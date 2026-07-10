@@ -1,0 +1,135 @@
+.bingo-page {
+    position: relative;
+
+    min-height: calc(100vh - 60px);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cell-panel {
+    position: absolute;
+    left: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 260px;
+    min-height: 420px;
+
+    background: white;
+    border-radius: 24px;
+
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: opacity 0.2s ease;
+}
+
+.cell-panel.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.bingo-cell {
+    position: relative;
+}
+
+.bingo-cell.editing::after {
+    content: "";
+
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 8px;
+
+    height: 3px;
+
+    background: black;
+    border-radius: 999px;
+}
+.bingo-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    width: fit-content;
+}
+
+.bingo-top-row {
+    width: 100%;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bingo-background-control {
+    display: flex;
+    align-items: center;
+}
+
+.bingo-size-control {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.bingo-size-btn {
+    width: 42px;
+    height: 42px;
+
+    background: white;
+    border: 1px solid black;
+
+    font: inherit;
+    font-size: 28px;
+
+    cursor: pointer;
+}
+
+.bingo-action-btn {
+    height: 42px;
+    padding: 0 16px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    background: white;
+    border: 1px solid black;
+
+    font: inherit;
+    font-size: 16px;
+
+    cursor: pointer;
+}
+
+.bingo-size-btn:hover {
+    background: #eeeeee;
+}
+
+.bingo-board {
+    display: grid;
+
+    width: 600px;
+    height: 600px;
+
+    border: 1px solid black;
+}
+
+.bingo-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid black;
+
+    font-size: 18px;
+    text-align: center;
+}

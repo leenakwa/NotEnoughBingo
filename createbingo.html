@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Not Enough Bingo, Bitchez</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="styles.css" rel="stylesheet">
+    <link href="bingo.css" rel="stylesheet">
+</head>
+
+<body>
+<header class="header">
+    <div class="header-left">
+        <a class="title" href="main.html">Not-Enough-Bingo</a>
+    </div>
+
+    <div class="header-center">
+        <button class="btn">
+            <i class="fa-regular fa-circle-plus"></i>
+        </button>
+    </div>
+
+    <div class="header-right">
+        <a href="foryoupage.html">For You</a>
+        <a href="main.html" class="active">Popular</a>
+        <a href="allbingopage.html">All Bingo</a>
+
+        <button class="btn">
+            <i class="fa-solid fa-house-user"></i>
+        </button>
+    </div>
+</header>
+
+
+<main class="bingo-page">
+    <div class="bingo-container">
+
+        <div class="bingo-top-row">
+            <div class="bingo-background-control">
+                <button id="upload-bg-btn" class="bingo-action-btn">
+                    <i class="fa-regular fa-image"></i>
+                    Upload Background
+                </button>
+
+                <input
+                        type="file"
+                        id="background-upload"
+                        accept=".png,image/png"
+                        hidden
+                >
+            </div>
+
+            <div class="bingo-size-control">
+                <button id="minus-size" class="bingo-size-btn">−</button>
+                <span id="bingo-size-count">5 × 5</span>
+                <button id="plus-size" class="bingo-size-btn">+</button>
+            </div>
+        </div>
+
+        <section id="bingo-board" class="bingo-board"></section>
+
+    </div>
+</main>
+
+
+<script src="createbingo.js"></script>
+
+
+</body>
+</html>
