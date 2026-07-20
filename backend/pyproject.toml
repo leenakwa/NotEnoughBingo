@@ -23,7 +23,7 @@ dependencies = [
   "gunicorn==23.0.0",
   "Pillow==12.3.0",
   "psycopg[binary]==3.3.4",
-  "reportlab==4.5.1",
+  "reportlab==5.0.0",
   "sentry-sdk[django]==2.66.0",
   "structlog==25.5.0",
   "whitenoise==6.12.0",
