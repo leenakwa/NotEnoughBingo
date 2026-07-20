@@ -21,7 +21,7 @@ def request_bingo_export(
     output_format: str,
     idempotency_key: str,
 ) -> ExportJob:
-    locked = Bingo.objects.select_for_update().select_related("current_revision").get(pk=bingo.pk)
+    locked = Bingo.objects.select_for_update().get(pk=bingo.pk)
     if locked.author_id != user.pk:
         raise PermissionDenied("Only the bingo author can export this board.")
     if locked.current_revision_id is None:

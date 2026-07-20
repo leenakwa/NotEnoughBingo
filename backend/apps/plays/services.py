@@ -97,9 +97,7 @@ def replace_progress(
     expected_version: int | None,
     revision_id=None,
 ) -> PlayProgress:
-    locked_bingo = (
-        Bingo.objects.select_for_update().select_related("current_revision").get(pk=bingo.pk)
-    )
+    locked_bingo = Bingo.objects.select_for_update().get(pk=bingo.pk)
     existing = (
         PlayProgress.objects.select_for_update().filter(user=user, bingo=locked_bingo).first()
     )
@@ -192,14 +190,7 @@ def create_shared_result(
     guest_hash: str = "",
     revision_id=None,
 ) -> SharedResult:
-    locked_bingo = (
-        Bingo.objects.select_for_update()
-        .select_related(
-            "current_revision",
-            "author",
-        )
-        .get(pk=bingo.pk)
-    )
+    locked_bingo = Bingo.objects.select_for_update().get(pk=bingo.pk)
     if locked_bingo.hidden_at or locked_bingo.current_revision_id is None:
         raise PermissionDenied("This bingo is unavailable.")
     if locked_bingo.visibility == Bingo.Visibility.PRIVATE and (

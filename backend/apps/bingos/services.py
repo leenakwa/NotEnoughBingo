@@ -247,14 +247,10 @@ def _save_idempotency(*, key: str, actor, bingo: Bingo, revision: BingoRevision)
 
 @transaction.atomic
 def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision:
-    locked_bingo = (
-        Bingo.objects.select_for_update()
-        .select_related("current_revision")
-        .get(
-            pk=bingo.pk,
-            author=actor,
-            deleted_at__isnull=True,
-        )
+    locked_bingo = Bingo.objects.select_for_update().get(
+        pk=bingo.pk,
+        author=actor,
+        deleted_at__isnull=True,
     )
     previous = _idempotency_lookup(key=idempotency_key, actor=actor, bingo=locked_bingo)
     if previous:
