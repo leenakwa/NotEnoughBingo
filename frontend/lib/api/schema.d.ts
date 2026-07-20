@@ -1067,7 +1067,6 @@ export interface components {
             readonly public_id: string;
             title?: string;
             description?: string;
-            /** Format: int64 */
             size?: number;
             status?: components["schemas"]["BingoStatus"];
             visibility?: components["schemas"]["VisibilityEnum"];
@@ -1102,11 +1101,8 @@ export interface components {
         BingoCell: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: int64 */
             position: number;
-            /** Format: int64 */
             row: number;
-            /** Format: int64 */
             column: number;
             text?: string;
             text_color?: string;
@@ -1123,7 +1119,6 @@ export interface components {
             /** Format: double */
             image_opacity?: number;
             border_color?: string;
-            /** Format: int64 */
             border_width?: number;
             border_style?: components["schemas"]["BorderStyleEnum"];
         };
@@ -1134,7 +1129,6 @@ export interface components {
             readonly public_id: string;
             title?: string;
             description?: string;
-            /** Format: int64 */
             size?: number;
             status?: components["schemas"]["BingoStatus"];
             visibility?: components["schemas"]["VisibilityEnum"];
@@ -1225,11 +1219,9 @@ export interface components {
             /** Format: uuid */
             readonly public_id: string;
             readonly number: number;
-            /** Format: int64 */
             revision_number: number;
             title: string;
             description?: string;
-            /** Format: int64 */
             size: number;
             visibility: components["schemas"]["VisibilityEnum"];
             marking_style: components["schemas"]["MarkingStyleEnum"];
@@ -1241,7 +1233,6 @@ export interface components {
             readonly cover_asset_id: string | null;
             /** Format: uuid */
             readonly background_asset_id: string | null;
-            /** Format: int64 */
             schema_version?: number;
             document_hash: string;
             readonly tags: components["schemas"]["RevisionTag"][];
@@ -1280,9 +1271,7 @@ export interface components {
             readonly body: string;
             /** Format: uuid */
             readonly parent_id: string | null;
-            /** Format: int64 */
             like_count?: number;
-            /** Format: int64 */
             reply_count?: number;
             readonly is_liked: boolean;
             readonly replies: components["schemas"]["Comment"][];
@@ -1787,7 +1776,6 @@ export interface components {
             readonly revision_id: string;
             readonly revision_number: number;
             readonly selected_cells: string[];
-            /** Format: int64 */
             version?: number;
             readonly stale: boolean;
             /** Format: date-time */

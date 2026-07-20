@@ -2300,9 +2300,8 @@ components:
           maxLength: 1000
         size:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         status:
           $ref: '#/components/schemas/BingoStatus'
         visibility:
@@ -2401,19 +2400,16 @@ components:
           readOnly: true
         position:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         row:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         column:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         text:
           type: string
           maxLength: 100
@@ -2460,9 +2456,8 @@ components:
           maxLength: 7
         border_width:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         border_style:
           $ref: '#/components/schemas/BorderStyleEnum'
       required:
@@ -2491,9 +2486,8 @@ components:
           maxLength: 1000
         size:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         status:
           $ref: '#/components/schemas/BingoStatus'
         visibility:
@@ -2759,9 +2753,8 @@ components:
           readOnly: true
         revision_number:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         title:
           type: string
           maxLength: 70
@@ -2770,9 +2763,8 @@ components:
           maxLength: 1000
         size:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         visibility:
           $ref: '#/components/schemas/VisibilityEnum'
         marking_style:
@@ -2807,9 +2799,8 @@ components:
           nullable: true
         schema_version:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         document_hash:
           type: string
           maxLength: 64
@@ -2919,14 +2910,12 @@ components:
           nullable: true
         like_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         reply_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         is_liked:
           type: boolean
           readOnly: true
@@ -4108,9 +4097,8 @@ components:
           readOnly: true
         version:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         stale:
           type: boolean
           readOnly: true
