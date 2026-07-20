@@ -1,149 +1,129 @@
 # Not Enough Bingo
 
-Not Enough Bingo is a social platform for creating, publishing, completing, and
-sharing user-authored bingo boards. The repository is being migrated from a
-static frontend prototype to a production-oriented Next.js and Django
-monorepo.
+Production-oriented social platform for creating, publishing, playing, and
+sharing user-authored bingo boards.
 
-The original static prototype has been fully migrated. Its historical behavior
-and product decisions remain documented in `docs/audit.md`; production code and
-content now come only from `frontend/`, `backend/`, and the API/database.
+## Stack and layout
 
-## Stack
+- `frontend/` — Next.js, TypeScript, App Router
+- `backend/` — Django, Django REST Framework, Celery
+- `infra/` — Nginx, MinIO policies, backup scripts
+- `docs/` — architecture, domain, security, and operations documentation
+- PostgreSQL, Redis, and S3-compatible storage (MinIO locally)
 
-- Next.js, TypeScript, and the App Router
-- Django, Django REST Framework, and PostgreSQL
-- Redis and Celery
-- S3-compatible object storage (MinIO locally)
-- Nginx as the local same-origin reverse proxy
-- Pytest, frontend component tests, and Playwright
+Django owns business rules and authorization, Next.js owns the UI, and Nginx
+provides one browser origin for both applications.
 
-The architecture is a modular monolith. Django owns business rules and
-authorization; Next.js owns rendering and interaction; Celery handles email,
-media processing, exports, and retention jobs.
-
-## Prerequisites
+## Requirements
 
 - Docker Engine with Docker Compose v2
-- GNU Make (optional; every target expands to a documented Docker command)
+- GNU Make (optional)
+- Node.js 22 only when running live Playwright tests from the host
 
-No local Node.js, Python, PostgreSQL, Redis, or MinIO installation is required
-for the standard development workflow.
+No local Python, PostgreSQL, Redis, or MinIO installation is required.
 
-## Quick start
+## Start locally
 
 ```bash
 cp .env.example .env
 docker compose config --quiet
 docker compose build
-docker compose run --rm backend python manage.py migrate
-docker compose up -d
+docker compose up -d --wait postgres redis minio mailpit
+docker compose run --rm --no-deps minio-init
+docker compose run --rm --no-deps backend python manage.py migrate --noinput
+docker compose up -d --wait
 docker compose exec backend python manage.py seed_dev
 ```
 
-Open:
+Seed login: `alex@example.test` / `LocalDevPassword!123`.
 
-- Application: <http://localhost:8080>
+Local services:
+
+- App: <http://localhost:8080>
+- API docs: <http://localhost:8080/api/v1/docs/>
 - API schema: <http://localhost:8080/api/v1/schema/>
-- API documentation: <http://localhost:8080/api/v1/docs/>
 - Django Admin: <http://localhost:8080/admin/>
 - Mailpit: <http://localhost:8025>
 - MinIO console: <http://localhost:9001>
 
-The seed command is for local development only and must refuse to run under
-production settings.
+Create an administrator with `make superuser`.
 
-## Common commands
+## Daily commands
 
 ```bash
-make help
-make up
-make migrate
-make test
-make lint
-make logs
-make down
+make ps          # service and health status
+make logs        # follow application logs
+make migrate     # apply migrations
+make seed        # restore deterministic development content
+make restart     # restart application services
+make down        # stop services and keep data
 ```
 
-Create a local database backup:
+To delete all local containers and data:
+
+```bash
+docker compose down --volumes --remove-orphans
+```
+
+## Test and validate
+
+Start the stack first, then run:
+
+```bash
+make lint              # Ruff, mypy, ESLint, TypeScript
+make migrations-check  # fail on model changes without a migration
+make test              # backend + frontend tests
+make test-e2e          # desktop and mobile browser smoke tests
+```
+
+The live suite covers registration and email verification, authoring and
+publishing, guest and authenticated play, sharing, revisions, privacy, social
+actions, reports, and admin moderation:
+
+```bash
+cd frontend
+npm ci
+npx playwright install chromium
+cd ..
+make test-e2e-live
+```
+
+After changing backend endpoints, regenerate and commit both API artifacts:
+
+```bash
+make openapi
+make api-types
+git diff -- backend/openapi.yaml frontend/lib/api/schema.d.ts
+```
+
+GitHub Actions additionally checks dependency audits, PostgreSQL behavior,
+Compose/Nginx/MinIO configuration, full-stack product flows, and both
+production container images.
+
+## Environment and data
+
+`.env.example` is the source of truth for supported variables and safe local
+defaults. Never reuse its secrets outside local development. Production must
+provide real Django, database, Redis, object-storage, email, and monitoring
+credentials; HTTPS-only cookies, trusted origins, allowed hosts, HSTS, and
+proxy-hop settings must match the deployment.
+
+Local database backup and guarded restore:
 
 ```bash
 make backup-db
-```
-
-Restore is deliberately guarded and requires an explicit confirmation:
-
-```bash
 CONFIRM_RESTORE=not-enough-bingo-local \
   make restore-db FILE=backups/postgres/example.dump
 ```
 
 ## Documentation
 
-- [Repository audit](docs/audit.md)
-- [Target architecture](docs/architecture.md)
+- [Documentation index](docs/README.md)
+- [Architecture](docs/architecture.md)
 - [Domain model](docs/domain-model.md)
-- [User flows](docs/user-flows.md)
-- [API boundaries](docs/api-boundaries.md)
-- [Security and media handling](docs/security-media.md)
-- [Migration plan](docs/migration-plan.md)
-- [Implementation status](docs/implementation-status.md)
 - [Operations runbook](docs/operations/runbook.md)
 - [Backup and restore](docs/operations/backups.md)
 
-## Environment configuration
-
-`.env.example` documents every local setting. Production secrets must come
-from the deployment platform's secret manager and must never be baked into an
-image, committed to Git, or logged. At minimum, production must replace:
-
-- `DJANGO_SECRET_KEY`
-- database credentials and `DATABASE_URL`
-- Redis/Celery credentials
-- object-storage credentials
-- email credentials
-- error-tracking DSN
-
-Production also requires HTTPS-only cookies, HSTS, an explicit allowed-host
-list, real trusted origins, the exact trusted-proxy hop count, private storage
-buckets with scoped IAM/lifecycle policy, image tags pinned to immutable
-digests, and tested backups.
-
-## Test commands
-
-```bash
-make test-backend
-make test-frontend
-make test-e2e
-make test
-```
-
-The full live product-flow suite runs against the already started Compose
-stack and uses host Playwright (Node.js 22 is required for this one command):
-
-```bash
-npm --prefix frontend ci
-npm --prefix frontend exec -- playwright install chromium
-make test-e2e-live
-```
-
-Regenerate the API schema/client contract after backend endpoint changes:
-
-```bash
-make openapi
-make api-types
-```
-
-CI additionally validates formatting, type safety, migrations, the OpenAPI
-schema, production dependency audits, shell scripts, infrastructure JSON/Nginx
-configuration, the Compose model, and both production container stages without
-publishing them.
-
-## Deployment note
-
-`compose.yml` is the reproducible local-development topology, not a production
-orchestrator. Production should deploy immutable frontend/backend images,
-managed PostgreSQL and Redis where available, private S3-compatible storage,
-separate web/worker/beat processes, and a managed ingress or load balancer.
-See the operations documentation for release, rollback, backup, and restore
-requirements.
+`compose.yml` is the reproducible development topology. Production should use
+immutable images, managed stateful services where available, private object
+storage, separate web/worker/beat processes, and a managed ingress.
