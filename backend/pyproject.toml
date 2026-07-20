@@ -18,7 +18,7 @@ dependencies = [
   "django-filter==25.2",
   "django-storages[s3]==1.14.6",
   "djangorestframework==3.16.1",
-  "drf-spectacular==0.28.0",
+  "drf-spectacular==0.30.0",
   "filetype==1.2.0",
   "gunicorn==23.0.0",
   "Pillow==12.3.0",
