@@ -102,17 +102,7 @@ def apply_moderation_action(
         or not moderator.has_perm("moderation.view_private_content")
     ):
         raise ValidationError({"moderator": "Moderator privileges are required."})
-    locked = (
-        Report.objects.select_for_update()
-        .select_related(
-            "bingo",
-            "comment",
-            "comment__author",
-            "profile",
-            "profile__user",
-        )
-        .get(pk=report.pk)
-    )
+    locked = Report.objects.select_for_update().get(pk=report.pk)
     now = timezone.now()
     bingo = locked.bingo
     comment = locked.comment

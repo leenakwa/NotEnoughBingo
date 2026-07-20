@@ -23,12 +23,7 @@ logger = logging.getLogger(__name__)
 )
 def process_export_job(job_id: int) -> str:
     with transaction.atomic():
-        job = (
-            ExportJob.objects.select_for_update()
-            .select_related("owner", "revision", "revision__published_by")
-            .filter(pk=job_id)
-            .first()
-        )
+        job = ExportJob.objects.select_for_update().filter(pk=job_id).first()
         if not job:
             return "missing"
         if job.status == ExportJob.Status.READY:
