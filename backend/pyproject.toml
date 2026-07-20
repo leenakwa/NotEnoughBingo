@@ -1,0 +1,120 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "not-enough-bingo-backend"
+version = "0.1.0"
+description = "Production API for Not Enough Bingo"
+requires-python = ">=3.12"
+dependencies = [
+  "Django==5.2.16",
+  "argon2-cffi==25.1.0",
+  "boto3==1.43.51",
+  "celery[redis]==5.5.3",
+  "django-celery-beat==2.9.0",
+  "django-cors-headers==4.9.0",
+  "django-environ==0.14.0",
+  "django-filter==25.2",
+  "django-storages[s3]==1.14.6",
+  "djangorestframework==3.16.1",
+  "drf-spectacular==0.28.0",
+  "filetype==1.2.0",
+  "gunicorn==23.0.0",
+  "Pillow==12.3.0",
+  "psycopg[binary]==3.3.4",
+  "reportlab==4.5.1",
+  "sentry-sdk[django]==2.66.0",
+  "structlog==25.5.0",
+  "whitenoise==6.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "django-stubs[compatible-mypy]==5.2.9",
+  "djangorestframework-stubs[compatible-mypy]==3.16.9",
+  "factory-boy==3.3.3",
+  "freezegun==1.5.5",
+  "mypy==1.19.1",
+  "pytest==9.0.3",
+  "pytest-cov==6.3.0",
+  "pytest-django==4.12.0",
+  "ruff==0.15.22",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["apps*", "config*"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py", "*_test.py"]
+addopts = "--strict-config --strict-markers --reuse-db"
+testpaths = ["tests", "apps"]
+markers = [
+  "concurrency: requires transactional/concurrent database behavior",
+  "integration: API or service integration test",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["apps", "config"]
+omit = ["*/migrations/*", "*/tests/*"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "DJ", "PT", "RUF", "S"]
+ignore = [
+  "DJ001",
+  "RUF012", # Django/DRF intentionally use mutable declarative class attributes.
+  "S101",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*.py" = ["F405", "F403", "S105"]
+"tests/**/*.py" = ["S106"]
+"apps/**/tests/**/*.py" = ["S106"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+check_untyped_defs = true
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_unused_ignores = false
+exclude = [
+  "/migrations/",
+  "^tests/",
+  "/tests/",
+  "/admin.py$",
+  "/views.py$",
+  "/serializers.py$",
+  "/models.py$",
+  "/tasks.py$",
+  "^config/settings/",
+  "^config/(asgi|wsgi|celery).py$",
+  "/management/commands/",
+]
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+[[tool.mypy.overrides]]
+module = [
+  "apps.*.admin",
+  "apps.*.models",
+  "apps.*.serializers",
+  "apps.*.tasks",
+  "apps.*.views",
+  "config.*",
+  "tests.*",
+]
+ignore_errors = true

@@ -1,0 +1,28 @@
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": 2,
+        "ExpiredObjectAllVersions": true
+      },
+      "Filter": {
+        "Prefix": "staging/uploads/"
+      },
+      "ID": "expire-staging-all-versions-2d",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "ExpiredObjectDeleteMarker": true
+      },
+      "Filter": {
+        "Prefix": "staging/uploads/"
+      },
+      "ID": "expire-staging-delete-markers-2d",
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 2
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
