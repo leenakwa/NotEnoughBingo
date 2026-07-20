@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - "codex/**"
   pull_request:
   workflow_dispatch:
 
@@ -46,6 +45,8 @@ jobs:
           python3 -m json.tool infra/minio/lifecycle.json >/dev/null
           python3 -m json.tool infra/minio/media-service-policy.json >/dev/null
           docker run --rm \
+            --add-host frontend:127.0.0.1 \
+            --add-host backend:127.0.0.1 \
             -e NGINX_CLIENT_MAX_BODY_SIZE=16m \
             -e NGINX_ENVSUBST_FILTER=NGINX_CLIENT_MAX_BODY_SIZE \
             -v "$PWD/infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
