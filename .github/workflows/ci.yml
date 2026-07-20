@@ -37,8 +37,8 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          shellcheck infra/scripts/*.sh
-          bash -n infra/scripts/*.sh
+          shellcheck infra/scripts/*.sh infra/minio/*.sh
+          bash -n infra/scripts/*.sh infra/minio/*.sh
 
       - name: Validate infrastructure documents and Nginx syntax
         run: |

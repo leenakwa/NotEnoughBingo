@@ -326,8 +326,8 @@ services:
         mc mb --ignore-existing "local/$$S3_BUCKET";
         mc anonymous set none "local/$$S3_BUCKET";
         mc version enable "local/$$S3_BUCKET";
-        sed "s|__S3_BUCKET__|$$S3_BUCKET|g"
-        /config/media-service-policy.json > /tmp/media-service-policy.json;
+        /bin/sh /config/render-policy.sh
+        /config/media-service-policy.json /tmp/media-service-policy.json;
         mc admin user add local "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY";
         mc admin policy create local neb-media-service
         /tmp/media-service-policy.json;
@@ -343,6 +343,7 @@ services:
     volumes:
       - ./infra/minio/lifecycle.json:/config/lifecycle.json:ro
       - ./infra/minio/media-service-policy.json:/config/media-service-policy.json:ro
+      - ./infra/minio/render-policy.sh:/config/render-policy.sh:ro
     networks:
       - app
 
