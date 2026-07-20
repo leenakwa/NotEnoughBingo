@@ -253,19 +253,6 @@ jobs:
       - name: Configure local full-stack environment
         run: cp .env.example .env
 
-      - name: Build development application images
-        run: docker compose build backend frontend
-
-      - name: Start stateful dependencies
-        run: |
-          docker compose up -d --wait --wait-timeout 180 postgres redis minio mailpit
-          docker compose run --rm --no-deps minio-init
-
-      - name: Apply migrations and start application services
-        run: |
-          docker compose run --rm --no-deps backend python manage.py migrate --noinput
-          docker compose up -d --wait --wait-timeout 240 backend worker frontend proxy
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -278,6 +265,19 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
+
+      - name: Build development application images
+        run: docker compose build backend frontend
+
+      - name: Start stateful dependencies
+        run: |
+          docker compose up -d --wait --wait-timeout 180 postgres redis minio mailpit
+          docker compose run --rm --no-deps minio-init
+
+      - name: Apply migrations and start application services
+        run: |
+          docker compose run --rm --no-deps backend python manage.py migrate --noinput
+          docker compose up -d --wait --wait-timeout 240 backend worker frontend proxy
 
       - name: Run live Playwright product flows
         working-directory: frontend
