@@ -110,6 +110,7 @@ describe("BingoCard", () => {
 
     expect(preview.querySelectorAll(".bingo-card-preview__cell")).toHaveLength(9);
     expect(preview).toHaveTextContent("First cell");
+    expect(preview.style.getPropertyValue("--preview-font-size")).toBe("3.1579cqw");
     expect(card.lastElementChild).toHaveClass("bingo-card__actions");
     expect(card.lastElementChild?.previousElementSibling).toHaveClass("bingo-card__tags");
   });

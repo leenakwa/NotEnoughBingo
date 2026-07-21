@@ -71,4 +71,15 @@ def test_seed_e2e_can_be_rerun_without_duplicate_fixture_state(monkeypatch) -> N
     ]
     assert [manifest["schema_version"] for manifest in manifests] == [1, 1]
     assert set(manifests[1]["bingos"]) == {"public", "unlisted", "private", "revision"}
+    assert manifests[1]["bingos"]["public"]["cell_texts"] == [
+        "Morning stretch",
+        "Made the bed",
+        "Drank water",
+        "Took a walk",
+        "Called a friend",
+        "Read ten pages",
+        "Cooked dinner",
+        "No-phone hour",
+        "Early bedtime",
+    ]
     assert manifests[0]["users"] == manifests[1]["users"]

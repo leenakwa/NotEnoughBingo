@@ -113,7 +113,7 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByRole("heading", { name: "Create bingo" })).toBeVisible();
 
     await page.getByRole("gridcell").first().click();
-    await page.getByLabel("Text", { exact: true }).fill("Created through the live editor");
+    await page.getByLabel("Text", { exact: true }).fill("Made something");
     await page.getByRole("button", { name: "Bold" }).click();
     await waitForResponse(page, "/api/v1/drafts/", "POST", () =>
       page.getByRole("button", { name: "Save draft" }).click(),
@@ -126,6 +126,7 @@ test.describe("live full-stack product flows", () => {
     await page.getByLabel("Description").fill("Saved and published by Playwright.");
     await page.getByPlaceholder("Search or add a tag").fill("browser-tested");
     await page.getByRole("button", { name: "Add" }).click();
+    await page.getByLabel("Visibility").selectOption("unlisted");
     await page.getByLabel("Cell completion style").selectOption("highlight");
     await waitForResponse(page, "/draft/", "PUT", () =>
       page.getByRole("button", { name: "Save draft" }).click(),
@@ -137,9 +138,35 @@ test.describe("live full-stack product flows", () => {
     );
     await expect(page).toHaveURL(/\/bingo\/[0-9a-f-]+$/);
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: /Created through the live editor/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Made something" })).toBeVisible();
+  });
+
+  test("discover scales fixture text with the board and keeps it inside cells", async ({
+    page,
+  }) => {
+    const fixture = readLiveFixture();
+    const title = fixture.bingos.public.title;
+    await page.goto("/discover");
+
+    const card = page.locator(".bingo-card").filter({ hasText: title });
+    await expect(card).toHaveCount(1);
+    const metrics = await card.evaluate((element) => {
+      const preview = element.querySelector<HTMLElement>(".bingo-card-preview");
+      const textNodes = preview?.querySelectorAll<HTMLElement>(".bingo-card-preview__text");
+      if (!preview || !textNodes?.length) return null;
+      return {
+        width: preview.getBoundingClientRect().width,
+        fontSize: Number.parseFloat(getComputedStyle(textNodes[0]!).fontSize),
+        allTextFits: Array.from(textNodes).every(
+          (text) =>
+            text.scrollWidth <= text.clientWidth + 1 && text.scrollHeight <= text.clientHeight + 1,
+        ),
+      };
+    });
+
+    expect(metrics).not.toBeNull();
+    expect(metrics?.fontSize).toBeCloseTo((24 * (metrics?.width ?? 0)) / 760, 1);
+    expect(metrics?.allTextFits).toBe(true);
   });
 
   test("guest progress resets, replays, shares, and stays read-only", async ({ page }) => {

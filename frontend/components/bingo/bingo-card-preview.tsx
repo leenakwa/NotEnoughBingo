@@ -7,6 +7,19 @@ interface PreviewStyle extends CSSProperties {
   "--preview-size": number;
 }
 
+const BOARD_REFERENCE_WIDTH_PX = 760;
+const ROOT_FONT_SIZE_PX = 16;
+
+export function boardFontSizeRem(size: number): number {
+  return Math.max(0.55, Math.min(1.5, 5 / size + 0.15));
+}
+
+function previewFontSize(size: number): string {
+  const relativeBoardWidth =
+    (boardFontSizeRem(size) * ROOT_FONT_SIZE_PX * 100) / BOARD_REFERENCE_WIDTH_PX;
+  return `${relativeBoardWidth.toFixed(4)}cqw`;
+}
+
 function cellStyle(cell: RevisionCell): CSSProperties {
   return {
     color: cell.text_color,
@@ -30,7 +43,7 @@ export function BingoCardPreview({
     ? [...preview.cells].sort((left, right) => left.row - right.row || left.column - right.column)
     : [];
   const style: PreviewStyle = {
-    "--preview-font-size": `${Math.max(0.3, Math.min(0.82, 1.08 - size * 0.075))}rem`,
+    "--preview-font-size": previewFontSize(size),
     "--preview-size": size,
     backgroundImage: preview?.board_background?.url
       ? `url("${preview.board_background.url}")`

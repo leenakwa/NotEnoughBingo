@@ -44,6 +44,7 @@ def _document(
     *,
     title: str,
     visibility: str,
+    cells: tuple[str, ...],
     marking_style: str = Bingo.MarkingStyle.CHECKMARK,
 ) -> dict[str, Any]:
     document = empty_draft_document(title=title, size=3)
@@ -55,8 +56,10 @@ def _document(
             "tags": ["e2e", visibility],
         }
     )
-    for position, cell in enumerate(document["cells"], start=1):
-        cell["text"] = f"{title} cell {position}"
+    if len(cells) != len(document["cells"]):
+        raise CommandError(f"{title!r} must define exactly {len(document['cells'])} cells.")
+    for cell, text in zip(document["cells"], cells, strict=True):
+        cell["text"] = text
     return document
 
 
@@ -221,21 +224,65 @@ class Command(BaseCommand):
                 "title": "E2E Public Board",
                 "visibility": Bingo.Visibility.PUBLIC,
                 "marking_style": Bingo.MarkingStyle.CHECKMARK,
+                "cells": (
+                    "Morning stretch",
+                    "Made the bed",
+                    "Drank water",
+                    "Took a walk",
+                    "Called a friend",
+                    "Read ten pages",
+                    "Cooked dinner",
+                    "No-phone hour",
+                    "Early bedtime",
+                ),
             },
             "unlisted": {
                 "title": "E2E Unlisted Board",
                 "visibility": Bingo.Visibility.UNLISTED,
                 "marking_style": Bingo.MarkingStyle.CROSSOUT,
+                "cells": (
+                    "Share a draft",
+                    "Ask for feedback",
+                    "Try new tools",
+                    "Sketch an idea",
+                    "Make a mistake",
+                    "Keep it simple",
+                    "Finish one thing",
+                    "Show the process",
+                    "Publish today",
+                ),
             },
             "private": {
                 "title": "E2E Private Board",
                 "visibility": Bingo.Visibility.PRIVATE,
                 "marking_style": Bingo.MarkingStyle.HIGHLIGHT,
+                "cells": (
+                    "Quiet morning",
+                    "Deep breath",
+                    "Clear the desk",
+                    "Write it down",
+                    "Take a pause",
+                    "Close one tab",
+                    "Drink some tea",
+                    "Stretch gently",
+                    "Rest well",
+                ),
             },
             "revision": {
                 "title": "E2E Revision Board",
                 "visibility": Bingo.Visibility.PUBLIC,
                 "marking_style": Bingo.MarkingStyle.CHECKMARK,
+                "cells": (
+                    "Fresh coffee",
+                    "Sunny window",
+                    "Favorite song",
+                    "Kind message",
+                    "Warm shower",
+                    "Good news",
+                    "Quiet moment",
+                    "Tasty lunch",
+                    "Clean sheets",
+                ),
             },
         }
         bingos: dict[str, dict[str, Any]] = {}
@@ -246,6 +293,7 @@ class Command(BaseCommand):
                 document=_document(
                     title=spec["title"],
                     visibility=spec["visibility"],
+                    cells=spec["cells"],
                     marking_style=spec["marking_style"],
                 ),
             )
