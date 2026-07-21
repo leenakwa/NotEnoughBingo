@@ -130,19 +130,23 @@ test("bingo card keeps tags with actions and handles guest likes without an API 
   const card = page.locator(".bingo-card");
   await expect(card).toHaveCount(1);
   const alignment = await card.evaluate((element) => {
+    const preview = element.querySelector<HTMLElement>(".bingo-card-preview");
     const tags = element.querySelector<HTMLElement>(".bingo-card__tags");
     const actions = element.querySelector<HTMLElement>(".bingo-card__actions");
-    if (!tags || !actions) return null;
+    if (!preview || !tags || !actions) return null;
+    const previewBox = preview.getBoundingClientRect();
     const tagsBox = tags.getBoundingClientRect();
     const actionsBox = actions.getBoundingClientRect();
     return {
       adjacent: actions.previousElementSibling === tags,
-      gap: Math.abs(actionsBox.top - tagsBox.bottom),
+      actionsGap: Math.abs(actionsBox.top - tagsBox.bottom),
+      previewGap: Math.abs(tagsBox.top - previewBox.bottom),
     };
   });
   expect(alignment).not.toBeNull();
   expect(alignment?.adjacent).toBe(true);
-  expect(alignment?.gap).toBeLessThanOrEqual(1);
+  expect(alignment?.actionsGap).toBeLessThanOrEqual(1);
+  expect(alignment?.previewGap).toBeLessThanOrEqual(1);
 
   await page.getByRole("button", { name: "Like Feedback board" }).click();
   await expect(page).toHaveURL(`/login?next=${encodeURIComponent(`/bingo/${bingoId}`)}`);
