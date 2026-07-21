@@ -1,3 +1,4 @@
+import { Agentation } from "agentation";
 import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
@@ -44,6 +45,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </a>
         <AppHeader />
         {children}
+        {process.env.NODE_ENV === "development" && <Agentation />}
       </body>
     </html>
   );
