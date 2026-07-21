@@ -27,8 +27,9 @@ vi.mock("@/lib/api/client", () => ({
       unlike: mocks.unlike,
     },
   },
-  ApiClientError: class extends Error {},
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
+  isAuthenticationRequiredError: (error: unknown) =>
+    Boolean(error && typeof error === "object" && "status" in error && error.status === 403),
 }));
 
 const previewCells: RevisionCell[] = Array.from({ length: 9 }, (_, index) => ({
@@ -110,5 +111,22 @@ describe("BingoCard", () => {
     expect(preview.querySelectorAll(".bingo-card-preview__cell")).toHaveLength(9);
     expect(preview).toHaveTextContent("First cell");
     expect(card.lastElementChild).toHaveClass("bingo-card__actions");
+    expect(card.lastElementChild?.previousElementSibling).toHaveClass("bingo-card__tags");
+  });
+
+  it("redirects guests to login without rendering an API error", async () => {
+    const user = userEvent.setup();
+    mocks.unlike.mockRejectedValueOnce({
+      status: 403,
+      message: "Authentication credentials were not provided.",
+    });
+    render(<BingoCard bingo={bingo} />);
+
+    await user.click(screen.getByRole("button", { name: `Unlike ${bingo.title}` }));
+
+    expect(mocks.push).toHaveBeenCalledWith(
+      `/login?next=${encodeURIComponent(`/bingo/${bingo.id}`)}`,
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
-import { api, ApiClientError, errorMessage } from "@/lib/api/client";
+import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import type { Notification, Page } from "@/lib/api/types";
 
 export function NotificationsView() {
@@ -26,7 +26,7 @@ export function NotificationsView() {
       .then(setResult)
       .catch((caught) => {
         if (controller.signal.aborted) return;
-        if (caught instanceof ApiClientError && caught.status === 401) {
+        if (isAuthenticationRequiredError(caught)) {
           setResult(null);
           setAuthRequired(true);
         } else {

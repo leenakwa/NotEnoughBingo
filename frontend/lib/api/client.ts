@@ -67,6 +67,20 @@ export class ApiClientError extends Error {
   }
 }
 
+const authenticationRequiredCodes = new Set(["not_authenticated", "authentication_required"]);
+
+export function isAuthenticationRequiredError(error: unknown): error is ApiClientError {
+  if (!(error instanceof ApiClientError) || (error.status !== 401 && error.status !== 403)) {
+    return false;
+  }
+  return (
+    authenticationRequiredCodes.has(error.code) ||
+    /authentication credentials were not provided|not authenticated|login required/i.test(
+      error.message,
+    )
+  );
+}
+
 function apiBase(): string {
   return typeof window === "undefined" ? serverApiBase : publicApiBase;
 }
@@ -179,6 +193,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 }
 
 export function errorMessage(error: unknown): string {
+  if (isAuthenticationRequiredError(error)) return "";
   if (error instanceof ApiClientError) {
     const detail = firstValidationDetail(error.details);
     return detail ?? error.message;

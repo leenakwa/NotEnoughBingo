@@ -8,7 +8,7 @@ import { AccountSettings } from "@/features/profile/account-settings";
 import { ProfileCollections } from "@/features/profile/profile-collections";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { notifyAuthChanged } from "@/lib/auth-events";
-import { api, ApiClientError, errorMessage } from "@/lib/api/client";
+import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import type { AuthenticatedUser, UserPrivacySettings, UserProfile } from "@/lib/api/types";
 
 const privacyLabels: Record<keyof UserPrivacySettings, string> = {
@@ -50,7 +50,7 @@ export function ProfileView({ username }: { username?: string }) {
       })
       .catch((caught) => {
         if (controller.signal.aborted) return;
-        if (!username && caught instanceof ApiClientError && caught.status === 401) {
+        if (!username && isAuthenticationRequiredError(caught)) {
           setAuthRequired(true);
         } else {
           setError(errorMessage(caught));

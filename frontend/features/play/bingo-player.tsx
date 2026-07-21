@@ -9,7 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state
 import { CommentsPanel } from "@/features/social/comments-panel";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { trackInteraction } from "@/lib/analytics";
-import { api, ApiClientError, errorMessage } from "@/lib/api/client";
+import { api, ApiClientError, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import {
   clearGuestProgress,
   makeIdempotencyKey,
@@ -88,7 +88,7 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
         try {
           user = await api.auth.me();
         } catch (caught) {
-          if (!(caught instanceof ApiClientError) || caught.status !== 401) {
+          if (!isAuthenticationRequiredError(caught)) {
             setProgressError("Progress sync is unavailable; guest progress will be used.");
           }
         }

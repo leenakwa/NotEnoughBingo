@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ApiClientError, errorMessage } from "@/lib/api/client";
+import { ApiClientError, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 
 describe("API error presentation", () => {
   it("surfaces the first field-level validation message", () => {
@@ -28,5 +28,25 @@ describe("API error presentation", () => {
     expect(errorMessage(new TypeError("Failed to fetch"))).toBe(
       "Unable to reach the service. Check your connection and try again.",
     );
+  });
+
+  it("does not expose missing-authentication API errors in the interface", () => {
+    const error = new ApiClientError(403, {
+      code: "not_authenticated",
+      message: "Authentication credentials were not provided.",
+    });
+
+    expect(isAuthenticationRequiredError(error)).toBe(true);
+    expect(errorMessage(error)).toBe("");
+  });
+
+  it("still shows authentication failures submitted from the login form", () => {
+    const error = new ApiClientError(401, {
+      code: "authentication_failed",
+      message: "The email or password is incorrect.",
+    });
+
+    expect(isAuthenticationRequiredError(error)).toBe(false);
+    expect(errorMessage(error)).toBe("The email or password is incorrect.");
   });
 });

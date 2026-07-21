@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { BingoCardPreview } from "@/components/bingo/bingo-card-preview";
 import { CommentIcon, HeartIcon } from "@/components/ui/icons";
 import { trackInteraction } from "@/lib/analytics";
-import { api, ApiClientError, errorMessage } from "@/lib/api/client";
+import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import type { BingoSummary } from "@/lib/api/types";
 
 function formatCount(value: number): string {
@@ -61,7 +61,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
         setLikeCount(updated.stats.likes);
       }
     } catch (error) {
-      if (error instanceof ApiClientError && error.status === 401) {
+      if (isAuthenticationRequiredError(error)) {
         router.push(`/login?next=${encodeURIComponent(`/bingo/${bingo.id}`)}`);
         return;
       }
@@ -84,6 +84,11 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
         </div>
         <BingoCardPreview preview={bingo.preview} fallbackSize={bingo.size} title={bingo.title} />
       </Link>
+      {actionError ? (
+        <p className="card-action-error" role="alert">
+          {actionError}
+        </p>
+      ) : null}
       {bingo.tags.length ? (
         <nav className="bingo-card__tags" aria-label={`Tags for ${bingo.title}`}>
           {bingo.tags.slice(0, 3).map((tag) => (
@@ -104,11 +109,6 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
       ) : (
         <div className="bingo-card__tags" aria-hidden="true" />
       )}
-      {actionError ? (
-        <p className="card-action-error" role="alert">
-          {actionError}
-        </p>
-      ) : null}
       <div className="bingo-card__actions">
         {bingo.status === "published" ? (
           <>
