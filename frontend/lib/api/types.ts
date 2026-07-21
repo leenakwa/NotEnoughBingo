@@ -53,6 +53,7 @@ export interface BingoSummary {
   description: string;
   author: PublicUser;
   cover: MediaAsset | null;
+  preview: BingoCardPreview | null;
   tags: Tag[];
   size: number;
   status: PublishStatus;
@@ -62,6 +63,12 @@ export interface BingoSummary {
   liked_by_me: boolean;
   published_at: string | null;
   updated_at: string;
+}
+
+export interface BingoCardPreview {
+  size: number;
+  board_background: MediaAsset | null;
+  cells: RevisionCell[];
 }
 
 export interface RevisionCell {

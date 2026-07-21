@@ -84,6 +84,12 @@ def test_bingo_api_enforces_catalog_and_direct_link_visibility(verified_user_fac
     assert str(public.public_id) in catalog_ids
     assert str(unlisted.public_id) not in catalog_ids
     assert str(private.public_id) not in catalog_ids
+    public_card = next(
+        item for item in catalog.data["results"] if item["id"] == str(public.public_id)
+    )
+    assert public_card["preview"]["size"] == 3
+    assert len(public_card["preview"]["cells"]) == 9
+    assert public_card["preview"]["cells"][0]["text"] == "Public board first cell"
     assert guest.get(f"/api/v1/bingos/{public.public_id}/").status_code == 200
     assert guest.get(f"/api/v1/bingos/{unlisted.public_id}/").status_code == 200
     assert guest.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404

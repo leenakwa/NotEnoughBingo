@@ -91,6 +91,7 @@ def _optimized_bingos(queryset):
         Prefetch("tag_links", queryset=BingoTag.objects.select_related("tag").order_by("position")),
         "current_revision__cells__image",
         "current_revision__cells__image__derivatives",
+        "current_revision__background__derivatives",
         "current_revision__revision_tags",
         "cover__derivatives",
         "background__derivatives",

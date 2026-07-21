@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { BingoCardPreview } from "@/components/bingo/bingo-card-preview";
 import { CommentIcon, HeartIcon } from "@/components/ui/icons";
 import { trackInteraction } from "@/lib/analytics";
 import { api, ApiClientError, errorMessage } from "@/lib/api/client";
@@ -20,7 +21,6 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
   const [likeCount, setLikeCount] = useState(bingo.stats.likes);
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState("");
-  const coverUrl = bingo.cover?.thumbnail_url ?? bingo.cover?.url;
 
   useEffect(() => {
     const element = articleRef.current;
@@ -82,24 +82,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
           <h2>{bingo.title}</h2>
           <span>by {bingo.author.display_name || `@${bingo.author.username}`}</span>
         </div>
-        {coverUrl ? (
-          // Media URLs are immutable, sanitized raster assets returned by the API.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className="bingo-card__cover"
-            src={coverUrl}
-            alt={`Cover for ${bingo.title}`}
-            width={640}
-            height={440}
-            loading="lazy"
-          />
-        ) : (
-          <div className="bingo-card__cover bingo-card__cover--empty" aria-hidden="true">
-            <span>
-              {bingo.size} × {bingo.size}
-            </span>
-          </div>
-        )}
+        <BingoCardPreview preview={bingo.preview} fallbackSize={bingo.size} title={bingo.title} />
       </Link>
       {bingo.tags.length ? (
         <nav className="bingo-card__tags" aria-label={`Tags for ${bingo.title}`}>
@@ -121,6 +104,11 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
       ) : (
         <div className="bingo-card__tags" aria-hidden="true" />
       )}
+      {actionError ? (
+        <p className="card-action-error" role="alert">
+          {actionError}
+        </p>
+      ) : null}
       <div className="bingo-card__actions">
         {bingo.status === "published" ? (
           <>
@@ -148,11 +136,6 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
           <span className="card-status">{bingo.status}</span>
         )}
       </div>
-      {actionError ? (
-        <p className="card-action-error" role="alert">
-          {actionError}
-        </p>
-      ) : null}
     </article>
   );
 }

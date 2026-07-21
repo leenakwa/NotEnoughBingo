@@ -2327,6 +2327,11 @@ components:
           format: uuid
           readOnly: true
           nullable: true
+        preview:
+          allOf:
+          - $ref: '#/components/schemas/BingoCardPreview'
+          readOnly: true
+          nullable: true
         author:
           allOf:
           - $ref: '#/components/schemas/BingoAuthor'
@@ -2387,10 +2392,32 @@ components:
       - current_revision_id
       - id
       - liked_by_me
+      - preview
       - public_id
       - stats
       - tags
       - updated_at
+    BingoCardPreview:
+      type: object
+      properties:
+        size:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        board_background:
+          allOf:
+          - $ref: '#/components/schemas/MediaAsset'
+          readOnly: true
+          nullable: true
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/BingoCell'
+          readOnly: true
+      required:
+      - board_background
+      - cells
+      - size
     BingoCell:
       type: object
       properties:
@@ -2513,6 +2540,11 @@ components:
           format: uuid
           readOnly: true
           nullable: true
+        preview:
+          allOf:
+          - $ref: '#/components/schemas/BingoCardPreview'
+          readOnly: true
+          nullable: true
         author:
           allOf:
           - $ref: '#/components/schemas/BingoAuthor'
@@ -2610,6 +2642,7 @@ components:
       - liked_by_me
       - marking_config
       - permissions
+      - preview
       - public_id
       - stats
       - tags

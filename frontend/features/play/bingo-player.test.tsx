@@ -71,6 +71,7 @@ const bingo: BingoDetail = {
     avatar: null,
   },
   cover: null,
+  preview: null,
   tags: [],
   size: 3,
   status: "published",

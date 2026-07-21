@@ -431,6 +431,9 @@ class ProfileBingoListView(generics.ListAPIView):
         ).prefetch_related(
             "tag_links__tag",
             "cover__derivatives",
+            "current_revision__background__derivatives",
+            "current_revision__cells__image",
+            "current_revision__cells__image__derivatives",
             "author__profile__avatar__derivatives",
         )
         if self.request.user.is_authenticated:

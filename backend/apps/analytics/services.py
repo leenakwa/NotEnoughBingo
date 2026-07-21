@@ -53,6 +53,9 @@ def public_feed_queryset(user: User | None = None) -> QuerySet[Bingo]:
                 queryset=BingoTag.objects.select_related("tag").order_by("position"),
             ),
             "cover__derivatives",
+            "current_revision__background__derivatives",
+            "current_revision__cells__image",
+            "current_revision__cells__image__derivatives",
             "author__profile__avatar__derivatives",
         )
     )

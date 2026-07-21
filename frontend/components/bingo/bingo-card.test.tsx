@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoCard } from "@/components/bingo/bingo-card";
-import type { BingoSummary } from "@/lib/api/types";
+import type { BingoSummary, RevisionCell } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
   unlike: vi.fn(),
@@ -31,6 +31,25 @@ vi.mock("@/lib/api/client", () => ({
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
 }));
 
+const previewCells: RevisionCell[] = Array.from({ length: 9 }, (_, index) => ({
+  id: `33333333-3333-4333-8333-${String(index).padStart(12, "0")}`,
+  row: Math.floor(index / 3),
+  column: index % 3,
+  text: index === 0 ? "First cell" : `Cell ${index + 1}`,
+  text_color: "#000000",
+  bold: false,
+  italic: false,
+  underline: false,
+  strikethrough: false,
+  background_color: "#ffffff",
+  background_opacity: 1,
+  image: null,
+  image_opacity: 1,
+  border_color: "#000000",
+  border_width: 1,
+  border_style: "solid",
+}));
+
 const bingo: BingoSummary = {
   id: "11111111-1111-4111-8111-111111111111",
   title: "Production readiness",
@@ -42,6 +61,11 @@ const bingo: BingoSummary = {
     avatar: null,
   },
   cover: null,
+  preview: {
+    size: 3,
+    board_background: null,
+    cells: previewCells,
+  },
   tags: [],
   size: 5,
   status: "published",
@@ -73,5 +97,18 @@ describe("BingoCard", () => {
 
     expect(mocks.unlike).toHaveBeenCalledWith(bingo.id);
     expect(screen.getByRole("button", { name: `Like ${bingo.title}` })).toHaveTextContent("3");
+  });
+
+  it("renders the bingo board and keeps social actions at the bottom", () => {
+    render(<BingoCard bingo={bingo} />);
+
+    const preview = screen.getByRole("img", {
+      name: `Preview of ${bingo.title}, 3 by 3 bingo`,
+    });
+    const card = screen.getByRole("article");
+
+    expect(preview.querySelectorAll(".bingo-card-preview__cell")).toHaveLength(9);
+    expect(preview).toHaveTextContent("First cell");
+    expect(card.lastElementChild).toHaveClass("bingo-card__actions");
   });
 });

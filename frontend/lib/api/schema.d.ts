@@ -1077,6 +1077,7 @@ export interface components {
             readonly cover_asset_id: string | null;
             /** Format: uuid */
             readonly current_revision_id: string | null;
+            readonly preview: components["schemas"]["BingoCardPreview"] | null;
             readonly author: components["schemas"]["BingoAuthor"];
             readonly tags: components["schemas"]["TagReference"][];
             readonly stats: components["schemas"]["BingoStats"];
@@ -1097,6 +1098,11 @@ export interface components {
             published_at?: string | null;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        BingoCardPreview: {
+            size: number;
+            readonly board_background: components["schemas"]["MediaAsset"] | null;
+            readonly cells: components["schemas"]["BingoCell"][];
         };
         BingoCell: {
             /** Format: uuid */
@@ -1139,6 +1145,7 @@ export interface components {
             readonly cover_asset_id: string | null;
             /** Format: uuid */
             readonly current_revision_id: string | null;
+            readonly preview: components["schemas"]["BingoCardPreview"] | null;
             readonly author: components["schemas"]["BingoAuthor"];
             readonly tags: components["schemas"]["TagReference"][];
             readonly stats: components["schemas"]["BingoStats"];

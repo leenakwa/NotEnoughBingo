@@ -194,6 +194,15 @@ class BingoRevisionSerializer(serializers.ModelSerializer):
         return [{"name": item.name, "slug": item.slug} for item in obj.revision_tags.all()]
 
 
+class BingoCardPreviewSerializer(serializers.ModelSerializer):
+    board_background = MediaAssetSerializer(source="background", read_only=True, allow_null=True)
+    cells = BingoCellSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BingoRevision
+        fields = ("size", "board_background", "cells")
+
+
 class BingoCardSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(source="public_id", read_only=True)
     author = BingoAuthorSerializer(read_only=True)
@@ -210,6 +219,11 @@ class BingoCardSerializer(serializers.ModelSerializer):
     )
     current_revision_id = serializers.UUIDField(
         source="current_revision.public_id",
+        read_only=True,
+        allow_null=True,
+    )
+    preview = BingoCardPreviewSerializer(
+        source="current_revision",
         read_only=True,
         allow_null=True,
     )
@@ -232,6 +246,7 @@ class BingoCardSerializer(serializers.ModelSerializer):
             "cover",
             "cover_asset_id",
             "current_revision_id",
+            "preview",
             "author",
             "tags",
             "stats",
