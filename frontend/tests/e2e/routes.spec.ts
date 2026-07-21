@@ -40,8 +40,47 @@ test("primary navigation uses the production route names", async ({ page }) => {
   );
   await expect(page.getByRole("link", { name: "Trending" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create", exact: true })).toHaveAttribute(
+    "href",
+    "/create",
+  );
+  await expect(page.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
   await expect(page.getByText("For You")).toHaveCount(0);
+});
+
+test("authenticated header keeps notification and profile actions", async ({ page }) => {
+  await page.unroute("**/api/v1/auth/me/");
+  await page.route("**/api/v1/auth/me/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: "11111111-1111-4111-8111-111111111111",
+        username: "author",
+        display_name: "Author",
+        avatar: null,
+        email: "author@example.test",
+        email_verified: true,
+      }),
+    }),
+  );
+  await page.route("**/api/v1/feeds/discover/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
+    }),
+  );
+
+  await page.goto("/discover");
+  await expect(page.getByRole("link", { name: "Notifications" })).toHaveAttribute(
+    "href",
+    "/notifications",
+  );
+  await expect(page.getByRole("link", { name: "Profile for Author" })).toHaveAttribute(
+    "href",
+    "/profile",
+  );
 });
 
 test("explore exposes title, author, tag, and sort controls", async ({ page }) => {

@@ -61,7 +61,7 @@ frontend-shell: ## Open a shell in the frontend container.
 test: test-backend test-frontend ## Run backend and frontend tests.
 
 test-backend: ## Run backend tests.
-	$(BACKEND) pytest
+	$(COMPOSE) exec -e USE_S3=false backend pytest
 
 test-frontend: ## Run frontend component and integration tests.
 	$(FRONTEND) npm test
