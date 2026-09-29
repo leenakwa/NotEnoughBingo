@@ -104,14 +104,18 @@ test("Discover, Trending, and Explore have no serious automated accessibility vi
 
   await page.goto("/discover");
   await expect(page.getByRole("heading", { name: "Discover" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No boards here yet" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create a bingo" })).toBeVisible();
   await expectNoSeriousViolations(page);
 
   await page.goto("/trending");
   await expect(page.getByRole("heading", { name: "Trending" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No boards here yet" })).toBeVisible();
   await expectNoSeriousViolations(page);
 
   await page.goto("/explore");
   await expect(page.getByRole("heading", { name: "Explore" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No matching bingos" })).toBeVisible();
   await expectNoSeriousViolations(page);
 });
 

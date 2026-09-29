@@ -347,6 +347,30 @@ test.describe("live full-stack product flows", () => {
     ).toHaveCount(0);
   });
 
+  test("zero-data search, comments, notifications, and editor explain the next step", async ({
+    page,
+  }) => {
+    const bingo = readLiveFixture().bingos.public;
+    await page.goto("/explore?search=no-such-bingo-in-this-fixture");
+    await expect(page.getByRole("heading", { name: "No matching bingos" })).toBeVisible();
+    await expect(page.getByText("Try fewer filters or a different search phrase.")).toBeVisible();
+
+    await page.goto(`/bingo/${bingo.id}`);
+    await expect(page.getByRole("heading", { name: "No comments yet" })).toBeVisible();
+
+    await authenticateAs(page, "player");
+    await page.goto("/notifications");
+    await expect(page.getByRole("heading", { name: "All quiet" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Mark all as read" })).toBeDisabled();
+
+    await authenticateAs(page, "author");
+    await page.goto("/create");
+    await expect(page.getByRole("button", { name: "Row 1, column 1: empty" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save draft" })).toBeDisabled();
+    await page.getByRole("button", { name: "Finish creating" }).click();
+    await expect(page.getByText("No cover selected")).toBeVisible();
+  });
+
   test("author creates, saves, edits, and publishes a draft", async ({ page }, testInfo) => {
     const title = `E2E UI Created Board ${testInfo.retry}`;
     await authenticateAs(page, "author");

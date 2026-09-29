@@ -337,15 +337,15 @@ Verify:
 
 Test zero-data conditions for relevant areas, including:
 
-- [ ] projects;
-- [ ] searches;
-- [ ] notifications;
-- [ ] files;
-- [ ] transactions/items;
-- [ ] team members;
-- [ ] charts;
-- [ ] analytics periods;
-- [ ] any other collections.
+- [x] projects;
+- [x] searches;
+- [x] notifications;
+- [x] files;
+- [x] transactions/items;
+- [x] team members;
+- [x] charts;
+- [x] analytics periods;
+- [x] any other collections.
 
 Empty states should be intentional, not just blank.
 

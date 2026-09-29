@@ -73,6 +73,9 @@ Authorization section 14 is checked after direct admin/API and cross-account
 resource probes, including an old-share media privacy regression that was fixed.
 Onboarding section 15 is checked after a live new-account walk, persisted
 language choice and skip, and useful empty-profile actions at narrow width.
+Empty states section 16 is checked after live search, comments, notifications,
+and blank-editor paths plus static empty-feed accessibility checks; absent
+commerce, teams, and analytics screens were classified as not applicable.
 
 ## Launch blockers currently outside the local stack
 

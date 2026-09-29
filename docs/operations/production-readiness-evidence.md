@@ -659,6 +659,27 @@ observed results and their limits. Do not include credentials or session data.
   is intentionally useful. Target-domain email delivery remains a rollout
   check, not evidence supplied by Mailpit.
 
+### 2026-09-30 — Zero-data interface inventory (section 16)
+
+- A live Chromium scenario on the isolated stack searched for an absent board
+  and saw “No matching bingos” with advice to change filters. Before social
+  activity was created, the public board showed “No comments yet”; a signed-in
+  player with no notifications saw “All quiet” and a disabled Mark all as read
+  button. A new editor showed empty cell labels and a disabled Save draft; its
+  details step showed “No cover selected.” This scenario passed 1/1. The
+  section 15 new-account scenario separately exercised empty Created, Drafts,
+  and Recent plays collections with next-step links.
+- A static browser scenario supplied empty feed/catalog responses and observed
+  explicit empty headings on Discover, Trending, and Explore. The same pages
+  passed their serious/critical axe scan; the scenario passed 1/1. Existing
+  code handles empty Shares, Followers, and Following profile tabs, and the
+  signup test checked the profile's first three empty tabs in the browser.
+- There is no project entity separate from a bingo board, no file library
+  separate from optional editor images, and no transaction, team-member,
+  chart, or analytics-period interface in this release. The corresponding
+  generic checklist categories were evaluated against those product
+  equivalents or classified as not applicable, not treated as unseen UI.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for
