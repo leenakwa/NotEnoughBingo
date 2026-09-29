@@ -280,9 +280,21 @@ observed results and their limits. Do not include credentials or session data.
   same-instance functional drill; it does not establish off-site recovery,
   provider replication, media inventory reconciliation, or the production RPO.
 
+### 2026-09-29 — Shared-result privacy regression (section 14)
+
+- Auditing the result endpoint exposed an access leak: a result created from a
+  public revision remained reachable through its old share URL after the author
+  republished the bingo as private. Access now follows the bingo's current
+  visibility and publication state, as well as the revision and result access
+  flags. A deleted or moderated bingo also cannot expose an old result to a
+  public visitor. The API regression confirms public access before the change,
+  404 for a visitor afterward, and continued access for the owner. The full
+  backend suite passed **117** tests with **1** infrastructure-location skip;
+  Ruff and mypy passed on the changed service. This is local PostgreSQL test
+  evidence, not a public-deployment check.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for
-  newly added controls, production image startup after the latest changes,
-  and real service-outage behavior remain in the work queue. None of the
-  external launch gates has been closed by these local tests.
+  newly added controls, and real service-outage behavior remain in the work
+  queue. None of the external launch gates has been closed by these local tests.

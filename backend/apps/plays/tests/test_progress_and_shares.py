@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.bingos.services import create_bingo, publish_bingo, save_draft
+from apps.bingos.services import create_bingo, publish_bingo, save_draft, soft_delete_bingo
 from apps.bingos.validators import empty_draft_document
 from apps.plays.services import (
     can_view_shared_result,
@@ -56,7 +56,7 @@ def test_share_id_is_cryptographically_random_url_safe() -> None:
     assert result.selected_cells == [cell_id]
 
 
-def test_old_public_share_remains_viewable_after_current_bingo_becomes_private() -> None:
+def test_old_public_share_becomes_private_with_its_bingo(client) -> None:
     user, bingo, first = _published()
     cell_id = str(first.cells.get(position=0).public_id)
     result = create_shared_result(
@@ -67,6 +67,8 @@ def test_old_public_share_remains_viewable_after_current_bingo_becomes_private()
         idempotency_key="share-before-private",
         actor=user,
     )
+    share_url = f"/api/v1/shares/{bingo.public_id}/{result.share_id}/"
+    assert client.get(share_url).status_code == 200
     draft = bingo.draft
     draft.refresh_from_db()
     document = dict(draft.document)
@@ -80,4 +82,9 @@ def test_old_public_share_remains_viewable_after_current_bingo_becomes_private()
     publish_bingo(bingo=bingo, actor=user, idempotency_key="share-publish-private")
     bingo.refresh_from_db()
     result.bingo = bingo
-    assert can_view_shared_result(result=result, user=AnonymousUser()) is True
+    assert can_view_shared_result(result=result, user=AnonymousUser()) is False
+    assert client.get(share_url).status_code == 404
+    client.force_login(user)
+    assert client.get(share_url).status_code == 200
+    soft_delete_bingo(bingo=bingo, actor=user)
+    assert client.get(share_url).status_code == 404

@@ -274,7 +274,7 @@ def create_shared_result(
 
 
 def can_view_shared_result(*, result: SharedResult, user) -> bool:
-    if result.revoked_at or result.hidden_at or result.bingo.hidden_at:
+    if result.revoked_at or result.hidden_at or result.bingo.hidden_at or result.bingo.deleted_at:
         return bool(
             user and user.is_authenticated and user.has_perm("moderation.view_private_content")
         )
@@ -287,6 +287,8 @@ def can_view_shared_result(*, result: SharedResult, user) -> bool:
     if (
         result.access == SharedResult.Access.OWNER_ONLY
         or result.revision.visibility == Bingo.Visibility.PRIVATE
+        or result.bingo.visibility == Bingo.Visibility.PRIVATE
+        or result.bingo.status != Bingo.Status.PUBLISHED
     ):
         return privileged
     return True

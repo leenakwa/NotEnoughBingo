@@ -82,6 +82,9 @@ repository CI checkout the assertion runs normally.
   profile content were verified in the browser. A new email-change flow
   requires the current password and confirmation through the new inbox;
   Mailpit received notices at both old and new addresses.
+- A shared result from an earlier public revision now becomes inaccessible to
+  visitors when its bingo is made private. The API regression checked 200
+  before the change, 404 afterward, and continued owner access.
 - Seventeen guest-facing routes plus signed-in Profile, Notifications, and
   Create returned expected page statuses without JavaScript errors, 5xx
   responses, or horizontal overflow at 320 and 1710 pixels. Account settings
