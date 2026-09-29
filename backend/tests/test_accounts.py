@@ -21,6 +21,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework.throttling import AnonRateThrottle
 
 from apps.accounts.models import (
     EmailVerification,
@@ -55,6 +56,29 @@ from apps.accounts.views import (
 from apps.common.authentication import StrictSessionAuthentication
 
 pytestmark = pytest.mark.django_db
+
+
+def test_session_status_is_guest_safe_and_never_cacheable(client, verified_user_factory) -> None:
+    guest = client.get("/api/v1/auth/session/")
+    assert guest.status_code == 200
+    assert guest.data == {"user": None}
+    assert guest["Cache-Control"] == "private, no-store"
+    assert client.get("/api/v1/auth/me/").status_code == 403
+
+    user = verified_user_factory()
+    client.force_login(user)
+    signed_in = client.get("/api/v1/auth/session/")
+    assert signed_in.status_code == 200
+    assert signed_in.data["user"]["id"] == str(user.public_id)
+    assert signed_in["Cache-Control"] == "private, no-store"
+
+
+def test_session_status_does_not_consume_the_general_guest_quota(client, monkeypatch) -> None:
+    monkeypatch.setitem(AnonRateThrottle.THROTTLE_RATES, "anon", "1/min")
+    for _ in range(2):
+        response = client.get("/api/v1/auth/session/", REMOTE_ADDR="192.0.2.203")
+        assert response.status_code == 200
+        assert response.data == {"user": None}
 
 
 def test_user_creation_normalizes_identity_and_creates_account_relations(user_factory) -> None:

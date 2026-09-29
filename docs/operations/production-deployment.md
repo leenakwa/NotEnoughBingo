@@ -62,6 +62,12 @@ share one source IP. Keep the production value at its default unless real
 traffic data justifies a separately reviewed change. Django also applies
 independent request and confirmation limits to email changes.
 
+The general anonymous API limit remains `120/min` by default. The read-only
+`/auth/session/` endpoint uses a separate `300/min` scope so public page
+navigation does not consume the general anonymous allowance. The live-browser
+CI job sets `ANON_RATE_LIMIT=600/m` only for its many synthetic users sharing
+one source IP; determine production limits from real traffic and abuse data.
+
 ## Trusted proxy and HTTPS contract
 
 The supported chain is a controlled TLS edge followed by this repository's

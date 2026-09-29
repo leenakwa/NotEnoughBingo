@@ -36,7 +36,7 @@ vi.mock("@/features/social/report-dialog", () => ({
 
 vi.mock("@/lib/api/client", () => ({
   api: {
-    auth: { me: mocks.getViewer },
+    auth: { session: mocks.getViewer },
     bingos: { get: mocks.getBingo },
     profiles: { get: mocks.getProfile },
     progress: {

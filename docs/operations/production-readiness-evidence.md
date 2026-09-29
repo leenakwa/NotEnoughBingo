@@ -349,6 +349,56 @@ observed results and their limits. Do not include credentials or session data.
   caches on the actual deployment. Reopen these conditional sections if their
   capabilities are added before launch.
 
+### 2026-09-30 — Guest session status and browser console (sections 14, 75–76, 82, 102)
+
+- A fresh guest browser at `/discover` produced four console errors from two
+  `/auth/me/` and two `/profiles/me/` requests returning 403. The protected
+  `/auth/me/` endpoint remains strict. Public screens now use a separate
+  `/auth/session/` endpoint that returns HTTP 200 with `{ "user": null }` for a
+  guest or the current user for an authenticated session, with
+  `Cache-Control: private, no-store`. Discover asks for profile preferences only
+  when the session has a user.
+- On the live QA stack, a fresh guest browser then showed zero console errors
+  on `/discover`; the four session-status requests returned 200 and no private
+  profile request was made. The two-width public route audit passed. Guest
+  play/share, registered progress, and two-tab logout passed 3/3. Expired
+  editor-session recovery and active-tab protected-action expiry passed 2/2.
+  The backend suite passed 119 tests with one infrastructure-location skip,
+  including the guest/authenticated session contract; frontend checks passed
+  67 unit tests and two focused mocked browser checks. The mobile WebKit live
+  guest play/share case also passed.
+- An initial share test run used `127.0.0.1:18080` although the isolated QA
+  stack trusts `localhost:18080` for CSRF. The POST was correctly rejected;
+  rerunning with the configured origin passed. This local result does not
+  replace a production-console inspection on the final domain.
+- A local full mocked-browser run initially encountered an unrelated service
+  listening on the host's port 8000: Next server rendering received that
+  service's 404 before browser request mocks applied. Static Playwright now
+  points server rendering to an intentionally unused loopback port. Repeating
+  the full Chromium, mobile Chromium, Firefox, and WebKit suite passed 50 cases
+  with six intentional geometry skips.
+
+### 2026-09-30 — Repeated QA runs and throttle isolation (sections 53, 72–73)
+
+- A repeated full live run on the long-lived `nebqa` stack hit the ordinary
+  `120/min` anonymous limit after several earlier targeted runs shared the
+  same Redis cache and source IP. The new read-only session status now has its
+  own `300/min` scoped throttle, so checking login state cannot drain the
+  general anonymous quota. A backend regression verifies two guest session
+  reads succeed even when the general guest limit is temporarily set to
+  `1/min` in the test.
+- Compose exposes `ANON_RATE_LIMIT`, defaulting to the original `120/min`.
+  Only the isolated CI live-browser job sets `600/min` because all synthetic
+  users share one source IP. After recreating the local QA backend with that
+  test value, a repeat reached the password-reset scenario and hit the
+  ordinary `5/min` login limit: the local backend had lost its earlier QA
+  override during recreation. Restoring the CI-equivalent `30/min` login
+  setting made the targeted reset case pass. The next complete Chromium and
+  mobile WebKit live suite passed **28/28**; the full backend suite passed
+  **119**, with **1** infrastructure-location skip. Production defaults are
+  unchanged for the general anonymous and login limits. Real shared-IP load
+  and suitable production limits still need measurement.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

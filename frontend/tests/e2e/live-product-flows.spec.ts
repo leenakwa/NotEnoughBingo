@@ -203,9 +203,18 @@ test.describe("live full-stack product flows", () => {
     ];
     const pageErrors: string[] = [];
     const serverFailures: string[] = [];
+    const guestAuthFailures: string[] = [];
+    let checkingGuestRoutes = true;
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("response", (response) => {
       if (response.status() >= 500) serverFailures.push(`${response.status()} ${response.url()}`);
+      if (
+        checkingGuestRoutes &&
+        (response.status() === 401 || response.status() === 403) &&
+        /\/api\/v1\/(auth\/me|profiles\/me)\//.test(response.url())
+      ) {
+        guestAuthFailures.push(`${response.status()} ${response.url()}`);
+      }
     });
     for (const width of [320, 1710]) {
       await page.setViewportSize({ width, height: 900 });
@@ -219,6 +228,8 @@ test.describe("live full-stack product flows", () => {
           .toBeLessThanOrEqual(width);
       }
     }
+    checkingGuestRoutes = false;
+    expect(guestAuthFailures).toEqual([]);
     await authenticateAs(page, "author");
     for (const width of [320, 1710]) {
       await page.setViewportSize({ width, height: 900 });

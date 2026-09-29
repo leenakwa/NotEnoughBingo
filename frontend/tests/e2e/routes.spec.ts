@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
+  );
   await page.route("**/api/v1/auth/me/", (route) =>
     route.fulfill({
       status: 401,
@@ -166,19 +169,21 @@ test("bingo card keeps tags with actions and handles guest likes without an API 
 });
 
 test("authenticated header keeps notification and profile actions", async ({ page }) => {
-  await page.unroute("**/api/v1/auth/me/");
-  await page.route("**/api/v1/auth/me/", (route) =>
+  await page.unroute("**/api/v1/auth/session/");
+  await page.route("**/api/v1/auth/session/", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        id: "11111111-1111-4111-8111-111111111111",
-        username: "author",
-        display_name: "Author",
-        avatar: null,
-        email: "author@example.test",
-        email_verified: true,
-        deletion_scheduled_for: null,
+        user: {
+          id: "11111111-1111-4111-8111-111111111111",
+          username: "author",
+          display_name: "Author",
+          avatar: null,
+          email: "author@example.test",
+          email_verified: true,
+          deletion_scheduled_for: null,
+        },
       }),
     }),
   );

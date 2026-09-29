@@ -176,7 +176,7 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
         }
       };
       api.auth
-        .me()
+        .session()
         .then(applyUser)
         .catch((caught) => {
           if (isAuthenticationRequiredError(caught)) applyUser(null);

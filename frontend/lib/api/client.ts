@@ -249,6 +249,8 @@ export const api = {
   auth: {
     csrf: () => apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true }),
     me: () => apiRequest<AuthenticatedUser>("auth/me/"),
+    session: async () =>
+      (await apiRequest<{ user: AuthenticatedUser | null }>("auth/session/")).user,
     register: (input: { email: string; username: string; password: string }) =>
       apiRequest<RegistrationResult>("auth/register/", {
         method: "POST",

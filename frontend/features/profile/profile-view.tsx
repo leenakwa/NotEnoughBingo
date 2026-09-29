@@ -87,9 +87,9 @@ export function ProfileView({
     if (ownProfile) return;
     let active = true;
     api.auth
-      .me()
+      .session()
       .then((user) => {
-        if (active) setViewer(user);
+        if (active) setViewer(user ?? "guest");
       })
       .catch(() => {
         if (active) setViewer("guest");

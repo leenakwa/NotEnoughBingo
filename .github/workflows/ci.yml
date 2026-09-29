@@ -278,8 +278,9 @@ jobs:
       PLAYWRIGHT_BASE_URL: http://localhost:8080
       MAILPIT_BASE_URL: http://localhost:8025
       NEXT_PUBLIC_CSRF_COOKIE_NAME: neb_csrf
-      # Browser scenarios share one CI source IP and exercise repeated logins.
-      # Scoped throttle behavior is covered by backend tests at the default rate.
+      # Browser scenarios share one CI source IP across many synthetic users.
+      # Production defaults and scoped throttle behavior are covered separately.
+      ANON_RATE_LIMIT: 600/m
       AUTH_LOGIN_RATE_LIMIT: 30/m
       NGINX_AUTH_BURST: "30"
       AGENTATION_ENABLED: "false"

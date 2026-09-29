@@ -41,6 +41,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Playwright
+.playwright-cli/
 playwright-report/
 test-results/
 blob-report/

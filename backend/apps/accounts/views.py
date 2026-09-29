@@ -41,6 +41,7 @@ from apps.accounts.serializers import (
     RegistrationSerializer,
     RegistrationStatusSerializer,
     SessionMetadataSerializer,
+    SessionStatusSerializer,
     UserProfileReadSerializer,
 )
 from apps.accounts.services import (
@@ -179,6 +180,19 @@ class CurrentUserView(APIView):
     @extend_schema(responses=CurrentUserSerializer)
     def get(self, request):
         return Response(CurrentUserSerializer(request.user).data)
+
+
+class SessionStatusView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "session_status"
+
+    @extend_schema(responses=SessionStatusSerializer)
+    def get(self, request):
+        user = CurrentUserSerializer(request.user).data if request.user.is_authenticated else None
+        response = Response({"user": user})
+        response["Cache-Control"] = "private, no-store"
+        return response
 
 
 class PasswordResetRequestView(APIView):

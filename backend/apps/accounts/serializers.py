@@ -53,6 +53,10 @@ class AuthResultSerializer(serializers.Serializer):
     user = CurrentUserSerializer(read_only=True)
 
 
+class SessionStatusSerializer(serializers.Serializer):
+    user = CurrentUserSerializer(read_only=True, allow_null=True)
+
+
 class FollowStateSerializer(serializers.Serializer):
     following = serializers.BooleanField(read_only=True)
 

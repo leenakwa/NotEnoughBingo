@@ -45,6 +45,9 @@ const revision = {
 };
 
 async function mockGuest(page: Page) {
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
+  );
   await page.route("**/api/v1/auth/me/", (route) =>
     route.fulfill({
       status: 401,

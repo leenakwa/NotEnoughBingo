@@ -43,6 +43,9 @@ const revision = {
 };
 
 async function mockLargeBingo(page: Page) {
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
+  );
   await page.route("**/api/v1/auth/me/", (route) =>
     route.fulfill({
       status: 401,
@@ -88,6 +91,20 @@ async function mockLargeBingo(page: Page) {
 }
 
 async function mockLargeEditor(page: Page) {
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: {
+          ...author,
+          email: "author@example.test",
+          email_verified: true,
+          deletion_scheduled_for: null,
+        },
+      }),
+    }),
+  );
   await page.route("**/api/v1/auth/me/", (route) =>
     route.fulfill({
       status: 200,

@@ -29,11 +29,11 @@ index. This plan sets the order of work; it does not reduce the checklist.
 | 4. Release mechanics | Clean install, migrations, image builds, worker/Beat, CI, scans, backup/restore, rollback, production config, and smoke instructions. | Exact release artifact has a passing gate and rehearsed deployment/rollback procedures. |
 | 5. Real deployment | Domain, TLS, email, object storage, monitoring, alerts, external recovery, real browser smoke and network/console checks. | All applicable tracker sections have production evidence; external owner decisions are resolved. |
 
-Stages 1–3 have local evidence. Stage 4 is in progress: its exact-commit CI
-gate passed on `d629a7153c5b33ddf6ece438bdc98faf2d428067`, while registry
-promotion and rollback on the target platform remain open. Stage 5 has no real
-deployment evidence yet. These are workflow stages, not a percentage of the
-105 completed production checks.
+Stages 1–3 have local evidence. Stage 4 is in progress: earlier candidate
+commits passed the exact-commit CI gate, while the final PR head must pass it
+again before registry promotion and rollback on the target platform. Stage 5
+has no real deployment evidence yet. These are workflow stages, not a
+percentage of the 105 completed production checks.
 
 ## Immediate work queue
 

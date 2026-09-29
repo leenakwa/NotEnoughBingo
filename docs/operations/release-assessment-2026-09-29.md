@@ -7,8 +7,9 @@ every checklist item has been verified on a public deployment.
 
 ## Decision
 
-The pushed release candidate passes the local code and product-flow checks
-below and its exact-commit CI gate. It is **not an authorized public
+The working tree passes the local code and product-flow checks below. A prior
+pushed revision passed its exact-commit CI gate; every subsequent revision
+must pass again before promotion. This is **not an authorized public
 deployment**. Images have not been promoted to a production registry or tested
 on the target platform.
 Production operator identity, private support contact, legal review, managed
@@ -35,12 +36,12 @@ configured and verified for the target environment. See the
 | Docker Compose configuration, shell scripts, Nginx syntax, workflow lint | Passed |
 | PostgreSQL migrations and missing-migration check | Passed |
 | Backend Ruff and mypy | Passed |
-| Backend tests on PostgreSQL/Python 3.13 | 117 passed, 1 skipped; coverage was measured before the newer language, reset-limit, media-message, and email-change tests (79.27% then) |
+| Backend tests on PostgreSQL/Python 3.13 | 119 passed, 1 skipped; coverage was measured before the newer language, reset-limit, media-message, and email-change tests (79.27% then) |
 | Generated OpenAPI and TypeScript types | Match checked-in artifacts under PostgreSQL/test settings |
 | Frontend ESLint, TypeScript, Prettier, production build | Passed with Next.js 16.3.7 |
 | Frontend component tests | 67 passed |
 | Browser smoke suite: Chromium, Firefox, WebKit, mobile | 50 passed, 6 intentionally skipped (geometry checks use Chromium) after editor-grid ARIA fix |
-| Live Chromium and mobile WebKit full-stack flows | 28 passed on the clean SeaweedFS stack, including a two-width route audit, accessibility, and account settings/email change |
+| Live Chromium and mobile WebKit full-stack flows | 28 passed on the clean SeaweedFS stack before the session-status change; 28 passed on the existing isolated QA stack afterward, including a two-width route audit, accessibility, and account settings/email change |
 | npm audit, pip-audit | No known vulnerabilities in the audited dependency graphs |
 | Trivy on both production images | No fixable High/Critical findings with refreshed base images |
 | Gitleaks committed-history scan | No leaks in 16 commits |
@@ -103,7 +104,9 @@ repository CI checkout the assertion runs normally.
 1. Review and merge the draft release PR when approved. GitHub Actions run
    `36630667887` passed the `Release gate` on
    `d629a7153c5b33ddf6ece438bdc98faf2d428067`, including clean-install
-   full-stack flows, image scanning, and SBOM generation. Production registry
+   full-stack flows, image scanning, and SBOM generation; a later run also
+   passed on `056576509d87d41073d1af9796bc1a2098abe703`. Require the same
+   gate on the final PR head. Production registry
    publication, signing/attestation, digest promotion, and platform rollback
    still need a target deployment.
 2. Configure the actual operator name, private monitored support address, and
@@ -116,6 +119,7 @@ repository CI checkout the assertion runs normally.
 5. Measure load, latency, queue age, and restore time against explicit launch
    targets using the real deployment topology. These were not measured here.
 
-Expected unauthenticated `/api/v1/auth/me/` responses appear as 403 resource
-entries in a guest browser console. The UI handles them, but a future public
-session-status design could remove this diagnostic noise.
+The new guest-safe `/api/v1/auth/session/` status endpoint removed the observed
+403 resource entries from a fresh guest `/discover` page while keeping
+`/api/v1/auth/me/` protected. Recheck the production console on the final
+domain; the local QA browser is not production evidence.

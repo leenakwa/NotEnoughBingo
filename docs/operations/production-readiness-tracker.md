@@ -131,10 +131,10 @@ are conditional and currently have no product flow; the evidence log records
 the source checks. Section 60 has no PWA implementation, but stale browser
 worker/cache behavior still needs checking on the actual deployment.
 
-The CI Release gate passed on `d629a7153c5b33ddf6ece438bdc98faf2d428067`.
-The remaining launch gates are release review and promotion, operator/legal/
-support decisions, production DNS/TLS/managed services and monitoring, off-site
-database plus media restore, and measurements on the real deployment. The
-evidence log now covers several local degraded-network,
+The CI Release gate passed on earlier candidate commits; require it again on
+the final PR head. The remaining launch gates are release review and promotion,
+operator/legal/support decisions, production DNS/TLS/managed services and
+monitoring, off-site database plus media restore, and measurements on the real
+deployment. The evidence log now covers several local degraded-network,
 cross-tab/session, direct-link, upload, and input cases. The remaining local
 items and production-only proofs are tracked in the execution plan.

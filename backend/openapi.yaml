@@ -287,6 +287,21 @@ paths:
       responses:
         '202':
           description: No response body
+  /api/v1/auth/session/:
+    get:
+      operationId: auth_session_retrieve
+      tags:
+      - auth
+      security:
+      - sessionCookie: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionStatus'
+          description: ''
   /api/v1/auth/sessions/:
     get:
       operationId: auth_sessions_list
@@ -4871,6 +4886,16 @@ components:
       - id
       - ip_hint
       - last_seen_at
+    SessionStatus:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/CurrentUser'
+          readOnly: true
+          nullable: true
+      required:
+      - user
     SharedResult:
       type: object
       properties:

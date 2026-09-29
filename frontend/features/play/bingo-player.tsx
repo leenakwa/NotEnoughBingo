@@ -120,7 +120,7 @@ export function BingoPlayer({
 
         let user: Viewer = "guest";
         try {
-          user = await api.auth.me();
+          user = (await api.auth.session()) ?? "guest";
         } catch (caught) {
           if (!isAuthenticationRequiredError(caught)) {
             setProgressError("Progress sync is unavailable; guest progress will be used.");

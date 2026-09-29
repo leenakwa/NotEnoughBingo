@@ -67,10 +67,11 @@ export function FeedPage({
   useEffect(() => {
     if (kind !== "discover") return;
     let active = true;
-    api.profiles
-      .me()
+    api.auth
+      .session()
+      .then((user) => (user ? api.profiles.me() : null))
       .then((value) => {
-        if (!active) return;
+        if (!active || !value) return;
         setProfile(value);
         const browserCode = navigator.language.slice(0, 2).toLowerCase();
         setOnboardingLanguages(

@@ -25,7 +25,12 @@ export default defineConfig({
         url: "http://127.0.0.1:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
-        env: { AGENTATION_ENABLED: "false" },
+        env: {
+          AGENTATION_ENABLED: "false",
+          // Static scenarios mock browser requests; server rendering must not
+          // accidentally read an unrelated developer API on port 8000.
+          API_BASE_URL: "http://127.0.0.1:1/api/v1",
+        },
       },
   projects: live
     ? [
