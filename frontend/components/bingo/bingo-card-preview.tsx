@@ -63,6 +63,7 @@ export function BingoCardPreview({
               key={cell.id ?? `${cell.row}:${cell.column}`}
               className="bingo-card-preview__cell"
               style={cellStyle(cell)}
+              title={cell.text || undefined}
               aria-hidden="true"
             >
               <span

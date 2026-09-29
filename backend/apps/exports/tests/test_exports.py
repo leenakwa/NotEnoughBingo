@@ -23,7 +23,8 @@ def _published():
         password="correct horse battery staple",
         email_verified_at=timezone.now(),
     )
-    document = empty_draft_document(title="Export me", size=3)
+    document = empty_draft_document(title="Export me", size=3, language="en")
+    document["cells"][0]["text"] = "Export this cell"
     document["visibility"] = "public"
     bingo = create_bingo(author=user, document=document)
     revision = publish_bingo(bingo=bingo, actor=user, idempotency_key="export-publish")

@@ -38,6 +38,7 @@ const viewer: AuthenticatedUser = {
   avatar: null,
   email: "reader@example.test",
   email_verified: true,
+  deletion_scheduled_for: null,
 };
 
 function comment(body: string): Comment {

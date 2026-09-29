@@ -374,9 +374,7 @@ def asset_is_publicly_accessible(asset: MediaAsset) -> bool:
     from django.db.models import Q
 
     if public_bingos.filter(
-        Q(cover=asset)
-        | Q(background=asset)
-        | Q(current_revision__cover=asset)
+        Q(current_revision__cover=asset)
         | Q(current_revision__background=asset)
         | Q(current_revision__cells__image=asset)
     ).exists():

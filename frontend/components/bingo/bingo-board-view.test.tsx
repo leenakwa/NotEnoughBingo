@@ -28,6 +28,7 @@ const revision: BingoRevision = {
   number: 1,
   title: "Year in review",
   description: "",
+  language: "en",
   size: 3,
   board_background: null,
   cover: null,
@@ -50,18 +51,29 @@ describe("BingoBoardView", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /went somewhere new/i }));
     expect(onToggle).toHaveBeenCalledWith(revisionCellKey(cell));
+    expect(screen.getByText(cell.text, { selector: ".play-cell-detail p" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /went somewhere new/i })).toHaveAttribute(
+      "title",
+      cell.text,
+    );
   });
 
-  it("renders immutable shared results as disabled controls", () => {
+  it("keeps shared results immutable while exposing full cell text", () => {
+    const onToggle = vi.fn();
     render(
       <BingoBoardView
         revision={revision}
         selected={new Set([cell.id!])}
         completionStyle="checkmark"
         readOnly
+        onToggle={onToggle}
       />,
     );
-    expect(screen.getByRole("gridcell", { name: /selected/i })).toBeDisabled();
+    const readOnlyCell = screen.getByRole("button", { name: /selected/i });
+    expect(readOnlyCell).toBeEnabled();
+    fireEvent.click(readOnlyCell);
+    expect(onToggle).not.toHaveBeenCalled();
+    expect(screen.getByText(cell.text, { selector: ".play-cell-detail p" })).toBeVisible();
     expect(screen.getByText("✓")).toBeInTheDocument();
   });
 
@@ -83,11 +95,29 @@ describe("BingoBoardView", () => {
 
     const first = screen.getByRole("button", { name: /went somewhere new/i });
     const second = screen.getByRole("button", { name: /learned something/i });
-    first.focus();
+    fireEvent.focus(first);
     fireEvent.keyDown(first, { key: "ArrowRight" });
 
     expect(second).toHaveFocus();
     expect(second).toHaveAttribute("tabindex", "0");
     expect(first).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("provides a keyboard-focusable scroll region for large mobile boards", () => {
+    render(
+      <BingoBoardView
+        revision={{ ...revision, size: 10 }}
+        selected={new Set()}
+        completionStyle="checkmark"
+        readOnly={false}
+      />,
+    );
+
+    expect(screen.getByRole("region", { name: "Scrollable bingo board" })).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
+    expect(screen.getByRole("grid")).toHaveAttribute("data-board-size", "10");
+    expect(screen.getByText("Scroll sideways to use this large board.")).toBeVisible();
   });
 });

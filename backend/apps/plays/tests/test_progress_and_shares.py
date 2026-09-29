@@ -26,7 +26,8 @@ def _published():
         password="correct horse battery staple",
         email_verified_at=timezone.now(),
     )
-    document = empty_draft_document(title="Share test", size=3)
+    document = empty_draft_document(title="Share test", size=3, language="en")
+    document["cells"][0]["text"] = "Share this cell"
     document["visibility"] = "public"
     bingo = create_bingo(author=user, document=document)
     revision = publish_bingo(bingo=bingo, actor=user, idempotency_key="share-publish-1")

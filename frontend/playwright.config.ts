@@ -25,6 +25,7 @@ export default defineConfig({
         url: "http://127.0.0.1:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        env: { AGENTATION_ENABLED: "false" },
       },
   projects: live
     ? [
@@ -33,17 +34,32 @@ export default defineConfig({
           testMatch: /live-product-flows\.spec\.ts/,
           use: { ...devices["Desktop Chrome"] },
         },
+        {
+          name: "live-mobile-webkit",
+          testMatch: /live-mobile-webkit\.spec\.ts/,
+          use: { ...devices["iPhone 13"] },
+        },
       ]
     : [
         {
           name: "chromium",
-          testIgnore: /live-product-flows\.spec\.ts/,
+          testIgnore: /live-.*\.spec\.ts/,
           use: { ...devices["Desktop Chrome"] },
         },
         {
           name: "mobile",
-          testIgnore: /live-product-flows\.spec\.ts/,
+          testIgnore: /live-.*\.spec\.ts/,
           use: { ...devices["Pixel 7"] },
+        },
+        {
+          name: "firefox",
+          testIgnore: /live-.*\.spec\.ts/,
+          use: { ...devices["Desktop Firefox"] },
+        },
+        {
+          name: "webkit",
+          testIgnore: /live-.*\.spec\.ts/,
+          use: { ...devices["Desktop Safari"] },
         },
       ],
 });

@@ -3,17 +3,24 @@ from __future__ import annotations
 import re
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
+from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.bingos.exceptions import DraftPreconditionRequired
+from apps.bingos.languages import requested_languages
 from apps.bingos.models import Bingo, BingoRevision, BingoTag, Draft, Tag
 from apps.bingos.serializers import (
+    AuthorSuggestionQuerySerializer,
+    AuthorSuggestionSerializer,
     BingoCardSerializer,
     BingoCreateSerializer,
     BingoDetailSerializer,
@@ -22,6 +29,7 @@ from apps.bingos.serializers import (
     DraftDocumentInputSerializer,
     DraftSerializer,
     DraftWriteSerializer,
+    PublicSitemapSerializer,
     TagSerializer,
 )
 from apps.bingos.services import (
@@ -36,6 +44,85 @@ from apps.common.pagination import StandardPageNumberPagination
 from apps.common.permissions import IsVerifiedUser
 
 ETAG_PATTERN = re.compile(r'^(?:W/)?"draft-(\d+)"$')
+PUBLIC_SITEMAP_BINGO_LIMIT = 10_000
+
+
+class AuthorSuggestionPagination(StandardPageNumberPagination):
+    page_size = 10
+    max_page_size = 10
+
+
+@method_decorator(cache_page(60 * 60), name="dispatch")
+class PublicSitemapView(APIView):
+    """Expose an index-only public projection without hydrating card revisions."""
+
+    authentication_classes: list = []
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(responses=PublicSitemapSerializer)
+    def get(self, request):
+        rows = list(
+            Bingo.objects.public_catalog()
+            .order_by("-last_published_at", "-pk")
+            .values_list(
+                "public_id",
+                "author__username",
+                "last_published_at",
+                "published_at",
+            )[: PUBLIC_SITEMAP_BINGO_LIMIT + 1]
+        )
+        truncated = len(rows) > PUBLIC_SITEMAP_BINGO_LIMIT
+        results = [
+            {
+                "bingo_id": public_id,
+                "author_username": author_username,
+                "last_modified": last_published_at or published_at,
+            }
+            for public_id, author_username, last_published_at, published_at in rows[
+                :PUBLIC_SITEMAP_BINGO_LIMIT
+            ]
+        ]
+        return Response(PublicSitemapSerializer({"results": results, "truncated": truncated}).data)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[AuthorSuggestionQuerySerializer],
+        description=(
+            "Suggest active authors who currently have at least one bingo in the public catalog."
+        ),
+    )
+)
+class AuthorSuggestionListView(generics.ListAPIView):
+    authentication_classes: list = []
+    permission_classes = [permissions.AllowAny]
+    filter_backends: list = []
+    serializer_class = AuthorSuggestionSerializer
+    pagination_class = AuthorSuggestionPagination
+
+    def get_queryset(self):
+        query = AuthorSuggestionQuerySerializer(data=self.request.query_params)
+        query.is_valid(raise_exception=True)
+        search = query.validated_data.get("search", "")
+        queryset = (
+            User.objects.filter(
+                is_active=True,
+                suspended_at__isnull=True,
+                deleted_at__isnull=True,
+            )
+            .select_related("profile")
+            .annotate(
+                has_public_bingo=Exists(
+                    Bingo.objects.public_catalog().filter(author_id=OuterRef("pk"))
+                )
+            )
+            .filter(has_public_bingo=True)
+        )
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) | Q(profile__display_name__icontains=search)
+            )
+        return queryset.order_by(Lower("username"), "pk")
 
 
 @extend_schema_view(
@@ -141,6 +228,14 @@ def _expected_draft_version(request) -> int:
                 description="For an authenticated viewer, return their own live bingos.",
             ),
             OpenApiParameter(
+                name="languages",
+                type=str,
+                many=True,
+                style="form",
+                explode=True,
+                description="Repeat for each bingo language. Use all for no language filter.",
+            ),
+            OpenApiParameter(
                 name="ordering",
                 type=str,
                 enum=("newest", "popular"),
@@ -216,6 +311,9 @@ class BingoViewSet(
             queryset = queryset.filter(
                 Q(tag_links__tag__slug__iexact=tag) | Q(tag_links__tag__name__iexact=tag)
             )
+        languages = requested_languages(params)
+        if languages:
+            queryset = queryset.filter(language__in=languages)
         ordering = params.get("ordering", "")
         if ordering == "newest":
             queryset = queryset.order_by("-published_at", "-pk")

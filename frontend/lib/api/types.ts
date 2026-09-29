@@ -30,6 +30,7 @@ export interface PublicUser {
 export interface AuthenticatedUser extends PublicUser {
   email: string;
   email_verified: boolean;
+  deletion_scheduled_for: string | null;
 }
 
 export interface Tag {
@@ -37,6 +38,12 @@ export interface Tag {
   name: string;
   slug: string;
   usage_count?: number;
+}
+
+export interface AuthorSuggestion {
+  id: PublicId;
+  username: string;
+  display_name: string;
 }
 
 export interface BingoStats {
@@ -51,6 +58,7 @@ export interface BingoSummary {
   id: PublicId;
   title: string;
   description: string;
+  language: string;
   author: PublicUser;
   cover: MediaAsset | null;
   preview: BingoCardPreview | null;
@@ -95,6 +103,7 @@ export interface BingoRevision {
   number: number;
   title: string;
   description: string;
+  language: string;
   size: number;
   board_background: MediaAsset | null;
   cover: MediaAsset | null;
@@ -119,6 +128,7 @@ export interface BingoDraft {
   bingo_id: PublicId | null;
   title: string;
   description: string;
+  language: string;
   size: number;
   visibility: Visibility;
   completion_style: CompletionStyle;
@@ -176,8 +186,11 @@ export interface UserProfile extends PublicUser {
   following_count: number;
   is_following: boolean;
   privacy: UserPrivacySettings;
-  created_bingos?: Page<BingoSummary>;
-  recent_bingos?: Page<BingoSummary>;
+}
+
+export interface OwnUserProfile extends UserProfile {
+  preferred_languages: string[];
+  language_preferences_confirmed: boolean;
 }
 
 export interface ProfilePlayHistoryItem {
@@ -203,6 +216,7 @@ export interface ProfileUpdate {
   username?: string;
   display_name?: string;
   bio?: string;
+  preferred_languages?: string[];
   avatar_id?: PublicId | null;
 }
 

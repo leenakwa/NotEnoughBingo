@@ -33,7 +33,10 @@ from apps.accounts.services import (
     token_digest,
     verify_email,
 )
-from apps.accounts.tasks import process_scheduled_account_deletions
+from apps.accounts.tasks import (
+    _process_account_deletion_request,
+    process_scheduled_account_deletions,
+)
 from apps.accounts.views import LoginView, RegisterView
 from apps.bingos.models import Bingo
 from apps.bingos.services import create_bingo, publish_bingo
@@ -291,7 +294,7 @@ def test_scheduled_deletion_revokes_sessions_blocks_writes_and_scrubs_identity(
     assert pending_login.status_code == 200
     blocked_write = pending_client.post(
         "/api/v1/bingos/",
-        empty_draft_document(title="Must not be created"),
+        empty_draft_document(title="Must not be created", language="en"),
         format="json",
     )
     assert blocked_write.status_code == 403
@@ -332,12 +335,149 @@ def test_scheduled_deletion_revokes_sessions_blocks_writes_and_scrubs_identity(
     assert erased_events.get().metadata == {}
 
 
+def test_pending_deletion_is_visible_after_reauthentication_and_can_be_cancelled(
+    verified_user_factory,
+) -> None:
+    password = "Deletion-Cancel-Password-That-Is-Strong-42"  # noqa: S105
+    user = verified_user_factory(
+        username="keep_this_identity",
+        email="keep-this-identity@example.test",
+        password=password,
+    )
+    deletion = schedule_account_deletion(user)
+    client = _csrf_api_client()
+
+    login = client.post(
+        "/api/v1/auth/login/",
+        {"email": user.email, "password": password},
+        format="json",
+    )
+
+    assert login.status_code == 200
+    assert login.data["user"]["deletion_scheduled_for"] is not None
+    current_user = client.get("/api/v1/auth/me/")
+    assert current_user.status_code == 200
+    assert (
+        current_user.data["deletion_scheduled_for"] == login.data["user"]["deletion_scheduled_for"]
+    )
+    client.credentials(
+        HTTP_X_CSRFTOKEN=client.cookies[settings.CSRF_COOKIE_NAME].value,
+    )
+
+    cancelled = client.delete("/api/v1/auth/account-deletion/")
+
+    assert cancelled.status_code == 204
+    user.refresh_from_db()
+    deletion.refresh_from_db()
+    assert user.deletion_requested_at is None
+    assert user.deletion_scheduled_for is None
+    assert deletion.status == AccountDeletionRequest.Status.CANCELLED
+    assert client.get("/api/v1/auth/me/").data["deletion_scheduled_for"] is None
+
+
+@pytest.mark.parametrize(
+    "request_status",
+    [
+        AccountDeletionRequest.Status.PROCESSING,
+        AccountDeletionRequest.Status.COMPLETE,
+    ],
+)
+def test_account_deletion_cannot_be_cancelled_after_processing_starts(
+    request_status,
+    verified_user_factory,
+) -> None:
+    password = "Deletion-Race-Password-That-Is-Strong-42"  # noqa: S105
+    user = verified_user_factory(
+        username=f"deletion_race_{request_status}",
+        email=f"deletion-race-{request_status}@example.test",
+        password=password,
+    )
+    deletion = schedule_account_deletion(user)
+    user.refresh_from_db()
+    requested_at = user.deletion_requested_at
+    scheduled_for = user.deletion_scheduled_for
+    client = _csrf_api_client()
+    login = client.post(
+        "/api/v1/auth/login/",
+        {"email": user.email, "password": password},
+        format="json",
+    )
+    assert login.status_code == 200
+    client.credentials(
+        HTTP_X_CSRFTOKEN=client.cookies[settings.CSRF_COOKIE_NAME].value,
+    )
+    AccountDeletionRequest.objects.filter(pk=deletion.pk).update(status=request_status)
+
+    response = client.delete("/api/v1/auth/account-deletion/")
+
+    assert response.status_code == 409
+    assert response.data["error"]["code"] == "account_deletion_conflict"
+    assert "can no longer be cancelled" in response.data["error"]["message"]
+    deletion.refresh_from_db()
+    user.refresh_from_db()
+    assert deletion.status == request_status
+    assert user.deletion_requested_at == requested_at
+    assert user.deletion_scheduled_for == scheduled_for
+
+
+def test_deletion_worker_marks_one_failure_safely_and_continues_remaining_requests(
+    verified_user_factory,
+) -> None:
+    failed_user = verified_user_factory(
+        username="failed_deletion",
+        email="failed-deletion@example.test",
+    )
+    completed_user = verified_user_factory(
+        username="completed_deletion",
+        email="completed-deletion@example.test",
+    )
+    failed = schedule_account_deletion(failed_user)
+    completed = schedule_account_deletion(completed_user)
+    AccountDeletionRequest.objects.filter(pk__in=(failed.pk, completed.pk)).update(
+        scheduled_for=timezone.now() - timedelta(seconds=1),
+    )
+
+    def process_one(request_id: int) -> bool:
+        if request_id == failed.pk:
+            raise RuntimeError("sensitive implementation detail")
+        return _process_account_deletion_request(request_id)
+
+    with (
+        patch(
+            "apps.accounts.tasks._process_account_deletion_request",
+            side_effect=process_one,
+        ),
+        patch("apps.accounts.tasks.logger.exception") as log_exception,
+    ):
+        processed = process_scheduled_account_deletions.run()
+
+    failed.refresh_from_db()
+    completed.refresh_from_db()
+    failed_user.refresh_from_db()
+    completed_user.refresh_from_db()
+    assert processed == 1
+    assert failed.status == AccountDeletionRequest.Status.FAILED
+    assert failed.error_code == "processing_failed"
+    assert failed.completed_at is None
+    assert failed_user.is_active is True
+    assert failed_user.deletion_requested_at is not None
+    assert completed.status == AccountDeletionRequest.Status.COMPLETE
+    assert completed_user.is_active is False
+    log_exception.assert_called_once()
+    assert log_exception.call_args.args == ("account_deletion.processing_failed",)
+    assert log_exception.call_args.kwargs["extra"] == {
+        "task_name": "apps.accounts.tasks.process_scheduled_account_deletions",
+        "outcome": "failed",
+        "exception_type": "RuntimeError",
+    }
+
+
 def test_draft_only_cell_media_is_a_reference_and_cannot_be_deleted(
     verified_user_factory,
 ) -> None:
     author = verified_user_factory(username="draft_media_author")
     asset = _ready_cell_asset(owner=author)
-    document = empty_draft_document(title="Draft media reference")
+    document = empty_draft_document(title="Draft media reference", language="en")
     document["cells"][0]["image_asset_id"] = str(asset.public_id)
 
     bingo = create_bingo(author=author, document=document)
@@ -434,7 +574,7 @@ def test_hidden_bingo_makes_shared_revision_media_unavailable(
 ) -> None:
     author = verified_user_factory(username="hidden_share_media_author")
     asset = _ready_cell_asset(owner=author)
-    document = empty_draft_document(title="Hidden share media")
+    document = empty_draft_document(title="Hidden share media", language="en")
     document["visibility"] = Bingo.Visibility.PUBLIC
     document["cells"][0]["image_asset_id"] = str(asset.public_id)
     bingo = create_bingo(author=author, document=document)

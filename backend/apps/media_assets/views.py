@@ -83,7 +83,7 @@ class DirectUploadView(APIView):
         try:
             asset = store_direct_upload(asset=asset, owner=request.user, uploaded_file=uploaded)
         except AssetValidationError as exc:
-            raise ValidationError({"file": [exc.code]}) from exc
+            raise ValidationError({"file": [exc.user_message]}) from exc
         return Response(MediaAssetSerializer(asset).data, status=status.HTTP_202_ACCEPTED)
 
 
@@ -98,7 +98,7 @@ class UploadCompleteView(APIView):
         try:
             asset = complete_upload(asset=asset, owner=request.user)
         except AssetValidationError as exc:
-            raise ValidationError({"file": [exc.code]}) from exc
+            raise ValidationError({"file": [exc.user_message]}) from exc
         return Response(MediaAssetSerializer(asset).data, status=status.HTTP_202_ACCEPTED)
 
 

@@ -45,7 +45,7 @@ export async function uploadImage(
     for (const [key, value] of Object.entries(ticket.fields)) form.set(key, value);
     form.set("file", file);
     const response = await fetch(ticket.upload_url, { method: "POST", body: form });
-    if (!response.ok) throw new Error("The object storage upload failed.");
+    if (!response.ok) throw new Error("Image upload failed. Check your connection and try again.");
   } else if (ticket.upload_url.startsWith("/api/")) {
     await api.uploads.uploadContent(ticket.asset_id, file, {
       ...ticket.headers,
@@ -57,7 +57,7 @@ export async function uploadImage(
       headers: { ...ticket.headers, "Content-Type": file.type },
       body: file,
     });
-    if (!response.ok) throw new Error("The object storage upload failed.");
+    if (!response.ok) throw new Error("Image upload failed. Check your connection and try again.");
   }
 
   let asset = await api.uploads.complete(ticket.asset_id);

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { api, errorMessage } from "@/lib/api/client";
+import { notifyAuthChanged } from "@/lib/auth-events";
 
-export function VerifyEmail() {
+export function VerifyEmail({ mode = "registration" }: { mode?: "registration" | "email-change" }) {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
@@ -16,20 +17,26 @@ export function VerifyEmail() {
   );
   const [message, setMessage] = useState("");
   const [resending, setResending] = useState(false);
+  const submittedToken = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
-    api.auth
-      .verifyEmail(token)
+    if (!token || submittedToken.current === token) return;
+    submittedToken.current = token;
+    (mode === "email-change" ? api.auth.confirmEmailChange(token) : api.auth.verifyEmail(token))
       .then(() => {
+        if (mode === "email-change") notifyAuthChanged();
         setState("verified");
-        setMessage("Your email address is verified.");
+        setMessage(
+          mode === "email-change"
+            ? "Your new email address is confirmed. Use it the next time you log in."
+            : "Your email address is verified.",
+        );
       })
       .catch((caught) => {
         setState("error");
         setMessage(errorMessage(caught));
       });
-  }, [token]);
+  }, [mode, token]);
 
   async function resend() {
     if (!email || resending) return;
@@ -49,11 +56,19 @@ export function VerifyEmail() {
 
   return (
     <AuthShell
-      eyebrow="Email verification"
-      title={state === "verified" ? "Email verified" : "Check your inbox"}
+      eyebrow={mode === "email-change" ? "Change email" : "Email verification"}
+      title={
+        state === "verified"
+          ? mode === "email-change"
+            ? "Email changed"
+            : "Email verified"
+          : "Check your inbox"
+      }
       description={
         state === "waiting"
-          ? `We sent a verification link${email ? ` to ${email}` : ""}.`
+          ? mode === "email-change"
+            ? "Open the confirmation link we sent to your new address."
+            : `We sent a verification link${email ? ` to ${email}` : ""}.`
           : "Verification links are time-limited and single-use."
       }
     >
@@ -64,11 +79,14 @@ export function VerifyEmail() {
         {state === "verifying" ? "Verifying…" : message}
       </p>
       {state === "verified" ? (
-        <Link className="button button--primary" href="/login">
-          Continue to login
+        <Link
+          className="button button--primary"
+          href={mode === "email-change" ? "/profile" : "/login"}
+        >
+          {mode === "email-change" ? "Back to profile" : "Continue to login"}
         </Link>
       ) : null}
-      {state !== "verified" && email ? (
+      {mode === "registration" && state !== "verified" && email ? (
         <button
           type="button"
           className="button button--secondary"

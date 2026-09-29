@@ -24,19 +24,22 @@ CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
 
 FROM dependencies AS builder
 
-ARG NEXT_PUBLIC_APP_URL=http://localhost:8080
+ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_API_BASE_URL=/api/v1
 ARG NEXT_PUBLIC_CSRF_COOKIE_NAME=neb_csrf
+ARG NEXT_PUBLIC_SUPPORT_EMAIL=
 ARG API_BASE_URL=http://backend:8000/api/v1
 
 ENV NODE_ENV=production \
     NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
     NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL} \
     NEXT_PUBLIC_CSRF_COOKIE_NAME=${NEXT_PUBLIC_CSRF_COOKIE_NAME} \
+    NEXT_PUBLIC_SUPPORT_EMAIL=${NEXT_PUBLIC_SUPPORT_EMAIL} \
     API_BASE_URL=${API_BASE_URL}
 
 COPY . .
-RUN mkdir -p public \
+RUN node -e 'const raw = process.env.NEXT_PUBLIC_APP_URL; let url; try { url = new URL(raw); } catch { /* handled below */ } if (!url || url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash || ["localhost", "127.0.0.1", "::1"].includes(url.hostname)) { console.error("NEXT_PUBLIC_APP_URL must be an explicit public HTTPS origin for a production image."); process.exit(1); }' \
+    && mkdir -p public \
     && npm run build
 
 FROM dependencies AS production-dependencies
@@ -45,13 +48,20 @@ RUN npm prune --omit=dev --no-audit
 
 FROM base AS production
 
+ARG NEXT_PUBLIC_APP_URL
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
+    NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
     API_BASE_URL=http://backend:8000/api/v1
 
 RUN addgroup --system --gid 10001 nodejs \
     && adduser --system --uid 10001 --ingroup nodejs nextjs
+
+# The production command invokes Node directly; package-manager tooling is not
+# needed at runtime and would otherwise retain its own dependency tree.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 COPY --from=production-dependencies --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next

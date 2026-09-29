@@ -45,6 +45,10 @@ Nginx:
 - routes `/api/`, `/admin/`, and `/static/` to Django;
 - routes everything else to Next.js;
 - forwards correlation and proxy headers;
+- accepts forwarded client identity only from an explicit trusted ingress CIDR,
+  then normalizes it before application forwarding and rate limiting;
+- asserts an explicit browser-facing scheme so external TLS termination cannot
+  create Django HTTPS redirect loops;
 - applies baseline security headers;
 - rate limits sensitive auth endpoints and general API bursts;
 - sets a configurable request-body ceiling.
@@ -57,11 +61,16 @@ for every version and delete marker under the staging prefix. Browser uploads
 are presigned for one staging key; only backend/worker credentials can write
 final prefixes.
 
-The local topology has exactly one trusted proxy hop, so
-`TRUSTED_PROXY_HOPS=1`. The backend selects a client address from the
-right-hand side of `X-Forwarded-For`; production must set this value to the
-exact number of controlled ingress/proxy hops. Do not increase it to accept
-client-supplied entries.
+The local topology has exactly one trusted application proxy hop, so
+`TRUSTED_PROXY_HOPS=1`. Production keeps that value when using this Nginx:
+`NGINX_TRUSTED_PROXY_CIDR` identifies the controlled CDN/LB network, Real-IP
+resolves the client, and Nginx overwrites the upstream chain with one address.
+Set `NGINX_FORWARDED_PROTO=https`, firewall the origin to the controlled edge,
+and set `NGINX_ADMIN_ALLOW_CIDR` to the staff VPN/IAP egress network. Do not
+trust user-supplied forwarding headers or expose the origin directly.
+
+See the [production deployment baseline](../docs/operations/production-deployment.md)
+for the full topology, CSP/HSTS rollout, release job, and external checklist.
 
 ## Scripts
 

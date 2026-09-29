@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
@@ -9,20 +9,53 @@ import { BingoDetails } from "@/features/editor/bingo-details";
 import { CellInspector } from "@/features/editor/cell-inspector";
 import { EditorBoard } from "@/features/editor/editor-board";
 import {
+  clearEditorRecovery,
+  readEditorRecovery,
+  writeEditorRecovery,
+} from "@/features/editor/editor-recovery";
+import { EditorSaveStatus, type EditorSaveStatusValue } from "@/features/editor/editor-save-status";
+import {
+  canRedo,
+  canUndo,
+  editorDocumentFingerprint,
+  editorDocumentSnapshot,
   editorPayload,
   editorReducer,
   createEditorState,
+  editorStateFromDraft,
+  editorStateWithDocument,
   MAX_BINGO_SIZE,
+  meaningfulCellsRemovedByResize,
   MIN_BINGO_SIZE,
+  type EditorDocumentSnapshot,
   type EditorMedia,
   type EditorStep,
 } from "@/features/editor/editor-state";
-import { api, errorMessage } from "@/lib/api/client";
+import { api, ApiClientError, errorMessage } from "@/lib/api/client";
 import { makeIdempotencyKey } from "@/lib/guest-progress";
 import type { BingoDraft, BingoExportFormat, ExportJob, MediaAsset } from "@/lib/api/types";
 import { uploadImage } from "@/lib/uploads";
 
 type UploadTarget = "board" | "cell" | "cover";
+type EditorPayload = ReturnType<typeof editorPayload>;
+
+const AUTOSAVE_DELAY_MS = 800;
+
+interface PendingDraftCreation {
+  fingerprint: string;
+  payload: EditorPayload;
+  idempotencyKey: string;
+}
+
+function isDraftConflict(error: unknown): error is ApiClientError {
+  return (
+    error instanceof ApiClientError &&
+    (error.status === 409 ||
+      error.status === 412 ||
+      error.code === "draft_version_conflict" ||
+      error.code === "conflict")
+  );
+}
 
 export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const router = useRouter();
@@ -32,13 +65,45 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const previewUrls = useRef(new Set<string>());
   const [hydrating, setHydrating] = useState(Boolean(bingoId));
   const [authState, setAuthState] = useState<"checking" | "allowed" | "guest" | "unverified">(
     "checking",
   );
+  const [accountId, setAccountId] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [exportAvailable, setExportAvailable] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<EditorSaveStatusValue>("pristine");
+  const [saveError, setSaveError] = useState("");
+  const [recoveryAvailable, setRecoveryAvailable] = useState(false);
+  const [savedFingerprint, setSavedFingerprint] = useState(() =>
+    editorDocumentFingerprint(createEditorState(5)),
+  );
+  const latestState = useRef(state);
+  const latestFingerprint = useRef(editorDocumentFingerprint(state));
+  const savedFingerprintRef = useRef(savedFingerprint);
+  const dirtyRef = useRef(false);
+  const saveStatusRef = useRef<EditorSaveStatusValue>("pristine");
+  const saveLoop = useRef<Promise<BingoDraft | null> | null>(null);
+  const serverDraft = useRef({ bingoId: bingoId ?? null, version: 0 });
+  const pendingCreation = useRef<PendingDraftCreation | null>(null);
+  const failedFingerprint = useRef<string | null>(null);
+  const recoveredConflictDocument = useRef<EditorDocumentSnapshot | null>(null);
+  const preserveRecovery = useRef(false);
+  const recoveryCheckedFor = useRef("");
+
+  const currentFingerprint = editorDocumentFingerprint(state);
+  const dirty = currentFingerprint !== savedFingerprint;
+
+  const updateSaveStatus = useCallback((status: EditorSaveStatusValue) => {
+    saveStatusRef.current = status;
+    setSaveStatus(status);
+  }, []);
+
+  useEffect(() => {
+    latestState.current = state;
+    latestFingerprint.current = currentFingerprint;
+    dirtyRef.current = dirty;
+  }, [currentFingerprint, dirty, state]);
 
   useEffect(() => {
     let active = true;
@@ -46,11 +111,13 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       .me()
       .then((user) => {
         if (!active) return;
+        setAccountId(user.id);
         setAccountEmail(user.email);
         setAuthState(user.email_verified ? "allowed" : "unverified");
       })
       .catch(() => {
         if (active) {
+          setAccountId("");
           setAuthState("guest");
           setHydrating(false);
         }
@@ -61,16 +128,27 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   }, []);
 
   useEffect(() => {
-    const urls = previewUrls.current;
-    return () => {
-      for (const previewUrl of urls) URL.revokeObjectURL(previewUrl);
-      urls.clear();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (authState !== "allowed") return;
+    if (authState !== "allowed" || !accountId) return;
+    const recoveryScope = bingoId ?? "new";
     if (!bingoId) {
+      if (recoveryCheckedFor.current !== recoveryScope) {
+        recoveryCheckedFor.current = recoveryScope;
+        const recovery = readEditorRecovery(accountId);
+        if (
+          recovery &&
+          window.confirm("We found unsaved changes from an earlier visit. Restore them?")
+        ) {
+          dispatch({ type: "restore-document", document: recovery.document });
+          updateSaveStatus("dirty");
+        } else if (recovery) {
+          clearEditorRecovery(accountId);
+        }
+      }
+      setHydrating(false);
+      return;
+    }
+    if (serverDraft.current.bingoId === bingoId && serverDraft.current.version > 0) {
+      recoveryCheckedFor.current = recoveryScope;
       setHydrating(false);
       return;
     }
@@ -82,7 +160,29 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       api.bingos.get(bingoId, controller.signal),
     ])
       .then(([draft, bingo]) => {
+        const serverState = editorStateFromDraft(draft);
+        const serverFingerprint = editorDocumentFingerprint(serverState);
+        serverDraft.current = { bingoId: draft.bingo_id, version: draft.version };
+        savedFingerprintRef.current = serverFingerprint;
+        setSavedFingerprint(serverFingerprint);
         dispatch({ type: "hydrate", draft });
+        updateSaveStatus("saved");
+        recoveryCheckedFor.current = recoveryScope;
+        const recovery = readEditorRecovery(accountId, bingoId);
+        if (recovery && recovery.serverVersion === draft.version) {
+          const recoveredState = editorStateWithDocument(serverState, recovery.document);
+          if (
+            editorDocumentFingerprint(recoveredState) !== serverFingerprint &&
+            window.confirm("We found newer unsaved changes for this draft. Restore them?")
+          ) {
+            dispatch({ type: "restore-document", document: recovery.document });
+            updateSaveStatus("dirty");
+          } else {
+            clearEditorRecovery(accountId, bingoId);
+          }
+        } else if (recovery) {
+          clearEditorRecovery(accountId, bingoId);
+        }
         setExportAvailable(Boolean(bingo.current_revision));
       })
       .catch((caught) => {
@@ -92,12 +192,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         if (!controller.signal.aborted) setHydrating(false);
       });
     return () => controller.abort();
-  }, [authState, bingoId]);
-
-  function mediaWithPreview(previewUrl: string): EditorMedia {
-    previewUrls.current.add(previewUrl);
-    return { asset: null, previewUrl };
-  }
+  }, [accountId, authState, bingoId, updateSaveStatus]);
 
   function replaceMedia(target: UploadTarget, media: EditorMedia, cellKeys?: string[]) {
     if (target === "board") dispatch({ type: "set-board-background", media });
@@ -111,11 +206,6 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     }
   }
 
-  function currentMedia(target: Exclude<UploadTarget, "cell">): EditorMedia {
-    if (target === "board") return state.boardBackground;
-    return state.cover;
-  }
-
   async function handleUpload(
     target: UploadTarget,
     file: File,
@@ -125,58 +215,268 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     setError("");
     setUploading(target);
     const cellKeys = target === "cell" ? [...state.selectedKeys] : undefined;
-    const previousMedia = target === "cell" ? null : currentMedia(target);
-    const previewUrl = target === "cell" ? null : URL.createObjectURL(file);
-    if (previewUrl) replaceMedia(target, mediaWithPreview(previewUrl));
     try {
       const asset = await uploadImage(file, kind);
       replaceMedia(target, { asset, previewUrl: null }, cellKeys);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        previewUrls.current.delete(previewUrl);
-      }
     } catch (caught) {
-      if (target !== "cell" && previousMedia) replaceMedia(target, previousMedia);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        previewUrls.current.delete(previewUrl);
-      }
       setError(errorMessage(caught));
     } finally {
       setUploading(null);
     }
   }
 
-  async function persistDraft(): Promise<BingoDraft> {
-    const payload = editorPayload(state);
-    const wasNew = !state.bingoId;
-    const draft = state.bingoId
-      ? await api.bingos.updateDraft(state.bingoId, payload, state.version)
-      : await api.bingos.createDraft(payload, makeIdempotencyKey());
-    dispatch({ type: "saved", draft });
-    if (wasNew && draft.bingo_id) {
-      router.replace(`/create?bingo=${draft.bingo_id}`, { scroll: false });
+  const flushDraft = useCallback((): Promise<BingoDraft | null> => {
+    if (saveLoop.current) return saveLoop.current;
+    const operation = (async () => {
+      let lastSaved: BingoDraft | null = null;
+      while (latestFingerprint.current !== savedFingerprintRef.current) {
+        if (saveStatusRef.current === "conflict") {
+          throw new Error("Resolve the draft conflict before saving again.");
+        }
+        updateSaveStatus("saving");
+        setSaveError("");
+
+        const requestState = latestState.current;
+        let requestFingerprint = editorDocumentFingerprint(requestState);
+        let payload = editorPayload(requestState);
+        const wasNew = !serverDraft.current.bingoId;
+        let draft: BingoDraft;
+        if (wasNew) {
+          const pending =
+            pendingCreation.current ??
+            ({
+              fingerprint: requestFingerprint,
+              payload,
+              idempotencyKey: makeIdempotencyKey(),
+            } satisfies PendingDraftCreation);
+          pendingCreation.current = pending;
+          requestFingerprint = pending.fingerprint;
+          payload = pending.payload;
+          draft = await api.bingos.createDraft(payload, pending.idempotencyKey);
+          pendingCreation.current = null;
+        } else {
+          const persistedBingoId = serverDraft.current.bingoId;
+          if (!persistedBingoId) throw new Error("The draft identifier is unavailable.");
+          draft = await api.bingos.updateDraft(
+            persistedBingoId,
+            payload,
+            serverDraft.current.version,
+          );
+        }
+
+        const previousBingoId = serverDraft.current.bingoId;
+        serverDraft.current = { bingoId: draft.bingo_id, version: draft.version };
+        latestState.current = editorReducer(latestState.current, { type: "saved", draft });
+        savedFingerprintRef.current = requestFingerprint;
+        setSavedFingerprint(requestFingerprint);
+        dispatch({ type: "saved", draft });
+        failedFingerprint.current = null;
+        setSaveError("");
+        lastSaved = draft;
+
+        const clean = latestFingerprint.current === requestFingerprint;
+        dirtyRef.current = !clean;
+        if (wasNew && draft.bingo_id) {
+          clearEditorRecovery(accountId, previousBingoId);
+          const draftUrl = `/create?bingo=${draft.bingo_id}`;
+          window.history.replaceState(null, "", draftUrl);
+          router.replace(draftUrl, { scroll: false });
+        }
+        if (clean) {
+          preserveRecovery.current = false;
+          recoveredConflictDocument.current = null;
+          setRecoveryAvailable(false);
+          clearEditorRecovery(accountId, previousBingoId, draft.bingo_id);
+          updateSaveStatus("saved");
+        } else {
+          writeEditorRecovery(accountId, {
+            ...latestState.current,
+            bingoId: draft.bingo_id,
+            version: draft.version,
+          });
+        }
+      }
+      return lastSaved;
+    })().catch((caught: unknown) => {
+      writeEditorRecovery(accountId, latestState.current);
+      if (isDraftConflict(caught)) {
+        updateSaveStatus("conflict");
+      } else {
+        failedFingerprint.current = latestFingerprint.current;
+        setSaveError(errorMessage(caught));
+        updateSaveStatus("failed");
+      }
+      throw caught;
+    });
+    saveLoop.current = operation;
+    void operation.then(
+      () => {
+        if (saveLoop.current === operation) saveLoop.current = null;
+      },
+      () => {
+        if (saveLoop.current === operation) saveLoop.current = null;
+      },
+    );
+    return operation;
+  }, [accountId, router, updateSaveStatus]);
+
+  useEffect(() => {
+    if (authState !== "allowed" || !accountId || hydrating) return;
+    if (!dirty) {
+      failedFingerprint.current = null;
+      if (!preserveRecovery.current) {
+        clearEditorRecovery(accountId, state.bingoId, serverDraft.current.bingoId);
+      }
+      if (
+        saveStatusRef.current !== "pristine" &&
+        saveStatusRef.current !== "saved" &&
+        !saveLoop.current
+      ) {
+        updateSaveStatus("saved");
+      }
+      return;
     }
-    return draft;
-  }
+    if (uploading) return;
+    writeEditorRecovery(accountId, latestState.current);
+    if (saveStatusRef.current === "conflict") return;
+    if (failedFingerprint.current === currentFingerprint) return;
+    if (!saveLoop.current) updateSaveStatus("dirty");
+    const timeout = window.setTimeout(() => {
+      void flushDraft().catch(() => undefined);
+    }, AUTOSAVE_DELAY_MS);
+    return () => window.clearTimeout(timeout);
+  }, [
+    accountId,
+    authState,
+    currentFingerprint,
+    dirty,
+    flushDraft,
+    hydrating,
+    state.bingoId,
+    updateSaveStatus,
+    uploading,
+  ]);
+
+  useEffect(() => {
+    function warnBeforeUnload(event: BeforeUnloadEvent) {
+      if (!dirtyRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    function protectInternalNavigation(event: MouseEvent) {
+      if (!dirtyRef.current || event.defaultPrevented || event.button !== 0) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest<HTMLAnchorElement>("a[href]");
+      if (!anchor || anchor.target || anchor.download) return;
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (
+        destination.pathname === window.location.pathname &&
+        destination.search === window.location.search
+      ) {
+        return;
+      }
+      if (!window.confirm("Your latest editor changes are not saved yet. Leave anyway?")) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    document.addEventListener("click", protectInternalNavigation, true);
+    return () => {
+      window.removeEventListener("beforeunload", warnBeforeUnload);
+      document.removeEventListener("click", protectInternalNavigation, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleHistoryShortcut(event: KeyboardEvent) {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      const redo = key === "y" || (key === "z" && event.shiftKey);
+      if (key !== "z" && key !== "y") return;
+      event.preventDefault();
+      dispatch({ type: redo ? "redo" : "undo" });
+    }
+    window.addEventListener("keydown", handleHistoryShortcut);
+    return () => window.removeEventListener("keydown", handleHistoryShortcut);
+  }, []);
 
   async function saveDraft() {
-    if (pendingAction) return;
+    if (pendingAction || saveStatusRef.current === "conflict") return;
     setPendingAction("save");
+    failedFingerprint.current = null;
     setError("");
     setMessage("");
     try {
-      const draft = await persistDraft();
-      const savedAt = new Date(draft.updated_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      setMessage(`Draft saved at ${savedAt}.`);
-    } catch (caught) {
-      setError(errorMessage(caught));
+      await flushDraft();
+    } catch {
+      // The persistent save status presents the actionable failure.
     } finally {
       setPendingAction(null);
     }
+  }
+
+  async function loadLatestAfterConflict() {
+    const currentBingoId = serverDraft.current.bingoId;
+    if (!currentBingoId) return;
+    const localDocument = editorDocumentSnapshot(latestState.current);
+    try {
+      const latest = await api.bingos.getDraft(currentBingoId);
+      const latestState = editorStateFromDraft(latest);
+      const latestServerFingerprint = editorDocumentFingerprint(latestState);
+      serverDraft.current = { bingoId: latest.bingo_id, version: latest.version };
+      savedFingerprintRef.current = latestServerFingerprint;
+      setSavedFingerprint(latestServerFingerprint);
+      recoveredConflictDocument.current = localDocument;
+      setRecoveryAvailable(true);
+      preserveRecovery.current = true;
+      writeEditorRecovery(accountId, {
+        ...editorStateWithDocument(latestState, localDocument),
+        version: latest.version,
+      });
+      dispatch({ type: "hydrate", draft: latest });
+      updateSaveStatus("saved");
+      setSaveError("");
+    } catch (caught) {
+      setSaveError(errorMessage(caught));
+      updateSaveStatus("failed");
+    }
+  }
+
+  async function keepLocalAfterConflict() {
+    const currentBingoId = serverDraft.current.bingoId;
+    if (!currentBingoId) return;
+    try {
+      const latest = await api.bingos.getDraft(currentBingoId);
+      const latestServerFingerprint = editorDocumentFingerprint(editorStateFromDraft(latest));
+      serverDraft.current = { bingoId: latest.bingo_id, version: latest.version };
+      savedFingerprintRef.current = latestServerFingerprint;
+      setSavedFingerprint(latestServerFingerprint);
+      latestState.current = editorReducer(latestState.current, { type: "saved", draft: latest });
+      dispatch({ type: "saved", draft: latest });
+      updateSaveStatus("dirty");
+      await flushDraft();
+    } catch (caught) {
+      if (!isDraftConflict(caught)) {
+        setSaveError(errorMessage(caught));
+        updateSaveStatus("failed");
+      }
+    }
+  }
+
+  function restoreConflictRecovery() {
+    const document = recoveredConflictDocument.current;
+    if (!document) return;
+    preserveRecovery.current = false;
+    recoveredConflictDocument.current = null;
+    setRecoveryAvailable(false);
+    failedFingerprint.current = null;
+    dispatch({ type: "restore-document", document });
+    updateSaveStatus("dirty");
   }
 
   async function publish() {
@@ -185,17 +485,25 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       setError("Add a title before publishing.");
       return;
     }
+    if (!state.language) {
+      setError("Choose a bingo language before publishing.");
+      return;
+    }
+    if (!Object.values(state.cells).some((cell) => cell.text.trim() || cell.image.asset)) {
+      setError("Add text or an image to at least one cell before publishing.");
+      return;
+    }
     setPendingAction("publish");
     setError("");
     setMessage("");
     try {
-      const draft = await persistDraft();
-      const bingoId = draft.bingo_id ?? state.bingoId;
-      if (!bingoId) throw new Error("The server did not return a bingo identifier.");
-      const published = await api.bingos.publishDraft(bingoId, makeIdempotencyKey());
+      await flushDraft();
+      const persistedBingoId = serverDraft.current.bingoId;
+      if (!persistedBingoId) throw new Error("The server did not return a bingo identifier.");
+      const published = await api.bingos.publishDraft(persistedBingoId, makeIdempotencyKey());
       router.push(`/bingo/${published.id}`);
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (!isDraftConflict(caught)) setError(errorMessage(caught));
       setPendingAction(null);
     }
   }
@@ -218,12 +526,11 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     }
     setPendingAction(`export-${format}`);
     setError("");
-    setMessage(`Preparing ${format.toUpperCase()} export…`);
+    setMessage(`Preparing published ${format.toUpperCase()} export…`);
     try {
-      const draft = await persistDraft();
-      const bingoId = draft.bingo_id ?? state.bingoId;
-      if (!bingoId) throw new Error("Save the bingo before exporting it.");
-      const job = await api.exports.create(bingoId, format, makeIdempotencyKey());
+      const persistedBingoId = serverDraft.current.bingoId ?? state.bingoId;
+      if (!persistedBingoId) throw new Error("Publish the bingo before exporting it.");
+      const job = await api.exports.create(persistedBingoId, format, makeIdempotencyKey());
       const completed = await waitForExport(job);
       if (completed.status === "ready" && completed.download_url) {
         window.location.assign(completed.download_url);
@@ -238,6 +545,34 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       setPendingAction(null);
     }
   }
+
+  function resizeBoard(nextSize: number) {
+    const removed = meaningfulCellsRemovedByResize(state, nextSize);
+    if (
+      removed.length > 0 &&
+      !window.confirm(
+        `Reducing this board will remove ${removed.length} customized ${removed.length === 1 ? "cell" : "cells"}. This change will autosave; you can use Undo to restore them. Continue?`,
+      )
+    ) {
+      return;
+    }
+    dispatch({ type: "set-size", size: nextSize });
+  }
+
+  const saveStatusView = (
+    <EditorSaveStatus
+      status={saveStatus}
+      error={saveError}
+      recoveryAvailable={recoveryAvailable}
+      onRetry={() => {
+        failedFingerprint.current = null;
+        void flushDraft().catch(() => undefined);
+      }}
+      onLoadLatest={() => void loadLatestAfterConflict()}
+      onKeepMine={() => void keepLocalAfterConflict()}
+      onRestoreRecovery={restoreConflictRecovery}
+    />
+  );
 
   if (authState === "checking" || hydrating) {
     return (
@@ -304,6 +639,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           onPublish={() => void publish()}
           onExport={(format) => void exportBoard(format)}
           exportAvailable={exportAvailable}
+          saveStatus={saveStatusView}
         />
       </main>
     );
@@ -337,26 +673,46 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
             <h1 id="create-title">{state.bingoId ? "Edit bingo" : "Create bingo"}</h1>
             <p>Click a cell to edit it, or drag across cells to edit several.</p>
           </div>
-          <div className="size-control" role="group" aria-label="Bingo size">
-            <button
-              type="button"
-              aria-label="Decrease bingo size"
-              disabled={state.size <= MIN_BINGO_SIZE}
-              onClick={() => dispatch({ type: "set-size", size: state.size - 1 })}
-            >
-              −
-            </button>
-            <output aria-live="polite">
-              {state.size} × {state.size}
-            </output>
-            <button
-              type="button"
-              aria-label="Increase bingo size"
-              disabled={state.size >= MAX_BINGO_SIZE}
-              onClick={() => dispatch({ type: "set-size", size: state.size + 1 })}
-            >
-              +
-            </button>
+          <div className="editor-toolbar-actions">
+            <div className="editor-history-actions" role="group" aria-label="Edit history">
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={!canUndo(state)}
+                onClick={() => dispatch({ type: "undo" })}
+              >
+                Undo
+              </button>
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={!canRedo(state)}
+                onClick={() => dispatch({ type: "redo" })}
+              >
+                Redo
+              </button>
+            </div>
+            <div className="size-control" role="group" aria-label="Bingo size">
+              <button
+                type="button"
+                aria-label="Decrease bingo size"
+                disabled={state.size <= MIN_BINGO_SIZE}
+                onClick={() => resizeBoard(state.size - 1)}
+              >
+                −
+              </button>
+              <output aria-live="polite">
+                {state.size} × {state.size}
+              </output>
+              <button
+                type="button"
+                aria-label="Increase bingo size"
+                disabled={state.size >= MAX_BINGO_SIZE}
+                onClick={() => resizeBoard(state.size + 1)}
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
         <div className="board-actions">
@@ -398,7 +754,9 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           <button
             type="button"
             className="button button--secondary"
-            disabled={Boolean(pendingAction) || uploading !== null}
+            disabled={
+              Boolean(pendingAction) || uploading !== null || saveStatus === "conflict" || !dirty
+            }
             onClick={() => void saveDraft()}
           >
             {pendingAction === "save" ? "Saving…" : "Save draft"}
@@ -412,6 +770,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
             Finish creating →
           </button>
         </div>
+        {saveStatusView}
         <p
           className={error ? "form-message form-message--error" : "form-message"}
           role={error ? "alert" : "status"}

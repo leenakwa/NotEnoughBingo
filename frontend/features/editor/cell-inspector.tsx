@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dispatch } from "react";
+import { useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
 import {
@@ -28,8 +29,12 @@ export function CellInspector({
   onImageSelected: (file: File) => void;
   uploadPending: boolean;
 }) {
+  const [bulkTextSelection, setBulkTextSelection] = useState<string | null>(null);
   const cell = selectedPrimaryCell(state);
   if (!cell) return null;
+  const selectionToken = state.selectedKeys.join("|");
+  const multipleSelected = state.selectedKeys.length > 1;
+  const bulkTextEnabled = multipleSelected && bulkTextSelection === selectionToken;
 
   return (
     <aside className="cell-inspector" aria-labelledby="inspector-title">
@@ -59,21 +64,41 @@ export function CellInspector({
         </button>
       </div>
 
-      <label className="field">
-        <span>Text</span>
-        <textarea
-          rows={4}
-          maxLength={100}
-          value={cell.text}
-          placeholder="Write something…"
-          onChange={(event) =>
-            dispatch({
-              type: "patch-selected",
-              patch: { text: event.target.value },
-            })
-          }
-        />
-      </label>
+      {multipleSelected && !bulkTextEnabled ? (
+        <div className="bulk-text-safety">
+          <p>Text is kept separate for each selected cell.</p>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => setBulkTextSelection(selectionToken)}
+          >
+            Set same text for {state.selectedKeys.length} cells
+          </button>
+        </div>
+      ) : (
+        <label className="field">
+          <span id={bulkTextEnabled ? "bulk-text-label" : undefined}>
+            {bulkTextEnabled ? `Shared text for ${state.selectedKeys.length} cells` : "Text"}
+          </span>
+          <textarea
+            rows={4}
+            maxLength={100}
+            value={cell.text}
+            placeholder="Write something…"
+            aria-labelledby={bulkTextEnabled ? "bulk-text-label" : undefined}
+            aria-describedby={bulkTextEnabled ? "bulk-text-description" : undefined}
+            onChange={(event) =>
+              dispatch({
+                type: "patch-selected",
+                patch: { text: event.target.value },
+              })
+            }
+          />
+          {bulkTextEnabled ? (
+            <small id="bulk-text-description">This replaces the text in every selected cell.</small>
+          ) : null}
+        </label>
+      )}
 
       <div className="format-row" role="group" aria-label="Text formatting">
         {formats.map((format) => (

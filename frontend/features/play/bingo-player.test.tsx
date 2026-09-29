@@ -58,12 +58,14 @@ const viewer: AuthenticatedUser = {
   avatar: null,
   email: "reader@example.test",
   email_verified: true,
+  deletion_scheduled_for: null,
 };
 
 const bingo: BingoDetail = {
   id: "22222222-2222-4222-8222-222222222222",
   title: "Hydration safety",
   description: "",
+  language: "en",
   author: {
     id: "33333333-3333-4333-8333-333333333333",
     username: "author",
@@ -92,6 +94,7 @@ const bingo: BingoDetail = {
     number: 1,
     title: "Hydration safety",
     description: "",
+    language: "en",
     size: 3,
     board_background: null,
     cover: null,

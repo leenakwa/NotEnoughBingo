@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BellIcon, PlusIcon, UserIcon } from "@/components/ui/icons";
-import { api } from "@/lib/api/client";
-import { AUTH_CHANGED_EVENT } from "@/lib/auth-events";
+import { api, isAuthenticationRequiredError } from "@/lib/api/client";
+import { AUTH_CHANGED_EVENT, AUTH_REQUIRED_EVENT, AUTH_SYNC_KEY } from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
 
 const navigation = [
@@ -19,6 +19,7 @@ interface HeaderViewProps {
   avatarUrl?: string;
   pathname: string;
   user: AuthenticatedUser | null;
+  unreadCount: number;
 }
 
 interface AppHeaderProps {
@@ -42,17 +43,22 @@ function NavigationLinks({ pathname }: Pick<HeaderViewProps, "pathname">) {
   });
 }
 
-function AccountNavigation({ avatarUrl, pathname, user }: HeaderViewProps) {
+function AccountNavigation({ avatarUrl, pathname, unreadCount, user }: HeaderViewProps) {
   return (
     <div className="account-nav">
       {user ? (
         <Link
           className="icon-link"
           href="/notifications"
-          aria-label="Notifications"
+          aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
           aria-current={pathname.startsWith("/notifications") ? "page" : undefined}
         >
           <BellIcon />
+          {unreadCount ? (
+            <span className="notification-badge" aria-hidden="true">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          ) : null}
         </Link>
       ) : null}
       <Link
@@ -73,7 +79,7 @@ function AccountNavigation({ avatarUrl, pathname, user }: HeaderViewProps) {
   );
 }
 
-export function ClassicAppHeader({ avatarUrl, pathname, user }: HeaderViewProps) {
+export function ClassicAppHeader({ avatarUrl, pathname, unreadCount, user }: HeaderViewProps) {
   const createIsActive = pathname.startsWith("/create");
 
   return (
@@ -100,13 +106,18 @@ export function ClassicAppHeader({ avatarUrl, pathname, user }: HeaderViewProps)
         <nav className="classic-header__nav" aria-label="Main navigation">
           <NavigationLinks pathname={pathname} />
         </nav>
-        <AccountNavigation avatarUrl={avatarUrl} pathname={pathname} user={user} />
+        <AccountNavigation
+          avatarUrl={avatarUrl}
+          pathname={pathname}
+          unreadCount={unreadCount}
+          user={user}
+        />
       </div>
     </header>
   );
 }
 
-export function ModernAppHeader({ avatarUrl, pathname, user }: HeaderViewProps) {
+export function ModernAppHeader({ avatarUrl, pathname, unreadCount, user }: HeaderViewProps) {
   const createIsActive = pathname.startsWith("/create");
 
   return (
@@ -127,37 +138,92 @@ export function ModernAppHeader({ avatarUrl, pathname, user }: HeaderViewProps) 
         </Link>
       </nav>
 
-      <AccountNavigation avatarUrl={avatarUrl} pathname={pathname} user={user} />
+      <AccountNavigation
+        avatarUrl={avatarUrl}
+        pathname={pathname}
+        unreadCount={unreadCount}
+        user={user}
+      />
     </header>
   );
 }
 
 export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const currentUserId = useRef<string | null | undefined>(undefined);
+  const refreshVersion = useRef(0);
   const avatarUrl = user?.avatar?.thumbnail_url ?? user?.avatar?.url ?? undefined;
 
-  const refreshUser = useCallback(() => {
-    api.auth
-      .me()
-      .then(setUser)
-      .catch(() => setUser(null));
-  }, []);
+  const refreshUser = useCallback(
+    (redirectIfChanged = false) => {
+      const version = ++refreshVersion.current;
+      const applyUser = (next: AuthenticatedUser | null) => {
+        if (version !== refreshVersion.current) return;
+        const previousId = currentUserId.current;
+        const nextId = next?.id ?? null;
+        currentUserId.current = nextId;
+        setUser(next);
+        if (redirectIfChanged && previousId !== undefined && previousId !== nextId) {
+          const destination =
+            nextId === null
+              ? `/login?reason=session-expired&next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`
+              : "/trending";
+          router.replace(destination);
+          router.refresh();
+        }
+      };
+      api.auth
+        .me()
+        .then(applyUser)
+        .catch((caught) => {
+          if (isAuthenticationRequiredError(caught)) applyUser(null);
+        });
+    },
+    [router],
+  );
 
   useEffect(() => {
     refreshUser();
   }, [pathname, refreshUser]);
 
   useEffect(() => {
-    window.addEventListener(AUTH_CHANGED_EVENT, refreshUser);
-    window.addEventListener("focus", refreshUser);
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    api.notifications
+      .unreadCount()
+      .then(({ count }) => setUnreadCount(count))
+      .catch(() => undefined);
+  }, [pathname, user]);
+
+  useEffect(() => {
+    const handleCurrentTabChange = () => refreshUser();
+    const handleFocus = () => refreshUser(true);
+    const handleAuthenticationRequired = () => {
+      if (currentUserId.current) refreshUser(true);
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === AUTH_SYNC_KEY) refreshUser(true);
+    };
+    window.addEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
+    window.addEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleStorage);
     return () => {
-      window.removeEventListener(AUTH_CHANGED_EVENT, refreshUser);
-      window.removeEventListener("focus", refreshUser);
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
+      window.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [refreshUser]);
 
   const HeaderView = variant === "modern" ? ModernAppHeader : ClassicAppHeader;
 
-  return <HeaderView avatarUrl={avatarUrl} pathname={pathname} user={user} />;
+  return (
+    <HeaderView avatarUrl={avatarUrl} pathname={pathname} unreadCount={unreadCount} user={user} />
+  );
 }

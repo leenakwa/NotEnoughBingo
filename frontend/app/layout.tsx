@@ -4,21 +4,13 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { siteUrl } from "@/lib/site";
 
 import "./globals.css";
 
-function publicAppUrl(): URL | undefined {
-  const value = process.env.NEXT_PUBLIC_APP_URL;
-  if (!value) return undefined;
-  try {
-    return new URL(value);
-  } catch {
-    return undefined;
-  }
-}
-
 export const metadata: Metadata = {
-  metadataBase: publicAppUrl(),
+  metadataBase: siteUrl(),
   title: {
     default: "Not Enough Bingo",
     template: "%s — Not Enough Bingo",
@@ -45,7 +37,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </a>
         <AppHeader />
         {children}
-        {process.env.NODE_ENV === "development" && <Agentation />}
+        <SiteFooter />
+        {process.env.NODE_ENV === "development" && process.env.AGENTATION_ENABLED !== "false" ? (
+          <Agentation />
+        ) : null}
       </body>
     </html>
   );

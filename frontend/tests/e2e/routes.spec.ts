@@ -178,6 +178,7 @@ test("authenticated header keeps notification and profile actions", async ({ pag
         avatar: null,
         email: "author@example.test",
         email_verified: true,
+        deletion_scheduled_for: null,
       }),
     }),
   );
@@ -216,6 +217,74 @@ test("explore exposes title, author, tag, and sort controls", async ({ page }) =
   await expect(page.getByRole("radio", { name: /Popular/ })).toBeChecked();
 });
 
+test("explore suggests public authors and tags and lets active filters be removed", async ({
+  page,
+}) => {
+  await page.route("**/api/v1/bingos/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
+    }),
+  );
+  await page.route("**/api/v1/tags/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "44444444-4444-4444-8444-444444444444",
+            name: "Travel",
+            slug: "travel",
+            usage_count: 4,
+          },
+        ],
+      }),
+    }),
+  );
+  await page.route("**/api/v1/authors/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            username: "ada",
+            display_name: "Ada Lovelace",
+          },
+        ],
+      }),
+    }),
+  );
+  await page.goto("/explore?search=summer&author=ada&tags=travel%2Cfriends&ordering=newest");
+
+  await expect(page.getByRole("button", { name: "Remove title filter: summer" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove author filter: ada" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove tag filter: friends" })).toBeVisible();
+  await page.getByRole("button", { name: "Remove tag filter: friends" }).click();
+  await expect(page).toHaveURL(/tags=travel/);
+  await expect(page).not.toHaveURL(/friends/);
+
+  await page.getByLabel("Tags").fill("tra");
+  await expect(page.locator('#explore-tag-suggestions option[value="travel"]')).toHaveCount(1);
+
+  const authorInput = page.getByRole("combobox", { name: "Author" });
+  await expect(authorInput).toHaveAttribute("list", "explore-author-suggestions");
+  await authorInput.fill("ad");
+  await expect(page.locator('#explore-author-suggestions option[value="ada"]')).toHaveAttribute(
+    "label",
+    "Ada Lovelace (@ada)",
+  );
+});
+
 test("create opens the coordinate-safe editor", async ({ page }) => {
   await page.unroute("**/api/v1/auth/me/");
   await page.route("**/api/v1/auth/me/", (route) =>
@@ -229,6 +298,7 @@ test("create opens the coordinate-safe editor", async ({ page }) => {
         avatar: null,
         email: "author@example.test",
         email_verified: true,
+        deletion_scheduled_for: null,
       }),
     }),
   );

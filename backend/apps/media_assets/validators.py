@@ -27,6 +27,30 @@ CHECKSUM_RE = re.compile(r"^[0-9a-f]{64}$")
 MAX_IMAGE_DIMENSION = 12_000
 MAX_IMAGE_PIXELS = 40_000_000
 
+ASSET_ERROR_MESSAGES = {
+    "unsupported_media_type": "Use a JPEG, PNG, WebP, or AVIF image.",
+    "file_size_out_of_range": "The image is empty or exceeds the upload size limit.",
+    "extension_mime_mismatch": "The filename extension does not match the image type.",
+    "invalid_checksum": "The image checksum is invalid. Try uploading the file again.",
+    "size_mismatch": "The uploaded image size does not match the expected size. Try again.",
+    "checksum_mismatch": "The uploaded image changed during transfer. Try again.",
+    "invalid_image": "This file could not be read as an image. Choose another image.",
+    "detected_mime_mismatch": "The image content does not match its declared type.",
+    "ambiguous_file_signature": "The image file has conflicting format information.",
+    "image_dimensions_out_of_range": "The image dimensions exceed the supported limit.",
+    "image_normalization_failed": "The image could not be processed. Choose another image.",
+    "unsupported_asset_kind": "This type of image upload is not supported.",
+    "too_many_active_uploads": "Too many uploads are in progress. Try again shortly.",
+    "upload_intent_expired": "This upload expired. Start a new upload.",
+    "declared_mime_mismatch": "The uploaded image type does not match the selected file.",
+    "upload_cannot_be_completed": "This upload cannot be completed. Start a new upload.",
+    "uploaded_object_not_found": "The uploaded image was not found. Try uploading it again.",
+}
+
+
+def asset_error_message(code: str) -> str:
+    return ASSET_ERROR_MESSAGES.get(code, "The image could not be processed. Try again.")
+
 
 class AssetValidationError(ValueError):
     """A safe, client-displayable media rejection."""
@@ -34,6 +58,10 @@ class AssetValidationError(ValueError):
     def __init__(self, code: str) -> None:
         super().__init__(code)
         self.code = code
+
+    @property
+    def user_message(self) -> str:
+        return asset_error_message(self.code)
 
 
 @dataclass(frozen=True)

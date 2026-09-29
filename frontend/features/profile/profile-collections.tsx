@@ -15,15 +15,16 @@ import type {
   PublicUser,
 } from "@/lib/api/types";
 
-type ProfileTab = "bingos" | "plays" | "shares" | "followers" | "following";
+type ProfileTab = "bingos" | "drafts" | "plays" | "shares" | "followers" | "following";
 type Collection =
-  | { kind: "bingos"; page: Page<BingoSummary> }
+  | { kind: "bingos" | "drafts"; page: Page<BingoSummary> }
   | { kind: "plays"; page: Page<ProfilePlayHistoryItem> }
   | { kind: "shares"; page: Page<ProfileSharedResultItem> }
   | { kind: "followers" | "following"; page: Page<PublicUser> };
 
 const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "bingos", label: "Created" },
+  { id: "drafts", label: "Drafts" },
   { id: "plays", label: "Recent plays" },
   { id: "shares", label: "Shared results" },
   { id: "followers", label: "Followers" },
@@ -43,16 +44,17 @@ export function ProfileCollections({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const visibleTabs = ownProfile ? tabs : tabs.filter((item) => item.id !== "drafts");
 
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError("");
     const request: Promise<Collection> =
-      tab === "bingos"
+      tab === "bingos" || tab === "drafts"
         ? api.profiles
-            .bingos(username, pageNumber, controller.signal)
-            .then((page) => ({ kind: "bingos", page }))
+            .bingos(username, pageNumber, controller.signal, tab === "drafts" ? "draft" : "created")
+            .then((page) => ({ kind: tab, page }))
         : tab === "plays"
           ? api.profiles
               .playHistory(username, pageNumber, controller.signal)
@@ -89,13 +91,14 @@ export function ProfileCollections({
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let nextIndex: number | null = null;
-    if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
-    if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+    if (event.key === "ArrowLeft")
+      nextIndex = (index - 1 + visibleTabs.length) % visibleTabs.length;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % visibleTabs.length;
     if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = tabs.length - 1;
+    if (event.key === "End") nextIndex = visibleTabs.length - 1;
     if (nextIndex === null) return;
     event.preventDefault();
-    const nextTab = tabs[nextIndex];
+    const nextTab = visibleTabs[nextIndex];
     if (!nextTab) return;
     activateTab(nextTab.id);
     event.currentTarget
@@ -108,7 +111,7 @@ export function ProfileCollections({
     <section className="profile-section" aria-labelledby="profile-content-title">
       <h2 id="profile-content-title">Profile activity</h2>
       <div className="profile-tabs" role="tablist" aria-label="Profile sections">
-        {tabs.map((item, index) => (
+        {visibleTabs.map((item, index) => (
           <button
             key={item.id}
             id={`profile-tab-${item.id}`}
@@ -147,13 +150,14 @@ export function ProfileCollections({
                 : "This section is empty or hidden by its privacy setting."
             }
             action={
-              ownProfile && tab === "bingos"
+              ownProfile && (tab === "bingos" || tab === "drafts")
                 ? { href: "/create", label: "Create a bingo" }
                 : undefined
             }
           />
         ) : null}
-        {collection?.kind === "bingos" && collection.page.results.length ? (
+        {(collection?.kind === "bingos" || collection?.kind === "drafts") &&
+        collection.page.results.length ? (
           <BingoGrid bingos={collection.page.results} />
         ) : null}
         {collection?.kind === "plays" && collection.page.results.length ? (

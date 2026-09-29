@@ -83,7 +83,7 @@ actions, reports, and admin moderation:
 ```bash
 cd frontend
 npm ci
-npx playwright install chromium
+npx playwright install chromium webkit
 cd ..
 make test-e2e-live
 ```
@@ -98,7 +98,9 @@ git diff -- backend/openapi.yaml frontend/lib/api/schema.d.ts
 
 GitHub Actions additionally checks dependency audits, PostgreSQL behavior,
 Compose/Nginx/MinIO configuration, full-stack product flows, and both
-production container images.
+production container images. Release image jobs assert a non-root runtime,
+fail on fixable high/critical vulnerabilities, and publish SPDX SBOM artifacts;
+repository history is scanned for secrets.
 
 ## Environment and data
 
@@ -122,6 +124,7 @@ CONFIRM_RESTORE=not-enough-bingo-local \
 - [Architecture](docs/architecture.md)
 - [Domain model](docs/domain-model.md)
 - [Operations runbook](docs/operations/runbook.md)
+- [Production deployment baseline](docs/operations/production-deployment.md)
 - [Backup and restore](docs/operations/backups.md)
 
 `compose.yml` is the reproducible development topology. Production should use

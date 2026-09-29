@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
+import { LanguagePicker } from "@/components/ui/language-picker";
 import { AccountSettings } from "@/features/profile/account-settings";
 import { ProfileCollections } from "@/features/profile/profile-collections";
 import { ReportDialog } from "@/features/social/report-dialog";
@@ -20,13 +21,20 @@ const privacyLabels: Record<keyof UserPrivacySettings, string> = {
   show_following: "Show following",
 };
 
-export function ProfileView({ username }: { username?: string }) {
+export function ProfileView({
+  username,
+  initialProfile,
+}: {
+  username?: string;
+  initialProfile?: UserProfile | null;
+}) {
   const ownProfile = !username;
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [displayName, setDisplayName] = useState("");
-  const [usernameValue, setUsernameValue] = useState("");
-  const [bio, setBio] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(initialProfile ?? null);
+  const [displayName, setDisplayName] = useState(initialProfile?.display_name ?? "");
+  const [usernameValue, setUsernameValue] = useState(initialProfile?.username ?? "");
+  const [bio, setBio] = useState(initialProfile?.bio ?? "");
+  const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(!initialProfile);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -34,8 +42,14 @@ export function ProfileView({ username }: { username?: string }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
   const [loadVersion, setLoadVersion] = useState(0);
+  const initialProfileConsumed = useRef(false);
 
   useEffect(() => {
+    if (!initialProfileConsumed.current && loadVersion === 0 && initialProfile) {
+      initialProfileConsumed.current = true;
+      return;
+    }
+    initialProfileConsumed.current = true;
     const controller = new AbortController();
     setLoading(true);
     setError("");
@@ -47,6 +61,13 @@ export function ProfileView({ username }: { username?: string }) {
         setDisplayName(value.display_name);
         setUsernameValue(value.username);
         setBio(value.bio);
+        if (
+          ownProfile &&
+          "preferred_languages" in value &&
+          Array.isArray(value.preferred_languages)
+        ) {
+          setPreferredLanguages(value.preferred_languages);
+        }
       })
       .catch((caught) => {
         if (controller.signal.aborted) return;
@@ -60,7 +81,7 @@ export function ProfileView({ username }: { username?: string }) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [loadVersion, username]);
+  }, [initialProfile, loadVersion, ownProfile, username]);
 
   useEffect(() => {
     if (ownProfile) return;
@@ -112,6 +133,21 @@ export function ProfileView({ username }: { username?: string }) {
       setMessage("Privacy settings saved.");
     } catch (caught) {
       setProfile((current) => (current ? { ...current, privacy: profile.privacy } : current));
+      setError(errorMessage(caught));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function saveLanguagePreferences() {
+    if (!preferredLanguages.length || pending) return;
+    setPending(true);
+    setError("");
+    try {
+      const updated = await api.profiles.update({ preferred_languages: preferredLanguages });
+      setProfile(updated);
+      setMessage("Bingo languages saved.");
+    } catch (caught) {
       setError(errorMessage(caught));
     } finally {
       setPending(false);
@@ -264,6 +300,24 @@ export function ProfileView({ username }: { username?: string }) {
               Save profile
             </button>
           </form>
+          <div className="settings-card">
+            <h2>Bingo languages</h2>
+            <p>Choose the languages you want to see in Discover.</p>
+            <LanguagePicker
+              value={preferredLanguages}
+              onChange={setPreferredLanguages}
+              label="Preferred languages"
+              disabled={pending}
+            />
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={pending || !preferredLanguages.length}
+              onClick={() => void saveLanguagePreferences()}
+            >
+              Save languages
+            </button>
+          </div>
           <div className="settings-card">
             <h2>Privacy</h2>
             <p>Control which profile sections other people can see.</p>

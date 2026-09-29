@@ -10,6 +10,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path(f"{API_V1}health/live/", health.live, name="health-live"),
     path(f"{API_V1}health/ready/", health.ready, name="health-ready"),
+    path(f"{API_V1}health/beat/", health.beat, name="health-beat"),
     path(
         f"{API_V1}schema/",
         SpectacularAPIView.as_view(),

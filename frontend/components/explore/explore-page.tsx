@@ -1,22 +1,25 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BingoGrid } from "@/components/bingo/bingo-grid";
+import { LanguagePicker } from "@/components/ui/language-picker";
 import { SearchIcon } from "@/components/ui/icons";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage } from "@/lib/api/client";
 import { trackInteraction } from "@/lib/analytics";
-import type { BingoSummary, Page } from "@/lib/api/types";
+import type { AuthorSuggestion, BingoSummary, Page, Tag } from "@/lib/api/types";
+import { languageLabel } from "@/lib/languages";
 
-export function ExplorePage() {
+export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSummary> | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const appliedSearch = searchParams.get("search") ?? "";
   const appliedAuthor = searchParams.get("author") ?? "";
   const appliedTags = searchParams.get("tags") ?? "";
+  const appliedLanguages = useMemo(() => searchParams.getAll("languages"), [searchParams]);
   const appliedOrdering =
     searchParams.get("ordering") === "newest" ? ("newest" as const) : ("popular" as const);
   const rawPage = Number(searchParams.get("page"));
@@ -24,11 +27,15 @@ export function ExplorePage() {
   const [search, setSearch] = useState(appliedSearch);
   const [author, setAuthor] = useState(appliedAuthor);
   const [tags, setTags] = useState(appliedTags);
+  const [languages, setLanguages] = useState(appliedLanguages);
   const [ordering, setOrdering] = useState<"popular" | "newest">(appliedOrdering);
-  const [result, setResult] = useState<Page<BingoSummary> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<Page<BingoSummary> | null>(initialResult ?? null);
+  const [loading, setLoading] = useState(!initialResult);
   const [error, setError] = useState("");
+  const [authorSuggestions, setAuthorSuggestions] = useState<AuthorSuggestion[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
   const [requestVersion, setRequestVersion] = useState(0);
+  const skipInitialRequest = useRef(Boolean(initialResult));
 
   const load = useCallback(
     async (signal: AbortSignal) => {
@@ -44,6 +51,7 @@ export function ExplorePage() {
                 .split(",")
                 .map((tag) => tag.trim())
                 .filter(Boolean),
+              languages: appliedLanguages,
               ordering: appliedOrdering,
               page,
             },
@@ -56,10 +64,14 @@ export function ExplorePage() {
         if (!signal.aborted) setLoading(false);
       }
     },
-    [appliedAuthor, appliedOrdering, appliedSearch, appliedTags, page],
+    [appliedAuthor, appliedOrdering, appliedSearch, appliedTags, appliedLanguages, page],
   );
 
   useEffect(() => {
+    if (skipInitialRequest.current) {
+      skipInitialRequest.current = false;
+      return;
+    }
     const controller = new AbortController();
     void load(controller.signal);
     return () => controller.abort();
@@ -69,14 +81,58 @@ export function ExplorePage() {
     setSearch(appliedSearch);
     setAuthor(appliedAuthor);
     setTags(appliedTags);
+    setLanguages(appliedLanguages);
     setOrdering(appliedOrdering);
-  }, [appliedAuthor, appliedOrdering, appliedSearch, appliedTags]);
+  }, [appliedAuthor, appliedOrdering, appliedSearch, appliedTags, appliedLanguages]);
 
-  function updateUrl(nextPage: number, filters = { search, author, tags, ordering }) {
+  useEffect(() => {
+    const query = author.trim();
+    if (!query) {
+      setAuthorSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      api.authors
+        .list(query, 1, controller.signal)
+        .then((page) => setAuthorSuggestions(page.results.slice(0, 10)))
+        .catch(() => {
+          if (!controller.signal.aborted) setAuthorSuggestions([]);
+        });
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [author]);
+
+  useEffect(() => {
+    const query = tags.split(",").at(-1)?.trim() ?? "";
+    if (!query) {
+      setTagSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      api.tags
+        .list(query, 1, controller.signal)
+        .then((page) => setTagSuggestions(page.results.slice(0, 10)))
+        .catch(() => {
+          if (!controller.signal.aborted) setTagSuggestions([]);
+        });
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [tags]);
+
+  function updateUrl(nextPage: number, filters = { search, author, tags, languages, ordering }) {
     const next = new URLSearchParams();
     if (filters.search.trim()) next.set("search", filters.search.trim());
     if (filters.author.trim()) next.set("author", filters.author.trim());
     if (filters.tags.trim()) next.set("tags", filters.tags.trim());
+    for (const language of filters.languages) next.append("languages", language);
     if (filters.ordering !== "popular") next.set("ordering", filters.ordering);
     if (nextPage > 1) next.set("page", String(nextPage));
     router.replace(`${pathname}${next.size ? `?${next.toString()}` : ""}`, {
@@ -105,9 +161,40 @@ export function ExplorePage() {
       search: appliedSearch,
       author: appliedAuthor,
       tags: appliedTags,
+      languages: appliedLanguages,
       ordering: appliedOrdering,
     });
   }
+
+  function removeFilter(filter: "search" | "author" | "ordering" | "tag" | "language", tag = "") {
+    const next = {
+      search: filter === "search" ? "" : appliedSearch,
+      author: filter === "author" ? "" : appliedAuthor,
+      tags:
+        filter === "tag"
+          ? appliedTags
+              .split(",")
+              .map((value) => value.trim())
+              .filter((value) => value && value.toLocaleLowerCase() !== tag.toLocaleLowerCase())
+              .join(", ")
+          : appliedTags,
+      languages:
+        filter === "language" ? appliedLanguages.filter((code) => code !== tag) : appliedLanguages,
+      ordering: filter === "ordering" ? ("popular" as const) : appliedOrdering,
+    };
+    setSearch(next.search);
+    setAuthor(next.author);
+    setTags(next.tags);
+    setLanguages(next.languages);
+    setOrdering(next.ordering);
+    updateUrl(1, next);
+  }
+
+  const tagPrefix = tags
+    .split(",")
+    .slice(0, -1)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
 
   return (
     <main id="main-content" className="page-shell" aria-busy={loading}>
@@ -137,7 +224,22 @@ export function ExplorePage() {
             value={author}
             onChange={(event) => setAuthor(event.target.value)}
             placeholder="Username or display name"
+            list="explore-author-suggestions"
+            maxLength={80}
           />
+          <datalist id="explore-author-suggestions">
+            {authorSuggestions.map((suggestion) => (
+              <option
+                key={suggestion.id}
+                value={suggestion.username}
+                label={
+                  suggestion.display_name
+                    ? `${suggestion.display_name} (@${suggestion.username})`
+                    : `@${suggestion.username}`
+                }
+              />
+            ))}
+          </datalist>
         </label>
         <label className="field">
           <span>Tags</span>
@@ -146,8 +248,17 @@ export function ExplorePage() {
             value={tags}
             onChange={(event) => setTags(event.target.value)}
             placeholder="travel, friends"
+            list="explore-tag-suggestions"
           />
+          <datalist id="explore-tag-suggestions">
+            {tagSuggestions.map((tag) => (
+              <option key={tag.id} value={[...tagPrefix, tag.slug].join(", ")}>
+                {tag.name}
+              </option>
+            ))}
+          </datalist>
         </label>
+        <LanguagePicker value={languages} onChange={setLanguages} label="Bingo languages" />
         <fieldset className="sort-options">
           <legend>Sort</legend>
           <label>
@@ -180,7 +291,87 @@ export function ExplorePage() {
         <button className="button button--primary filter-submit" type="submit">
           Search
         </button>
+        {appliedSearch ||
+        appliedAuthor ||
+        appliedTags ||
+        appliedLanguages.length ||
+        appliedOrdering !== "popular" ? (
+          <button
+            className="button button--secondary filter-clear"
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setAuthor("");
+              setTags("");
+              setLanguages([]);
+              setOrdering("popular");
+              router.replace(pathname, { scroll: false });
+            }}
+          >
+            Clear all filters
+          </button>
+        ) : null}
       </form>
+
+      {appliedSearch ||
+      appliedAuthor ||
+      appliedTags ||
+      appliedLanguages.length ||
+      appliedOrdering !== "popular" ? (
+        <div className="active-filters" aria-label="Active filters">
+          {appliedSearch ? (
+            <button
+              type="button"
+              onClick={() => removeFilter("search")}
+              aria-label={`Remove title filter: ${appliedSearch}`}
+            >
+              Title: {appliedSearch} <span aria-hidden="true">×</span>
+            </button>
+          ) : null}
+          {appliedAuthor ? (
+            <button
+              type="button"
+              onClick={() => removeFilter("author")}
+              aria-label={`Remove author filter: ${appliedAuthor}`}
+            >
+              Author: {appliedAuthor} <span aria-hidden="true">×</span>
+            </button>
+          ) : null}
+          {appliedTags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+            .map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => removeFilter("tag", tag)}
+                aria-label={`Remove tag filter: ${tag}`}
+              >
+                #{tag} <span aria-hidden="true">×</span>
+              </button>
+            ))}
+          {appliedLanguages.map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => removeFilter("language", code)}
+              aria-label={`Remove language filter: ${languageLabel(code)}`}
+            >
+              {languageLabel(code)} <span aria-hidden="true">×</span>
+            </button>
+          ))}
+          {appliedOrdering === "newest" ? (
+            <button
+              type="button"
+              onClick={() => removeFilter("ordering")}
+              aria-label="Remove newest-first sorting"
+            >
+              Newest first <span aria-hidden="true">×</span>
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {loading && !result ? <LoadingState label="Searching bingos…" /> : null}
       {error ? (

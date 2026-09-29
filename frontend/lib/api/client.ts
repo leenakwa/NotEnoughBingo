@@ -2,6 +2,7 @@ import type {
   ApiErrorPayload,
   AccountDeletionResult,
   AccountExportResult,
+  AuthorSuggestion,
   AuthResult,
   AuthenticatedUser,
   BingoDetail,
@@ -14,6 +15,7 @@ import type {
   MediaAsset,
   Notification,
   NotificationPreferences,
+  OwnUserProfile,
   Page,
   PlayProgress,
   ProfilePlayHistoryItem,
@@ -33,6 +35,7 @@ import type {
   UserPrivacySettings,
   UserProfile,
 } from "@/lib/api/types";
+import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
 
 type QueryValue = string | number | boolean | null | undefined;
 type Query = Record<string, QueryValue | QueryValue[]>;
@@ -146,7 +149,12 @@ function normalizeError(status: number, data: unknown): ApiErrorPayload {
 
   return {
     code: `http_${status}`,
-    message: status >= 500 ? "The service is temporarily unavailable." : "The request failed.",
+    message:
+      status === 429
+        ? "Too many requests. Wait a moment and try again."
+        : status >= 500
+          ? "The service is temporarily unavailable."
+          : "The request failed.",
   };
 }
 
@@ -187,7 +195,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const data: unknown = contentType.includes("application/json") ? await response.json() : null;
 
   if (!response.ok) {
-    throw new ApiClientError(response.status, normalizeError(response.status, data));
+    const error = new ApiClientError(response.status, normalizeError(response.status, data));
+    if (
+      typeof window !== "undefined" &&
+      path !== "auth/me/" &&
+      isAuthenticationRequiredError(error)
+    ) {
+      window.dispatchEvent(new Event(AUTH_REQUIRED_EVENT));
+    }
+    throw error;
   }
   return data as T;
 }
@@ -263,6 +279,13 @@ export const api = {
         method: "POST",
         body: input,
       }),
+    requestEmailChange: (input: { current_password: string; new_email: string }) =>
+      apiRequest<void>("auth/email-change/", { method: "POST", body: input }),
+    confirmEmailChange: (token: string) =>
+      apiRequest<void>("auth/email-change/confirm/", {
+        method: "POST",
+        body: { token },
+      }),
     sessions: () => apiRequest<Page<SessionMetadata>>("auth/sessions/"),
     revokeSession: (sessionId: PublicId) =>
       apiRequest<void>(`auth/sessions/${sessionId}/`, { method: "DELETE" }),
@@ -278,14 +301,24 @@ export const api = {
     cancelAccountDeletion: () => apiRequest<void>("auth/account-deletion/", { method: "DELETE" }),
   },
   feeds: {
-    discover: (page = 1, signal?: AbortSignal) =>
+    discover: (page = 1, signal?: AbortSignal, languages: string[] | null = null) =>
       apiRequest<Page<BingoSummary>>("feeds/discover/", {
-        query: { page },
+        query: {
+          page,
+          languages: languages === null ? undefined : languages.length ? languages : ["all"],
+        },
         signal,
       }),
     trending: (page = 1, signal?: AbortSignal) =>
       apiRequest<Page<BingoSummary>>("feeds/trending/", {
         query: { page },
+        signal,
+      }),
+  },
+  authors: {
+    list: (search = "", page = 1, signal?: AbortSignal) =>
+      apiRequest<Page<AuthorSuggestion>>("authors/", {
+        query: { search, page },
         signal,
       }),
   },
@@ -302,6 +335,7 @@ export const api = {
         search?: string;
         author?: string;
         tags?: string[];
+        languages?: string[];
         ordering?: "popular" | "newest";
         page?: number;
       },
@@ -320,6 +354,7 @@ export const api = {
     updateDraft: (bingoId: PublicId, input: unknown, version: number) =>
       apiRequest<BingoDraft>(`bingos/${bingoId}/draft/`, {
         method: "PUT",
+        headers: { "If-Match": `"draft-${version}"` },
         body: { ...asRecord(input), version },
       }),
     publishDraft: (bingoId: PublicId, idempotencyKey: string) =>
@@ -391,13 +426,13 @@ export const api = {
       }),
   },
   profiles: {
-    me: () => apiRequest<UserProfile>("profiles/me/"),
+    me: () => apiRequest<OwnUserProfile>("profiles/me/"),
     get: (username: string, signal?: AbortSignal) =>
       apiRequest<UserProfile>(`profiles/${encodeURIComponent(username)}/`, {
         signal,
       }),
     update: (input: ProfileUpdate) =>
-      apiRequest<UserProfile>("profiles/me/", { method: "PATCH", body: input }),
+      apiRequest<OwnUserProfile>("profiles/me/", { method: "PATCH", body: input }),
     updatePrivacy: (input: UserPrivacySettings) =>
       apiRequest<UserPrivacySettings>("profiles/me/privacy/", {
         method: "PUT",
@@ -410,9 +445,9 @@ export const api = {
         method: "PATCH",
         body: input,
       }),
-    bingos: (username: string, page = 1, signal?: AbortSignal) =>
+    bingos: (username: string, page = 1, signal?: AbortSignal, status?: "draft" | "created") =>
       apiRequest<Page<BingoSummary>>(`profiles/${encodeURIComponent(username)}/bingos/`, {
-        query: { page },
+        query: { page, status },
         signal,
       }),
     playHistory: (username: string, page = 1, signal?: AbortSignal) =>

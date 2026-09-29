@@ -59,6 +59,7 @@ class Bingo(PublicIdModel, TimeStampedModel, SoftDeleteModel):
     )
     title = models.CharField(max_length=70, blank=True)
     description = models.CharField(max_length=1000, blank=True)
+    language = models.CharField(max_length=8, default="und", db_index=True)
     size = models.PositiveSmallIntegerField(default=5)
     status = models.CharField(
         max_length=16,
@@ -99,7 +100,11 @@ class Bingo(PublicIdModel, TimeStampedModel, SoftDeleteModel):
         on_delete=models.SET_NULL,
         related_name="current_for_bingos",
     )
+    # ``published_at`` is the immutable first-publication timestamp.  Keeping
+    # the established field name preserves the public API and existing sort
+    # semantics; ``last_published_at`` records later explicit republishes.
     published_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    last_published_at = models.DateTimeField(null=True, blank=True)
     archived_at = models.DateTimeField(null=True, blank=True)
     hidden_at = models.DateTimeField(null=True, blank=True, db_index=True)
     hidden_reason = models.CharField(max_length=500, blank=True)
@@ -197,6 +202,7 @@ class BingoRevision(PublicIdModel, TimeStampedModel):
     revision_number = models.PositiveIntegerField()
     title = models.CharField(max_length=70)
     description = models.CharField(max_length=1000, blank=True)
+    language = models.CharField(max_length=8, default="und")
     size = models.PositiveSmallIntegerField()
     visibility = models.CharField(max_length=16, choices=Bingo.Visibility.choices)
     marking_style = models.CharField(max_length=16, choices=Bingo.MarkingStyle.choices)

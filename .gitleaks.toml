@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Documented non-secret passwords used only by authentication tests"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(^|/)backend/tests/(conftest|test_accounts)\.py$''']
+regexes = ['''^(Correct-Horse-Battery-42|Strong-and-Unique-Pass-42)$''']

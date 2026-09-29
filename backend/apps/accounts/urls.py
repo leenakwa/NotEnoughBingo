@@ -21,6 +21,12 @@ urlpatterns = [
         name="password-reset-confirm",
     ),
     path("password-change/", views.PasswordChangeView.as_view(), name="password-change"),
+    path("email-change/", views.EmailChangeRequestView.as_view(), name="email-change"),
+    path(
+        "email-change/confirm/",
+        views.EmailChangeConfirmView.as_view(),
+        name="email-change-confirm",
+    ),
     path("sessions/", views.SessionListView.as_view(), name="sessions"),
     path("sessions/<uuid:public_id>/", views.SessionRevokeView.as_view(), name="session-revoke"),
     path("account-export/", views.AccountExportView.as_view(), name="account-export"),

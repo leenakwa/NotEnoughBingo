@@ -39,6 +39,12 @@ paths:
       responses:
         '204':
           description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+          description: The deletion request is no longer scheduled and cannot be cancelled.
   /api/v1/auth/account-export/:
     post:
       operationId: auth_account_export_create
@@ -67,6 +73,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/CsrfResponse'
           description: ''
+  /api/v1/auth/email-change/:
+    post:
+      operationId: auth_email_change_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+        required: true
+      security:
+      - sessionCookie: []
+      responses:
+        '202':
+          description: No response body
+  /api/v1/auth/email-change/confirm/:
+    post:
+      operationId: auth_email_change_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailTokenRequest'
+        required: true
+      security:
+      - sessionCookie: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/auth/login/:
     post:
       operationId: auth_login_create
@@ -319,6 +370,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/CurrentUser'
           description: ''
+  /api/v1/authors/:
+    get:
+      operationId: authors_list
+      description: Suggest active authors who currently have at least one bingo in
+        the public catalog.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+          maxLength: 80
+      tags:
+      - authors
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuthorSuggestionList'
+          description: ''
   /api/v1/bingos/:
     get:
       operationId: bingos_list
@@ -328,6 +413,15 @@ paths:
         schema:
           type: string
         description: Case-insensitive author username or display-name filter.
+      - in: query
+        name: languages
+        schema:
+          type: array
+          items:
+            type: string
+        description: Repeat for each bingo language. Use all for no language filter.
+        explode: true
+        style: form
       - in: query
         name: mine
         schema:
@@ -1074,6 +1168,15 @@ paths:
   /api/v1/feeds/discover/:
     get:
       operationId: feeds_discover_retrieve
+      parameters:
+      - in: query
+        name: languages
+        schema:
+          type: array
+          items:
+            type: string
+        explode: true
+        style: form
       tags:
       - feeds
       security:
@@ -1679,7 +1782,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfileRead'
+                $ref: '#/components/schemas/OwnUserProfileRead'
           description: ''
     patch:
       operationId: profiles_me_partial_update
@@ -1703,7 +1806,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfileRead'
+                $ref: '#/components/schemas/OwnUserProfileRead'
           description: ''
   /api/v1/profiles/me/privacy/:
     get:
@@ -1989,6 +2092,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedResult'
           description: ''
+  /api/v1/sitemap/bingos/:
+    get:
+      operationId: sitemap_bingos_retrieve
+      description: Expose an index-only public projection without hydrating card revisions.
+      tags:
+      - sitemap
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSitemap'
+          description: ''
   /api/v1/tags/:
     get:
       operationId: tags_list
@@ -2244,6 +2362,35 @@ components:
         * `unsuspend_user` - Unsuspend user
         * `dismiss` - Dismiss report
         * `resolve_no_action` - Resolve without action
+    ApiErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        details:
+          readOnly: true
+        request_id:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - code
+      - details
+      - message
+      - request_id
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/ApiErrorDetail'
+          readOnly: true
+      required:
+      - error
     AuthResult:
       type: object
       properties:
@@ -2253,6 +2400,23 @@ components:
           readOnly: true
       required:
       - user
+    AuthorSuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          readOnly: true
+      required:
+      - display_name
+      - id
+      - username
     BingoAuthor:
       type: object
       properties:
@@ -2298,6 +2462,9 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          type: string
+          maxLength: 8
         size:
           type: integer
           maximum: 32767
@@ -2511,6 +2678,9 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          type: string
+          maxLength: 8
         size:
           type: integer
           maximum: 32767
@@ -2721,6 +2891,10 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          oneOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         size:
           type: integer
           maximum: 10
@@ -2794,6 +2968,9 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          type: string
+          maxLength: 8
         size:
           type: integer
           maximum: 32767
@@ -3033,8 +3210,14 @@ components:
         email_verified:
           type: boolean
           readOnly: true
+        deletion_scheduled_for:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - avatar
+      - deletion_scheduled_for
       - display_name
       - email
       - email_verified
@@ -3060,6 +3243,9 @@ components:
           type: string
           readOnly: true
         description:
+          type: string
+          readOnly: true
+        language:
           type: string
           readOnly: true
         size:
@@ -3115,6 +3301,7 @@ components:
       - description
       - etag
       - id
+      - language
       - public_id
       - size
       - tags
@@ -3213,6 +3400,10 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          oneOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         size:
           type: integer
           maximum: 10
@@ -3245,6 +3436,20 @@ components:
         version:
           type: integer
           minimum: 1
+    EmailChangeRequestRequest:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          minLength: 1
+        current_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - current_password
+      - new_email
     EmailRequestRequest:
       type: object
       properties:
@@ -3464,6 +3669,40 @@ components:
           oneOf:
           - $ref: '#/components/schemas/OrderingEnum'
           - $ref: '#/components/schemas/BlankEnum'
+    LanguageEnum:
+      enum:
+      - en
+      - ru
+      - uk
+      - es
+      - fr
+      - de
+      - pt
+      - it
+      - pl
+      - tr
+      - ar
+      - hi
+      - ja
+      - ko
+      - zh
+      type: string
+      description: |-
+        * `en` - English
+        * `ru` - Russian
+        * `uk` - Ukrainian
+        * `es` - Spanish
+        * `fr` - French
+        * `de` - German
+        * `pt` - Portuguese
+        * `it` - Italian
+        * `pl` - Polish
+        * `tr` - Turkish
+        * `ar` - Arabic
+        * `hi` - Hindi
+        * `ja` - Japanese
+        * `ko` - Korean
+        * `zh` - Chinese
     LoginRequest:
       type: object
       properties:
@@ -3761,6 +4000,81 @@ components:
       description: |-
         * `newest` - newest
         * `popular` - popular
+    OwnUserProfileRead:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          maxLength: 80
+        avatar:
+          allOf:
+          - $ref: '#/components/schemas/MediaAsset'
+          readOnly: true
+          nullable: true
+        bio:
+          type: string
+          maxLength: 500
+        follower_count:
+          type: integer
+          readOnly: true
+        following_count:
+          type: integer
+          readOnly: true
+        is_following:
+          type: boolean
+          readOnly: true
+        privacy:
+          allOf:
+          - $ref: '#/components/schemas/Privacy'
+          readOnly: true
+        preferred_languages:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        language_preferences_confirmed:
+          type: boolean
+          readOnly: true
+      required:
+      - avatar
+      - follower_count
+      - following_count
+      - id
+      - is_following
+      - language_preferences_confirmed
+      - preferred_languages
+      - privacy
+      - username
+    PaginatedAuthorSuggestionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorSuggestion'
     PaginatedBingoCardList:
       type: object
       required:
@@ -4103,6 +4417,13 @@ components:
           format: uuid
           writeOnly: true
           nullable: true
+        preferred_languages:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 8
+          maxItems: 15
     PlayProgress:
       type: object
       properties:
@@ -4188,33 +4509,6 @@ components:
           type: boolean
         show_following:
           type: boolean
-    ProfileBingoCollection:
-      type: object
-      properties:
-        count:
-          type: integer
-          minimum: 0
-          readOnly: true
-        next:
-          type: string
-          format: uri
-          readOnly: true
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          readOnly: true
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/BingoCard'
-          readOnly: true
-      required:
-      - count
-      - next
-      - previous
-      - results
     ProfilePlayProgress:
       type: object
       properties:
@@ -4299,6 +4593,38 @@ components:
           nullable: true
       required:
       - selected_cells
+    PublicSitemap:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSitemapEntry'
+          readOnly: true
+        truncated:
+          type: boolean
+          readOnly: true
+      required:
+      - results
+      - truncated
+    PublicSitemapEntry:
+      type: object
+      properties:
+        bingo_id:
+          type: string
+          format: uuid
+          readOnly: true
+        author_username:
+          type: string
+          readOnly: true
+        last_modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author_username
+      - bingo_id
+      - last_modified
     PublicUser:
       type: object
       properties:
@@ -4851,14 +5177,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/Privacy'
           readOnly: true
-        created_bingos:
-          allOf:
-          - $ref: '#/components/schemas/ProfileBingoCollection'
-          nullable: true
-          readOnly: true
       required:
       - avatar
-      - created_bingos
       - follower_count
       - following_count
       - id

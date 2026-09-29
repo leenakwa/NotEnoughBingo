@@ -52,6 +52,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/email-change/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_email_change_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/email-change/confirm/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_email_change_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login/": {
         parameters: {
             query?: never;
@@ -222,6 +254,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["auth_verify_email_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/authors/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Suggest active authors who currently have at least one bingo in the public catalog. */
+        get: operations["authors_list"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -916,6 +965,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sitemap/bingos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Expose an index-only public projection without hydrating card revisions. */
+        get: operations["sitemap_bingos_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tags/": {
         parameters: {
             query?: never;
@@ -1048,8 +1114,23 @@ export interface components {
          * @enum {string}
          */
         ActionEnum: "hide" | "restore" | "soft_delete" | "suspend_user" | "unsuspend_user" | "dismiss" | "resolve_no_action";
+        ApiErrorDetail: {
+            readonly code: string;
+            readonly message: string;
+            readonly details: unknown;
+            readonly request_id: string | null;
+        };
+        ApiErrorEnvelope: {
+            readonly error: components["schemas"]["ApiErrorDetail"];
+        };
         AuthResult: {
             readonly user: components["schemas"]["CurrentUser"];
+        };
+        AuthorSuggestion: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly username: string;
+            readonly display_name: string;
         };
         BingoAuthor: {
             /** Format: uuid */
@@ -1067,6 +1148,7 @@ export interface components {
             readonly public_id: string;
             title?: string;
             description?: string;
+            language?: string;
             size?: number;
             status?: components["schemas"]["BingoStatus"];
             visibility?: components["schemas"]["VisibilityEnum"];
@@ -1135,6 +1217,7 @@ export interface components {
             readonly public_id: string;
             title?: string;
             description?: string;
+            language?: string;
             size?: number;
             status?: components["schemas"]["BingoStatus"];
             visibility?: components["schemas"]["VisibilityEnum"];
@@ -1203,6 +1286,7 @@ export interface components {
             schema_version?: number;
             title?: string;
             description?: string;
+            language?: components["schemas"]["LanguageEnum"] | components["schemas"]["BlankEnum"];
             size?: number;
             visibility?: components["schemas"]["VisibilityEnum"];
             completion_style?: components["schemas"]["MarkingStyleEnum"];
@@ -1229,6 +1313,7 @@ export interface components {
             revision_number: number;
             title: string;
             description?: string;
+            language?: string;
             size: number;
             visibility: components["schemas"]["VisibilityEnum"];
             marking_style: components["schemas"]["MarkingStyleEnum"];
@@ -1310,6 +1395,8 @@ export interface components {
             /** Format: email */
             email: string;
             readonly email_verified: boolean;
+            /** Format: date-time */
+            readonly deletion_scheduled_for: string | null;
         };
         Draft: {
             /** Format: uuid */
@@ -1320,6 +1407,7 @@ export interface components {
             readonly bingo_id: string | null;
             readonly title: string;
             readonly description: string;
+            readonly language: string;
             readonly size: number;
             readonly visibility: components["schemas"]["VisibilityEnum"];
             readonly completion_style: components["schemas"]["MarkingStyleEnum"];
@@ -1357,6 +1445,7 @@ export interface components {
             schema_version?: number;
             title?: string;
             description?: string;
+            language?: components["schemas"]["LanguageEnum"] | components["schemas"]["BlankEnum"];
             size?: number;
             visibility?: components["schemas"]["VisibilityEnum"];
             completion_style?: components["schemas"]["MarkingStyleEnum"];
@@ -1368,6 +1457,11 @@ export interface components {
             tags?: string[];
             cells?: components["schemas"]["BingoDocumentCellInputRequest"][];
             version?: number;
+        };
+        EmailChangeRequestRequest: {
+            /** Format: email */
+            new_email: string;
+            current_password: string;
         };
         EmailRequestRequest: {
             /** Format: email */
@@ -1471,6 +1565,25 @@ export interface components {
             tags?: string;
             ordering?: components["schemas"]["OrderingEnum"] | components["schemas"]["BlankEnum"];
         };
+        /**
+         * @description * `en` - English
+         *     * `ru` - Russian
+         *     * `uk` - Ukrainian
+         *     * `es` - Spanish
+         *     * `fr` - French
+         *     * `de` - German
+         *     * `pt` - Portuguese
+         *     * `it` - Italian
+         *     * `pl` - Polish
+         *     * `tr` - Turkish
+         *     * `ar` - Arabic
+         *     * `hi` - Hindi
+         *     * `ja` - Japanese
+         *     * `ko` - Korean
+         *     * `zh` - Chinese
+         * @enum {string}
+         */
+        LanguageEnum: "en" | "ru" | "uk" | "es" | "fr" | "de" | "pt" | "it" | "pl" | "tr" | "ar" | "hi" | "ja" | "ko" | "zh";
         LoginRequest: {
             /** Format: email */
             email: string;
@@ -1588,6 +1701,35 @@ export interface components {
          * @enum {string}
          */
         OrderingEnum: "newest" | "popular";
+        OwnUserProfileRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly username: string;
+            display_name?: string;
+            readonly avatar: components["schemas"]["MediaAsset"] | null;
+            bio?: string;
+            readonly follower_count: number;
+            readonly following_count: number;
+            readonly is_following: boolean;
+            readonly privacy: components["schemas"]["Privacy"];
+            readonly preferred_languages: string[];
+            readonly language_preferences_confirmed: boolean;
+        };
+        PaginatedAuthorSuggestionList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AuthorSuggestion"][];
+        };
         PaginatedBingoCardList: {
             /** @example 123 */
             count: number;
@@ -1773,6 +1915,7 @@ export interface components {
             bio?: string;
             /** Format: uuid */
             avatar_id?: string | null;
+            preferred_languages?: string[];
         };
         PlayProgress: {
             /** Format: uuid */
@@ -1808,14 +1951,6 @@ export interface components {
             show_followers?: boolean;
             show_following?: boolean;
         };
-        ProfileBingoCollection: {
-            readonly count: number;
-            /** Format: uri */
-            readonly next: string | null;
-            /** Format: uri */
-            readonly previous: string | null;
-            readonly results: components["schemas"]["BingoCard"][];
-        };
         ProfilePlayProgress: {
             /** Format: uuid */
             readonly public_id: string;
@@ -1843,6 +1978,17 @@ export interface components {
             version?: number;
             /** Format: uuid */
             revision_id?: string | null;
+        };
+        PublicSitemap: {
+            readonly results: components["schemas"]["PublicSitemapEntry"][];
+            readonly truncated: boolean;
+        };
+        PublicSitemapEntry: {
+            /** Format: uuid */
+            readonly bingo_id: string;
+            readonly author_username: string;
+            /** Format: date-time */
+            readonly last_modified: string;
         };
         PublicUser: {
             /** Format: uuid */
@@ -2052,7 +2198,6 @@ export interface components {
             readonly following_count: number;
             readonly is_following: boolean;
             readonly privacy: components["schemas"]["Privacy"];
-            readonly created_bingos: components["schemas"]["ProfileBingoCollection"] | null;
         };
         /**
          * @description * `original` - Original
@@ -2118,6 +2263,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description The deletion request is no longer scheduled and cannot be cancelled. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorEnvelope"];
+                };
+            };
         };
     };
     auth_account_export_create: {
@@ -2155,6 +2309,54 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CsrfResponse"];
                 };
+            };
+        };
+    };
+    auth_email_change_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailChangeRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmailChangeRequestRequest"];
+                "multipart/form-data": components["schemas"]["EmailChangeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    auth_email_change_confirm_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailTokenRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmailTokenRequest"];
+                "multipart/form-data": components["schemas"]["EmailTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2414,11 +2616,38 @@ export interface operations {
             };
         };
     };
+    authors_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAuthorSuggestionList"];
+                };
+            };
+        };
+    };
     bingos_list: {
         parameters: {
             query?: {
                 /** @description Case-insensitive author username or display-name filter. */
                 author?: string;
+                /** @description Repeat for each bingo language. Use all for no language filter. */
+                languages?: string[];
                 /** @description For an authenticated viewer, return their own live bingos. */
                 mine?: boolean;
                 ordering?: "newest" | "popular";
@@ -3107,7 +3336,9 @@ export interface operations {
     };
     feeds_discover_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                languages?: string[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3604,7 +3835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserProfileRead"];
+                    "application/json": components["schemas"]["OwnUserProfileRead"];
                 };
             };
         };
@@ -3629,7 +3860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserProfileRead"];
+                    "application/json": components["schemas"]["OwnUserProfileRead"];
                 };
             };
         };
@@ -3927,6 +4158,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SharedResult"];
+                };
+            };
+        };
+    };
+    sitemap_bingos_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSitemap"];
                 };
             };
         };

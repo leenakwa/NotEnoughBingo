@@ -22,6 +22,16 @@ export function safeNext(value: string | null): string {
   }
 }
 
+export function loginNotice(reason: string | null): string {
+  if (reason === "session-expired") {
+    return "Your session ended. Log in again to continue where you left off.";
+  }
+  if (reason === "deletion-scheduled") {
+    return "Account deletion is scheduled and all sessions were signed out. Log back in to review or cancel it during the grace period.";
+  }
+  return "";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,6 +39,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const notice = loginNotice(searchParams.get("reason"));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,6 +64,11 @@ export function LoginForm() {
       footer={{ text: "New here?", href: "/register", label: "Create an account" }}
     >
       <form className="stack-form" onSubmit={submit}>
+        {notice ? (
+          <p className="form-message" role="status">
+            {notice}
+          </p>
+        ) : null}
         <label className="field">
           <span>Email</span>
           <input

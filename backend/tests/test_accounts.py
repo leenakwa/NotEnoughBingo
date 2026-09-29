@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sessions.backends.cached_db import SessionStore as CachedDbSessionStore
@@ -32,13 +33,17 @@ from apps.accounts.models import (
 )
 from apps.accounts.serializers import PrivacySerializer, UserProfileReadSerializer
 from apps.accounts.services import (
+    confirm_email_change,
     create_authenticated_session,
     issue_email_verification,
+    request_email_change,
     revoke_session,
     token_digest,
     verify_email,
 )
 from apps.accounts.views import (
+    EmailChangeConfirmView,
+    EmailChangeRequestView,
     LoginView,
     PasswordChangeView,
     PasswordResetConfirmView,
@@ -60,6 +65,134 @@ def test_user_creation_normalizes_identity_and_creates_account_relations(user_fa
     assert UserProfile.objects.filter(user=user).exists()
     assert UserPrivacySettings.objects.filter(user=user).exists()
     assert NotificationPreference.objects.filter(user=user).exists()
+
+
+def test_email_change_requires_password_and_new_address_confirmation(
+    csrf_request, verified_user_factory, monkeypatch
+) -> None:
+    user = verified_user_factory(email="before@example.test")
+    monkeypatch.setattr(
+        "apps.accounts.services.secrets.token_urlsafe",
+        lambda _: "new-email-token-long-enough-for-api-confirm",
+    )
+    path = "/api/v1/auth/email-change/"
+    confirm_path = "/api/v1/auth/email-change/confirm/"
+
+    wrong_password = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            path,
+            {"new_email": "after@example.test", "current_password": "wrong-password"},
+            user=user,
+        )
+    )
+    assert wrong_password.status_code == 400
+    assert not EmailVerification.objects.filter(
+        purpose=EmailVerification.Purpose.CHANGE_EMAIL
+    ).exists()
+
+    verified_user_factory(email="taken@example.test")
+    hidden_address = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            path,
+            {"new_email": "taken@example.test", "current_password": "wrong-password"},
+            user=user,
+        )
+    )
+    assert hidden_address.status_code == 400
+    assert "new_email" not in hidden_address.data
+
+    requested = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            path,
+            {"new_email": "After@EXAMPLE.TEST", "current_password": "Correct-Horse-Battery-42"},
+            user=user,
+        )
+    )
+    assert requested.status_code == 202
+    user.refresh_from_db()
+    assert user.email == "before@example.test"
+    verification = EmailVerification.objects.get(purpose=EmailVerification.Purpose.CHANGE_EMAIL)
+    assert verification.email == "after@example.test"
+
+    invalid = EmailChangeConfirmView.as_view()(
+        csrf_request("post", confirm_path, {"token": "incorrect-token-long-enough-for-api-confirm"})
+    )
+    assert invalid.status_code == 400
+    confirmed = EmailChangeConfirmView.as_view()(
+        csrf_request("post", confirm_path, {"token": "new-email-token-long-enough-for-api-confirm"})
+    )
+    assert confirmed.status_code == 204
+    user.refresh_from_db()
+    verification.refresh_from_db()
+    assert user.email == "after@example.test"
+    assert authenticate(email="before@example.test", password="Correct-Horse-Battery-42") is None
+    assert authenticate(email="after@example.test", password="Correct-Horse-Battery-42") == user
+    assert verification.used_at is not None
+    assert SecurityEvent.objects.filter(
+        user=user, event_type=SecurityEvent.EventType.EMAIL_CHANGED
+    ).exists()
+    replay = EmailChangeConfirmView.as_view()(
+        csrf_request("post", confirm_path, {"token": "new-email-token-long-enough-for-api-confirm"})
+    )
+    assert replay.status_code == 400
+
+
+def test_email_change_rejects_an_address_taken_during_verification(
+    csrf_request, verified_user_factory, monkeypatch
+) -> None:
+    user = verified_user_factory(email="original@example.test")
+    monkeypatch.setattr(
+        "apps.accounts.services.secrets.token_urlsafe",
+        lambda _: "pending-email-token-long-enough-for-confirm",
+    )
+    request = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            "/api/v1/auth/email-change/",
+            {"new_email": "pending@example.test", "current_password": "Correct-Horse-Battery-42"},
+            user=user,
+        )
+    )
+    assert request.status_code == 202
+    verified_user_factory(email="PENDING@example.test")
+    confirm = EmailChangeConfirmView.as_view()(
+        csrf_request(
+            "post",
+            "/api/v1/auth/email-change/confirm/",
+            {"token": "pending-email-token-long-enough-for-confirm"},
+        )
+    )
+    assert confirm.status_code == 400
+    user.refresh_from_db()
+    assert user.email == "original@example.test"
+
+
+def test_new_email_change_request_invalidates_earlier_link_and_expired_link(
+    verified_user_factory, monkeypatch
+) -> None:
+    user = verified_user_factory(email="first@example.test")
+    tokens = iter(
+        ("first-email-change-token-value-123456", "second-email-change-token-value-12345")
+    )
+    monkeypatch.setattr("apps.accounts.services.secrets.token_urlsafe", lambda _: next(tokens))
+    request_email_change(user=user, new_email="second@example.test")
+    request_email_change(user=user, new_email="third@example.test")
+
+    with pytest.raises(DjangoValidationError, match="already been used"):
+        confirm_email_change("first-email-change-token-value-123456")
+
+    latest = EmailVerification.objects.get(
+        token_hash=token_digest("second-email-change-token-value-12345")
+    )
+    latest.expires_at = timezone.now() - timedelta(seconds=1)
+    latest.save(update_fields=("expires_at",))
+    with pytest.raises(DjangoValidationError, match="expired"):
+        confirm_email_change("second-email-change-token-value-12345")
+    user.refresh_from_db()
+    assert user.email == "first@example.test"
 
 
 def test_case_insensitive_identity_constraints_are_database_enforced(user_factory) -> None:
@@ -522,7 +655,7 @@ def test_public_profile_obeys_bio_and_relationship_privacy(user_factory) -> None
     assert public_data["bio"] == ""
     assert public_data["follower_count"] == 0
     assert public_data["following_count"] == 0
-    assert public_data["created_bingos"] is None
+    assert "created_bingos" not in public_data
 
     owner_request = APIRequestFactory().get("/profiles/me/")
     owner_request.user = owner

@@ -12,6 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from apps.accounts.exceptions import AccountDeletionConflict
 from apps.accounts.models import (
     AccountDeletionRequest,
     EmailVerification,
@@ -21,7 +22,11 @@ from apps.accounts.models import (
 )
 from apps.accounts.security import hash_sensitive, request_ip
 from apps.accounts.session_management import invalidate_session_keys
-from apps.accounts.tasks import send_critical_security_email, send_verification_email
+from apps.accounts.tasks import (
+    send_critical_security_email,
+    send_email_change_notice,
+    send_verification_email,
+)
 
 
 def token_digest(token: str) -> str:
@@ -221,6 +226,82 @@ def verify_email(token: str) -> User:
     return user
 
 
+@transaction.atomic
+def request_email_change(*, user: User, new_email: str) -> None:
+    now = timezone.now()
+    user = User.objects.select_for_update().get(pk=user.pk)
+    if not user.can_create_content:
+        raise ValidationError("This account cannot change its email address right now.")
+    if new_email == user.email.lower():
+        raise ValidationError("Enter a different email address.")
+    if User.objects.filter(email__iexact=new_email).exclude(pk=user.pk).exists():
+        raise ValidationError("This email address is unavailable.")
+    EmailVerification.objects.filter(
+        user=user,
+        purpose=EmailVerification.Purpose.CHANGE_EMAIL,
+        used_at__isnull=True,
+    ).update(used_at=now)
+    token = secrets.token_urlsafe(32)
+    verification = EmailVerification.objects.create(
+        user=user,
+        email=new_email,
+        purpose=EmailVerification.Purpose.CHANGE_EMAIL,
+        token_hash=token_digest(token),
+        expires_at=now + timedelta(seconds=settings.EMAIL_VERIFICATION_TTL_SECONDS),
+    )
+    transaction.on_commit(lambda: send_verification_email.delay(verification.pk, token))
+
+
+def confirm_email_change(token: str) -> User:
+    now = timezone.now()
+    with transaction.atomic():
+        verification = (
+            EmailVerification.objects.select_related("user")
+            .filter(
+                token_hash=token_digest(token),
+                purpose=EmailVerification.Purpose.CHANGE_EMAIL,
+                used_at__isnull=True,
+            )
+            .first()
+        )
+        if verification is None:
+            raise ValidationError("The email change link is invalid or has already been used.")
+        user = User.objects.select_for_update().get(pk=verification.user_id)
+        verification = EmailVerification.objects.select_for_update().get(pk=verification.pk)
+        if verification.used_at is not None or verification.expires_at <= now:
+            raise ValidationError("The email change link is invalid or expired.")
+        if not user.can_create_content:
+            raise ValidationError("This account cannot change its email address right now.")
+        if User.objects.filter(email__iexact=verification.email).exclude(pk=user.pk).exists():
+            raise ValidationError("This email address is unavailable. Request a new link.")
+        old_email = user.email
+        user.email = verification.email
+        user.email_verified_at = now
+        try:
+            with transaction.atomic():
+                user.save(update_fields=("email", "email_verified_at"))
+        except IntegrityError as exc:
+            raise ValidationError("This email address is unavailable. Request a new link.") from exc
+        EmailVerification.objects.filter(
+            user=user,
+            purpose=EmailVerification.Purpose.CHANGE_EMAIL,
+            used_at__isnull=True,
+        ).update(used_at=now)
+        SecurityEvent.objects.create(user=user, event_type=SecurityEvent.EventType.EMAIL_CHANGED)
+        transaction.on_commit(
+            lambda: send_critical_security_email.delay(
+                user.pk,
+                "Your email address changed",
+                (
+                    "Your Not Enough Bingo email address changed. "
+                    "Contact support immediately if this was not you."
+                ),
+            )
+        )
+        transaction.on_commit(lambda: send_email_change_notice.delay(old_email))
+    return user
+
+
 def _device_name(user_agent: str) -> str:
     normalized = user_agent.lower()
     browser = "Browser"
@@ -341,12 +422,32 @@ def schedule_account_deletion(user: User) -> AccountDeletionRequest:
 
 @transaction.atomic
 def cancel_account_deletion(user: User) -> None:
-    AccountDeletionRequest.objects.filter(
-        user=user, status=AccountDeletionRequest.Status.SCHEDULED
-    ).update(status=AccountDeletionRequest.Status.CANCELLED)
-    user.deletion_requested_at = None
-    user.deletion_scheduled_for = None
-    user.save(update_fields=("deletion_requested_at", "deletion_scheduled_for"))
+    deletion = (
+        AccountDeletionRequest.objects.select_for_update()
+        .select_related("user")
+        .filter(user_id=user.pk)
+        .order_by("-created_at", "-pk")
+        .first()
+    )
+    if deletion is None:
+        raise AccountDeletionConflict("No scheduled account deletion is available to cancel.")
+    if deletion.status == AccountDeletionRequest.Status.PROCESSING:
+        raise AccountDeletionConflict(
+            "Account deletion is already being processed and can no longer be cancelled."
+        )
+    if deletion.status == AccountDeletionRequest.Status.COMPLETE:
+        raise AccountDeletionConflict(
+            "Account deletion is complete and can no longer be cancelled."
+        )
+    if deletion.status != AccountDeletionRequest.Status.SCHEDULED:
+        raise AccountDeletionConflict()
+
+    deletion.status = AccountDeletionRequest.Status.CANCELLED
+    deletion.save(update_fields=("status", "updated_at"))
+    locked_user = deletion.user
+    locked_user.deletion_requested_at = None
+    locked_user.deletion_scheduled_for = None
+    locked_user.save(update_fields=("deletion_requested_at", "deletion_scheduled_for"))
 
 
 def validate_account_can_authenticate(user: User) -> None:

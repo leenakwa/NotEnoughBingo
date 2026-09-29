@@ -51,6 +51,12 @@ RUN apt-get update \
     && useradd --create-home --uid 10001 app
 
 COPY --from=builder /opt/venv /opt/venv
+
+# Packaging tools are build-time only. Removing them from both Python installations
+# keeps pip's vendored dependencies out of the runtime vulnerability surface.
+RUN /opt/venv/bin/python -m pip uninstall --yes pip setuptools wheel \
+    && PIP_ROOT_USER_ACTION=ignore /usr/local/bin/python -m pip uninstall --yes pip setuptools wheel
+
 COPY --chown=app:app apps ./apps
 COPY --chown=app:app config ./config
 COPY --chown=app:app manage.py ./

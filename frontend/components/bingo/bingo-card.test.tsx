@@ -55,6 +55,7 @@ const bingo: BingoSummary = {
   id: "11111111-1111-4111-8111-111111111111",
   title: "Production readiness",
   description: "",
+  language: "en",
   author: {
     id: "22222222-2222-4222-8222-222222222222",
     username: "author",
@@ -113,6 +114,16 @@ describe("BingoCard", () => {
     expect(preview.style.getPropertyValue("--preview-font-size")).toBe("3.1579cqw");
     expect(card.lastElementChild).toHaveClass("bingo-card__actions");
     expect(card.lastElementChild?.previousElementSibling).toHaveClass("bingo-card__tags");
+  });
+
+  it("opens an unpublished creator card directly in the editor", () => {
+    render(<BingoCard bingo={{ ...bingo, status: "draft", title: "" }} />);
+
+    expect(screen.getByRole("heading", { name: "Untitled bingo" })).toBeVisible();
+    expect(screen.getByRole("link", { name: /Untitled bingo/ })).toHaveAttribute(
+      "href",
+      `/create?bingo=${bingo.id}`,
+    );
   });
 
   it("redirects guests to login without rendering an API error", async () => {

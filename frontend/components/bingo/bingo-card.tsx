@@ -9,6 +9,7 @@ import { CommentIcon, HeartIcon } from "@/components/ui/icons";
 import { trackInteraction } from "@/lib/analytics";
 import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import type { BingoSummary } from "@/lib/api/types";
+import { languageLabel } from "@/lib/languages";
 
 function formatCount(value: number): string {
   return new Intl.NumberFormat("en", { notation: "compact" }).format(value);
@@ -21,6 +22,8 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
   const [likeCount, setLikeCount] = useState(bingo.stats.likes);
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState("");
+  const title = bingo.title.trim() || "Untitled bingo";
+  const cardHref = bingo.status === "draft" ? `/create?bingo=${bingo.id}` : `/bingo/${bingo.id}`;
 
   useEffect(() => {
     const element = articleRef.current;
@@ -75,14 +78,19 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
     <article ref={articleRef} className="bingo-card">
       <Link
         className="bingo-card__main"
-        href={`/bingo/${bingo.id}`}
-        onClick={() => trackInteraction("open", { bingoId: bingo.id })}
+        href={cardHref}
+        onClick={() => {
+          if (bingo.status === "published") trackInteraction("open", { bingoId: bingo.id });
+        }}
       >
         <div className="bingo-card__heading">
-          <h2>{bingo.title}</h2>
-          <span>by {bingo.author.display_name || `@${bingo.author.username}`}</span>
+          <h2>{title}</h2>
+          <span>
+            by {bingo.author.display_name || `@${bingo.author.username}`} ·{" "}
+            {languageLabel(bingo.language)}
+          </span>
         </div>
-        <BingoCardPreview preview={bingo.preview} fallbackSize={bingo.size} title={bingo.title} />
+        <BingoCardPreview preview={bingo.preview} fallbackSize={bingo.size} title={title} />
       </Link>
       {actionError ? (
         <p className="card-action-error" role="alert">
@@ -90,7 +98,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
         </p>
       ) : null}
       {bingo.tags.length ? (
-        <nav className="bingo-card__tags" aria-label={`Tags for ${bingo.title}`}>
+        <nav className="bingo-card__tags" aria-label={`Tags for ${title}`}>
           {bingo.tags.slice(0, 3).map((tag) => (
             <Link
               key={tag.id}
@@ -115,7 +123,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
             <button
               type="button"
               className="card-action"
-              aria-label={liked ? `Unlike ${bingo.title}` : `Like ${bingo.title}`}
+              aria-label={liked ? `Unlike ${title}` : `Like ${title}`}
               aria-pressed={liked}
               disabled={pending}
               onClick={toggleLike}
@@ -126,7 +134,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
             <Link
               className="card-action"
               href={`/bingo/${bingo.id}#comments`}
-              aria-label={`View comments for ${bingo.title}`}
+              aria-label={`View comments for ${title}`}
             >
               <CommentIcon />
               <span>{formatCount(bingo.stats.comments)}</span>

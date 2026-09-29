@@ -47,7 +47,7 @@ def _document(
     cells: tuple[str, ...],
     marking_style: str = Bingo.MarkingStyle.CHECKMARK,
 ) -> dict[str, Any]:
-    document = empty_draft_document(title=title, size=3)
+    document = empty_draft_document(title=title, size=3, language="en")
     document.update(
         {
             "description": f"{title} is deterministic browser-test content.",
@@ -152,7 +152,18 @@ def _upsert_user(
     user.profile.display_name = display_name
     user.profile.bio = f"{display_name} browser-test account."
     user.profile.avatar = None
-    user.profile.save(update_fields=("display_name", "bio", "avatar", "updated_at"))
+    user.profile.preferred_languages = []
+    user.profile.language_preferences_confirmed = False
+    user.profile.save(
+        update_fields=(
+            "display_name",
+            "bio",
+            "avatar",
+            "preferred_languages",
+            "language_preferences_confirmed",
+            "updated_at",
+        )
+    )
     privacy = user.privacy
     for field in (
         "show_bio",
@@ -164,6 +175,17 @@ def _upsert_user(
     ):
         setattr(privacy, field, True)
     privacy.save()
+    notification_preferences = user.notification_preferences
+    for field in (
+        "new_comment",
+        "comment_reply",
+        "bingo_like",
+        "comment_like",
+        "new_follower",
+    ):
+        setattr(notification_preferences, field, True)
+    notification_preferences.marketing_email = False
+    notification_preferences.save()
     return user
 
 

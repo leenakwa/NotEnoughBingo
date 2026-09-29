@@ -11,17 +11,20 @@ export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     setPending(true);
+    setMessage("");
+    setError("");
     try {
-      await api.auth.requestPasswordReset(email);
-    } catch {
-      // Deliberately keep the same response for unknown accounts and transient
-      // delivery failures to avoid turning recovery into an enumeration oracle.
-    } finally {
+      await api.auth.requestPasswordReset(email.trim());
       setMessage("If an account exists for that address, a reset email is on its way.");
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
       setPending(false);
     }
   }
@@ -47,9 +50,16 @@ export function ForgotPasswordForm() {
         <button className="button button--primary" type="submit" disabled={pending}>
           {pending ? "Sending…" : "Send reset link"}
         </button>
-        <p className="form-message" role="status">
-          {message}
-        </p>
+        {message ? (
+          <p className="form-message" role="status">
+            {message}
+          </p>
+        ) : null}
+        {error ? (
+          <p className="form-message form-message--error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </form>
     </AuthShell>
   );

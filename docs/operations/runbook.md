@@ -20,10 +20,11 @@ normally uses managed PostgreSQL, Redis, object storage, mail, and ingress.
 - Public frontend variables contain no secret.
 - Configuration changes are reviewed and auditable.
 - Image references use immutable digests in production.
-- `TRUSTED_PROXY_HOPS` equals the exact number of controlled proxies that
-  append `X-Forwarded-For`. Local Compose uses one Nginx hop; production must
-  account for its load balancer/ingress chain and must not trust arbitrary
-  client-supplied entries.
+- The supported production ingress normalizes the chain at Nginx. Configure
+  the load-balancer source CIDR and asserted public scheme there; Django then
+  receives exactly one canonical `X-Forwarded-For` value and keeps
+  `TRUSTED_PROXY_HOPS=1`. See the
+  [production deployment baseline](production-deployment.md).
 
 ## Process types
 
@@ -44,6 +45,8 @@ normally uses managed PostgreSQL, Redis, object storage, mail, and ingress.
 - `/api/v1/health/live/` checks Django process liveness.
 - `/api/v1/health/ready/` checks database connectivity, required migration
   compatibility, Redis when required for serving, and critical configuration.
+- `/api/v1/health/beat/` returns `200` only when the scheduled Celery Beat
+  heartbeat has been observed within three minutes.
 - Readiness must be fast, bounded, and must not mutate data.
 - Storage/email degradation appears in telemetry but should not necessarily
   remove read-only web capacity.
@@ -71,11 +74,40 @@ Create local-only sample data:
 docker compose exec backend python manage.py seed_dev
 ```
 
+`seed_dev` is deliberately blocked outside debug mode. Never copy its users,
+password, or synthetic engagement into staging or production.
+
+## Launch-content workflow
+
+Prepare the first public catalog through the real product workflow instead of
+running a production seed:
+
+1. Register a named editorial account with a role mailbox, verify its email,
+   enable the staff access controls used by the deployment, and store its
+   credential in the production secret manager.
+2. Create and review a small, varied set of genuine boards in the editor. Check
+   every cell, image licence, tag, description, mobile layout, and visibility
+   while each board is still a private draft.
+3. Publish the approved boards normally. Do not manufacture likes, follows,
+   plays, shares, or ranking events; Discover can surface newly published
+   catalog content without fake engagement.
+4. In a logged-out browser, verify Discover, Trending's honest empty/low-data
+   state, Explore search/tag filters, each public board, its social preview,
+   and one immutable shared result. Private review drafts must remain absent
+   from all public endpoints and the sitemap.
+5. Record the editorial owner and board URLs in the release evidence. Revoke
+   temporary setup sessions and rotate any credential that was exposed during
+   launch preparation.
+
+Repeat this reviewed workflow when curating seasonal content. Production boot
+must never create users or content automatically; an empty catalog remains a
+supported UI state if all curated boards are later archived.
+
 ## Release procedure
 
-1. CI passes lint, formatting, typecheck, unit/integration tests, permission
-   tests, frontend tests, image build, dependency scan, OpenAPI validation, and
-   migration checks.
+1. CI passes lint, formatting, typecheck, unit/integration and browser tests,
+   dependency/secret/image scans, OpenAPI/migration/config validation,
+   non-root image assertions, and SBOM generation.
 2. Build frontend/backend once and publish by immutable digest.
 3. Deploy compatible additive migrations before application rollout.
 4. Start one release/migration job; never run migrations concurrently in every
@@ -88,6 +120,9 @@ docker compose exec backend python manage.py seed_dev
 
 Destructive schema contraction occurs in a later release after old code no
 longer reads the field/table.
+
+The backend entrypoint rejects `RUN_MIGRATIONS=1`. Invoke `python manage.py
+migrate --noinput` as the explicit one-shot release command instead.
 
 ## Rollback
 
@@ -167,13 +202,22 @@ supports it; neither receives bucket-administration permission.
 ## Staff administration
 
 - Rate-limit `/admin/login/` at ingress and return `429` for exhausted limits.
-- Restrict Admin to approved staff networks/devices where practical.
+- Set `NGINX_ADMIN_ALLOW_CIDR` to the staff VPN/IAP egress network; the local
+  `all` value must never reach a public deployment.
 - Prefer organization SSO with phishing-resistant MFA at the ingress/identity
   layer; the first product release does not expose social OAuth to users.
 - Review staff accounts and permissions quarterly and audit every moderation
   action.
 
 ## Observability and alerts
+
+Django emits one structured completion record per request with request ID,
+method, path (without query string), resolved route, status, duration, service,
+environment, and release. Celery emits explicit retry/failure records with task
+name, ID, attempt/outcome, and exception type. Set `APP_RELEASE` to the exact
+image/git release and use a distinct `SERVICE_NAME` for web, worker, and Beat.
+Sentry receives the same environment/release metadata when configured and does
+not collect default PII.
 
 Minimum dashboards:
 
@@ -190,6 +234,9 @@ Minimum dashboards:
 Page on user-impacting availability, sustained error rate, database capacity,
 oldest critical task, failed backup, or security anomaly. Ticket non-urgent
 growth and individual malformed user requests.
+
+External smoke-flow definitions and the exact proxy/HSTS contract are in the
+[production deployment baseline](production-deployment.md).
 
 ## Incident handling
 
@@ -214,4 +261,10 @@ personal exports into tickets/chat.
 - Secret rotation: provider/policy schedule and after suspected exposure.
 - Database index/query review: before large launches and as traffic changes.
 - Retention/orphan reconciliation: scheduled and monitored.
+- Raw interaction-event cleanup: daily; default retention is 90 days through
+  `ANALYTICS_RAW_EVENT_RETENTION_DAYS` (minimum seven days for Trending).
+- Relational counter reconciliation: daily in bounded batches. Operators can
+  inspect drift with `python manage.py reconcile_counters --dry-run` and repair
+  it with `python manage.py reconcile_counters`. This intentionally excludes
+  lifetime view/play totals, which cannot be rebuilt after raw-event expiry.
 - Privacy deletion/export sampling: regularly in staging with synthetic users.

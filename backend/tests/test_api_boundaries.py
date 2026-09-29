@@ -36,7 +36,7 @@ def _api_client(user=None) -> APIClient:
 
 
 def _document(*, title: str, visibility: str = Bingo.Visibility.PUBLIC) -> dict:
-    document = empty_draft_document(title=title, size=3)
+    document = empty_draft_document(title=title, size=3, language="en")
     document["visibility"] = visibility
     document["cells"][0]["text"] = f"{title} first cell"
     return document
@@ -136,6 +136,86 @@ def test_tag_catalog_only_exposes_tags_used_by_public_bingos(verified_user_facto
     ]
     assert client.get("/api/v1/tags/?search=visible").data["count"] == 1
     assert client.get("/api/v1/tags/?search=secret").data["count"] == 0
+
+
+def test_author_suggestions_are_public_catalog_scoped_and_privacy_minimal(
+    verified_user_factory,
+) -> None:
+    alpha = verified_user_factory(username="alpha_catalog")
+    alpha.profile.display_name = "Alpha Maker"
+    alpha.profile.save(update_fields=["display_name"])
+    _published_bingo(author=alpha, title="Alpha public board")
+
+    zeta = verified_user_factory(username="zeta_catalog")
+    zeta.profile.display_name = "Zed Display"
+    zeta.profile.save(update_fields=["display_name"])
+    _published_bingo(author=zeta, title="Zeta public board")
+
+    draft_only = verified_user_factory(username="draft_catalog")
+    create_bingo(author=draft_only, document=_document(title="Draft only"))
+
+    unlisted = verified_user_factory(username="unlisted_catalog")
+    _published_bingo(
+        author=unlisted,
+        title="Unlisted only",
+        visibility=Bingo.Visibility.UNLISTED,
+    )
+
+    hidden = verified_user_factory(username="hidden_catalog")
+    hidden_bingo, _ = _published_bingo(author=hidden, title="Hidden public board")
+    hidden_bingo.hidden_at = timezone.now()
+    hidden_bingo.save(update_fields=["hidden_at"])
+
+    deleted_bingo_author = verified_user_factory(username="deleted_bingo_catalog")
+    deleted_bingo, _ = _published_bingo(
+        author=deleted_bingo_author,
+        title="Deleted public board",
+    )
+    deleted_bingo.deleted_at = timezone.now()
+    deleted_bingo.save(update_fields=["deleted_at"])
+
+    for username, field in (
+        ("suspended_catalog", "suspended_at"),
+        ("deleted_user_catalog", "deleted_at"),
+    ):
+        author = verified_user_factory(username=username)
+        _published_bingo(author=author, title=f"{username} public board")
+        setattr(author, field, timezone.now())
+        author.save(update_fields=[field])
+
+    inactive = verified_user_factory(username="inactive_catalog")
+    _published_bingo(author=inactive, title="Inactive public board")
+    inactive.is_active = False
+    inactive.save(update_fields=["is_active"])
+
+    client = _api_client()
+    response = client.get("/api/v1/authors/?search=catalog")
+
+    assert response.status_code == 200
+    assert [item["username"] for item in response.data["results"]] == [
+        "alpha_catalog",
+        "zeta_catalog",
+    ]
+    assert all(set(item) == {"id", "username", "display_name"} for item in response.data["results"])
+    assert client.get("/api/v1/authors/?search=zed").data["results"][0]["username"] == (
+        "zeta_catalog"
+    )
+    assert client.get(f"/api/v1/authors/?search={'x' * 81}").status_code == 400
+
+
+def test_author_suggestion_page_size_is_capped(verified_user_factory) -> None:
+    for index in range(11):
+        author = verified_user_factory(username=f"bounded_author_{index:02d}")
+        _published_bingo(author=author, title=f"Bounded public board {index}")
+
+    response = _api_client().get("/api/v1/authors/?search=bounded&page_size=999")
+
+    assert response.status_code == 200
+    assert response.data["count"] == 11
+    assert len(response.data["results"]) == 10
+    assert [item["username"] for item in response.data["results"]] == [
+        f"bounded_author_{index:02d}" for index in range(10)
+    ]
 
 
 def test_bingo_create_publish_and_revision_api_preserves_old_snapshot(
@@ -346,6 +426,63 @@ def test_upload_intent_content_and_complete_are_owner_scoped(
         format="json",
     )
     assert denied.status_code == 403
+
+
+def test_upload_rejection_has_actionable_message(verified_user_factory) -> None:
+    owner = verified_user_factory(username="upload_error_owner")
+    client = _api_client(owner)
+    response = client.post(
+        "/api/v1/uploads/intents/",
+        {
+            "kind": "cover",
+            "file_name": "cover.jpg",
+            "content_type": "image/png",
+            "size": len(_png_bytes()),
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data["error"]["details"]["file"] == {
+        "message": "The filename extension does not match the image type.",
+        "code": "invalid",
+    }
+
+    oversized = client.post(
+        "/api/v1/uploads/intents/",
+        {
+            "kind": "cover",
+            "file_name": "cover.png",
+            "content_type": "image/png",
+            "size": 13 * 1024 * 1024,
+        },
+        format="json",
+    )
+    assert oversized.status_code == 400
+    assert oversized.data["error"]["details"]["file"]["message"] == (
+        "The image is empty or exceeds the upload size limit."
+    )
+
+    intent = client.post(
+        "/api/v1/uploads/intents/",
+        {
+            "kind": "cover",
+            "file_name": "cover.png",
+            "content_type": "image/png",
+            "size": len(_png_bytes()),
+        },
+        format="json",
+    )
+    assert intent.status_code == 201
+    MediaAsset.objects.filter(public_id=intent.data["asset_id"]).update(
+        status=MediaAsset.Status.REJECTED,
+        rejection_reason="invalid_image",
+    )
+    detail = client.get(f"/api/v1/uploads/{intent.data['asset_id']}/")
+    assert detail.status_code == 200
+    assert detail.data["rejection_reason"] == (
+        "This file could not be read as an image. Choose another image."
+    )
 
 
 def test_export_api_is_author_only_idempotent_and_owner_scoped(verified_user_factory) -> None:
@@ -607,6 +744,13 @@ def test_profile_subresources_apply_independent_privacy_and_visibility(
         title="Profile unlisted board",
         visibility=Bingo.Visibility.UNLISTED,
     )
+    draft_document = _document(
+        title="Profile private draft",
+        visibility=Bingo.Visibility.PRIVATE,
+    )
+    draft_document["description"] = "Only the creator can see this saved draft."
+    draft_document["tags"] = ["Work in progress"]
+    draft_bingo = create_bingo(author=profile_user, document=draft_document)
     played_bingo, played_revision = _published_bingo(
         author=other_author,
         title="Profile played board",
@@ -665,4 +809,14 @@ def test_profile_subresources_apply_independent_privacy_and_visibility(
         assert hidden.data["count"] == 0
 
     owner = _api_client(profile_user)
-    assert owner.get(f"{base}/bingos/").data["count"] == 2
+    owner_bingos = owner.get(f"{base}/bingos/")
+    assert owner_bingos.data["count"] == 3
+    draft_card = next(
+        item for item in owner_bingos.data["results"] if item["id"] == str(draft_bingo.public_id)
+    )
+    assert draft_card["status"] == Bingo.Status.DRAFT
+    assert draft_card["title"] == "Profile private draft"
+    assert draft_card["description"] == "Only the creator can see this saved draft."
+    assert draft_card["visibility"] == Bingo.Visibility.PRIVATE
+    assert draft_card["tags"][0]["name"] == "work in progress"
+    assert draft_card["preview"]["cells"][0]["text"] == "Profile private draft first cell"

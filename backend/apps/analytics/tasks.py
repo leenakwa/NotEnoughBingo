@@ -6,9 +6,13 @@ from datetime import timedelta
 from decimal import Decimal
 
 from celery import shared_task
+from django.conf import settings
 from django.db.models import Count, Q
 from django.utils import timezone
 
+from apps.analytics.counter_reconciliation import (
+    reconcile_denormalized_counters as reconcile_counters,
+)
 from apps.analytics.models import InteractionEvent
 from apps.bingos.models import Bingo
 
@@ -24,6 +28,12 @@ EVENT_WEIGHTS = {
     InteractionEvent.Type.SHARE: 5.0,
     InteractionEvent.Type.COMMENT: 3.5,
 }
+INTERACTION_DELETE_BATCH_SIZE = 5_000
+
+
+@shared_task(ignore_result=True)
+def reconcile_denormalized_counters(batch_size: int = 500) -> dict[str, int]:
+    return reconcile_counters(batch_size=batch_size)
 
 
 def calculate_trending_score(
@@ -76,3 +86,25 @@ def recompute_trending_scores() -> int:
         bingo.save(update_fields=("trending_score", "trending_score_updated_at", "updated_at"))
         updated += 1
     return updated
+
+
+@shared_task(ignore_result=True)
+def purge_expired_interaction_events(
+    batch_size: int = INTERACTION_DELETE_BATCH_SIZE,
+) -> int:
+    """Delete raw interaction rows after the configured collection window."""
+
+    retention_days = int(settings.ANALYTICS_RAW_EVENT_RETENTION_DAYS)
+    cutoff = timezone.now() - timedelta(days=retention_days)
+    safe_batch_size = max(1, min(int(batch_size), INTERACTION_DELETE_BATCH_SIZE))
+    deleted_total = 0
+    while True:
+        expired_ids = list(
+            InteractionEvent.objects.filter(occurred_at__lt=cutoff)
+            .order_by("pk")
+            .values_list("pk", flat=True)[:safe_batch_size]
+        )
+        if not expired_ids:
+            return deleted_total
+        deleted, _ = InteractionEvent.objects.filter(pk__in=expired_ids).delete()
+        deleted_total += deleted

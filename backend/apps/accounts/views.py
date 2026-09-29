@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.csrf import ensure_csrf_cookie
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, Throttled, ValidationError
 from rest_framework.response import Response
@@ -26,11 +26,13 @@ from apps.accounts.serializers import (
     AuthResultSerializer,
     CsrfResponseSerializer,
     CurrentUserSerializer,
+    EmailChangeRequestSerializer,
     EmailRequestSerializer,
     EmailTokenSerializer,
     FollowStateSerializer,
     LoginSerializer,
     NotificationPreferenceSerializer,
+    OwnUserProfileReadSerializer,
     PasswordChangeSerializer,
     PasswordResetConfirmSerializer,
     PrivacySerializer,
@@ -44,8 +46,10 @@ from apps.accounts.serializers import (
 from apps.accounts.services import (
     begin_registration,
     cancel_account_deletion,
+    confirm_email_change,
     create_authenticated_session,
     destroy_authenticated_session,
+    request_email_change,
     resend_email_verification,
     revoke_session,
     schedule_account_deletion,
@@ -56,9 +60,10 @@ from apps.accounts.session_management import invalidate_session_keys
 from apps.accounts.tasks import send_critical_security_email, send_password_reset_email
 from apps.analytics.models import InteractionEvent
 from apps.analytics.services import record_server_event
-from apps.bingos.models import Bingo
-from apps.bingos.serializers import BingoCardSerializer
+from apps.bingos.models import Bingo, DraftMediaAsset
+from apps.bingos.serializers import BingoCardSerializer, CreatorBingoCardSerializer
 from apps.common.pagination import StandardPageNumberPagination
+from apps.common.serializers import ApiErrorEnvelopeSerializer
 from apps.plays.models import PlayProgress, SharedResult
 from apps.plays.serializers import (
     ProfilePlayProgressSerializer,
@@ -179,7 +184,7 @@ class CurrentUserView(APIView):
 class PasswordResetRequestView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "password_reset"
+    throttle_scope = "password_reset_request"
 
     @extend_schema(request=EmailRequestSerializer, responses={202: None})
     def post(self, request):
@@ -198,7 +203,7 @@ class PasswordResetRequestView(APIView):
 class PasswordResetConfirmView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "password_reset"
+    throttle_scope = "password_reset_confirm"
 
     @extend_schema(request=PasswordResetConfirmSerializer, responses={204: None})
     def post(self, request):
@@ -276,6 +281,40 @@ class PasswordChangeView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class EmailChangeRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_change_request"
+
+    @extend_schema(request=EmailChangeRequestSerializer, responses={202: None})
+    def post(self, request):
+        serializer = EmailChangeRequestSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        try:
+            request_email_change(
+                user=request.user, new_email=serializer.validated_data["new_email"]
+            )
+        except DjangoValidationError as exc:
+            raise ValidationError({"new_email": exc.messages}) from exc
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+
+class EmailChangeConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_change_confirm"
+
+    @extend_schema(request=EmailTokenSerializer, responses={204: None})
+    def post(self, request):
+        serializer = EmailTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            confirm_email_change(serializer.validated_data["token"])
+        except DjangoValidationError as exc:
+            raise ValidationError({"token": exc.messages}) from exc
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class SessionListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = SessionMetadataSerializer
@@ -307,18 +346,18 @@ class SessionRevokeView(APIView):
 class ProfileMeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(responses=UserProfileReadSerializer)
+    @extend_schema(responses=OwnUserProfileReadSerializer)
     def get(self, request):
         profile = UserProfile.objects.select_related(
             "user",
             "user__privacy",
             "avatar",
         ).get(pk=request.user.profile.pk)
-        return Response(UserProfileReadSerializer(profile, context={"request": request}).data)
+        return Response(OwnUserProfileReadSerializer(profile, context={"request": request}).data)
 
     @extend_schema(
         request=ProfileUpdateSerializer,
-        responses=UserProfileReadSerializer,
+        responses=OwnUserProfileReadSerializer,
     )
     def patch(self, request):
         serializer = ProfileUpdateSerializer(
@@ -329,7 +368,7 @@ class ProfileMeView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         profile = serializer.save()
-        return Response(UserProfileReadSerializer(profile, context={"request": request}).data)
+        return Response(OwnUserProfileReadSerializer(profile, context={"request": request}).data)
 
 
 class PrivacyView(APIView):
@@ -407,8 +446,15 @@ def _profile_owner(request, user: User) -> bool:
 
 class ProfileBingoListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
+    # The creator projection deliberately keeps the public card response contract.
+    # Keeping the base serializer here also prevents a duplicate OpenAPI component.
     serializer_class = BingoCardSerializer
     pagination_class = StandardPageNumberPagination
+
+    def get_serializer_class(self):
+        if getattr(self, "swagger_fake_view", False):
+            return BingoCardSerializer
+        return CreatorBingoCardSerializer
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -422,6 +468,13 @@ class ProfileBingoListView(generics.ListAPIView):
             if owner
             else Bingo.objects.public_catalog().filter(author=user)
         )
+        requested_status = self.request.query_params.get("status", "")
+        if requested_status not in ("", "draft", "created"):
+            raise ValidationError({"status": "Choose draft or created."})
+        if requested_status == "draft":
+            queryset = queryset.filter(status=Bingo.Status.DRAFT) if owner else queryset.none()
+        elif requested_status == "created":
+            queryset = queryset.exclude(status=Bingo.Status.DRAFT)
         queryset = queryset.select_related(
             "author",
             "author__profile",
@@ -436,6 +489,16 @@ class ProfileBingoListView(generics.ListAPIView):
             "current_revision__cells__image__derivatives",
             "author__profile__avatar__derivatives",
         )
+        if owner:
+            queryset = queryset.select_related("draft").prefetch_related(
+                Prefetch(
+                    "draft__media_links",
+                    queryset=DraftMediaAsset.objects.select_related("asset").prefetch_related(
+                        "asset__derivatives"
+                    ),
+                    to_attr="creator_media_links",
+                )
+            )
         if self.request.user.is_authenticated:
             from apps.social.models import BingoLike
 
@@ -446,7 +509,11 @@ class ProfileBingoListView(generics.ListAPIView):
                     to_attr="_viewer_likes",
                 )
             )
-        return queryset.order_by("-updated_at")
+        return (
+            queryset.order_by("-draft__updated_at", "-updated_at")
+            if owner
+            else queryset.order_by("-updated_at")
+        )
 
 
 class ProfilePlayHistoryView(generics.ListAPIView):
@@ -659,7 +726,18 @@ class AccountDeletionView(APIView):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    @extend_schema(request=None, responses={204: None})
+    @extend_schema(
+        request=None,
+        responses={
+            204: None,
+            409: OpenApiResponse(
+                response=ApiErrorEnvelopeSerializer,
+                description=(
+                    "The deletion request is no longer scheduled and cannot be cancelled."
+                ),
+            ),
+        },
+    )
     def delete(self, request):
         cancel_account_deletion(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -4,6 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 env = environ.Env(
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "apps.common.middleware.RequestIdMiddleware",
+    "apps.common.middleware.RequestLogMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -168,13 +170,21 @@ REST_FRAMEWORK = {
             "AUTH_EMAIL_VERIFICATION_RATE_LIMIT",
             default="5/hour",
         ),
-        "password_reset": env(
+        "password_reset_request": env(
             "AUTH_PASSWORD_RESET_RATE_LIMIT",
             default="3/hour",
         ),
+        "password_reset_confirm": env(
+            "AUTH_PASSWORD_RESET_CONFIRM_RATE_LIMIT",
+            default="20/hour",
+        ),
+        "email_change_request": env("AUTH_EMAIL_CHANGE_RATE_LIMIT", default="3/hour"),
+        "email_change_confirm": env("AUTH_EMAIL_CHANGE_CONFIRM_RATE_LIMIT", default="20/hour"),
         "comments": env("COMMENT_RATE_LIMIT", default="10/min"),
         "reports": env("REPORT_RATE_LIMIT", default="5/hour"),
         "uploads": env("UPLOAD_RATE_LIMIT", default="30/hour"),
+        "shares": env("SHARE_RATE_LIMIT", default="10/min"),
+        "exports": env("BINGO_EXPORT_RATE_LIMIT", default="10/hour"),
         "interactions": "300/min",
     },
     "COERCE_DECIMAL_TO_STRING": False,
@@ -253,7 +263,19 @@ CELERY_TASK_SOFT_TIME_LIMIT = env.int(
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+ANALYTICS_RAW_EVENT_RETENTION_DAYS = env.int(
+    "ANALYTICS_RAW_EVENT_RETENTION_DAYS",
+    default=90,
+)
+if ANALYTICS_RAW_EVENT_RETENTION_DAYS < 7:
+    raise ImproperlyConfigured(
+        "ANALYTICS_RAW_EVENT_RETENTION_DAYS must retain the seven-day trending window."
+    )
 CELERY_BEAT_SCHEDULE = {
+    "record-beat-heartbeat-every-minute": {
+        "task": "apps.common.tasks.record_beat_heartbeat",
+        "schedule": timedelta(minutes=1),
+    },
     "cleanup-orphaned-media-hourly": {
         "task": "apps.media_assets.tasks.cleanup_orphaned_media",
         "schedule": timedelta(hours=1),
@@ -261,6 +283,14 @@ CELERY_BEAT_SCHEDULE = {
     "recompute-trending-quarter-hourly": {
         "task": "apps.analytics.tasks.recompute_trending_scores",
         "schedule": timedelta(minutes=15),
+    },
+    "purge-expired-interaction-events-daily": {
+        "task": "apps.analytics.tasks.purge_expired_interaction_events",
+        "schedule": timedelta(hours=24),
+    },
+    "reconcile-denormalized-counters-daily": {
+        "task": "apps.analytics.tasks.reconcile_denormalized_counters",
+        "schedule": timedelta(hours=24),
     },
     "process-account-deletions-daily": {
         "task": "apps.accounts.tasks.process_scheduled_account_deletions",
@@ -359,12 +389,21 @@ X_FRAME_OPTIONS = "DENY"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 
 LOG_LEVEL = env("LOG_LEVEL", default="INFO")
+APP_ENVIRONMENT = env(
+    "APP_ENVIRONMENT",
+    default=env("SENTRY_ENVIRONMENT", default="development"),
+)
+APP_RELEASE = env("APP_RELEASE", default="")
+SERVICE_NAME = env("SERVICE_NAME", default="backend")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "json": {
             "()": "apps.common.logging.JsonFormatter",
+            "service": SERVICE_NAME,
+            "environment": APP_ENVIRONMENT,
+            "release": APP_RELEASE,
         }
     },
     "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "json"}},
@@ -380,7 +419,8 @@ if SENTRY_DSN:
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        environment=env("SENTRY_ENVIRONMENT", default="development"),
+        environment=APP_ENVIRONMENT,
+        release=APP_RELEASE or None,
         send_default_pii=False,
         traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05),
     )

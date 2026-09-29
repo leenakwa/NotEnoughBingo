@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { BingoBoardView, revisionCellKey } from "@/components/bingo/bingo-board-view";
+import {
+  BingoBoardView,
+  revisionCellKey,
+  type PlayMarkStyle,
+} from "@/components/bingo/bingo-board-view";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { CommentsPanel } from "@/features/social/comments-panel";
 import { ReportDialog } from "@/features/social/report-dialog";
@@ -16,16 +20,28 @@ import {
   readGuestProgress,
   writeGuestProgress,
 } from "@/lib/guest-progress";
+import {
+  clearProgressRecovery,
+  readProgressRecovery,
+  writeProgressRecovery,
+} from "@/lib/progress-recovery";
 import type { AuthenticatedUser, BingoDetail, UserProfile } from "@/lib/api/types";
 
 type Viewer = AuthenticatedUser | "guest" | null;
 
-export function BingoPlayer({ bingoId }: { bingoId: string }) {
+export function BingoPlayer({
+  bingoId,
+  initialBingo,
+}: {
+  bingoId: string;
+  initialBingo?: BingoDetail | null;
+}) {
   const router = useRouter();
-  const [bingo, setBingo] = useState<BingoDetail | null>(null);
+  const [bingo, setBingo] = useState<BingoDetail | null>(initialBingo ?? null);
   const [viewer, setViewer] = useState<Viewer>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [markStyle, setMarkStyle] = useState<PlayMarkStyle>("checkmark");
+  const [loading, setLoading] = useState(!initialBingo);
   const [error, setError] = useState("");
   const [progressError, setProgressError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -43,17 +59,21 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
   const skipNextSync = useRef(false);
   const completedRevision = useRef<string | null>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
+  const initialBingoConsumed = useRef(false);
 
   useEffect(() => {
     let active = true;
     async function load() {
+      const canUseInitial =
+        !initialBingoConsumed.current && loadVersion === 0 && initialBingo?.id === bingoId;
+      initialBingoConsumed.current = true;
       requestVersion.current += 1;
       progressVersion.current = 0;
       completedRevision.current = null;
-      setLoading(true);
+      setLoading(!canUseInitial);
       setError("");
       setProgressError("");
-      setBingo(null);
+      if (!canUseInitial) setBingo(null);
       setViewer(null);
       setSelected(new Set());
       setAuthorProfile(null);
@@ -66,9 +86,23 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
       hydrated.current = false;
       skipNextSync.current = false;
       try {
-        const detail = await api.bingos.get(bingoId);
+        const detail = canUseInitial && initialBingo ? initialBingo : await api.bingos.get(bingoId);
         if (!active) return;
         setBingo(detail);
+        try {
+          const savedMark = window.localStorage.getItem(`not-enough-bingo:mark:${bingoId}`);
+          setMarkStyle(
+            savedMark === "cross" ||
+              savedMark === "checkmark" ||
+              savedMark === "crossout" ||
+              savedMark === "highlight"
+              ? savedMark
+              : (detail.current_revision?.completion_style ?? "checkmark"),
+          );
+        } catch {
+          setMarkStyle(detail.current_revision?.completion_style ?? "checkmark");
+        }
+        if (canUseInitial) setLoading(false);
         if (!detail.current_revision) {
           setViewer("guest");
           return;
@@ -121,7 +155,14 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
             }
           }
           if (!active) return;
-          skipNextSync.current = true;
+          const recovered = readProgressRecovery(user.id, bingoId, detail.current_revision.id);
+          if (recovered) {
+            const validIds = new Set(detail.current_revision.cells.map(revisionCellKey));
+            setSelected(new Set(recovered.filter((cellId) => validIds.has(cellId))));
+            skipNextSync.current = false;
+          } else {
+            skipNextSync.current = true;
+          }
         }
         if (!active) return;
         hydrated.current = true;
@@ -135,7 +176,7 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
     return () => {
       active = false;
     };
-  }, [bingoId, loadVersion]);
+  }, [bingoId, initialBingo, loadVersion]);
 
   useEffect(() => {
     const revision = bingo?.current_revision;
@@ -173,10 +214,12 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
             saved = await api.progress.save(bingoId, revision.id, cells, latest.version);
           }
           progressVersion.current = saved.version;
+          clearProgressRecovery(viewer.id, bingoId);
           if (version === requestVersion.current) setProgressError("");
         })
         .catch((caught) => {
           if (version === requestVersion.current) {
+            writeProgressRecovery(viewer.id, bingoId, revision.id, cells);
             setProgressError(errorMessage(caught));
           }
         })
@@ -479,7 +522,7 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
               </button>
             </>
           ) : null}
-          {playable ? (
+          {playable && viewer ? (
             <>
               <button
                 type="button"
@@ -503,19 +546,53 @@ export function BingoPlayer({ bingoId }: { bingoId: string }) {
         </div>
       </header>
 
+      {playable ? (
+        <fieldset className="play-mark-menu">
+          <legend>Mark cells with</legend>
+          {(
+            [
+              ["cross", "×", "Cross"],
+              ["checkmark", "✓", "Checkmark"],
+              ["crossout", "╱", "Diagonal line"],
+              ["highlight", "▧", "Highlight"],
+            ] as const
+          ).map(([value, symbol, label]) => (
+            <label key={value}>
+              <input
+                type="radio"
+                name="play-mark-style"
+                value={value}
+                checked={markStyle === value}
+                onChange={() => {
+                  setMarkStyle(value);
+                  try {
+                    window.localStorage.setItem(`not-enough-bingo:mark:${bingoId}`, value);
+                  } catch {
+                    /* Private browsing may block storage. */
+                  }
+                }}
+              />
+              <span aria-hidden="true">{symbol}</span> {label}
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
+
       <BingoBoardView
         revision={revision}
         selected={selected}
-        completionStyle={revision.completion_style}
-        readOnly={!playable}
+        completionStyle={markStyle}
+        readOnly={!playable || !viewer}
         onToggle={toggleCell}
       />
 
       <p className="progress-status" aria-live="polite">
         {playable
-          ? saving
-            ? "Saving progress…"
-            : `${selected.size} of ${revision.cells.length} selected`
+          ? !viewer
+            ? "Loading your progress…"
+            : saving
+              ? "Saving progress…"
+              : `${selected.size} of ${revision.cells.length} selected`
           : "This bingo is archived and shown read-only to its author."}
       </p>
       {progressError ? (

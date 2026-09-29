@@ -14,6 +14,7 @@ from apps.accounts.models import (
     UserPrivacySettings,
     UserProfile,
 )
+from apps.bingos.languages import LANGUAGE_CODES
 from apps.media_assets.serializers import MediaAssetSerializer
 
 
@@ -29,9 +30,15 @@ class PublicUserSerializer(serializers.ModelSerializer[User]):
 
 class CurrentUserSerializer(PublicUserSerializer):
     email_verified = serializers.BooleanField(source="is_email_verified", read_only=True)
+    deletion_scheduled_for = serializers.DateTimeField(read_only=True, allow_null=True)
 
     class Meta(PublicUserSerializer.Meta):
-        fields = (*PublicUserSerializer.Meta.fields, "email", "email_verified")
+        fields = (
+            *PublicUserSerializer.Meta.fields,
+            "email",
+            "email_verified",
+            "deletion_scheduled_for",
+        )
 
 
 class CsrfResponseSerializer(serializers.Serializer):
@@ -61,16 +68,6 @@ class AccountExportResponseSerializer(serializers.Serializer):
     status = serializers.CharField(read_only=True)
 
 
-class ProfileBingoCollectionSerializer(serializers.Serializer):
-    count = serializers.IntegerField(min_value=0, read_only=True)
-    next = serializers.URLField(read_only=True, allow_null=True)
-    previous = serializers.URLField(read_only=True, allow_null=True)
-    results = lazy_serializer("apps.bingos.serializers.BingoCardSerializer")(
-        many=True,
-        read_only=True,
-    )
-
-
 class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
     id = serializers.UUIDField(source="user.public_id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
@@ -79,7 +76,6 @@ class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
     following_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
     privacy = serializers.SerializerMethodField()
-    created_bingos = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -93,7 +89,6 @@ class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
             "following_count",
             "is_following",
             "privacy",
-            "created_bingos",
         )
 
     def _is_owner(self, obj: UserProfile) -> bool:
@@ -123,51 +118,23 @@ class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
     def get_privacy(self, obj: UserProfile) -> dict:
         return PrivacySerializer(obj.user.privacy).data
 
-    @extend_schema_field(ProfileBingoCollectionSerializer(allow_null=True))
-    def get_created_bingos(self, obj: UserProfile) -> dict | None:
-        privacy = obj.user.privacy
-        if not self._is_owner(obj) and not privacy.show_created_bingos:
-            return None
-
-        from apps.bingos.models import Bingo
-        from apps.bingos.serializers import BingoCardSerializer
-
-        queryset = (
-            Bingo.objects.public_catalog()
-            .filter(author=obj.user)
-            .select_related(
-                "author",
-                "author__profile",
-                "author__profile__avatar",
-                "cover",
-                "current_revision",
-            )
-            .prefetch_related(
-                "tag_links__tag",
-                "cover__derivatives",
-                "current_revision__background__derivatives",
-                "current_revision__cells__image",
-                "current_revision__cells__image__derivatives",
-                "author__profile__avatar__derivatives",
-            )
-        )
-        results = list(queryset[:12])
-        return {
-            "count": queryset.count(),
-            "next": None,
-            "previous": None,
-            "results": BingoCardSerializer(
-                results,
-                many=True,
-                context=self.context,
-            ).data,
-        }
-
     def to_representation(self, instance: UserProfile) -> dict:
         data = super().to_representation(instance)
         if not self._is_owner(instance) and not instance.user.privacy.show_bio:
             data["bio"] = ""
         return data
+
+
+class OwnUserProfileReadSerializer(UserProfileReadSerializer):
+    preferred_languages = serializers.ListField(child=serializers.CharField(), read_only=True)
+    language_preferences_confirmed = serializers.BooleanField(read_only=True)
+
+    class Meta(UserProfileReadSerializer.Meta):
+        fields = (
+            *UserProfileReadSerializer.Meta.fields,
+            "preferred_languages",
+            "language_preferences_confirmed",
+        )
 
 
 class RegistrationSerializer(serializers.Serializer):
@@ -218,6 +185,29 @@ class EmailRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 
+class EmailChangeRequestSerializer(serializers.Serializer):
+    new_email = serializers.EmailField()
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs: dict) -> dict:
+        user = self.context["request"].user
+        if not user.check_password(attrs["current_password"]):
+            raise serializers.ValidationError(
+                {"current_password": "The current password is incorrect."}
+            )
+        if not user.can_create_content:
+            raise serializers.ValidationError(
+                {"new_email": "This account cannot change its email address right now."}
+            )
+        email = attrs["new_email"].strip().lower()
+        if email == user.email.lower():
+            raise serializers.ValidationError({"new_email": "Enter a different email address."})
+        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError({"new_email": "This email address is unavailable."})
+        attrs["new_email"] = email
+        return attrs
+
+
 class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField(max_length=200)
     token = serializers.CharField(max_length=200)
@@ -247,10 +237,18 @@ class ProfileUpdateSerializer(serializers.ModelSerializer[UserProfile]):
     username = serializers.RegexField(
         r"^[a-zA-Z0-9_]{3,30}$", max_length=30, source="user.username", required=False
     )
+    preferred_languages = serializers.ListField(
+        child=serializers.CharField(max_length=8), required=False, allow_empty=False, max_length=15
+    )
 
     class Meta:
         model = UserProfile
-        fields = ("username", "display_name", "bio", "avatar_id")
+        fields = ("username", "display_name", "bio", "avatar_id", "preferred_languages")
+
+    def validate_preferred_languages(self, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)) or any(code not in LANGUAGE_CODES for code in value):
+            raise serializers.ValidationError("Choose distinct supported languages.")
+        return value
 
     def validate_avatar_id(self, value):
         if value is None:
@@ -269,6 +267,8 @@ class ProfileUpdateSerializer(serializers.ModelSerializer[UserProfile]):
     def update(self, instance: UserProfile, validated_data: dict) -> UserProfile:
         user_data = validated_data.pop("user", {})
         avatar_id = validated_data.pop("avatar_id", serializers.empty)
+        if "preferred_languages" in validated_data:
+            instance.language_preferences_confirmed = True
         if user_data:
             username = user_data["username"].lower()
             if User.objects.exclude(pk=instance.user_id).filter(username__iexact=username).exists():

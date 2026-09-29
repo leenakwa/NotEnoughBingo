@@ -8,6 +8,7 @@ from PIL import Image
 
 from apps.media_assets.validators import (
     AssetValidationError,
+    asset_error_message,
     inspect_image,
     normalize_image_bytes,
     validate_upload_declaration,
@@ -73,4 +74,11 @@ def test_normalize_image_removes_metadata_and_uses_safe_webp() -> None:
         assert image.size == (20, 12)
         assert not image.getexif()
         assert "icc_profile" not in image.info
-        assert "xmp" not in image.info
+    assert "xmp" not in image.info
+
+
+def test_asset_rejection_message_does_not_expose_internal_code() -> None:
+    error = AssetValidationError("invalid_image")
+    assert error.code == "invalid_image"
+    assert error.user_message == "This file could not be read as an image. Choose another image."
+    assert "unknown_internal_code" not in asset_error_message("unknown_internal_code")

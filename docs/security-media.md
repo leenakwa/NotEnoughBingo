@@ -83,13 +83,20 @@ Production requires:
 - CORS disabled for arbitrary origins;
 - proxy-aware scheme/host handling only from trusted proxies.
 
-`TRUSTED_PROXY_HOPS` is not a generic “enable proxy headers” switch. It must
-equal the number of controlled proxies on the request path so the application
-selects the client address from the trusted right-hand side of
-`X-Forwarded-For`. The production settings assume at least one isolated
-ingress; local Compose uses one Nginx hop. A production load balancer plus
-ingress commonly requires two, after the chain is verified. Backend ports must
-not be reachable around that trusted ingress.
+`TRUSTED_PROXY_HOPS` is not a generic “enable proxy headers” switch. In the
+supported topology, the CDN/LB is the only public origin client and Nginx trusts
+only its configured source CIDR. Nginx Real-IP resolves the last non-trusted
+address, keys rate limits from it, replaces `X-Forwarded-For` with that one
+canonical value, and asserts the configured external scheme rather than its
+internal HTTP `$scheme`. Django therefore sees exactly one trusted Nginx hop.
+Arbitrary forwarded headers from direct clients are ignored, and backend/origin
+ports must not be reachable around the controlled ingress. Alternate platform
+topologies must reproduce this normalize-and-overwrite contract explicitly.
+
+Production CSP sources are enumerated with `CSP_IMAGE_ORIGINS`,
+`CSP_CONNECT_ORIGINS`, and `CSP_MEDIA_ORIGINS`; there is no blanket `https:`
+source. HSTS starts with a short verified max age. `includeSubDomains` and
+preload remain off until the staged deployment checklist is complete.
 
 Staff administration is a higher-value authentication surface. The edge
 rate-limits the exact Django Admin login path and returns `429` when exhausted.
@@ -115,6 +122,10 @@ PostgreSQL as well. Limits cover:
 - shared result/export/account-export creation;
 - search and event ingestion.
 
+Application-level shared-result and bingo-export limits are configurable with
+`SHARE_RATE_LIMIT` and `BINGO_EXPORT_RATE_LIMIT`; production uses the shared
+Redis cache so limits are enforced consistently across web workers.
+
 Guest identifiers are privacy-preserving and cannot be trusted as sole abuse
 identity. Controls combine session, IP prefix, target, account age, verified
 email, and velocity. Moderation actions and security events are auditable.
@@ -130,6 +141,11 @@ email, and velocity. Moderation actions and security events are auditable.
 - Generate an SBOM and preserve license notices for releases.
 - Logs and error tracking redact cookies, tokens, authorization, signed URLs,
   passwords, email bodies, and private documents.
+
+CI uses `pip-audit` and production `npm audit`, scans complete Git history with
+Gitleaks, fails production images on fixable high/critical Trivy findings, and
+retains an SPDX SBOM for each image. Scanner allowlists require a reviewed,
+precise justification and expiry; broad ignores are not acceptable.
 
 ## Media threat model
 
@@ -275,6 +291,13 @@ errors and retries; generated files are removed by retention jobs.
 ## Privacy, export, and deletion
 
 - Collect the minimum security metadata and document retention.
+- The browser's persistent anonymous analytics identifier is sent only to the
+  interaction endpoint and stored as a one-way hash. Raw interaction rows may
+  include an authenticated actor, public content references, event type,
+  allowlisted metadata, and bounded search text; they do not store raw IPs.
+- A daily task deletes raw events after 90 days by default (configurable with
+  `ANALYTICS_RAW_EVENT_RETENTION_DAYS`, minimum seven). Account erasure clears
+  the actor link before any pseudonymized remainder reaches normal expiry.
 - User export runs asynchronously and is available only after recent
   authentication through a short-lived private URL.
 - Deletion revokes sessions and new uploads immediately, then anonymizes or

@@ -72,7 +72,9 @@ Completed: visibility/privacy regression tests, session-cache invalidation,
 pre-registration takeover protection, trusted-proxy handling, upload validation
 and immutable promotion, CSP/security headers, rate limits, OpenAPI validation,
 generated TypeScript API contracts, responsive/accessibility review, dependency
-audits, CI image builds, and documented backup/restore/retention procedures.
+audits, complete-history secret scanning, production image vulnerability scans
+and SBOMs, non-root image checks, structured HTTP/Celery telemetry, Beat
+heartbeat health, and documented deployment/backup/restore procedures.
 
 Authoritative executable artifacts:
 

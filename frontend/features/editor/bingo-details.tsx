@@ -1,9 +1,10 @@
 "use client";
 
-import type { Dispatch } from "react";
+import type { Dispatch, ReactNode } from "react";
 import { useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
+import { bingoLanguages } from "@/lib/languages";
 import type { EditorAction, EditorState } from "@/features/editor/editor-state";
 import type { BingoExportFormat } from "@/lib/api/types";
 
@@ -21,6 +22,7 @@ export function BingoDetails({
   onPublish,
   onExport,
   exportAvailable,
+  saveStatus,
 }: {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
@@ -35,6 +37,7 @@ export function BingoDetails({
   onPublish: () => void;
   onExport: (format: BingoExportFormat) => void;
   exportAvailable: boolean;
+  saveStatus: ReactNode;
 }) {
   const [tagInput, setTagInput] = useState("");
   const coverUrl = state.cover.previewUrl ?? state.cover.asset?.url;
@@ -63,6 +66,22 @@ export function BingoDetails({
           onChange={(event) => dispatch({ type: "set-title", value: event.target.value })}
           aria-invalid={Boolean(error && !state.title.trim())}
         />
+      </label>
+      <label className="field">
+        <span>Bingo language</span>
+        <select
+          required
+          value={state.language}
+          aria-invalid={Boolean(error && !state.language)}
+          onChange={(event) => dispatch({ type: "set-language", value: event.target.value })}
+        >
+          <option value="">Choose a language</option>
+          {bingoLanguages.map((language) => (
+            <option key={language.code} value={language.code}>
+              {language.flag} {language.name}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="field">
         <span>
@@ -164,7 +183,7 @@ export function BingoDetails({
           {coverUrl ? (
             // The preview is either a local object URL or an API-owned asset.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverUrl} alt="Selected bingo cover preview" />
+            <img src={coverUrl} alt="Selected bingo cover preview" width={170} height={105} />
           ) : (
             <div className="cover-empty">
               <ImageIcon />
@@ -223,21 +242,21 @@ export function BingoDetails({
         </button>
         {exportAvailable ? (
           <details className="download-control">
-            <summary className="button button--secondary">Download</summary>
+            <summary className="button button--secondary">Download published version</summary>
             <div>
               <button
                 type="button"
                 disabled={Boolean(pendingAction) || uploadPending}
                 onClick={() => onExport("png")}
               >
-                PNG
+                Published PNG
               </button>
               <button
                 type="button"
                 disabled={Boolean(pendingAction) || uploadPending}
                 onClick={() => onExport("pdf")}
               >
-                PDF
+                Published PDF
               </button>
             </div>
           </details>
@@ -252,6 +271,13 @@ export function BingoDetails({
           </button>
         )}
       </div>
+      {exportAvailable ? (
+        <p className="export-explanation">
+          Downloads use the currently published revision. Draft edits are included only after you
+          publish them.
+        </p>
+      ) : null}
+      {saveStatus}
       <p
         className={error ? "form-message form-message--error" : "form-message"}
         role={error ? "alert" : "status"}

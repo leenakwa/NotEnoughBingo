@@ -1,13 +1,15 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ErrorState, LoadingState } from "@/components/ui/page-state";
+import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
+import { clearAllProgressRecovery } from "@/lib/progress-recovery";
 import { notifyAuthChanged } from "@/lib/auth-events";
 import { api, errorMessage } from "@/lib/api/client";
 import type {
-  AccountDeletionResult,
   AuthenticatedUser,
   ExportJob,
   NotificationPreferences,
@@ -38,10 +40,13 @@ export function AccountSettings({
   const [sessions, setSessions] = useState<Page<SessionMetadata> | null>(null);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
+  const [emailChangePassword, setEmailChangePassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [emailFeedback, setEmailFeedback] = useState<{ error: boolean; text: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [deletionPassword, setDeletionPassword] = useState("");
-  const [deletion, setDeletion] = useState<AccountDeletionResult | null>(null);
+  const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
   const [exportJob, setExportJob] = useState<ExportJob | null>(null);
   const [pending, setPending] = useState("");
   const [message, setMessage] = useState("");
@@ -60,6 +65,7 @@ export function AccountSettings({
         setUser(currentUser);
         setSessions(activeSessions);
         setPreferences(notificationPreferences);
+        setDeletionScheduledFor(currentUser.deletion_scheduled_for);
       })
       .catch((caught) => {
         if (active) setInitialError(errorMessage(caught));
@@ -76,6 +82,7 @@ export function AccountSettings({
     setPending(action);
     setMessage("");
     setError("");
+    setEmailFeedback(null);
   }
 
   async function updateAvatar(file: File) {
@@ -136,12 +143,35 @@ export function AccountSettings({
     }
   }
 
+  async function requestEmailChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return;
+    beginAction("email");
+    try {
+      await api.auth.requestEmailChange({
+        current_password: emailChangePassword,
+        new_email: newEmail,
+      });
+      setEmailChangePassword("");
+      setEmailFeedback({
+        error: false,
+        text: "Check the new email address for a confirmation link. Your current address remains active until you confirm it.",
+      });
+    } catch (caught) {
+      setEmailFeedback({ error: true, text: errorMessage(caught) });
+    } finally {
+      setPending("");
+    }
+  }
+
   async function revokeSession(session: SessionMetadata) {
     if (pending) return;
     beginAction(`session-${session.id}`);
     try {
       await api.auth.revokeSession(session.id);
       if (session.current) {
+        clearAllEditorRecovery();
+        clearAllProgressRecovery();
         notifyAuthChanged();
         router.replace("/login");
         router.refresh();
@@ -221,11 +251,13 @@ export function AccountSettings({
     beginAction("deletion");
     try {
       const scheduled = await api.auth.scheduleAccountDeletion(deletionPassword);
-      setDeletion(scheduled);
+      clearAllEditorRecovery();
+      clearAllProgressRecovery();
       setDeletionPassword("");
-      setMessage(
-        `Account deletion is scheduled for ${new Date(scheduled.scheduled_for).toLocaleString()}.`,
-      );
+      setDeletionScheduledFor(scheduled.scheduled_for);
+      notifyAuthChanged();
+      router.replace("/login?next=%2Fprofile&reason=deletion-scheduled");
+      router.refresh();
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -238,7 +270,8 @@ export function AccountSettings({
     beginAction("deletion");
     try {
       await api.auth.cancelAccountDeletion();
-      setDeletion(null);
+      setDeletionScheduledFor(null);
+      setUser((current) => (current ? { ...current, deletion_scheduled_for: null } : current));
       setMessage("Account deletion cancelled.");
     } catch (caught) {
       setError(errorMessage(caught));
@@ -252,6 +285,8 @@ export function AccountSettings({
     beginAction("logout");
     try {
       await api.auth.logout();
+      clearAllEditorRecovery();
+      clearAllProgressRecovery();
       notifyAuthChanged();
       router.replace("/login");
       router.refresh();
@@ -335,6 +370,48 @@ export function AccountSettings({
           </button>
         </div>
 
+        <form className="settings-card" onSubmit={requestEmailChange}>
+          <h3>Change email</h3>
+          <p>Current address: {user.email}</p>
+          <label className="field">
+            <span>New email address</span>
+            <input
+              type="email"
+              autoComplete="email"
+              required
+              value={newEmail}
+              onChange={(event) => {
+                setNewEmail(event.target.value);
+                setEmailFeedback(null);
+              }}
+            />
+          </label>
+          <label className="field">
+            <span>Current password for email change</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={emailChangePassword}
+              onChange={(event) => {
+                setEmailChangePassword(event.target.value);
+                setEmailFeedback(null);
+              }}
+            />
+          </label>
+          <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
+            {pending === "email" ? "Sending…" : "Send confirmation email"}
+          </button>
+          {emailFeedback ? (
+            <p
+              className={emailFeedback.error ? "form-message form-message--error" : "form-message"}
+              role={emailFeedback.error ? "alert" : "status"}
+            >
+              {emailFeedback.text}
+            </p>
+          ) : null}
+        </form>
+
         <form className="settings-card" onSubmit={changePassword}>
           <h3>Change password</h3>
           <label className="field">
@@ -372,6 +449,9 @@ export function AccountSettings({
           <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
             {pending === "password" ? "Changing…" : "Change password"}
           </button>
+          <Link href="/forgot-password" className="text-button">
+            Forgot your current password?
+          </Link>
         </form>
 
         <div className="settings-card">
@@ -447,12 +527,12 @@ export function AccountSettings({
             Deletion is scheduled after a grace period. Shared public snapshots remain stable but
             are anonymized according to the deletion policy.
           </p>
-          {deletion ? (
+          {deletionScheduledFor ? (
             <>
               <p>
                 Scheduled for{" "}
-                <time dateTime={deletion.scheduled_for}>
-                  {new Date(deletion.scheduled_for).toLocaleString()}
+                <time dateTime={deletionScheduledFor}>
+                  {new Date(deletionScheduledFor).toLocaleString()}
                 </time>
               </p>
               <button

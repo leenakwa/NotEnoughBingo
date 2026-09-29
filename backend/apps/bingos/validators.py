@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 
+from apps.bingos.languages import LANGUAGE_CODES
 from apps.bingos.models import Bingo, BingoCell
 
 HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -207,6 +208,7 @@ def normalize_draft_document(document: Any, *, require_publishable: bool = False
         "schema_version",
         "title",
         "description",
+        "language",
         "size",
         "visibility",
         "marking_style",
@@ -230,6 +232,11 @@ def normalize_draft_document(document: Any, *, require_publishable: bool = False
     description = document.get("description", "")
     if not isinstance(description, str) or len(description) > 1000:
         raise _invalid("description", "Description must be at most 1000 characters.")
+    language = document.get("language", "")
+    if not isinstance(language, str) or (language and language not in LANGUAGE_CODES):
+        raise _invalid("language", "Choose a supported bingo language.")
+    if require_publishable and not language:
+        raise _invalid("language", "Choose a bingo language before publishing.")
     size = document.get("size", 5)
     if isinstance(size, bool) or not isinstance(size, int) or not 3 <= size <= 10:
         raise _invalid("size", "Bingo size must be from 3 to 10.")
@@ -246,6 +253,10 @@ def normalize_draft_document(document: Any, *, require_publishable: bool = False
             f"A {size} x {size} board must contain exactly {size * size} cells.",
         )
     cells = [_normalize_cell(raw, position=index, size=size) for index, raw in enumerate(raw_cells)]
+    if require_publishable and not any(
+        cell["text"].strip() or cell["image_asset_id"] for cell in cells
+    ):
+        raise _invalid("cells", "Add text or an image to at least one cell before publishing.")
     ids = [cell["id"] for cell in cells]
     if len(ids) != len(set(ids)):
         raise _invalid("cells", "Cell ids must be unique within a board.")
@@ -257,6 +268,7 @@ def normalize_draft_document(document: Any, *, require_publishable: bool = False
         "schema_version": DOCUMENT_SCHEMA_VERSION,
         "title": title,
         "description": description.strip(),
+        "language": language,
         "size": size,
         "visibility": visibility,
         "marking_style": marking_style,
@@ -275,10 +287,11 @@ def normalize_draft_document(document: Any, *, require_publishable: bool = False
     return normalized
 
 
-def empty_draft_document(*, title: str = "", size: int = 5) -> dict:
+def empty_draft_document(*, title: str = "", size: int = 5, language: str = "") -> dict:
     return normalize_draft_document(
         {
             "title": title,
+            "language": language,
             "size": size,
             "cells": [{"position": position} for position in range(size * size)],
         }

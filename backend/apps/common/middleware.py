@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import logging
 import re
+import time
 import uuid
 from collections.abc import Callable
 
 from django.http import HttpRequest, HttpResponse
 
 SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
+request_logger = logging.getLogger("app.request")
 
 
 class RequestIdMiddleware:
@@ -18,6 +21,31 @@ class RequestIdMiddleware:
         request.request_id = supplied if SAFE_REQUEST_ID.fullmatch(supplied) else str(uuid.uuid4())  # type: ignore[attr-defined]
         response = self.get_response(request)
         response["X-Request-ID"] = request.request_id  # type: ignore[attr-defined]
+        return response
+
+
+class RequestLogMiddleware:
+    """Emit one bounded structured completion event for every HTTP request."""
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        started_at = time.perf_counter()
+        response = self.get_response(request)
+        duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        resolver_match = getattr(request, "resolver_match", None)
+        request_logger.info(
+            "http.request.complete",
+            extra={
+                "request_id": getattr(request, "request_id", ""),
+                "method": request.method,
+                "path": request.path,
+                "route": getattr(resolver_match, "view_name", "") or "",
+                "status_code": response.status_code,
+                "duration_ms": duration_ms,
+            },
+        )
         return response
 
 
