@@ -382,6 +382,11 @@ test.describe("live full-stack product flows", () => {
     await page.reload();
     await expect(search).toHaveValue("E2E PUBLIC");
 
+    await page.getByRole("radio", { name: /New Recently published/ }).check();
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page).toHaveURL(/search=E2E\+PUBLIC.*ordering=newest/);
+    await expect(page.getByRole("radio", { name: /New Recently published/ })).toBeChecked();
+
     const languages = page.getByRole("group", { name: "Bingo languages" });
     await languages.getByLabel("Russian").check();
     await page.getByRole("button", { name: "Search", exact: true }).click();

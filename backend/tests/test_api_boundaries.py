@@ -134,6 +134,22 @@ def test_catalog_search_handles_unicode_literals_limits_and_pagination(
     assert len(first_page.data["results"]) == 2
     assert first_page.data["next"] is not None
     assert guest.get("/api/v1/bingos/", {"page_size": 2, "page": 3}).data["count"] == 5
+
+    Bingo.objects.filter(public_id=boards["Summer day"]).update(trending_score=10)
+    newest = guest.get("/api/v1/bingos/", {"search": "Summer", "ordering": "newest"})
+    popular = guest.get(
+        "/api/v1/bingos/",
+        {"search": "Summer", "author": "catalogowner", "ordering": "popular"},
+    )
+    assert [item["id"] for item in newest.data["results"]] == [
+        boards["Summer night"],
+        boards["Summer day"],
+    ]
+    assert [item["id"] for item in popular.data["results"]] == [
+        boards["Summer day"],
+        boards["Summer night"],
+    ]
+    assert guest.get("/api/v1/bingos/", {"author": "nobody"}).data["count"] == 0
     assert guest.get("/api/v1/bingos/", {"search": "x" * 81}).status_code == 400
     assert guest.get("/api/v1/bingos/", {"author": "x" * 81}).status_code == 400
 

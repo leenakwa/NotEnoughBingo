@@ -373,6 +373,138 @@ test("Explore waits for the last author-suggestion query", async ({ page }) => {
   await expect.poll(() => queries).toEqual(["ad"]);
 });
 
+test("board lists keep long titles, author names, and tags readable", async ({ page }) => {
+  const title = "ExtremelyLongBingoTitleWithoutAnySpaces".repeat(2).slice(0, 70);
+  const tag = "ExtremelyLongTagWithoutAnySpaces";
+  await page.route("**/api/v1/feeds/discover/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            title,
+            description: "",
+            language: "en",
+            author: {
+              id: "22222222-2222-4222-8222-222222222222",
+              username: "verylongusernamewithoutspaces",
+              display_name: "VeryLongDisplayNameWithoutAnySpaces".repeat(2),
+              avatar: null,
+            },
+            cover: null,
+            preview: null,
+            tags: [{ id: "33333333-3333-4333-8333-333333333333", name: tag, slug: "long-tag" }],
+            size: 3,
+            status: "published",
+            visibility: "public",
+            completion_style: "checkmark",
+            stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+            liked_by_me: false,
+            published_at: "2026-08-07T00:00:00Z",
+            updated_at: "2026-08-07T00:00:00Z",
+          },
+        ],
+      }),
+    }),
+  );
+
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/discover");
+    const card = page.getByRole("article");
+    await expect(card.getByRole("heading", { name: title })).toBeVisible();
+    await expect(card.getByRole("link", { name: `#${tag}` })).toBeVisible();
+    const layout = await card.evaluate((element) => {
+      const cardBox = element.getBoundingClientRect();
+      const titleBox = element.querySelector("h2")?.getBoundingClientRect();
+      const authorBox = element.querySelector(".bingo-card__heading span")?.getBoundingClientRect();
+      const tagBox = element.querySelector(".bingo-card__tags a")?.getBoundingClientRect();
+      return {
+        cardRight: cardBox.right,
+        titleRight: titleBox?.right ?? Infinity,
+        authorRight: authorBox?.right ?? Infinity,
+        tagRight: tagBox?.right ?? Infinity,
+        tagBottom: tagBox?.bottom ?? Infinity,
+        cardBottom: cardBox.bottom,
+      };
+    });
+    expect(layout.titleRight).toBeLessThanOrEqual(layout.cardRight);
+    expect(layout.authorRight).toBeLessThanOrEqual(layout.cardRight);
+    expect(layout.tagRight).toBeLessThanOrEqual(layout.cardRight);
+    expect(layout.tagBottom).toBeLessThanOrEqual(layout.cardBottom);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    await expect(page.locator("body")).not.toContainText("undefined");
+  }
+});
+
+test("Explore pagination keeps its page in the URL and restores the selected board", async ({
+  page,
+}) => {
+  const summary = (id: string, title: string) => ({
+    id,
+    title,
+    description: "",
+    language: "en",
+    author: {
+      id: "22222222-2222-4222-8222-222222222222",
+      username: "author",
+      display_name: "Author",
+      avatar: null,
+    },
+    cover: null,
+    preview: null,
+    tags: [],
+    size: 3,
+    status: "published",
+    visibility: "public",
+    completion_style: "checkmark",
+    stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+    liked_by_me: false,
+    published_at: "2026-08-07T00:00:00Z",
+    updated_at: "2026-08-07T00:00:00Z",
+  });
+  await page.route("**/api/v1/bingos/**", (route) => {
+    const secondPage = new URL(route.request().url()).searchParams.get("page") === "2";
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 2,
+        next: secondPage ? null : "?page=2",
+        previous: secondPage ? "?page=1" : null,
+        results: [
+          secondPage
+            ? summary("22222222-2222-4222-8222-222222222223", "Second board")
+            : summary("11111111-1111-4111-8111-111111111111", "First board"),
+        ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/auth/csrf/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
+  );
+  await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204 }));
+
+  await page.goto("/explore");
+  await expect(page.getByRole("heading", { name: "First board" })).toBeVisible();
+  const pagination = page.getByRole("navigation", { name: "Explore pages" });
+  await pagination.getByRole("button", { name: "Next" }).click();
+  await expect(page).toHaveURL(/\/explore\?page=2$/);
+  await expect(page.getByRole("heading", { name: "Second board" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Second board" })).toBeVisible();
+  await pagination.getByRole("button", { name: "Previous" }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await expect(page.getByRole("heading", { name: "First board" })).toBeVisible();
+});
+
 test("create opens the coordinate-safe editor", async ({ page }) => {
   await page.unroute("**/api/v1/auth/session/");
   await page.route("**/api/v1/auth/session/", (route) =>

@@ -558,11 +558,13 @@ h3 {
 .bingo-card__heading h2 {
   margin: 0 0 4px;
   font-size: 1.35rem;
+  overflow-wrap: anywhere;
 }
 
 .bingo-card__heading span {
   color: var(--muted);
   font-size: 0.8rem;
+  overflow-wrap: anywhere;
 }
 
 .bingo-card-preview {
@@ -621,17 +623,17 @@ h3 {
 .bingo-card__tags {
   min-height: 45px;
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
-  overflow: hidden;
   padding: 11px 15px;
   border-bottom: var(--line);
   background: var(--soft);
   font-size: 0.8rem;
-  white-space: nowrap;
 }
 
 .bingo-card__tags a {
   text-underline-offset: 3px;
+  overflow-wrap: anywhere;
 }
 
 .bingo-card__actions {

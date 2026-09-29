@@ -703,6 +703,29 @@ observed results and their limits. Do not include credentials or session data.
   final `ad` API request after the 250 ms debounce. Both passed 1/1. The
   separate author/tag suggestion UI scenario already passed in the browser.
 
+### 2026-09-30 — Card lists, pagination, and long values (section 18)
+
+- The catalog API test covered zero, one, two, and five matching rows, a
+  two-item page size through page three, no results after an author filter,
+  and different `newest` versus `popular` ordering after the Summer search
+  filter. A live Explore flow kept its selected New sort while adding a
+  language filter and restored the default when all filters were cleared.
+- Static Chromium used a two-page catalog fixture, clicked Next and Previous,
+  observed the correct board and page URL, and reloaded page two without
+  losing selection. This passed 1/1. The profile's selected tab state and
+  empty Created/Drafts/Recent plays lists were already exercised by the
+  new-account browser scenario. These are card and tab collections, not HTML
+  data tables, so column header alignment is not applicable.
+- A long-content card fixture used a maximum-length unbroken title, long
+  display name, null cover/preview, and a long tag. Before the change, the
+  card's tag strip hid overflow; it now wraps visible links, and title and
+  author text wrap inside the card. Static Chromium at 320 and 1710 px found
+  no page overflow, clipped link box, or literal `undefined`; the case passed
+  1/1. Optional missing title is separately rendered as “Untitled bingo” in
+  the card unit test. Card lists adapt to viewport width and need no
+  horizontal scroll; the large 10×10 board has its own separately tested
+  scroll region.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

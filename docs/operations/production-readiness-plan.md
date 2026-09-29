@@ -79,6 +79,9 @@ commerce, teams, and analytics screens were classified as not applicable.
 Search section 17 is checked after bounded API queries for empty, Unicode,
 special-character, and paginated results plus live Enter, combined-filter,
 URL, and clear flows and static loading/debounce checks.
+Lists section 18 is checked after paginated card and profile collections,
+filtered ordering, long-content layout at 320 and 1710 pixels, and explicit
+classification of table-only requirements as not applicable.
 
 ## Launch blockers currently outside the local stack
 

@@ -375,23 +375,23 @@ If search exists, test:
 
 Test:
 
-- [ ] zero rows;
-- [ ] one row;
-- [ ] many rows;
-- [ ] pagination;
-- [ ] sorting;
-- [ ] filtering;
-- [ ] sorting after filtering;
-- [ ] no-results state;
-- [ ] long values;
-- [ ] long usernames/names;
-- [ ] missing values;
-- [ ] null values;
-- [ ] `undefined` never shown to users;
-- [ ] header alignment;
-- [ ] mobile behavior;
-- [ ] horizontal scroll if required;
-- [ ] selection state.
+- [x] zero rows;
+- [x] one row;
+- [x] many rows;
+- [x] pagination;
+- [x] sorting;
+- [x] filtering;
+- [x] sorting after filtering;
+- [x] no-results state;
+- [x] long values;
+- [x] long usernames/names;
+- [x] missing values;
+- [x] null values;
+- [x] `undefined` never shown to users;
+- [x] header alignment;
+- [x] mobile behavior;
+- [x] horizontal scroll if required;
+- [x] selection state.
 
 # 19. FILE UPLOADS
 
