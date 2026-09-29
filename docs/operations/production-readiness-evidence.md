@@ -563,6 +563,38 @@ observed results and their limits. Do not include credentials or session data.
   hostname, so its result is not counted. Production email delivery, a live
   hostname, and real provider rate limits remain deployment-only evidence.
 
+### 2026-09-30 — Password reset and logout item audit (sections 12–13)
+
+- **Forgot Password and real local delivery:** the `/login` link reaches the
+  form. A live Chromium journey submitted an address to the isolated backend,
+  read the resulting reset message from Mailpit, followed its link, changed
+  credentials, observed the old password fail and the new password work. The
+  same journey forced a failed network request first and confirmed the email
+  remained available for retry.
+- **Public URL and expiry:** the task builds the reset link from `FRONTEND_URL`;
+  a new mail-outbox test rendered
+  `https://bingo.example.test/reset-password?uid=...&token=...` under an
+  explicit HTTPS configuration. Production settings reject an HTTP or missing
+  public origin. A second test advanced time past a 60-second test TTL and
+  confirmed the API rejected the old token without changing the password.
+  The actual public hostname and external mail provider are still rollout
+  inputs and are not claimed to have been observed locally.
+- **Reuse, changed credentials, and sessions:** the live browser received HTTP
+  400 when it reused a successful reset token; a backend test confirmed the
+  password hash changed and all active session records and Django sessions
+  were revoked. The live browser observed its existing `/auth/me/` session
+  return 403 immediately after the reset.
+- **Logout and Back:** a live two-tab scenario explicitly logged out in one
+  tab. The private `/auth/me/` API then returned 403; session storage progress
+  in that tab and shared editor recovery were removed. Back returned to
+  Discover rather than a private profile. Opening `/profile` directly showed
+  the guest login state, and signing in as another user returned to that
+  intended profile. The other open tab detected the lost session and left its
+  private profile view. The strengthened scenario passed on the isolated
+  PostgreSQL/Redis/S3/Mailpit stack. Focused TTL/public-URL backend tests
+  passed 2/2. These checks do not imply the future external email service is
+  configured or delivering yet.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

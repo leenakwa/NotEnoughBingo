@@ -283,22 +283,22 @@ Test:
 
 Verify:
 
-- [ ] Forgot Password exists if authentication uses passwords;
-- [ ] reset email is actually sent;
-- [ ] email contains the production URL;
-- [ ] token expires;
-- [ ] token reuse is handled correctly;
-- [ ] password update really changes credentials;
-- [ ] relevant old sessions are invalidated if intended.
+- [x] Forgot Password exists if authentication uses passwords;
+- [x] reset email is actually sent;
+- [x] email contains the production URL;
+- [x] token expires;
+- [x] token reuse is handled correctly;
+- [x] password update really changes credentials;
+- [x] relevant old sessions are invalidated if intended.
 
 # 13. LOGOUT
 
 Verify:
 
-- [ ] session is actually invalidated;
-- [ ] protected APIs stop working;
-- [ ] Back button does not expose private content;
-- [ ] sensitive client cache/local state is cleared where appropriate.
+- [x] session is actually invalidated;
+- [x] protected APIs stop working;
+- [x] Back button does not expose private content;
+- [x] sensitive client cache/local state is cleared where appropriate.
 
 # 14. AUTHORIZATION
 

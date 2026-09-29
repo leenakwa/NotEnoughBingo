@@ -67,6 +67,8 @@ the still-open production checklist boxes.
 Signup and login sections 10–11 now have every applicable predeployment bullet
 checked, including live email verification, resend, invalid credentials,
 rate limiting, keyboard submission, and already-authenticated navigation.
+Password reset and logout sections 12–13 are also checked with local mail,
+token-expiry, credential/session, Back-navigation, and recovery-cleanup evidence.
 
 ## Launch blockers currently outside the local stack
 

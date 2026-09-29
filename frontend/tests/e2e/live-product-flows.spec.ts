@@ -1082,6 +1082,7 @@ test.describe("live full-stack product flows", () => {
     await authenticateAs(page, "author");
     const secondTab = await page.context().newPage();
     await page.goto("/profile");
+    await secondTab.goto("/discover");
     await secondTab.goto("/profile");
     await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
     await expect(secondTab.getByRole("button", { name: "Log out" })).toBeVisible();
@@ -1089,8 +1090,23 @@ test.describe("live full-stack product flows", () => {
     await page.evaluate(() => {
       window.localStorage.setItem("not-enough-bingo:editor-recovery:v1:new", "old private draft");
     });
+    await secondTab.evaluate(() => {
+      window.sessionStorage.setItem("not-enough-bingo:progress-recovery:v1:test", "old progress");
+    });
     await secondTab.getByRole("button", { name: "Log out" }).click();
     await expect(secondTab).toHaveURL(/\/login$/);
+    expect((await secondTab.request.get("/api/v1/auth/me/")).status()).toBe(403);
+    expect(
+      await secondTab.evaluate(() =>
+        window.sessionStorage.getItem("not-enough-bingo:progress-recovery:v1:test"),
+      ),
+    ).toBeNull();
+    await secondTab.goBack();
+    await expect(secondTab).toHaveURL(/\/discover$/);
+    await secondTab.goto("/profile");
+    await expect(
+      secondTab.getByRole("heading", { name: "Log in to view your profile" }),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/login\?reason=session-expired&next=%2Fprofile$/);
     await expect(
       page.getByText("Your session ended. Log in again to continue where you left off."),
@@ -1102,12 +1118,13 @@ test.describe("live full-stack product flows", () => {
       ),
     ).toBeNull();
 
+    await secondTab.getByRole("link", { name: "Log in", exact: true }).last().click();
     await secondTab.getByLabel("Email").fill(fixture.users.player.email);
     await secondTab.getByLabel("Password").fill(E2E_FIXTURE_PASSWORD);
     await waitForResponse(secondTab, "/api/v1/auth/login/", "POST", () =>
       secondTab.getByRole("button", { name: "Log in" }).click(),
     );
-    await expect(secondTab).toHaveURL(/\/discover$/);
+    await expect(secondTab).toHaveURL(/\/profile$/);
     await expect(page.locator('a[href="/profile"]')).toBeVisible();
     await secondTab.close();
   });

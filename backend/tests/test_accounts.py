@@ -11,12 +11,15 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sessions.backends.cached_db import SessionStore as CachedDbSessionStore
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.core import mail
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
+from django.test import override_settings
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from freezegun import freeze_time
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
@@ -43,6 +46,7 @@ from apps.accounts.services import (
     token_digest,
     verify_email,
 )
+from apps.accounts.tasks import send_password_reset_email
 from apps.accounts.views import (
     EmailChangeConfirmView,
     EmailChangeRequestView,
@@ -670,6 +674,40 @@ def test_password_reset_changes_password_and_revokes_every_active_session(
         user=user,
         event_type=SecurityEvent.EventType.PASSWORD_RESET,
     ).exists()
+
+
+@override_settings(FRONTEND_URL="https://bingo.example.test")
+def test_password_reset_email_uses_the_configured_public_origin(user_factory) -> None:
+    user = user_factory()
+    send_password_reset_email(user.pk, "example-uid", "example-token")
+
+    assert len(mail.outbox) == 1
+    assert "https://bingo.example.test/reset-password?uid=example-uid&token=example-token" in (
+        mail.outbox[0].body
+    )
+
+
+@override_settings(PASSWORD_RESET_TIMEOUT=60)
+def test_password_reset_token_expires_without_changing_credentials(
+    user_factory, csrf_request
+) -> None:
+    user = user_factory(password="Old-Strong-Password-42")
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    with freeze_time("2026-09-30 10:00:00+00:00"):
+        token = default_token_generator.make_token(user)
+
+    with freeze_time("2026-09-30 10:01:01+00:00"):
+        response = PasswordResetConfirmView.as_view()(
+            csrf_request(
+                "post",
+                "/api/v1/auth/password-reset/confirm/",
+                {"uid": uid, "token": token, "new_password": "New-Strong-Password-84"},
+            )
+        )
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.check_password("Old-Strong-Password-42")
 
 
 def test_password_change_preserves_current_session_and_revokes_other_sessions(
