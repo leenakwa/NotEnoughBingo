@@ -125,9 +125,10 @@ browser flows, and known local limits. It does not attest to the 105 sections
 on a live production domain. Before checking any section, record concrete
 evidence for its relevant bullets and mark non-applicable items explicitly.
 
-The current external launch gates are the exact release commit and CI gate,
-operator/legal/support decisions, production DNS/TLS/managed services and
-monitoring, off-site database plus media restore, and measurements on the
-real deployment. The evidence log now covers several local degraded-network,
+The CI Release gate passed on `d629a7153c5b33ddf6ece438bdc98faf2d428067`.
+The remaining launch gates are release review and promotion, operator/legal/
+support decisions, production DNS/TLS/managed services and monitoring, off-site
+database plus media restore, and measurements on the real deployment. The
+evidence log now covers several local degraded-network,
 cross-tab/session, direct-link, upload, and input cases. The remaining local
 items and production-only proofs are tracked in the execution plan.

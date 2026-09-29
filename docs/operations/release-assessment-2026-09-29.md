@@ -7,9 +7,10 @@ every checklist item has been verified on a public deployment.
 
 ## Decision
 
-The current working tree passes the local code and product-flow checks below. It
-is a **release candidate, not an authorized public deployment**. Local checks
-do not replace the required Release gate on the exact pushed commit.
+The pushed release candidate passes the local code and product-flow checks
+below and its exact-commit CI gate. It is **not an authorized public
+deployment**. Images have not been promoted to a production registry or tested
+on the target platform.
 Production operator identity, private support contact, legal review, managed
 services, TLS/ingress, secrets, monitoring, and off-site recovery remain to be
 configured and verified for the target environment. See the
@@ -95,11 +96,12 @@ repository CI checkout the assertion runs normally.
 
 ## Remaining launch gates
 
-1. Review the release commit and require the `Release gate` CI status on its
-   exact revision. The previous CI run failed to pull the withdrawn MinIO
-   Community image; the clean-install S3 override has passed locally and still
-   needs the exact-commit CI gate. The local scan does not replace CI image
-   scanning, SBOM generation, or a registry release by digest.
+1. Review and merge the draft release PR when approved. GitHub Actions run
+   `36630667887` passed the `Release gate` on
+   `d629a7153c5b33ddf6ece438bdc98faf2d428067`, including clean-install
+   full-stack flows, image scanning, and SBOM generation. Production registry
+   publication, signing/attestation, digest promotion, and platform rollback
+   still need a target deployment.
 2. Configure the actual operator name, private monitored support address, and
    review the Privacy Policy, Terms, and moderation process for the deployment.
 3. Provision and test the production domain, TLS edge, trusted proxy CIDR,

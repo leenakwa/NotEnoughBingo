@@ -29,17 +29,22 @@ index. This plan sets the order of work; it does not reduce the checklist.
 | 4. Release mechanics | Clean install, migrations, image builds, worker/Beat, CI, scans, backup/restore, rollback, production config, and smoke instructions. | Exact release artifact has a passing gate and rehearsed deployment/rollback procedures. |
 | 5. Real deployment | Domain, TLS, email, object storage, monitoring, alerts, external recovery, real browser smoke and network/console checks. | All applicable tracker sections have production evidence; external owner decisions are resolved. |
 
+Stages 1–3 have local evidence. Stage 4 is in progress: its exact-commit CI
+gate passed on `d629a7153c5b33ddf6ece438bdc98faf2d428067`, while registry
+promotion and rollback on the target platform remain open. Stage 5 has no real
+deployment evidence yet. These are workflow stages, not a percentage of the
+105 completed production checks.
+
 ## Immediate work queue
 
-1. Finish browser audit of remaining narrow and wide screens, modal focus,
-   public routes, long board content, browser console, and network failures.
-2. Recheck authorization, duplicate/concurrent writes, privacy, and worker
-   integrity beyond the current single-user flows.
-3. Validate clean install, current production images, CI configuration,
-   database **and media** backup/restore, and rollback on the exact tree.
-4. Review the complete diff, prepare a release commit, and gather
-   target-environment details
-   for the real deployment and final production smoke.
+1. Extend local evidence for invalid inputs, media errors, keyboard/responsive
+   controls, and service outages where current scenarios are still narrow.
+2. Review the draft PR and target migration compatibility. Record the exact
+   registry digests and rehearse rollback once a deployment platform exists.
+3. Obtain the actual domain, DNS/TLS edge, production service endpoints,
+   support/legal owner decisions, and access needed for the real deployment.
+4. Configure production backups/monitoring, perform an off-site database and
+   media restore drill, then run the full real-domain user and smoke sequence.
 
 ## Local milestones already exercised
 

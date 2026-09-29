@@ -311,7 +311,18 @@ observed results and their limits. Do not include credentials or session data.
   volumes and credentials were removed after verification.
 - The local emulator auto-creates a bucket and does not prove production IAM,
   versioning, lifecycle, or off-site recovery. Those deployment gates remain
-  open. The exact new commit still needs its GitHub Release gate result.
+  open.
+
+### 2026-09-30 — Exact-commit CI gate (sections 70–73, 105)
+
+- GitHub Actions run `36630667887` completed successfully on commit
+  `d629a7153c5b33ddf6ece438bdc98faf2d428067`. Foundation configuration,
+  secret scan, backend and frontend checks, static browser smoke, live
+  full-stack product flows, both production-image jobs, and the aggregate
+  `Release gate` all passed. GitGuardian also reported success on the PR.
+- This proves the repository gate for that commit. It does not prove registry
+  publication, image signing, deployment, rollback on the target platform, or
+  any production-domain behavior. The PR remains a draft and unmerged.
 
 ### Remaining local evidence to gather
 
