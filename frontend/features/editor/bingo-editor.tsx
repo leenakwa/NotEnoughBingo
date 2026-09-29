@@ -66,9 +66,11 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [hydrating, setHydrating] = useState(Boolean(bingoId));
-  const [authState, setAuthState] = useState<"checking" | "allowed" | "guest" | "unverified">(
-    "checking",
-  );
+  const [authState, setAuthState] = useState<
+    "checking" | "allowed" | "guest" | "unverified" | "error"
+  >("checking");
+  const [authError, setAuthError] = useState("");
+  const [authCheckVersion, setAuthCheckVersion] = useState(0);
   const [accountId, setAccountId] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [exportAvailable, setExportAvailable] = useState(false);
@@ -107,25 +109,37 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
 
   useEffect(() => {
     let active = true;
+    setAuthState("checking");
+    setAuthError("");
     api.auth
-      .me()
+      .session()
       .then((user) => {
         if (!active) return;
+        if (!user) {
+          setAccountId("");
+          setAccountEmail("");
+          setAuthState("guest");
+          setHydrating(false);
+          return;
+        }
         setAccountId(user.id);
         setAccountEmail(user.email);
         setAuthState(user.email_verified ? "allowed" : "unverified");
+        if (!user.email_verified) setHydrating(false);
       })
-      .catch(() => {
+      .catch((caught) => {
         if (active) {
           setAccountId("");
-          setAuthState("guest");
+          setAccountEmail("");
+          setAuthError(errorMessage(caught));
+          setAuthState("error");
           setHydrating(false);
         }
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [authCheckVersion]);
 
   useEffect(() => {
     if (authState !== "allowed" || !accountId) return;
@@ -582,13 +596,29 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     );
   }
 
+  if (authState === "error") {
+    return (
+      <main id="main-content" className="create-shell">
+        <ErrorState
+          message={authError}
+          onRetry={() => setAuthCheckVersion((version) => version + 1)}
+        />
+      </main>
+    );
+  }
+
   if (authState === "guest") {
     return (
       <main id="main-content" className="create-shell">
         <EmptyState
-          title="Log in to create"
-          description="Anyone can play public bingos. A verified account is required to save and publish one."
+          title="Create your own bingo"
+          headingLevel={1}
+          description="Create an account and verify your email to save and publish bingos. You can play public boards without an account."
           action={{
+            href: "/register",
+            label: "Create account",
+          }}
+          secondaryAction={{
             href: `/login?next=${encodeURIComponent(
               bingoId ? `/create?bingo=${bingoId}` : "/create",
             )}`,
@@ -604,6 +634,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       <main id="main-content" className="create-shell">
         <EmptyState
           title="Verify your email"
+          headingLevel={1}
           description="Confirm your email address before creating, saving, or publishing bingos."
           action={{
             href: `/verify-email?email=${encodeURIComponent(accountEmail)}`,

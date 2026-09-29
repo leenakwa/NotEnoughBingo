@@ -27,6 +27,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Verify the complete user readiness checklist
+        run: python3 infra/scripts/verify-readiness-checklist.py
+
       - name: Validate Compose model
         run: |
           set -o pipefail

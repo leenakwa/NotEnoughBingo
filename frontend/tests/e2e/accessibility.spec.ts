@@ -127,7 +127,8 @@ test("authentication and editor entry states pass the serious accessibility gate
   await expectNoSeriousViolations(page);
 
   await page.goto("/create");
-  await expect(page.getByText("Log in to create")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create your own bingo" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create account" })).toBeVisible();
   await expectNoSeriousViolations(page);
 
   await page.route("**/api/v1/notifications/**", (route) =>
@@ -141,16 +142,18 @@ test("authentication and editor entry states pass the serious accessibility gate
   await expect(page.getByText("Log in to view notifications")).toBeVisible();
   await expectNoSeriousViolations(page);
 
-  await page.unroute("**/api/v1/auth/me/");
-  await page.route("**/api/v1/auth/me/", (route) =>
+  await page.unroute("**/api/v1/auth/session/");
+  await page.route("**/api/v1/auth/session/", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        ...author,
-        email: "author@example.test",
-        email_verified: true,
-        deletion_scheduled_for: null,
+        user: {
+          ...author,
+          email: "author@example.test",
+          email_verified: true,
+          deletion_scheduled_for: null,
+        },
       }),
     }),
   );

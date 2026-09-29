@@ -483,6 +483,13 @@ h3 {
   margin: 0;
 }
 
+.page-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
 .page-state--error {
   border-color: var(--danger);
   color: var(--danger);
@@ -708,7 +715,7 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 6px 9px;
   border: var(--line);
   font-size: 0.8rem;
@@ -1032,7 +1039,7 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 5px 9px;
   border: var(--line);
   background: var(--paper);

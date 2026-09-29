@@ -429,6 +429,83 @@ observed results and their limits. Do not include credentials or session data.
   object store, or externally exposed backend. Repeat these probes after
   deployment before checking off the sections.
 
+### 2026-09-30 — Mobile language and play controls (sections 21–23, 95)
+
+- A new isolated mobile WebKit scenario opened the Discover language chooser,
+  selected Russian and English, confirmed the empty/result states, and then
+  switched a played cell between cross, checkmark, and diagonal marks. It also
+  used Space to close and reopen the language chooser and ArrowRight to change
+  the native radio selection. The first run failed because the language option
+  labels measured 40 CSS pixels high against the project's 44-pixel mobile
+  target. Both language and mark labels now have a 44-pixel minimum height.
+- The focused WebKit scenario passed after the CSS fix; the full mobile WebKit
+  live file passed 2/2. The existing Chromium keyboard/filter scenario passed
+  again at 320 and 1710 pixels. Neither mobile screen had horizontal page
+  overflow. Frontend ESLint and TypeScript checks passed. This proves the
+  tested local browser and device emulations, not every physical device.
+
+### 2026-09-30 — Predeployment checklist traceability (sections 72, 105)
+
+- The original 40,643-byte user prompt remains unchanged. An editable working
+  copy now includes all 105 numbered sections and 1,142 checkbox items. The
+  repository verifier reverses checkbox markup and compares every original
+  line, checks checklist and tracker section order, and validates the source
+  SHA-256; it passed locally and is part of the CI foundation job.
+- The section tracker now reports predeployment verdicts separately from
+  deployment-only checks. At this snapshot, 1 section has complete local
+  evidence, 57 have partial section-specific evidence, 41 await an itemized
+  verdict, 5 conditional sections are N/A for this release based on the
+  source inventory. These are evidence states, not a claim that 58 sections
+  have passed all their original bullets. Section 74 explicitly requires a
+  live deployment and is tracked separately. The public deployment remains
+  unproven.
+
+### 2026-09-30 — Rehearsed public deployment smoke (sections 38–39, 74, 77, 79–80)
+
+- Added `infra/scripts/smoke-public.sh` with an HTTPS-only default and a
+  localhost-only HTTP override for isolated rehearsal. It requires a known
+  published board ID, checks public pages, one board, readiness, guest session,
+  robots/sitemap origin, icon and social image, true 404s, and representative
+  private paths. It also rejects a guest session response lacking `no-store`.
+- `shellcheck` and `bash -n` passed. The script passed against the `nebqa`
+  proxy and current public fixture board: 17 route/status probes plus the
+  robots and cache-header checks. Missing HTTPS opt-in and a malformed bingo
+  ID were rejected before network requests. A later replay with an ID from a
+  fixture that had since been reseeded correctly failed its board probe with
+  404; using the current fixture manifest ID passed all probes. The script
+  has not run on a
+  public domain; it does not validate email delivery, authenticated writes,
+  external monitoring, or recovery after a real deployment.
+
+### 2026-09-30 — New visitor enters Create (sections 1–3, 6, 14–15, 32, 75–76)
+
+- A manual guest journey on the QA stack opened Discover at mobile and 1710 px,
+  followed **Find a bingo** to Explore, returned with browser Back, then
+  followed **Create your own** to `/create`. Before the fix, the editor made
+  two protected `/auth/me/` requests, both HTTP 403, despite presenting a
+  guest message. The editor now calls the guest-safe `/auth/session/` endpoint.
+  A fresh guest reload had no console errors; its observed session requests
+  returned 200. The protected `/auth/me/` contract remains unchanged.
+- Discover's first-screen description now names the community feed and the
+  two immediate actions without implying a guest already follows people or
+  tags. The mobile hero still exposes the primary **Find a bingo** action.
+  Eight observable first-screen bullets in section 2 are checked in the
+  working copy; the problem/value wording, explicit free/paid clarity, CTA
+  competition, and reader comprehension still need an itemized UX verdict.
+- The guest Create state now names the action, explains the verified-account
+  requirement, offers **Create account** and **Log in** links, and uses a page
+  level heading. A failed session check shows a retryable error instead of
+  pretending the visitor is signed out. An unverified user opening a draft
+  link sees verification options instead of a permanent loading state. The
+  registration link reached the Register page; the login link preserves
+  `/create` as its return path.
+- The live route audit passed with `/create` included at 320 and 1710 px and
+  no guest 401/403 or horizontal overflow. A live author created, saved,
+  edited, and published a board. Editor unit tests passed 13/13; focused
+  Chromium and mobile browser accessibility/outage scenarios passed 4/4;
+  frontend format, ESLint, and TypeScript checks passed. This covers the
+  local guest and author flows, not real email verification after deployment.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

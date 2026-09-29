@@ -196,6 +196,7 @@ test.describe("live full-stack product flows", () => {
       "/community-guidelines",
       "/login",
       "/register",
+      "/create",
       "/forgot-password",
       "/verify-email",
       "/reset-password",
@@ -228,6 +229,16 @@ test.describe("live full-stack product flows", () => {
           .toBeLessThanOrEqual(width);
       }
     }
+    await page.goto("/discover");
+    await page.getByRole("link", { name: "Create your own" }).click();
+    await expect(page).toHaveURL(/\/create$/);
+    await expect(
+      page.getByRole("heading", { name: "Create your own bingo", level: 1 }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Create account" })).toHaveAttribute(
+      "href",
+      "/register",
+    );
     checkingGuestRoutes = false;
     expect(guestAuthFailures).toEqual([]);
     await authenticateAs(page, "author");

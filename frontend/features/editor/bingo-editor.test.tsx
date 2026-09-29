@@ -8,7 +8,7 @@ import { ApiClientError } from "@/lib/api/client";
 import type { BingoDetail, BingoDraft, ExportJob, RevisionCell } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
-  me: vi.fn(),
+  session: vi.fn(),
   getDraft: vi.fn(),
   getBingo: vi.fn(),
   createDraft: vi.fn(),
@@ -46,7 +46,7 @@ vi.mock("@/lib/api/client", () => {
     errorMessage: (error: unknown) =>
       error instanceof Error ? error.message : "The request failed.",
     api: {
-      auth: { me: mocks.me },
+      auth: { session: mocks.session },
       bingos: {
         getDraft: mocks.getDraft,
         get: mocks.getBingo,
@@ -169,7 +169,7 @@ describe("BingoEditor autosave and safety", () => {
     vi.clearAllMocks();
     window.localStorage.clear();
     vi.spyOn(window, "confirm").mockReturnValue(true);
-    mocks.me.mockResolvedValue({
+    mocks.session.mockResolvedValue({
       id: "user-id",
       email: "author@example.test",
       username: "author",
@@ -193,6 +193,51 @@ describe("BingoEditor autosave and safety", () => {
       download_url: null,
       error: null,
     } as ExportJob);
+  });
+
+  it("offers account creation to a guest without opening an editor draft", async () => {
+    mocks.session.mockResolvedValueOnce(null);
+    await openEditor();
+
+    expect(screen.getByRole("heading", { name: "Create your own bingo", level: 1 })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Create account" })).toHaveAttribute(
+      "href",
+      "/register",
+    );
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute(
+      "href",
+      "/login?next=%2Fcreate",
+    );
+    expect(mocks.getDraft).not.toHaveBeenCalled();
+  });
+
+  it("shows verification options for an unverified account with a draft link", async () => {
+    mocks.session.mockResolvedValueOnce({
+      id: "user-id",
+      email: "author@example.test",
+      username: "author",
+      display_name: "Author",
+      avatar: null,
+      email_verified: false,
+      deletion_scheduled_for: null,
+    });
+    await openEditor(BINGO_ID);
+
+    expect(screen.getByRole("heading", { name: "Verify your email", level: 1 })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Verification options" })).toBeVisible();
+    expect(mocks.getDraft).not.toHaveBeenCalled();
+  });
+
+  it("explains a session connection error and can retry into the editor", async () => {
+    mocks.session.mockRejectedValueOnce(new Error("Connection unavailable"));
+    await openEditor();
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Connection unavailable");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await settle();
+    await settle();
+    expect(screen.getByRole("heading", { name: "Create bingo" })).toBeVisible();
+    expect(mocks.session).toHaveBeenCalledTimes(2);
   });
 
   it("debounces rapid new-board edits and transitions dirty to saving to saved", async () => {

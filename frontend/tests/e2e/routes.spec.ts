@@ -51,6 +51,27 @@ test("primary navigation uses the production route names", async ({ page }) => {
   await expect(page.getByText("For You")).toHaveCount(0);
 });
 
+test("guest creation offers signup and recovers from a session outage", async ({ page }) => {
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "unavailable", message: "Please try later." } }),
+    }),
+  );
+  await page.goto("/create");
+  await expect(page.locator("main [role='alert']")).toContainText("Please try later.");
+
+  await page.unroute("**/api/v1/auth/session/");
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
+  );
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { name: "Create your own bingo" })).toBeVisible();
+  await page.getByRole("link", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/register$/);
+});
+
 test("bingo card keeps tags with actions and handles guest likes without an API error", async ({
   page,
 }) => {

@@ -18,7 +18,7 @@ export default async function DiscoverPage() {
     <FeedPage
       kind="discover"
       title="Discover"
-      description="New work from people you follow, tags you enjoy, and useful community picks."
+      description="Fresh bingo boards from the community. Find one to play or create your own."
       initialResult={initialResult}
     />
   );

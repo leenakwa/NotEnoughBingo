@@ -112,8 +112,9 @@ Build each production image once, scan it, record its digest and SBOM, and
 promote that exact digest. Both production images declare non-root users. Do
 not inject `.env` files or build contexts containing secrets.
 
-Browser source maps are private for this release: do not serve them or upload
-them to a public URL. No monitoring-provider map upload is configured. The CI
+Browser source maps are private for this release: they can expose original
+source and internal paths, so do not serve them or upload them to a public URL.
+No monitoring-provider map upload is configured or required for launch. The CI
 image job rejects maps and sensitive file types in the frontend's public
 directories; repeat the HTTP check on the deployed domain. Use the release
 commit and server-side error logs for debugging until a private monitoring
@@ -143,6 +144,21 @@ commit. Artifact-registry signing/attestation remains a deployment-platform
 control.
 
 ## Post-deploy synthetic checks
+
+Run the prepared read-only smoke against the canonical HTTPS origin and a
+known published board ID. It validates DNS/TLS through ordinary `curl`, public
+routes, readiness, guest session status, redirects, and representative private
+file paths without using an account:
+
+```bash
+PUBLIC_BASE_URL=https://<actual-domain> \
+PUBLIC_BINGO_ID=<published-bingo-uuid> \
+infra/scripts/smoke-public.sh
+```
+
+The same script can be rehearsed against an isolated local stack by setting
+`ALLOW_LOCAL_HTTP=1` and a localhost URL. It does not replace live email,
+storage, authenticated writes, monitoring, or rollback checks below.
 
 Run a low-frequency external monitor from outside the origin network:
 

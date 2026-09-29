@@ -26,19 +26,31 @@ export function EmptyState({
   title,
   description,
   action,
+  secondaryAction,
+  headingLevel = 2,
 }: {
   title: string;
   description: string;
   action?: { href: string; label: string };
+  secondaryAction?: { href: string; label: string };
+  headingLevel?: 1 | 2;
 }) {
+  const Heading = headingLevel === 1 ? "h1" : "h2";
   return (
     <div className="page-state page-state--empty">
-      <h2>{title}</h2>
+      <Heading>{title}</Heading>
       <p>{description}</p>
       {action ? (
-        <Link className="button button--primary" href={action.href}>
-          {action.label}
-        </Link>
+        <div className="page-state__actions">
+          <Link className="button button--primary" href={action.href}>
+            {action.label}
+          </Link>
+          {secondaryAction ? (
+            <Link className="button button--secondary" href={secondaryAction.href}>
+              {secondaryAction.label}
+            </Link>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
