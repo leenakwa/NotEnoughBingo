@@ -5,6 +5,7 @@ import { generateMetadata as profileMetadata } from "@/app/profile/[username]/pa
 import { generateMetadata as shareMetadata } from "@/app/share/[bingoId]/[shareId]/page";
 import sitemap from "@/app/sitemap";
 import type { BingoDetail, SharedResult, UserProfile } from "@/lib/api/types";
+import { absoluteSiteUrl } from "@/lib/site";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -155,7 +156,7 @@ describe("public route metadata", () => {
     expect(metadata.description).toContain("2 of 2 cells selected");
     expect(metadata.robots).toEqual({ index: false, follow: true });
     expect(metadata.alternates).toMatchObject({
-      canonical: "http://localhost:3000/share/11111111-1111-4111-8111-111111111111/share-token",
+      canonical: absoluteSiteUrl("/share/11111111-1111-4111-8111-111111111111/share-token"),
     });
   });
 
@@ -183,7 +184,7 @@ describe("public route metadata", () => {
     expect(metadata.title).toBe("Author Name (@author)");
     expect(metadata.description).toBe("Creator of practical community bingo boards.");
     expect(metadata.alternates).toMatchObject({
-      canonical: "http://localhost:3000/profile/author",
+      canonical: absoluteSiteUrl("/profile/author"),
     });
   });
 
