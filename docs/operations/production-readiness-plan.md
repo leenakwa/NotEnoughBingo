@@ -76,6 +76,9 @@ language choice and skip, and useful empty-profile actions at narrow width.
 Empty states section 16 is checked after live search, comments, notifications,
 and blank-editor paths plus static empty-feed accessibility checks; absent
 commerce, teams, and analytics screens were classified as not applicable.
+Search section 17 is checked after bounded API queries for empty, Unicode,
+special-character, and paginated results plus live Enter, combined-filter,
+URL, and clear flows and static loading/debounce checks.
 
 ## Launch blockers currently outside the local stack
 

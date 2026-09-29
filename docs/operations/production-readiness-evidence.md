@@ -680,6 +680,29 @@ observed results and their limits. Do not include credentials or session data.
   generic checklist categories were evaluated against those product
   equivalents or classified as not applicable, not treated as unseen UI.
 
+### 2026-09-30 — Catalog search edge cases and interaction (section 17)
+
+- A PostgreSQL API regression created five public boards and checked an empty
+  query, whitespace, one-character match, case-insensitive match, no-match
+  typo, Cyrillic text, emoji, and literal `%` and `_` searches. It also checked
+  one match, two Summer matches, five total results across paginated pages,
+  and 400 responses for over-80-character title and author queries. The test
+  passed 1/1 after the fixture author name was changed so a literal `_` query
+  did not correctly match every board through its author field. The main
+  catalog now limits these query lengths server-side, and the title field
+  limits typing to 80 characters client-side.
+- Live Chromium submitted a mixed-case title with surrounding spaces using
+  Enter, observed the trimmed query and matching board, reloaded to find the
+  URL and input preserved, combined the query with Russian-only filtering to
+  reach the no-results state, then cleared all filters and recovered the
+  public board. The scenario passed 1/1. A separate live no-match search also
+  showed explicit guidance.
+- Static Chromium held the catalog response pending and observed `aria-busy`
+  plus “Updating results…” until it arrived. Another static scenario rapidly
+  changed the author suggestion query from `a` to `ad` and observed only the
+  final `ad` API request after the 250 ms debounce. Both passed 1/1. The
+  separate author/tag suggestion UI scenario already passed in the browser.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

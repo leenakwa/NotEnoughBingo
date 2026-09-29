@@ -311,6 +311,68 @@ test("explore suggests public authors and tags and lets active filters be remove
   );
 });
 
+test("Explore keeps search visibly busy until a slow result arrives", async ({ page }) => {
+  const emptyPage = { count: 0, next: null, previous: null, results: [] };
+  await page.route("**/api/v1/auth/csrf/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
+  );
+  await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204 }));
+  let releaseSlowResponse = () => {};
+  let reportSlowRequest = () => {};
+  const slowResponse = new Promise<void>((resolve) => {
+    releaseSlowResponse = resolve;
+  });
+  const slowRequest = new Promise<void>((resolve) => {
+    reportSlowRequest = resolve;
+  });
+  await page.route("**/api/v1/bingos/**", async (route) => {
+    if (new URL(route.request().url()).searchParams.get("search") === "slow") {
+      reportSlowRequest();
+      await slowResponse;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(emptyPage),
+    });
+  });
+
+  await page.goto("/explore");
+  await expect(page.getByRole("heading", { name: "No matching bingos" })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search by title" }).fill("slow");
+  await page.getByRole("searchbox", { name: "Search by title" }).press("Enter");
+  await slowRequest;
+  await expect(page.locator("main#main-content")).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator(".results-count")).toContainText("Updating results");
+  releaseSlowResponse();
+  await expect(page.locator("main#main-content")).toHaveAttribute("aria-busy", "false");
+});
+
+test("Explore waits for the last author-suggestion query", async ({ page }) => {
+  const queries: string[] = [];
+  await page.route("**/api/v1/bingos/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
+    }),
+  );
+  await page.route("**/api/v1/authors/**", (route) => {
+    queries.push(new URL(route.request().url()).searchParams.get("search") ?? "");
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
+    });
+  });
+
+  await page.goto("/explore");
+  const author = page.getByRole("combobox", { name: "Author" });
+  await author.fill("a");
+  await author.fill("ad");
+  await expect.poll(() => queries).toEqual(["ad"]);
+});
+
 test("create opens the coordinate-safe editor", async ({ page }) => {
   await page.unroute("**/api/v1/auth/session/");
   await page.route("**/api/v1/auth/session/", (route) =>

@@ -104,6 +104,40 @@ def test_bingo_api_enforces_catalog_and_direct_link_visibility(verified_user_fac
     assert stranger.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
 
 
+def test_catalog_search_handles_unicode_literals_limits_and_pagination(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory(username="catalogowner")
+    boards = {}
+    for title in ("Summer day", "Summer night", "Zebra", "Привет ☕", "100% under_score"):
+        board, _ = _published_bingo(author=author, title=title)
+        boards[title] = str(board.public_id)
+    guest = _api_client()
+
+    assert guest.get("/api/v1/bingos/", {"search": ""}).data["count"] == 5
+    assert guest.get("/api/v1/bingos/", {"search": "   "}).data["count"] == 5
+    assert guest.get("/api/v1/bingos/", {"search": "z"}).data["results"][0]["id"] == boards["Zebra"]
+    assert guest.get("/api/v1/bingos/", {"search": "SUMMER"}).data["count"] == 2
+    for query, title in (
+        ("Привет", "Привет ☕"),
+        ("☕", "Привет ☕"),
+        ("%", "100% under_score"),
+        ("_", "100% under_score"),
+    ):
+        response = guest.get("/api/v1/bingos/", {"search": query})
+        assert response.status_code == 200
+        assert [item["id"] for item in response.data["results"]] == [boards[title]], query
+    assert guest.get("/api/v1/bingos/", {"search": "no-match-typo"}).data["count"] == 0
+
+    first_page = guest.get("/api/v1/bingos/", {"page_size": 2})
+    assert first_page.data["count"] == 5
+    assert len(first_page.data["results"]) == 2
+    assert first_page.data["next"] is not None
+    assert guest.get("/api/v1/bingos/", {"page_size": 2, "page": 3}).data["count"] == 5
+    assert guest.get("/api/v1/bingos/", {"search": "x" * 81}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"author": "x" * 81}).status_code == 400
+
+
 def test_direct_urls_and_spoofed_role_cannot_change_another_users_bingo(
     verified_user_factory,
 ) -> None:

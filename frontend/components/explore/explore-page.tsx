@@ -214,6 +214,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Enter a title"
+              maxLength={80}
             />
           </span>
         </label>

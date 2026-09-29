@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **8 verified**, **51 partial**, **40 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **9 verified**, **50 partial**, **40 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -64,7 +64,7 @@ unresolved failures or missing evidence.
 - [x] 14. AUTHORIZATION — Verified before deployment: direct admin/API and cross-account ID/role/delete/download probes, including the fixed old-share media leak.
 - [x] 15. ONBOARDING — Verified before deployment: first-login language step and skip persist, helpful first actions and profile empty states, responsive browser journey; multi-step progress is N/A because setup has one step.
 - [x] 16. EMPTY STATES — Verified before deployment: zero-data feed/search, profile, notifications, comments, and editor states; teams, commerce, charts, and analytics-period screens are absent.
-- [ ] 17. SEARCH — Partial: local evidence recorded; review remaining original bullets.
+- [x] 17. SEARCH — Verified before deployment: input normalization, Unicode/literal matching, result counts and pagination, visible loading, debounced suggestions, Enter, combined filters, URL restore, and clear.
 - [ ] 18. TABLES AND LISTS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 19. FILE UPLOADS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 20. IMAGES — Review pending: map original bullets to repository and runtime evidence.

@@ -353,23 +353,23 @@ Empty states should be intentional, not just blank.
 
 If search exists, test:
 
-- [ ] empty query;
-- [ ] whitespace;
-- [ ] one character;
-- [ ] case differences;
-- [ ] typo/no match;
-- [ ] Unicode;
-- [ ] emoji;
-- [ ] special characters;
-- [ ] no results;
-- [ ] one result;
-- [ ] many results;
-- [ ] loading;
-- [ ] debouncing;
-- [ ] Enter;
-- [ ] clearing;
-- [ ] filters + search;
-- [ ] URL persistence where appropriate.
+- [x] empty query;
+- [x] whitespace;
+- [x] one character;
+- [x] case differences;
+- [x] typo/no match;
+- [x] Unicode;
+- [x] emoji;
+- [x] special characters;
+- [x] no results;
+- [x] one result;
+- [x] many results;
+- [x] loading;
+- [x] debouncing;
+- [x] Enter;
+- [x] clearing;
+- [x] filters + search;
+- [x] URL persistence where appropriate.
 
 # 18. TABLES AND LISTS
 

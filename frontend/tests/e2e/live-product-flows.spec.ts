@@ -371,6 +371,29 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByText("No cover selected")).toBeVisible();
   });
 
+  test("Explore search submits, filters, reloads, and clears through its URL", async ({ page }) => {
+    const title = readLiveFixture().bingos.public.title;
+    await page.goto("/explore");
+    const search = page.getByRole("searchbox", { name: "Search by title" });
+    await search.fill("  E2E PUBLIC  ");
+    await search.press("Enter");
+    await expect(page).toHaveURL(/search=E2E\+PUBLIC/);
+    await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
+    await page.reload();
+    await expect(search).toHaveValue("E2E PUBLIC");
+
+    const languages = page.getByRole("group", { name: "Bingo languages" });
+    await languages.getByLabel("Russian").check();
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page).toHaveURL(/search=E2E\+PUBLIC.*languages=ru/);
+    await expect(page.getByRole("heading", { name: "No matching bingos" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Clear all filters" }).click();
+    await expect(page).toHaveURL(/\/explore$/);
+    await expect(search).toHaveValue("");
+    await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
+  });
+
   test("author creates, saves, edits, and publishes a draft", async ({ page }, testInfo) => {
     const title = `E2E UI Created Board ${testInfo.retry}`;
     await authenticateAs(page, "author");

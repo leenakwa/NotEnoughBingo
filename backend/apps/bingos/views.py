@@ -295,6 +295,8 @@ class BingoViewSet(
             return queryset
         params = self.request.query_params
         search = params.get("search", "").strip()
+        if len(search) > 80:
+            raise ValidationError({"search": "Must be at most 80 characters."})
         if search:
             queryset = queryset.filter(
                 Q(title__icontains=search)
@@ -302,6 +304,8 @@ class BingoViewSet(
                 | Q(author__profile__display_name__icontains=search)
             )
         author = params.get("author", "").strip()
+        if len(author) > 80:
+            raise ValidationError({"author": "Must be at most 80 characters."})
         if author:
             queryset = queryset.filter(
                 Q(author__username__icontains=author)
