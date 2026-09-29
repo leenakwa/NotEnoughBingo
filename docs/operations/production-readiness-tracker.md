@@ -125,6 +125,12 @@ browser flows, and known local limits. It does not attest to the 105 sections
 on a live production domain. Before checking any section, record concrete
 evidence for its relevant bullets and mark non-applicable items explicitly.
 
+The source inventory found no current OAuth/social login, payments, incoming
+webhooks, AI/LLM features, or teams/organizations. Sections 47–49, 54, and 57
+are conditional and currently have no product flow; the evidence log records
+the source checks. Section 60 has no PWA implementation, but stale browser
+worker/cache behavior still needs checking on the actual deployment.
+
 The CI Release gate passed on `d629a7153c5b33ddf6ece438bdc98faf2d428067`.
 The remaining launch gates are release review and promotion, operator/legal/
 support decisions, production DNS/TLS/managed services and monitoring, off-site

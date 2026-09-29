@@ -89,6 +89,10 @@ repository CI checkout the assertion runs normally.
 - A shared result from an earlier public revision now becomes inaccessible to
   visitors when its bingo is made private. The API regression checked 200
   before the change, 404 afterward, and continued owner access.
+- The production frontend image now fails to build without a valid support
+  email. A local image built with a CI-only address rendered that `mailto:` on
+  `/support` rather than the public issue tracker. A real monitored inbox is
+  still a launch gate.
 - Seventeen guest-facing routes plus signed-in Profile, Notifications, and
   Create returned expected page statuses without JavaScript errors, 5xx
   responses, or horizontal overflow at 320 and 1710 pixels. Account settings

@@ -324,6 +324,31 @@ observed results and their limits. Do not include credentials or session data.
   publication, image signing, deployment, rollback on the target platform, or
   any production-domain behavior. The PR remains a draft and unmerged.
 
+### 2026-09-30 — Production support contact (sections 40, 70, 88)
+
+- The production frontend image now requires a syntactically valid
+  `NEXT_PUBLIC_SUPPORT_EMAIL` build argument and carries it into the runtime
+  stage. A build with the required HTTPS origin but no support address failed
+  at the guard as intended. A production image built with the CI-only
+  `support@example.test` address; its `/support` page returned HTTP 200,
+  rendered `mailto:support@example.test`, and did not render the public issue
+  tracker fallback. The temporary test container was stopped.
+- This does not prove that a real support inbox exists, is monitored, receives
+  and answers mail, or is appropriate for privacy/security reports. The
+  operator must supply and test that address before a public deployment.
+
+### 2026-09-30 — Conditional feature inventory (sections 47–49, 54, 57, 60)
+
+- Inspected backend URL registration, frontend page routes, application
+  dependencies, and source references. This release candidate has no OAuth or
+  social-login integration, payment checkout or billing, incoming webhooks,
+  AI/LLM feature, or team/organization workflow. The conditional scenarios in
+  sections 47–49, 54, and 57 therefore have no current product flow to test.
+- There is no registered service worker or PWA manifest in the frontend
+  source. Section 60 still requires a real-browser check for stale workers or
+  caches on the actual deployment. Reopen these conditional sections if their
+  capabilities are added before launch.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

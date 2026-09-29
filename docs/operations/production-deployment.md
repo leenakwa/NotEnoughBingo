@@ -44,7 +44,8 @@ Provide secrets from a secret manager and configure at least:
 - `ANALYTICS_RAW_EVENT_RETENTION_DAYS` (90 by default, never below the
   seven-day Trending window) with the scheduled cleanup task enabled;
 - a monitored `NEXT_PUBLIC_SUPPORT_EMAIL`. It is public and is embedded when
-  the frontend image is built; without it the support page links to GitHub.
+  the frontend image is built. The production Dockerfile rejects a missing or
+  malformed address; the operator must verify that the inbox receives mail.
 - the exact public HTTPS origin as `NEXT_PUBLIC_APP_URL` when building the
   frontend image. The production Dockerfile rejects a missing or non-HTTPS
   value. Rebuild the image if the public origin changes; the CI image uses a
