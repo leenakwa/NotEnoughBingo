@@ -64,6 +64,9 @@ production-image origin validation, notifications, account preferences,
 multilingual long content, and email change have specific browser or server evidence in
 the [evidence log](production-readiness-evidence.md). They remain separate from
 the still-open production checklist boxes.
+Signup and login sections 10–11 now have every applicable predeployment bullet
+checked, including live email verification, resend, invalid credentials,
+rate limiting, keyboard submission, and already-authenticated navigation.
 
 ## Launch blockers currently outside the local stack
 

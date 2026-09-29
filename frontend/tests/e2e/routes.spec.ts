@@ -312,19 +312,21 @@ test("explore suggests public authors and tags and lets active filters be remove
 });
 
 test("create opens the coordinate-safe editor", async ({ page }) => {
-  await page.unroute("**/api/v1/auth/me/");
-  await page.route("**/api/v1/auth/me/", (route) =>
+  await page.unroute("**/api/v1/auth/session/");
+  await page.route("**/api/v1/auth/session/", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        id: "11111111-1111-4111-8111-111111111111",
-        username: "author",
-        display_name: "Author",
-        avatar: null,
-        email: "author@example.test",
-        email_verified: true,
-        deletion_scheduled_for: null,
+        user: {
+          id: "11111111-1111-4111-8111-111111111111",
+          username: "author",
+          display_name: "Author",
+          avatar: null,
+          email: "author@example.test",
+          email_verified: true,
+          deletion_scheduled_for: null,
+        },
       }),
     }),
   );

@@ -156,9 +156,10 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError("This username is unavailable.")
         return normalized
 
-    def validate_password(self, value: str) -> str:
-        validate_password(value)
-        return value
+    def validate(self, attrs: dict) -> dict:
+        candidate = User(username=attrs["username"], email=attrs["email"])
+        validate_password(attrs["password"], candidate)
+        return attrs
 
 
 class LoginSerializer(serializers.Serializer):

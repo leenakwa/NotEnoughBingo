@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **1 verified**, **57 partial**, **41 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **3 verified**, **56 partial**, **40 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -57,8 +57,8 @@ unresolved failures or missing evidence.
 - [ ] 7. FORMS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 8. BUTTONS AND CONTROLS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 9. DESTRUCTIVE ACTIONS — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 10. SIGNUP — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 11. LOGIN — Partial: local evidence recorded; review remaining original bullets.
+- [x] 10. SIGNUP — Verified before deployment: browser validation, password visibility and Enter, Mailpit verification and resend, duplicate and weak-password API behavior, expired and reused links.
+- [x] 11. LOGIN — Verified before deployment: valid/invalid credentials, rate limit, safe return navigation, signed-in redirect, and session-error fallback.
 - [ ] 12. PASSWORD RESET — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 13. LOGOUT — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 14. AUTHORIZATION — Partial: local evidence recorded; review remaining original bullets.

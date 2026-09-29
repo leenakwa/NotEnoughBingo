@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { PasswordField } from "@/components/auth/password-field";
 import { api, errorMessage } from "@/lib/api/client";
 
 export function RegisterForm() {
@@ -58,18 +59,14 @@ export function RegisterForm() {
           />
           <small>Letters, numbers, and underscores.</small>
         </label>
-        <label className="field">
-          <span>Password</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={12}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          <small>Use at least 12 characters.</small>
-        </label>
+        <PasswordField
+          label="Password"
+          autoComplete="new-password"
+          minLength={12}
+          hint="Use at least 12 characters. Avoid common words and your username."
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
         <button className="button button--primary" type="submit" disabled={pending}>
           {pending ? "Creating account…" : "Create account"}
         </button>

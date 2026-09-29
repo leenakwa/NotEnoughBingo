@@ -800,6 +800,28 @@ h3 {
   resize: vertical;
 }
 
+.password-field__control {
+  position: relative;
+}
+
+.password-field__control input {
+  padding-right: 76px;
+}
+
+.password-field__control button {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  min-width: 64px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-left: var(--line);
+  background: var(--paper);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .input-with-icon {
   position: relative;
 }

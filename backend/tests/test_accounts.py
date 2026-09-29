@@ -32,6 +32,7 @@ from apps.accounts.models import (
     UserPrivacySettings,
     UserProfile,
 )
+from apps.accounts.security import LoginRateLimiter
 from apps.accounts.serializers import PrivacySerializer, UserProfileReadSerializer
 from apps.accounts.services import (
     confirm_email_change,
@@ -275,6 +276,47 @@ def test_registration_is_anti_enumerating_and_creates_a_verification(
     assert set(attempts.values_list("pending_username", flat=True)) == {"new_person"}
 
 
+def test_existing_verified_email_does_not_disclose_the_account_or_change_it(
+    csrf_request,
+    verified_user_factory,
+) -> None:
+    existing = verified_user_factory(email="already@example.test")
+    old_password = existing.password
+    response = RegisterView.as_view()(
+        csrf_request(
+            "post",
+            "/api/v1/auth/register/",
+            {
+                "email": existing.email.upper(),
+                "username": "fresh_choice",
+                "password": "Strong-and-Unique-Pass-42",
+            },
+        )
+    )
+
+    assert response.status_code == 202
+    assert response.data == {"status": "verification_required"}
+    existing.refresh_from_db()
+    assert existing.password == old_password
+    assert not existing.email_verifications.exists()
+    assert User.objects.filter(email__iexact=existing.email).count() == 1
+
+
+def test_registration_rejects_weak_or_username_similar_passwords(csrf_request) -> None:
+    base = {"email": "new@example.test", "username": "bingo_creator"}
+    for password in ("short", "password123456789", "bingo_creator_2026"):
+        response = RegisterView.as_view()(
+            csrf_request(
+                "post",
+                "/api/v1/auth/register/",
+                {**base, "password": password},
+            )
+        )
+        assert response.status_code == 400
+        assert "password" in str(response.data).lower()
+    assert not User.objects.filter(email=base["email"]).exists()
+
+
 def test_registration_without_csrf_is_rejected(api_request_factory: APIRequestFactory) -> None:
     response = RegisterView.as_view()(
         api_request_factory.post(
@@ -439,6 +481,24 @@ def test_login_has_generic_failure_and_success_creates_server_side_session(
         user=user,
         event_type=SecurityEvent.EventType.LOGIN,
     ).exists()
+
+
+def test_login_locks_repeated_failures_for_the_same_email(
+    csrf_request,
+    verified_user_factory,
+    monkeypatch,
+) -> None:
+    user = verified_user_factory(email="limited@example.test")
+    monkeypatch.setattr(LoginRateLimiter, "max_email_attempts", 2)
+    endpoint = LoginView.as_view()
+    payload = {"email": user.email, "password": "incorrect-password"}
+
+    for _ in range(2):
+        response = endpoint(csrf_request("post", "/api/v1/auth/login/", payload, with_session=True))
+        assert response.status_code == 400
+    limited = endpoint(csrf_request("post", "/api/v1/auth/login/", payload, with_session=True))
+    assert limited.status_code == 429
+    assert "Retry-After" in limited
 
 
 def test_revoke_session_deletes_django_session_and_is_idempotent(user_factory) -> None:

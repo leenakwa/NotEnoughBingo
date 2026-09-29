@@ -253,31 +253,31 @@ Verify:
 
 Test:
 
-- [ ] valid email;
-- [ ] invalid email;
-- [ ] duplicate email;
-- [ ] weak password;
-- [ ] password requirements;
-- [ ] confirm password if used;
-- [ ] show/hide password;
-- [ ] Enter submit;
-- [ ] verification email;
-- [ ] verification expiration;
-- [ ] resend verification;
-- [ ] old verification links.
+- [x] valid email;
+- [x] invalid email;
+- [x] duplicate email;
+- [x] weak password;
+- [x] password requirements;
+- [x] confirm password if used;
+- [x] show/hide password;
+- [x] Enter submit;
+- [x] verification email;
+- [x] verification expiration;
+- [x] resend verification;
+- [x] old verification links.
 
 # 11. LOGIN
 
 Test:
 
-- [ ] valid credentials;
-- [ ] wrong email;
-- [ ] wrong password;
-- [ ] unknown account;
-- [ ] rate limiting;
-- [ ] remember-me if used;
-- [ ] redirect back to intended page;
-- [ ] already-authenticated user visiting login.
+- [x] valid credentials;
+- [x] wrong email;
+- [x] wrong password;
+- [x] unknown account;
+- [x] rate limiting;
+- [x] remember-me if used;
+- [x] redirect back to intended page;
+- [x] already-authenticated user visiting login.
 
 # 12. PASSWORD RESET
 

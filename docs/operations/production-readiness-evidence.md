@@ -506,6 +506,63 @@ observed results and their limits. Do not include credentials or session data.
   frontend format, ESLint, and TypeScript checks passed. This covers the
   local guest and author flows, not real email verification after deployment.
 
+### 2026-09-30 — Signup and login item audit (sections 7, 10–12, 23, 45, 53)
+
+- **Valid email, verification email, and valid credentials:** the live Chromium
+  journey registered a unique address, read the actual message from Mailpit,
+  followed its one-time link, logged in, and saved language preferences. It
+  passed again after the form changes. The same live journey submitted a
+  verification-resend request and still completed with the original link;
+  the backend cooldown test confirms an immediate resend preserves that link.
+- **Invalid email, weak password, requirements, visibility, and Enter:** the
+  browser form rejects malformed email and fewer than 12 password characters
+  without posting. Its Show/Hide control preserves the entered value, is
+  keyboard-operable, and has a 44 px target with no 320 px horizontal overflow.
+  Pressing Enter submits the valid form. `auth-forms.spec.ts` passed 20/20
+  across Chromium, mobile Chromium, Firefox, and WebKit. The reusable control
+  also covers login, password reset, email change, password change, and
+  account deletion forms. A component test passed for keyboard reveal/hide.
+- **Server password enforcement:** registration now passes the candidate email
+  and username to Django password validation, so its similarity rule actually
+  runs. A small shared validator rejects obvious words padded with digits or
+  punctuation. The API test rejected a short password, a padded `password`
+  value, and a username-similar value without creating an account.
+- **Duplicate email and recovery path:** an API test proved a verified address
+  receives the same 202 response as a new address, with no new verification
+  and no account/password mutation. The waiting page uses conditional copy and
+  provides login and password-reset links; it does not falsely claim a new
+  email was sent. The waiting page's immediate-resend feedback no longer
+  promises a fresh email during the cooldown. `confirm password if used` is
+  N/A: signup has no confirmation field; account password change does.
+- **Expiration and old links:** backend tests cover expired verification,
+  one-time use, and invalidating an earlier pending-registration link when a
+  later link verifies the address. These are service tests, not a timed
+  24-hour browser wait. The configured verification TTL is 86,400 seconds in
+  the local Compose contract.
+- **Wrong email, wrong password, unknown account, and rate limiting:** the
+  login API test gives the same generic failure for wrong credentials and an
+  unknown address. A new API test showed two failed attempts followed by HTTP
+  429 with `Retry-After` under a reduced test threshold. The live reset flow
+  confirmed an old password fails and the new password works. There is no
+  remember-me option for this release; the server-side session lifetime is
+  configured independently.
+- **Return navigation and signed-in login:** a live expired-session journey
+  returned to the intended draft after reauthentication. `safeNext` rejects
+  external and authentication-page destinations. A signed-in visitor opening
+  `/login?next=...` now goes to that local page; a session-check outage leaves
+  the login form usable with an honest status message. The browser matrix
+  exercised both states. The stale `/create` browser fixture that caused the
+  prior CI smoke failure was updated to mock `/auth/session/`, the route now
+  used by the editor; all four focused browser projects passed.
+- **Commands and limits:** the complete account backend module passed 26/26
+  on isolated PostgreSQL; frontend lint, typecheck, format and 73 unit tests
+  passed. The authentication/editor accessibility gate passed 4/4 across the
+  browser matrix; live registration/resend and password-reset flows passed.
+  The local Docker daemon briefly stopped, then restarted; the
+  first host-side pytest attempt could not resolve the Compose-only `postgres`
+  hostname, so its result is not counted. Production email delivery, a live
+  hostname, and real provider rate limits remain deployment-only evidence.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { PasswordField } from "@/components/auth/password-field";
 import { ErrorState, LoadingState } from "@/components/ui/page-state";
 import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
 import { clearAllProgressRecovery } from "@/lib/progress-recovery";
@@ -386,19 +387,15 @@ export function AccountSettings({
               }}
             />
           </label>
-          <label className="field">
-            <span>Current password for email change</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={emailChangePassword}
-              onChange={(event) => {
-                setEmailChangePassword(event.target.value);
-                setEmailFeedback(null);
-              }}
-            />
-          </label>
+          <PasswordField
+            label="Current password for email change"
+            autoComplete="current-password"
+            value={emailChangePassword}
+            onChange={(event) => {
+              setEmailChangePassword(event.target.value);
+              setEmailFeedback(null);
+            }}
+          />
           <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
             {pending === "email" ? "Sending…" : "Send confirmation email"}
           </button>
@@ -414,38 +411,26 @@ export function AccountSettings({
 
         <form className="settings-card" onSubmit={changePassword}>
           <h3>Change password</h3>
-          <label className="field">
-            <span>Current password</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>New password</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength={12}
-              required
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>Confirm new password</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength={12}
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-          </label>
+          <PasswordField
+            label="Current password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+          />
+          <PasswordField
+            label="New password"
+            autoComplete="new-password"
+            minLength={12}
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+          />
+          <PasswordField
+            label="Confirm new password"
+            autoComplete="new-password"
+            minLength={12}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+          />
           <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
             {pending === "password" ? "Changing…" : "Change password"}
           </button>
@@ -546,16 +531,12 @@ export function AccountSettings({
             </>
           ) : (
             <>
-              <label className="field">
-                <span>Confirm with your password</span>
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={deletionPassword}
-                  onChange={(event) => setDeletionPassword(event.target.value)}
-                />
-              </label>
+              <PasswordField
+                label="Confirm with your password"
+                autoComplete="current-password"
+                value={deletionPassword}
+                onChange={(event) => setDeletionPassword(event.target.value)}
+              />
               <button type="submit" className="button button--danger" disabled={Boolean(pending)}>
                 {pending === "deletion" ? "Scheduling…" : "Schedule account deletion"}
               </button>

@@ -274,6 +274,10 @@ test.describe("live full-stack product flows", () => {
     );
     await expect(page).toHaveURL(new RegExp(`/verify-email\\?email=${encodeURIComponent(email)}`));
     await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
+    await waitForResponse(page, "/api/v1/auth/resend-verification/", "POST", () =>
+      page.getByRole("button", { name: "Resend verification email" }).click(),
+    );
+    await expect(page.getByRole("status")).toContainText("check your inbox");
 
     const link = new URL(await verificationLink(request, email));
     await page.goto(`${link.pathname}${link.search}`);

@@ -45,7 +45,9 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
     try {
       await api.auth.resendVerification(email);
       setState("waiting");
-      setMessage("If this registration is pending, a fresh link is on its way.");
+      setMessage(
+        "If this registration is pending, check your inbox for a verification link. You can request another after a short wait.",
+      );
     } catch (caught) {
       setState("error");
       setMessage(errorMessage(caught));
@@ -68,7 +70,7 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
         state === "waiting"
           ? mode === "email-change"
             ? "Open the confirmation link we sent to your new address."
-            : `We sent a verification link${email ? ` to ${email}` : ""}.`
+            : `If this registration is pending, check for a verification link${email ? ` at ${email}` : ""}.`
           : "Verification links are time-limited and single-use."
       }
     >
@@ -87,14 +89,20 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
         </Link>
       ) : null}
       {mode === "registration" && state !== "verified" && email ? (
-        <button
-          type="button"
-          className="button button--secondary"
-          disabled={resending || state === "verifying"}
-          onClick={() => void resend()}
-        >
-          {resending ? "Sending…" : "Resend verification email"}
-        </button>
+        <>
+          <button
+            type="button"
+            className="button button--secondary"
+            disabled={resending || state === "verifying"}
+            onClick={() => void resend()}
+          >
+            {resending ? "Sending…" : "Resend verification email"}
+          </button>
+          <p>
+            Already have an account? <Link href="/login">Log in</Link> or{" "}
+            <Link href="/forgot-password">reset your password</Link>.
+          </p>
+        </>
       ) : null}
     </AuthShell>
   );

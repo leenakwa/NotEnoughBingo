@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { PasswordField } from "@/components/auth/password-field";
 import { api, errorMessage } from "@/lib/api/client";
 
 export function ForgotPasswordForm() {
@@ -103,17 +104,13 @@ export function ResetPasswordForm() {
       description="Reset links are single-use and expire for your safety."
     >
       <form className="stack-form" onSubmit={submit}>
-        <label className="field">
-          <span>New password</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            minLength={12}
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+        <PasswordField
+          label="New password"
+          autoComplete="new-password"
+          minLength={12}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
         <button
           className="button button--primary"
           type="submit"
