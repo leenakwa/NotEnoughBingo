@@ -595,6 +595,44 @@ observed results and their limits. Do not include credentials or session data.
   passed 2/2. These checks do not imply the future external email service is
   configured or delivering yet.
 
+### 2026-09-30 — Direct authorization probes and old-share media (section 14)
+
+- An authenticated ordinary user requested `/admin/` and the User model's
+  admin URL directly. Both redirected to the admin login rather than exposing
+  data. The same user supplied `role=moderator`, `X-Role: moderator`, and
+  `X-Is-Staff: true` to the moderation API; it returned 403 and the stored
+  account remained non-staff. Existing moderation tests separately cover
+  permission-gated reports and actions.
+- A second account opened a private bingo ID, its draft URL, and direct PUT,
+  publish, and DELETE endpoints using the owner's ID. The reads and writes
+  returned 404. Deleting the owner's public bingo returned 403; both records
+  remained live. Existing API tests cover owner-scoped uploads, exports,
+  sessions, and private share URLs. These requests exercise server rules, not
+  hidden frontend controls.
+- A new media regression reproduced a privacy leak. A public board with a
+  shared revision image was republished as private: the old share URL returned
+  404, but a guest still received the old image URL with HTTP 200. The media
+  visibility query now requires the share's current bingo to be published,
+  undeleted, unhidden, and public/unlisted, and the referenced revision to be
+  public/unlisted. The same test now gets 404 for guest and another account,
+  while the author still gets 200. The existing hidden-bingo media regression
+  also passed. The targeted test was observed failing on the old code and
+  passing after the fix.
+- Media responses previously allowed public caches to retain an image for one
+  hour. They now send `Cache-Control: private, no-store`, so a cache cannot
+  continue serving an old public image after the board becomes private. The
+  regression asserts this header on the originally public response. This
+  trades repeat image bandwidth for immediate visibility changes; a future
+  cache optimization needs an explicit revocation mechanism.
+- With `DJANGO_SETTINGS_MODULE=config.settings.test` and `USE_S3=false` to
+  reproduce the CI test configuration on the isolated PostgreSQL stack, the
+  complete API-boundary and security-regression modules passed 29/29. An
+  initial local run inherited the development Compose `USE_S3=true` setting,
+  so an unrelated upload-intent test expected local PUT but got presigned POST;
+  that environment mismatch is not counted as a product failure. Real object
+  storage policy and enforcement by the future public edge remain
+  target-environment checks.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

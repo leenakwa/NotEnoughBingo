@@ -39,7 +39,7 @@ from apps.accounts.tasks import (
 )
 from apps.accounts.views import LoginView, RegisterView
 from apps.bingos.models import Bingo
-from apps.bingos.services import create_bingo, publish_bingo
+from apps.bingos.services import create_bingo, publish_bingo, save_draft
 from apps.bingos.validators import empty_draft_document
 from apps.media_assets.models import MediaAsset
 from apps.media_assets.services import (
@@ -606,3 +606,56 @@ def test_hidden_bingo_makes_shared_revision_media_unavailable(
     assert can_view_shared_result(result=result, user=AnonymousUser()) is False
     assert asset_is_publicly_accessible(asset) is False
     assert guest.get(f"/api/v1/media/{asset.public_id}/").status_code == 404
+
+
+def test_private_republish_closes_old_shared_revision_media(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory(username="private_share_media_author")
+    other = verified_user_factory(username="private_share_media_other")
+    asset = _ready_cell_asset(owner=author)
+    document = empty_draft_document(title="Public share media", language="en")
+    document["visibility"] = Bingo.Visibility.PUBLIC
+    document["cells"][0]["text"] = "Shared image"
+    document["cells"][0]["image_asset_id"] = str(asset.public_id)
+    bingo = create_bingo(author=author, document=document)
+    revision = publish_bingo(
+        bingo=bingo,
+        actor=author,
+        idempotency_key="public-share-media-publish",
+    )
+    result = create_shared_result(
+        bingo=bingo,
+        revision_id=revision.public_id,
+        selected_cells=[str(revision.cells.get(position=0).public_id)],
+        display_name="Author",
+        idempotency_key="public-share-media-result",
+        actor=author,
+    )
+    guest = _csrf_api_client()
+    media_url = f"/api/v1/media/{asset.public_id}/"
+    share_url = f"/api/v1/shares/{bingo.public_id}/{result.share_id}/"
+    public_media = guest.get(media_url)
+    assert public_media.status_code == 200
+    assert public_media["Cache-Control"] == "private, no-store"
+    assert guest.get(share_url).status_code == 200
+
+    draft = bingo.draft
+    draft.refresh_from_db()
+    private_document = {**draft.document, "visibility": Bingo.Visibility.PRIVATE}
+    save_draft(
+        bingo=bingo,
+        actor=author,
+        document=private_document,
+        expected_version=draft.version,
+    )
+    publish_bingo(
+        bingo=bingo,
+        actor=author,
+        idempotency_key="private-share-media-publish",
+    )
+
+    assert guest.get(share_url).status_code == 404
+    assert guest.get(media_url).status_code == 404
+    assert _csrf_api_client(other).get(media_url).status_code == 404
+    assert _csrf_api_client(author).get(media_url).status_code == 200

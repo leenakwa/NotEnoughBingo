@@ -69,6 +69,8 @@ checked, including live email verification, resend, invalid credentials,
 rate limiting, keyboard submission, and already-authenticated navigation.
 Password reset and logout sections 12–13 are also checked with local mail,
 token-expiry, credential/session, Back-navigation, and recovery-cleanup evidence.
+Authorization section 14 is checked after direct admin/API and cross-account
+resource probes, including an old-share media privacy regression that was fixed.
 
 ## Launch blockers currently outside the local stack
 

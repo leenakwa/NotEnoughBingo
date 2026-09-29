@@ -160,7 +160,5 @@ class MediaContentView(APIView):
             ),
         )
         response["X-Content-Type-Options"] = "nosniff"
-        response["Cache-Control"] = (
-            "public, max-age=3600" if not is_owner else "private, max-age=300"
-        )
+        response["Cache-Control"] = "private, no-store"
         return response

@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **5 verified**, **54 partial**, **40 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **6 verified**, **53 partial**, **40 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -61,7 +61,7 @@ unresolved failures or missing evidence.
 - [x] 11. LOGIN — Verified before deployment: valid/invalid credentials, rate limit, safe return navigation, signed-in redirect, and session-error fallback.
 - [x] 12. PASSWORD RESET — Verified before deployment: Mailpit delivery, configured HTTPS link, TTL, one-time use, credential change, and session revocation.
 - [x] 13. LOGOUT — Verified before deployment: session/API revocation, browser Back and private deep link, and local recovery cleanup.
-- [ ] 14. AUTHORIZATION — Partial: local evidence recorded; review remaining original bullets.
+- [x] 14. AUTHORIZATION — Verified before deployment: direct admin/API and cross-account ID/role/delete/download probes, including the fixed old-share media leak.
 - [ ] 15. ONBOARDING — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 16. EMPTY STATES — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 17. SEARCH — Partial: local evidence recorded; review remaining original bullets.

@@ -389,6 +389,10 @@ def asset_is_publicly_accessible(asset: MediaAsset) -> bool:
             hidden_at__isnull=True,
             revoked_at__isnull=True,
             bingo__hidden_at__isnull=True,
+            bingo__deleted_at__isnull=True,
+            bingo__status=Bingo.Status.PUBLISHED,
+            bingo__visibility__in=(Bingo.Visibility.PUBLIC, Bingo.Visibility.UNLISTED),
+            revision__visibility__in=(Bingo.Visibility.PUBLIC, Bingo.Visibility.UNLISTED),
         )
         .filter(
             Q(revision__cover=asset)

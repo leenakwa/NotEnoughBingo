@@ -6,6 +6,7 @@ import uuid
 
 import pytest
 from django.conf import settings
+from django.test import Client
 from django.utils import timezone
 from PIL import Image
 from rest_framework.test import APIClient
@@ -101,6 +102,62 @@ def test_bingo_api_enforces_catalog_and_direct_link_visibility(verified_user_fac
 
     stranger = _api_client(verified_user_factory())
     assert stranger.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+
+
+def test_direct_urls_and_spoofed_role_cannot_change_another_users_bingo(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory(username="access_author")
+    stranger = verified_user_factory(username="access_stranger")
+    public, _ = _published_bingo(author=author, title="Access public board")
+    private, _ = _published_bingo(
+        author=author,
+        title="Access private board",
+        visibility=Bingo.Visibility.PRIVATE,
+    )
+    client = _api_client(stranger)
+
+    assert client.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert client.get(f"/api/v1/bingos/{private.public_id}/draft/").status_code == 404
+    assert (
+        client.put(
+            f"/api/v1/bingos/{private.public_id}/draft/",
+            _document(title="Stolen board"),
+            format="json",
+            HTTP_IF_MATCH='"draft-1"',
+        ).status_code
+        == 404
+    )
+    assert (
+        client.post(
+            f"/api/v1/bingos/{private.public_id}/publish/",
+            {},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="spoofed-publish",
+        ).status_code
+        == 404
+    )
+    assert client.delete(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert client.delete(f"/api/v1/bingos/{public.public_id}/").status_code == 403
+    assert (
+        Bingo.objects.filter(pk__in=(public.pk, private.pk), deleted_at__isnull=True).count() == 2
+    )
+
+    moderation = client.get(
+        "/api/v1/moderation/reports/?role=moderator",
+        HTTP_X_ROLE="moderator",
+        HTTP_X_IS_STAFF="true",
+    )
+    assert moderation.status_code == 403
+    stranger.refresh_from_db()
+    assert stranger.is_staff is False
+
+    browser = Client()
+    browser.force_login(stranger)
+    for path in ("/admin/", "/admin/accounts/user/"):
+        response = browser.get(path)
+        assert response.status_code == 302
+        assert "/admin/login/" in response["Location"]
 
 
 def test_tag_catalog_only_exposes_tags_used_by_public_bingos(verified_user_factory) -> None:

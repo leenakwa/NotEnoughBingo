@@ -306,14 +306,14 @@ Do not confuse authentication with authorization.
 
 Attempt:
 
-- [ ] normal user opening an admin URL;
-- [ ] user A opening user B's resource URL;
-- [ ] manually modifying resource IDs;
-- [ ] calling API endpoints directly;
-- [ ] calling admin endpoints without UI;
-- [ ] modifying role/client state;
-- [ ] deleting another user's resource;
-- [ ] downloading another user's private file.
+- [x] normal user opening an admin URL;
+- [x] user A opening user B's resource URL;
+- [x] manually modifying resource IDs;
+- [x] calling API endpoints directly;
+- [x] calling admin endpoints without UI;
+- [x] modifying role/client state;
+- [x] deleting another user's resource;
+- [x] downloading another user's private file.
 
 Security must be enforced server-side.
 
