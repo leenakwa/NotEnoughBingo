@@ -7,9 +7,9 @@ sharing user-authored bingo boards.
 
 - `frontend/` — Next.js, TypeScript, App Router
 - `backend/` — Django, Django REST Framework, Celery
-- `infra/` — Nginx, MinIO policies, backup scripts
+- `infra/` — Nginx, storage policies, backup scripts
 - `docs/` — architecture, domain, security, and operations documentation
-- PostgreSQL, Redis, and S3-compatible storage (MinIO locally)
+- PostgreSQL, Redis, and S3-compatible storage (SeaweedFS for new local checkouts)
 
 Django owns business rules and authorization, Next.js owns the UI, and Nginx
 provides one browser origin for both applications.
@@ -20,7 +20,7 @@ provides one browser origin for both applications.
 - GNU Make (optional)
 - Node.js 22 only when running live Playwright tests from the host
 
-No local Python, PostgreSQL, Redis, or MinIO installation is required.
+No local Python, PostgreSQL, Redis, or S3 server installation is required.
 
 ## Start locally
 
@@ -31,7 +31,7 @@ docker compose build
 docker compose up -d --wait postgres redis minio mailpit
 docker compose run --rm --no-deps minio-init
 docker compose run --rm --no-deps backend python manage.py migrate --noinput
-docker compose up -d --wait
+docker compose up -d --wait backend worker beat frontend proxy
 docker compose exec backend python manage.py seed_dev
 ```
 
@@ -44,7 +44,13 @@ Local services:
 - API schema: <http://localhost:8080/api/v1/schema/>
 - Django Admin: <http://localhost:8080/admin/>
 - Mailpit: <http://localhost:8025>
-- MinIO console: <http://localhost:9001>
+- Local S3 endpoint: <http://localhost:9000>
+
+Fresh `.env` files select `compose.s3-emulator.yml`. Existing `.env` files
+without `COMPOSE_FILE` keep their MinIO container and `minio_data` volume;
+the emulator uses a separate `seaweedfs_data` volume. If you have local media
+to retain, copy it through the S3 API before selecting the emulator. The
+withdrawn MinIO Community images cannot be pulled on a fresh machine.
 
 Create an administrator with `make superuser`.
 

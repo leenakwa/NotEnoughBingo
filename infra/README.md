@@ -1,6 +1,7 @@
 # Infrastructure
 
-`compose.yml` defines the local development topology:
+`compose.yml` defines the local development topology. Fresh checkouts also
+load `compose.s3-emulator.yml` through `.env.example`:
 
 - `frontend`: Next.js development server;
 - `backend`: Django development server;
@@ -8,12 +9,13 @@
 - `beat`: Celery beat scheduler;
 - `postgres`: application database;
 - `redis`: cache and Celery transport;
-- `minio`: local S3-compatible storage;
-- `minio-init`: one-shot private/versioned bucket, scoped IAM, and lifecycle setup;
+- `minio`: local S3-compatible storage (SeaweedFS in the fresh-install override);
+- `minio-init`: MinIO bootstrap on legacy local stacks; the SeaweedFS override
+  creates its bucket at startup and makes this service a no-op;
 - `mailpit`: local SMTP capture;
 - `proxy`: same-origin Nginx entrypoint.
 
-Only the proxy, developer database/cache ports, MinIO, and Mailpit are bound to
+Only the proxy, developer database/cache ports, S3 emulator, and Mailpit are bound to
 loopback. Frontend/backend communicate on the private Compose network.
 
 The application Dockerfiles must expose matching `development` and
@@ -28,14 +30,15 @@ Production uses immutable images built from the production stages. The local
 bind mounts and development servers in `compose.yml` are not production
 settings.
 
-The pinned MinIO Community image is provided only as the requested local
-S3-compatible emulator. Its upstream repository is archived; do not deploy it
-as the production object store. Production must use a maintained S3-compatible
-provider and credentials/endpoints supplied through environment configuration.
-Community MinIO uses the server-level `MINIO_API_CORS_ALLOW_ORIGIN`; local
-Compose restricts it to the application origin instead of its wildcard default.
-Production configures the equivalent provider policy with only the real web
-origin.
+Fresh local installs and CI use the maintained SeaweedFS 4.47 S3 emulator.
+The withdrawn MinIO Community images remain in the base Compose file solely
+for existing local stacks with cached images and data. Their `minio_data`
+volume is never mounted into SeaweedFS; migrating existing objects requires
+an explicit S3 copy. Neither local emulator is the production object store.
+Production must use a maintained provider with private, versioned storage,
+least-privilege credentials, lifecycle rules, and a CORS policy for the real
+web origin. The local SeaweedFS identity and automatic bucket are for
+development only; they do not demonstrate those production controls.
 
 ## Proxy
 
@@ -55,7 +58,7 @@ Nginx:
 
 Application-level throttles and permissions remain authoritative.
 
-`minio-init` creates a non-root application identity limited to
+In a legacy MinIO stack, `minio-init` creates a non-root application identity limited to
 `staging/uploads/`, `media/`, and `exports/`, then installs a two-day purge rule
 for every version and delete marker under the staging prefix. Browser uploads
 are presigned for one staging key; only backend/worker credentials can write

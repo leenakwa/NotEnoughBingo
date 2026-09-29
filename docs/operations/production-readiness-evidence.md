@@ -293,6 +293,26 @@ observed results and their limits. Do not include credentials or session data.
   Ruff and mypy passed on the changed service. This is local PostgreSQL test
   evidence, not a public-deployment check.
 
+### 2026-09-30 — Clean S3-emulator install and CI recovery (sections 40, 44, 70, 72–74)
+
+- GitHub run `36627640934` passed foundation, secret scan, backend, frontend,
+  static browser matrix, and both production image jobs. Its live-stack job
+  stopped before migrations because the archived MinIO Community image could
+  no longer be pulled from Docker Hub; the Release gate therefore failed.
+- Added a separate Compose override for new local checkouts and CI using the
+  pinned SeaweedFS 4.47 image. It uses its own volume, leaving existing local
+  MinIO data untouched. A separate `nebseaqa` project started from fresh
+  PostgreSQL, Redis, S3, and Mailpit volumes; migrations, app health, S3
+  bucket access, object write/read/delete, browser CORS, and all **28/28**
+  full-stack Chromium/mobile WebKit scenarios passed. The first complete run
+  had one intermittent profile-form assertion; that scenario passed 5/5
+  isolated repeats, then the revised full run passed 28/28. The revised test
+  checks the first input after moving to the second field. Temporary test
+  volumes and credentials were removed after verification.
+- The local emulator auto-creates a bucket and does not prove production IAM,
+  versioning, lifecycle, or off-site recovery. Those deployment gates remain
+  open. The exact new commit still needs its GitHub Release gate result.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

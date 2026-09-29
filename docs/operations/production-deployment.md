@@ -21,7 +21,7 @@ workers, Beat, and object-storage control endpoints stay on private networks.
 Start from `.env.example` only as a variable inventory; none of its local
 credentials may be reused. `config.settings.production` fails during startup
 for debug mode, known local/default credentials, wildcard hosts, SQLite,
-local MinIO/Mailpit, insecure public URLs, non-TLS SMTP, insecure cookies,
+local S3 emulator/Mailpit, insecure public URLs, non-TLS SMTP, insecure cookies,
 missing shared cache, disabled HTTPS redirect/HSTS, or an absent trusted proxy
 hop. Run this before a rollout:
 

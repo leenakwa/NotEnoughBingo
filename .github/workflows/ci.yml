@@ -31,7 +31,8 @@ jobs:
         run: |
           set -o pipefail
           docker compose --env-file .env.example config --quiet
-          docker compose --env-file .env.example config --format json \
+          COMPOSE_FILE=compose.yml docker compose --env-file .env.example config --quiet
+          COMPOSE_FILE=compose.yml docker compose --env-file .env.example config --format json \
             | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["minio-init"]["command"][0])' \
             | sh -n
 
@@ -273,6 +274,7 @@ jobs:
     env:
       CI: "true"
       E2E_LIVE: "1"
+      COMPOSE_FILE: compose.yml:compose.s3-emulator.yml
       PLAYWRIGHT_BASE_URL: http://localhost:8080
       MAILPIT_BASE_URL: http://localhost:8025
       NEXT_PUBLIC_CSRF_COOKIE_NAME: neb_csrf

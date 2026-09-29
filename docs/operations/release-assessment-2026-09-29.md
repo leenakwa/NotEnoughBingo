@@ -20,6 +20,9 @@ configured and verified for the target environment. See the
 - An isolated Compose project, `nebqa`, ran on `http://localhost:18080` with
   separate PostgreSQL, Redis, MinIO, and Mailpit volumes. Existing project
   volumes were not used. Browser fixtures were synthetic accounts and boards.
+- On 2026-09-30, a second clean Compose project, `nebseaqa`, ran the new
+  SeaweedFS S3 override with separate fresh volumes. Its 28 live browser
+  scenarios passed; the temporary project and volumes were then removed.
 - Docker images used freshly pulled `python:3.13-slim` and `node:22-alpine`
   bases. These mutable tags are only inputs to the local check; record and
   promote immutable release image digests after CI succeeds.
@@ -36,7 +39,7 @@ configured and verified for the target environment. See the
 | Frontend ESLint, TypeScript, Prettier, production build | Passed with Next.js 16.3.7 |
 | Frontend component tests | 67 passed |
 | Browser smoke suite: Chromium, Firefox, WebKit, mobile | 50 passed, 6 intentionally skipped (geometry checks use Chromium) after editor-grid ARIA fix |
-| Live Chromium and mobile WebKit full-stack flows | 27 passed after the editor-grid ARIA fix, authenticated accessibility scan, and account-settings/email-change additions |
+| Live Chromium and mobile WebKit full-stack flows | 28 passed on the clean SeaweedFS stack, including a two-width route audit, accessibility, and account settings/email change |
 | npm audit, pip-audit | No known vulnerabilities in the audited dependency graphs |
 | Trivy on both production images | No fixable High/Critical findings with refreshed base images |
 | Gitleaks committed-history scan | No leaks in 16 commits |
@@ -93,7 +96,9 @@ repository CI checkout the assertion runs normally.
 ## Remaining launch gates
 
 1. Review the release commit and require the `Release gate` CI status on its
-   exact revision. The local scan does not replace CI image
+   exact revision. The previous CI run failed to pull the withdrawn MinIO
+   Community image; the clean-install S3 override has passed locally and still
+   needs the exact-commit CI gate. The local scan does not replace CI image
    scanning, SBOM generation, or a registry release by digest.
 2. Configure the actual operator name, private monitored support address, and
    review the Privacy Policy, Terms, and moderation process for the deployment.

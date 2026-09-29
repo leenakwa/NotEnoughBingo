@@ -586,11 +586,12 @@ test.describe("live full-stack product flows", () => {
     await page.goto("/create");
     await page.getByRole("gridcell").first().click();
     const input = page.getByLabel("Add image to cell");
+    const applicationOrigin = new URL(page.url()).origin;
     let blocked = 0;
     await page.route("**/*", (route) => {
       if (
         route.request().method() === "POST" &&
-        new URL(route.request().url()).origin !== "http://localhost:18080"
+        new URL(route.request().url()).origin !== applicationOrigin
       ) {
         blocked += 1;
         return route.fulfill({ status: 503, body: "Storage temporarily unavailable" });
@@ -873,8 +874,11 @@ test.describe("live full-stack product flows", () => {
     const bio = `${"界".repeat(90)} 🎲 ${"A".repeat(90)}`;
     await authenticateAs(page, "author");
     await page.goto("/profile");
-    await page.getByLabel("Display name").fill(name);
+    const displayName = page.getByLabel("Display name");
+    await displayName.fill(name);
+    await displayName.press("Tab");
     await page.getByRole("textbox", { name: "Bio" }).fill(bio);
+    await expect(displayName).toHaveValue(name);
     await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
       page.getByRole("button", { name: "Save profile" }).click(),
     );

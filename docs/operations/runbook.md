@@ -176,12 +176,14 @@ migrate --noinput` as the explicit one-shot release command instead.
 - Inventory/reconciliation alerts on unknown or missing objects before cleanup.
 - Credential rotation is tested without downtime.
 
-Local MinIO bootstrap creates a scoped `neb-media-service` user/policy and the
-two-day staging lifecycle rule. Verify them after bootstrap:
+For a legacy local MinIO stack, bootstrap creates a scoped
+`neb-media-service` user/policy and the two-day staging lifecycle rule. Verify
+them with `COMPOSE_FILE=compose.yml`; the fresh-install SeaweedFS emulator
+selected by `.env.example` has an automatic bucket and a no-op bootstrap:
 
 ```bash
-docker compose run --rm minio-init
-docker compose run --rm --entrypoint /bin/sh minio-init -ceu \
+COMPOSE_FILE=compose.yml docker compose run --rm minio-init
+COMPOSE_FILE=compose.yml docker compose run --rm --entrypoint /bin/sh minio-init -ceu \
   'mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD";
    mc admin policy info local neb-media-service;
    mc ilm rule ls "local/$S3_BUCKET" --expiry'
