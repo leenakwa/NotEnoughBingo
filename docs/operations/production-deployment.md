@@ -112,6 +112,13 @@ Build each production image once, scan it, record its digest and SBOM, and
 promote that exact digest. Both production images declare non-root users. Do
 not inject `.env` files or build contexts containing secrets.
 
+Browser source maps are private for this release: do not serve them or upload
+them to a public URL. No monitoring-provider map upload is configured. The CI
+image job rejects maps and sensitive file types in the frontend's public
+directories; repeat the HTTP check on the deployed domain. Use the release
+commit and server-side error logs for debugging until a private monitoring
+upload is configured and reviewed.
+
 Run migrations once as a dedicated release job, never as a web/worker startup
 side effect:
 

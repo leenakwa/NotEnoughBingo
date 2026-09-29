@@ -394,6 +394,23 @@ jobs:
               ;;
           esac
 
+      - name: Reject public source maps and sensitive files
+        if: ${{ matrix.name == 'frontend' }}
+        env:
+          IMAGE_REF: not-enough-bingo-${{ matrix.name }}:${{ github.sha }}
+        run: |
+          docker run --rm --entrypoint sh "$IMAGE_REF" -eu -c '
+            exposed="$(find /app/public /app/.next/static \
+              \( -name .git -o -name .env -o -name ".env.*" -o \
+                 -name "*.map" -o -name "*.db" -o -name "*.sqlite*" -o \
+                 -name "*.dump" -o -name "*.sql" -o -name "*.pem" -o \
+                 -name "*.key" -o -name "*.log" \) -print)"
+            if [ -n "$exposed" ]; then
+              printf "Disallowed public files in production image:\n%s\n" "$exposed" >&2
+              exit 1
+            fi
+          '
+
       - name: Scan production image for fixable high/critical vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:

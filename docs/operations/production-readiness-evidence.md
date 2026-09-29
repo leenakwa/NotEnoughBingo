@@ -399,6 +399,36 @@ observed results and their limits. Do not include credentials or session data.
   unchanged for the general anonymous and login limits. Real shared-IP load
   and suitable production limits still need measurement.
 
+### 2026-09-30 — Public-file exposure on production images (sections 79–81, 85)
+
+- Built the current-source production frontend and backend images locally at
+  commit `254131acd660d0ee5b6c35a73910c8ce0b0da981`. The frontend image
+  digest was `sha256:4ed91be0e5f3a62ee26bb11b05b5932151f4302e4300514bfd93e92fe1be464c`;
+  the backend digest was
+  `sha256:46ca5a777db437048a0bc44d10fc4a6d169b626c2f1c175967274faa40b50b0d`.
+  The frontend used a deliberately nondeployable `.invalid` origin and a
+  CI-only `.test` support address. File inspection found no `.map` under
+  `/app/public` or `/app/.next/static`, and no `.env`, database, backup, key,
+  dump, or log files in the inspected application paths.
+- Served the frontend production image on `127.0.0.1:65264` against the
+  isolated QA stack. `/discover`, `/support`, `/icon.svg`, `/robots.txt`,
+  `/api/health`, and a hashed CSS/JS asset returned 200. Requests for `.env`,
+  `.git/config`, example backup/SQLite/config/test-report paths, a hashed JS
+  and CSS source map, `/_next/server/app/page.js`, and Next development or
+  stack-frame endpoints returned 404. Static hashed assets had immutable
+  cache headers; the health response was `no-store`.
+- A fresh Chromium guest visit to `/discover` rendered the board list and
+  public navigation. The browser reported zero console messages, errors, or
+  warnings; the network log showed successful static asset, page, prefetched
+  route, and guest `/api/v1/auth/session/` responses.
+- Browser source maps are intentionally private and absent from the public
+  release image. No monitoring-provider map upload is configured. A new CI
+  image guard rejects maps and sensitive file names from public frontend
+  directories; its result awaits the next exact-commit CI run. The direct
+  container check does not prove the behavior of a real domain, CDN, TLS edge,
+  object store, or externally exposed backend. Repeat these probes after
+  deployment before checking off the sections.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for
