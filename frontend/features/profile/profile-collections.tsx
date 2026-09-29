@@ -31,6 +31,41 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "following", label: "Following" },
 ];
 
+const ownEmptyStates: Record<
+  ProfileTab,
+  { title: string; description: string; action?: { href: string; label: string } }
+> = {
+  bingos: {
+    title: "No published bingos yet",
+    description: "Create a board and publish it when you are ready for others to play.",
+    action: { href: "/create", label: "Create a bingo" },
+  },
+  drafts: {
+    title: "No drafts yet",
+    description: "Start a bingo and save it to keep working on it later.",
+    action: { href: "/create", label: "Create a bingo" },
+  },
+  plays: {
+    title: "No plays yet",
+    description: "Pick a community board and mark the cells that apply to you.",
+    action: { href: "/discover", label: "Find a bingo" },
+  },
+  shares: {
+    title: "No shared results yet",
+    description: "After playing a board, share your result to keep it here.",
+    action: { href: "/discover", label: "Find a bingo" },
+  },
+  followers: {
+    title: "No followers yet",
+    description: "People who follow your profile will appear here.",
+  },
+  following: {
+    title: "Not following anyone yet",
+    description: "Explore community boards and follow an author you like.",
+    action: { href: "/discover", label: "Explore bingos" },
+  },
+};
+
 export function ProfileCollections({
   username,
   ownProfile,
@@ -143,17 +178,13 @@ export function ProfileCollections({
         ) : null}
         {!loading && !error && page?.results.length === 0 ? (
           <EmptyState
-            title="Nothing visible here"
+            title={ownProfile ? ownEmptyStates[tab].title : "Nothing visible here"}
             description={
               ownProfile
-                ? "Activity will appear here as you use Not Enough Bingo."
+                ? ownEmptyStates[tab].description
                 : "This section is empty or hidden by its privacy setting."
             }
-            action={
-              ownProfile && (tab === "bingos" || tab === "drafts")
-                ? { href: "/create", label: "Create a bingo" }
-                : undefined
-            }
+            action={ownProfile ? ownEmptyStates[tab].action : undefined}
           />
         ) : null}
         {(collection?.kind === "bingos" || collection?.kind === "drafts") &&

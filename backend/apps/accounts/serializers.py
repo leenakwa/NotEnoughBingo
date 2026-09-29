@@ -243,7 +243,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer[UserProfile]):
         r"^[a-zA-Z0-9_]{3,30}$", max_length=30, source="user.username", required=False
     )
     preferred_languages = serializers.ListField(
-        child=serializers.CharField(max_length=8), required=False, allow_empty=False, max_length=15
+        child=serializers.CharField(max_length=8), required=False, allow_empty=True, max_length=15
     )
 
     class Meta:

@@ -89,6 +89,16 @@ def test_language_preferences_filter_discover_and_catalog() -> None:
     assert [item["id"] for item in catalog.data["results"]] == [str(english.public_id)]
     assert client.get("/api/v1/bingos/?languages=invalid").status_code == 400
 
+    skipped = client.patch("/api/v1/profiles/me/", {"preferred_languages": []}, format="json")
+    assert skipped.status_code == 200
+    assert skipped.data["language_preferences_confirmed"] is True
+    assert skipped.data["preferred_languages"] == []
+    all_languages = client.get("/api/v1/feeds/discover/")
+    assert {item["id"] for item in all_languages.data["results"]} == {
+        str(english.public_id),
+        str(russian.public_id),
+    }
+
 
 def test_drafts_are_separate_from_created_bingos() -> None:
     author = _author()

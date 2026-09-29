@@ -297,12 +297,53 @@ test.describe("live full-stack product flows", () => {
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
     ).toBeVisible();
+    await page.goto("/profile");
+    await expect(page.getByRole("heading", { name: "No published bingos yet" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Create a bingo" })).toBeVisible();
+    await page.getByRole("tab", { name: "Drafts" }).click();
+    await expect(page.getByRole("heading", { name: "No drafts yet" })).toBeVisible();
+    await page.getByRole("tab", { name: "Recent plays" }).click();
+    await expect(page.getByRole("heading", { name: "No plays yet" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Find a bingo" })).toBeVisible();
+    await page.goto("/discover");
     await page.getByRole("group", { name: "Preferred languages" }).getByLabel("Russian").check();
     await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
       page.getByRole("button", { name: "Save preferences" }).click(),
     );
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
+    ).toHaveCount(0);
+  });
+
+  test("language onboarding can be skipped and stays dismissed", async ({ page }) => {
+    await authenticateAs(page, "player");
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto("/discover");
+    await expect(
+      page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      page.getByRole("button", { name: "Not now · show all languages" }).click(),
+    );
+    await expect(
+      page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
+    ).toHaveCount(0);
+    await expect(page.locator(".language-filter summary")).toContainText("All");
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
+    ).toHaveCount(0);
+    await page.goto("/profile");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    await expect(
+      page.getByRole("group", { name: "Preferred languages" }).getByRole("checkbox", {
+        checked: true,
+      }),
     ).toHaveCount(0);
   });
 

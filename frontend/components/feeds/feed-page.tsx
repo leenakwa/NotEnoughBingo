@@ -86,15 +86,16 @@ export function FeedPage({
     };
   }, [kind]);
 
-  async function saveLanguagePreferences() {
-    if (!onboardingLanguages.length || savingPreferences) return;
+  async function saveLanguagePreferences(languages: string[] = onboardingLanguages) {
+    if (savingPreferences) return;
     setSavingPreferences(true);
     setPreferenceError("");
     try {
-      const updated = await api.profiles.update({ preferred_languages: onboardingLanguages });
+      const updated = await api.profiles.update({ preferred_languages: languages });
       setProfile(updated);
       setLanguageFilter(updated.preferred_languages);
       setPage(1);
+      setResult(null);
     } catch (caught) {
       setPreferenceError(errorMessage(caught));
     } finally {
@@ -124,14 +125,24 @@ export function FeedPage({
                 label="Preferred languages"
                 disabled={savingPreferences}
               />
-              <button
-                type="button"
-                className="button button--primary"
-                disabled={!onboardingLanguages.length || savingPreferences}
-                onClick={() => void saveLanguagePreferences()}
-              >
-                {savingPreferences ? "Saving…" : "Save preferences"}
-              </button>
+              <div className="inline-actions">
+                <button
+                  type="button"
+                  className="button button--primary"
+                  disabled={!onboardingLanguages.length || savingPreferences}
+                  onClick={() => void saveLanguagePreferences()}
+                >
+                  {savingPreferences ? "Saving…" : "Save preferences"}
+                </button>
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  disabled={savingPreferences}
+                  onClick={() => void saveLanguagePreferences([])}
+                >
+                  Not now · show all languages
+                </button>
+              </div>
               {preferenceError ? (
                 <p role="alert" className="form-message form-message--error">
                   {preferenceError}

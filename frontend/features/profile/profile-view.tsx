@@ -140,7 +140,7 @@ export function ProfileView({
   }
 
   async function saveLanguagePreferences() {
-    if (!preferredLanguages.length || pending) return;
+    if (pending) return;
     setPending(true);
     setError("");
     try {
@@ -302,7 +302,7 @@ export function ProfileView({
           </form>
           <div className="settings-card">
             <h2>Bingo languages</h2>
-            <p>Choose the languages you want to see in Discover.</p>
+            <p>Choose the languages you want to see in Discover. Select none to see all.</p>
             <LanguagePicker
               value={preferredLanguages}
               onChange={setPreferredLanguages}
@@ -312,7 +312,7 @@ export function ProfileView({
             <button
               type="button"
               className="button button--primary"
-              disabled={pending || !preferredLanguages.length}
+              disabled={pending}
               onClick={() => void saveLanguagePreferences()}
             >
               Save languages

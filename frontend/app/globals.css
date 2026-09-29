@@ -766,8 +766,10 @@ h3 {
   margin: 0 0 15px;
 }
 
-.language-onboarding > .button {
+.language-onboarding > .inline-actions {
   margin-top: 16px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .field {

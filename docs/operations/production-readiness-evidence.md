@@ -633,6 +633,32 @@ observed results and their limits. Do not include credentials or session data.
   storage policy and enforcement by the future public edge remain
   target-environment checks.
 
+### 2026-09-30 — New-account onboarding and first useful action (section 15)
+
+- On the isolated `nebqa` PostgreSQL/Redis/Mailpit stack, a new account
+  registered, verified its email, logged in, and arrived on Discover rather
+  than an empty dashboard. Discover describes playing and creation and offers
+  both actions. Its one-step language question proposes the browser language
+  when supported and permits several choices with flags and names. Saving
+  preferences persisted them in the profile, applied the Discover filter, and
+  removed the question. A separate account chose “Not now · show all
+  languages”; the backend stored an empty preference list as the explicit
+  all-language choice and kept the question dismissed after reload. The same
+  browser journey had no document overflow at 320 px on Discover or Profile.
+- Before the new account had content, the profile's Created, Drafts, and
+  Recent plays tabs each showed a specific explanation and a useful Create or
+  Find action. Shares and Following now give their own first steps; Followers
+  explains what will appear. Other users retain privacy-safe empty wording.
+  The live signup and skip tests passed 2/2. The focused language backend
+  module passed 3/3, including an empty preference list showing both English
+  and Russian boards. The setup is a single choice, so a multi-step progress
+  indicator is not applicable.
+- The `seed_e2e` example data is an explicit QA command, guarded to debug or
+  test settings and opt-in credentials; normal startup does not load it.
+  Production content therefore comes from users, and the zero-data interface
+  is intentionally useful. Target-domain email delivery remains a rollout
+  check, not evidence supplied by Mailpit.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input/media-upload cases, keyboard and responsive flows for

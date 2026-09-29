@@ -323,15 +323,15 @@ Hiding a button in the frontend is not authorization.
 
 Verify:
 
-- [ ] new accounts do not land in an unexplained empty dashboard;
-- [ ] there is an obvious first useful action;
-- [ ] empty states help users begin;
-- [ ] demo/example data is used only intentionally;
-- [ ] onboarding can be skipped where appropriate;
-- [ ] completed onboarding is not shown repeatedly;
-- [ ] completion state is persisted;
-- [ ] multi-step setup communicates progress;
-- [ ] sensible defaults exist.
+- [x] new accounts do not land in an unexplained empty dashboard;
+- [x] there is an obvious first useful action;
+- [x] empty states help users begin;
+- [x] demo/example data is used only intentionally;
+- [x] onboarding can be skipped where appropriate;
+- [x] completed onboarding is not shown repeatedly;
+- [x] completion state is persisted;
+- [x] multi-step setup communicates progress;
+- [x] sensible defaults exist.
 
 # 16. EMPTY STATES
 
