@@ -1594,6 +1594,76 @@ observed results and their limits. Do not include credentials or session data.
   Chromium moderation sequence passed locally 2/2 and the mobile WebKit
   scenario passed locally 1/1. The next exact-commit CI run is pending.
 
+### 2026-09-30 — Dropdown and popover controls (section 95)
+
+- Existing live browser flows exercised the inline language disclosure by
+  keyboard and mobile touch. A new QA walkthrough opened the published-version
+  download disclosure in the editor at 390px, 320px, and 1710px. The absolute
+  options panel stayed within each viewport (at 320px, x=14–306 and
+  y=502–592); its parent does not clip it. Space closed the disclosure and
+  Enter reopened it. On scroll the panel moved with its summary and kept the
+  4px anchor gap; it did not remain detached or overlap the sticky header.
+  Browser console had no errors.
+- This walkthrough found the two download options were 43px high on mobile.
+  Their minimum height is now 44px, with a visible separator and hover state;
+  a live geometry recheck measured 44px and 44.2px. The language disclosure
+  expands inline, so floating-layer clipping/edge positioning does not apply
+  to it. The popup uses a bounded z-index of 5 below the sticky header's 30.
+
+### 2026-09-30 — Overlay stack (section 96)
+
+- In a live 390×640 browser, the report dialog matched the native `:modal`
+  top layer and intercepted a hit test over the sticky header; its z-index was
+  80 versus the header's 30, and root/body scrolling was locked. Escape closed
+  the dialog, returned the hit test to the header link, and restored both
+  overflow styles. The editor's mobile inspector uses a deliberate 40 layer;
+  the download popup uses 5 and stayed below the header while scrolling.
+  The skip link uses 100 so it remains reachable when focused outside a modal.
+- The current UI has no custom toast, tooltip, or date-picker overlay. Browser
+  `title` hints are native rather than app-managed floating layers; the
+  checked source bullets for these three are N/A in this release. The stack
+  uses bounded layer values instead of arbitrary extreme numbers.
+
+### 2026-09-30 — Refresh and independent deep links (sections 99–100)
+
+- Fresh guest tabs opened Explore with a query, a public bingo, an immutable
+  shared result, a public author profile, Forgot Password, a reset-password
+  form with an invalid token, and Create directly. Each returned HTTP 200,
+  showed the expected page, and did so again after a hard reload. The board
+  check waited for its actual title after the temporary loading
+  heading; both first load and refresh resolved to “E2E Public Board.” The
+  shared result and profile likewise loaded fixture content without prior
+  navigation. Existing live flows had already verified editor save/recovery
+  across refresh, password-reset link handling, and an authenticated profile
+  in a second tab.
+- There is no dashboard, checkout-success page, or OAuth callback in this
+  release; those three original refresh bullets are N/A. This evidence is
+  from the QA stack, not a public deployment; production routing will still
+  get its narrow live smoke check during rollout.
+
+### 2026-09-30 — Concurrent session-expiry feedback (section 102)
+
+- The header previously started one `/auth/session/` request for each
+  `auth-required` event, so concurrent protected API failures could trigger
+  duplicate rechecks. It now holds an in-flight guard until the check settles.
+  A component regression test dispatched three simultaneous events after an
+  authenticated state and observed exactly one new session request, one
+  explanatory login redirect, and no further recheck after the user became
+  anonymous. The targeted unit test passed.
+- The two live Chromium session-expiry scenarios passed again: unsaved editor
+  text was recovered on the original draft after login, and a failed play
+  progress write redirected to login without focus change, then saved the
+  pending mark and retained it after reload. Both showed the session-ended
+  explanation and preserved the intended return URL.
+
+### 2026-09-30 — Exact-commit CI release gate (`c4bc4e2`)
+
+- All nine jobs passed for `c4bc4e2`: backend and frontend quality/tests,
+  browser smoke, full-stack product flows, both production images,
+  foundation configuration, secret scan, and the aggregate Release gate.
+  The later dropdown-size, overlay/deep-link audit, and concurrent-session
+  changes require a new exact-head run.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

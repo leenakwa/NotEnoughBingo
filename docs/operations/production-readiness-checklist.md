@@ -1685,25 +1685,25 @@ Test:
 
 Test:
 
-- [ ] open;
-- [ ] close;
-- [ ] keyboard;
-- [ ] mobile;
-- [ ] clipping by parent overflow;
-- [ ] screen-edge positioning;
-- [ ] z-index;
-- [ ] behavior while page scrolls.
+- [x] open;
+- [x] close;
+- [x] keyboard;
+- [x] mobile;
+- [x] clipping by parent overflow;
+- [x] screen-edge positioning;
+- [x] z-index;
+- [x] behavior while page scrolls.
 
 # 96. Z-INDEX / OVERLAY STACK
 
 Test combinations of:
 
-- [ ] sticky headers;
-- [ ] dropdowns;
-- [ ] modals;
-- [ ] toasts;
-- [ ] tooltips;
-- [ ] date pickers.
+- [x] sticky headers;
+- [x] dropdowns;
+- [x] modals;
+- [x] toasts;
+- [x] tooltips;
+- [x] date pickers.
 
 Avoid arbitrary extreme z-index values that create future collisions.
 
@@ -1735,13 +1735,13 @@ the user must clearly know whether the action succeeded, failed, or is still run
 
 Press Refresh/Cmd+R/Ctrl+R on every important route/state, especially:
 
-- [ ] dashboard;
-- [ ] editor;
-- [ ] checkout success;
-- [ ] OAuth callback;
-- [ ] password-reset page;
-- [ ] nested SPA routes;
-- [ ] shared links.
+- [x] dashboard;
+- [x] editor;
+- [x] checkout success;
+- [x] OAuth callback;
+- [x] password-reset page;
+- [x] nested SPA routes;
+- [x] shared links.
 
 # 100. OPEN-IN-NEW-TAB TEST
 
@@ -1749,9 +1749,9 @@ Open important links/routes directly in a new tab.
 
 Verify:
 
-- [ ] route works independently;
-- [ ] required data loads from the server;
-- [ ] page does not depend on hidden in-memory state from a previous route.
+- [x] route works independently;
+- [x] required data loads from the server;
+- [x] page does not depend on hidden in-memory state from a previous route.
 
 # 101. MULTIPLE TABS
 
@@ -1769,11 +1769,11 @@ Simulate an expired session while the app is open.
 
 Verify:
 
-- [ ] app does not produce a flood of repeated failures;
-- [ ] user understands they need to log in again;
-- [ ] redirect works;
-- [ ] unsaved state is preserved where practical;
-- [ ] successful re-login returns them to the appropriate place.
+- [x] app does not produce a flood of repeated failures;
+- [x] user understands they need to log in again;
+- [x] redirect works;
+- [x] unsaved state is preserved where practical;
+- [x] successful re-login returns them to the appropriate place.
 
 # 103. VERSION / DEPLOYMENT COMPATIBILITY
 

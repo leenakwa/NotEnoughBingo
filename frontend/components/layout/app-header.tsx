@@ -150,6 +150,7 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const currentUserId = useRef<string | null | undefined>(undefined);
   const refreshVersion = useRef(0);
+  const authenticationCheckInFlight = useRef(false);
   const avatarUrl = user?.avatar?.thumbnail_url ?? user?.avatar?.url ?? undefined;
 
   const refreshUser = useCallback(
@@ -170,7 +171,7 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
           router.refresh();
         }
       };
-      api.auth
+      return api.auth
         .session()
         .then(applyUser)
         .catch((caught) => {
@@ -181,7 +182,7 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   );
 
   useEffect(() => {
-    refreshUser();
+    void refreshUser();
   }, [pathname, refreshUser]);
 
   useEffect(() => {
@@ -196,13 +197,17 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   }, [pathname, user]);
 
   useEffect(() => {
-    const handleCurrentTabChange = () => refreshUser();
-    const handleFocus = () => refreshUser(true);
+    const handleCurrentTabChange = () => void refreshUser();
+    const handleFocus = () => void refreshUser(true);
     const handleAuthenticationRequired = () => {
-      if (currentUserId.current) refreshUser(true);
+      if (!currentUserId.current || authenticationCheckInFlight.current) return;
+      authenticationCheckInFlight.current = true;
+      void refreshUser(true).finally(() => {
+        authenticationCheckInFlight.current = false;
+      });
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === AUTH_SYNC_KEY) refreshUser(true);
+      if (event.key === AUTH_SYNC_KEY) void refreshUser(true);
     };
     window.addEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
     window.addEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);

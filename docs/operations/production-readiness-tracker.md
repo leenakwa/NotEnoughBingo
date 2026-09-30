@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **28 verified**, **57 partial**, **13 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **33 verified**, **53 partial**, **12 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -142,14 +142,14 @@ unresolved failures or missing evidence.
 - [ ] 92. FAVICON SET — Partial: ICO, SVG browser icon, and 180px Apple touch icon return 200 and appear in page head; light/dark browser chrome still needs a visual check. PWA is absent.
 - [x] 93. SCROLL BEHAVIOR — Verified before deployment: route top, browser Back, modal close, horizontal overflow, and sticky-header anchor behavior checked at mobile and desktop widths.
 - [x] 94. MODALS — Verified before deployment: report dialog X, Cancel, Escape, backdrop, focus containment, background scroll lock, and 320px-high viewport; there is no destructive modal action.
-- [ ] 95. DROPDOWNS / POPOVERS — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
-- [ ] 96. Z-INDEX / OVERLAY STACK — Review pending: map original bullets to repository and runtime evidence.
+- [x] 95. DROPDOWNS / POPOVERS — Verified before deployment: language disclosures and download options open/close with touch and keyboard, remain unclipped at 320–1710px, and stay anchored on scroll; popup targets meet 44px.
+- [x] 96. Z-INDEX / OVERLAY STACK — Verified before deployment: modal top layer blocks the sticky header and restores it on close; download popup remains bounded below the header, mobile inspector layers deliberately; no custom toast, tooltip, or date picker layers exist.
 - — 97. TOASTS / TRANSIENT FEEDBACK — N/A for current release: source inventory found no toast component; action messages are persistent inline status/alert regions, assessed in section 98.
 - [x] 98. ACTION FEEDBACK — Verified before deployment: editor save and upload stages/failures, publication/report submission, and account deletion schedule/cancel expose pending, success, and error states; invite and payment actions are absent.
-- [ ] 99. REFRESH TEST — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 100. OPEN-IN-NEW-TAB TEST — Partial: local evidence recorded; review remaining original bullets.
+- [x] 99. REFRESH TEST — Verified before deployment: editor state, recovery/password-reset routes, nested bingo/profile routes, and shared-result links recover after reload; dashboard, checkout, and OAuth callback do not exist.
+- [x] 100. OPEN-IN-NEW-TAB TEST — Verified before deployment: independent tabs loaded public board, shared result, profile, Explore, recovery, and Create routes with server data and no prerequisite route memory.
 - [ ] 101. MULTIPLE TABS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 102. SESSION EXPIRATION — Partial: local evidence recorded; review remaining original bullets.
+- [x] 102. SESSION EXPIRATION — Verified before deployment: concurrent authentication failures trigger one session recheck; editor and play flows explain expiry, preserve unsaved progress, and restore the intended route after login.
 - [ ] 103. VERSION / DEPLOYMENT COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 104. ROLLBACK — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 105. FINAL EXECUTION SEQUENCE — Partial: local evidence recorded; review remaining original bullets.

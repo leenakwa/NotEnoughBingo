@@ -1489,9 +1489,14 @@ input[type="range"] {
 
 .download-control > div button {
   width: 100%;
+  min-height: 44px;
   padding: 10px;
   border: 0;
   background: var(--paper);
+}
+
+.download-control > div button + button {
+  border-top: var(--line);
 }
 
 .download-control > div button:hover {
