@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **23 verified**, **45 partial**, **31 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **23 verified**, **51 partial**, **25 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -97,8 +97,8 @@ unresolved failures or missing evidence.
 - — 47. OAUTH / SOCIAL LOGIN — N/A for current release: capability absent in source inventory.
 - — 48. PAYMENTS — N/A for current release: capability absent in source inventory.
 - — 49. WEBHOOKS — N/A for current release: capability absent in source inventory.
-- [ ] 50. SECURITY HEADERS — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 51. COOKIES — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 50. SECURITY HEADERS — Partial: live QA responses and production CSP policy cover all listed headers except public HTTPS HSTS behavior, which needs the target edge.
+- [ ] 51. COOKIES — Partial: Secure production settings, HttpOnly session, SameSite, logout revocation, and CSRF-only JS access verified; settle final expiry and inspect host/path on the real origin.
 - [ ] 52. BASIC SECURITY ABUSE TESTS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 53. RATE LIMITING — Partial: local evidence recorded; review remaining original bullets.
 - — 54. AI/LLM FEATURES — N/A for current release: capability absent in source inventory.
@@ -111,10 +111,10 @@ unresolved failures or missing evidence.
 - [ ] 61. ANALYTICS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 62. PRODUCT METRICS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 63. ERROR TRACKING — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 64. LOGGING — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 64. LOGGING — Partial: structured request/task logs expose timestamp, severity, route, request ID, failure fields, and bounded context; review third-party/exception text for sensitive values before closing.
 - [ ] 65. MONITORING — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 66. ALERTS — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 67. HEALTH ENDPOINT — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 67. HEALTH ENDPOINT — Partial: live, readiness, database, migration, cache, and Beat checks respond on QA without secrets; target storage/email and external monitor coverage remain.
 - [ ] 68. CRON / SCHEDULED JOBS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 69. QUEUES / WORKERS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 70. PRODUCTION BUILD — Partial: local evidence recorded; review remaining original bullets.
@@ -130,10 +130,10 @@ unresolved failures or missing evidence.
 - [ ] 80. PUBLIC FILE EXPOSURE — Partial: local evidence recorded; review remaining original bullets.
 - [x] 81. SOURCE MAPS — Verified before deployment: private map policy, production-image file inspection, HTTP probes, and CI guard.
 - [ ] 82. API READINESS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 83. CORS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 83. CORS — Partial: QA preflight allows its configured origin with credentials and denies an outside origin; production rejects wildcard, HTTP, and local CSRF/CORS origins; staging target remains unspecified.
 - [ ] 84. FEATURE FLAGS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 85. DEBUG ARTIFACTS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 86. TEST / DEMO ACCOUNTS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 86. TEST / DEMO ACCOUNTS — Partial: deterministic `.test` fixtures and elevated E2E moderator cannot be created by the seed command under production settings; verify the target database has none and is isolated from staging. Payments are absent.
 - [ ] 87. ADMIN PANEL — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 88. SUPPORT — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 89. LEGAL / BUSINESS FOOTER — Review pending: map original bullets to repository and runtime evidence.

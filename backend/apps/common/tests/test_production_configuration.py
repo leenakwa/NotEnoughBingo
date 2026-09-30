@@ -121,6 +121,31 @@ def test_production_rejects_environment_and_public_origin_mismatch() -> None:
     assert "CSRF_TRUSTED_ORIGINS must include FRONTEND_URL" in result.stderr
 
 
+@pytest.mark.parametrize(
+    ("name", "value", "message"),
+    [
+        (
+            "CSRF_TRUSTED_ORIGINS",
+            "https://app.example.test,https://localhost:3000",
+            "Production CSRF origins cannot use local hostnames",
+        ),
+        (
+            "CORS_ALLOWED_ORIGINS",
+            "https://127.0.0.1:3000",
+            "Production CORS origins cannot use local hostnames",
+        ),
+    ],
+)
+def test_production_rejects_local_security_origins(name: str, value: str, message: str) -> None:
+    environment = _production_environment()
+    environment[name] = value
+
+    result = _load_production_settings(environment)
+
+    assert result.returncode != 0
+    assert message in result.stderr
+
+
 def test_nginx_normalizes_forwarded_identity_and_scheme() -> None:
     repository_root = Path(__file__).resolve().parents[4]
     template_path = repository_root / "infra/nginx/templates/default.conf.template"

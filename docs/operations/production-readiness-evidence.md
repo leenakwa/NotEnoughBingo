@@ -1338,6 +1338,84 @@ observed results and their limits. Do not include credentials or session data.
   migration. Remaining database bullets require index/constraint inspection,
   high-volume testing, and a target-platform backup and rollback drill.
 
+### 2026-09-30 — HTTP security headers and cookies (sections 50–51, partial)
+
+- A live QA GET of `/discover` returned nonce-bearing CSP, `nosniff`, frame
+  denial, `strict-origin-when-cross-origin`, and a restrictive
+  Permissions-Policy. An API health response also returned its separate
+  `default-src 'none'` CSP and frame denial. Production CSP unit checks cover
+  nonce-protected scripts and reject development HTTP origins; existing
+  browser journeys found no blocking CSP console errors on the sampled flows.
+  QA uses plain HTTP and intentionally sends `Strict-Transport-Security:
+  max-age=0`. Django production requires positive HSTS and the runbook stages
+  the Nginx HSTS value, but actual TLS-edge behavior is still unverified.
+- Django's production settings force session and CSRF cookies to `Secure`;
+  the production-configuration test loads those settings. The session cookie
+  is `HttpOnly`, while the CSRF cookie intentionally remains readable so the
+  frontend can send the CSRF header. Both use `SameSite=Lax`; the live QA CSRF
+  response showed `Path=/` and `SameSite=Lax`. Existing API and two-tab
+  browser tests exercised logout and session revocation. Final cookie expiry
+  policy and the host-only/path behavior on the actual public origin remain
+  unchecked.
+
+### 2026-09-30 — Local readiness responses (section 67, partial)
+
+- The QA `/api/v1/health/ready/` returned HTTP 200 with only database,
+  migration, and cache status (`ok`). `/api/v1/health/beat/` returned a recent
+  scheduler heartbeat; the existing test covers recent and stale states.
+  `/api/v1/health/live/` and the frontend `/api/health` support process-level
+  probes. No response included credentials or provider configuration.
+- Storage and transactional email are exercised in separate product flows,
+  not the high-frequency readiness route. Provider-specific availability and
+  the external monitor cannot be verified until a hosting target exists.
+
+### 2026-09-30 — Structured operational logs (section 64, partial)
+
+- The backend JSON formatter emits UTC timestamp, severity, service and
+  environment, optional release, request ID, method, route, status, duration,
+  and bounded task failure fields. Its test confirms a query-string token is
+  omitted from request completion logs and headers/bodies are not serialized.
+  The backend suite passed 144 tests with one skip. The formatter can still
+  include arbitrary text from a third-party logger or an exception traceback;
+  an exhaustive secret-redaction review remains open. Production log sink and
+  access/retention controls also depend on the hosting platform.
+
+### 2026-09-30 — CORS and trusted-origin boundary (section 83, partial)
+
+- A QA browser preflight to the login API with its configured local origin
+  returned HTTP 200, that exact `Access-Control-Allow-Origin`, credentials,
+  methods, and CSRF header allowance. The same preflight from an unrelated
+  HTTPS origin returned no CORS allow-origin or credentials header. The
+  already exercised browser login and CSRF flows use the same-origin route.
+- Django production settings already reject wildcard and non-HTTPS CORS
+  origins. They now also reject local hostnames in extra CSRF or CORS origins,
+  including `https://localhost` and `https://127.0.0.1`; two new focused
+  configuration cases passed (`6 passed, 1 infrastructure skip` in the
+  production-config test file). The public frontend is same-origin by
+  default, so an empty CORS list is valid. An actual staging origin and its
+  cookie/preflight behavior must be checked when that environment is chosen.
+
+### 2026-09-30 — Deterministic test accounts (section 86, partial)
+
+- The `seed_e2e` command labels its fixtures with `E2E`/`.test`, requires an
+  explicit opt-in and password, and refuses to run unless Django is in DEBUG
+  or test settings. A backend test proved it rejects production settings even
+  when the opt-in variable is present; the full backend suite passed 146 tests
+  with one skip. The fixture moderator is a superuser in QA, so the actual
+  production database must be checked for fixture accounts before launch.
+- No payment implementation or payment sandbox exists in this release, so
+  test payments cannot pollute a live payment system. Staging/production
+  database separation remains an external deployment choice.
+
+### 2026-09-30 — Exact-commit CI release gate (`15137e4`)
+
+- All nine CI jobs completed successfully for `15137e4`: repository secret
+  scan, frontend quality/tests, foundation configuration, backend
+  quality/tests, browser smoke, full-stack product flows, frontend/backend
+  production images, and the aggregate Release gate. This validates that
+  commit only; the subsequent local CORS/configuration and tracker edits
+  require their own exact-head CI run after push.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

@@ -64,6 +64,8 @@ if not CSRF_TRUSTED_ORIGINS:
     errors.append("CSRF_TRUSTED_ORIGINS must contain the public HTTPS origin")
 if not all(origin.startswith("https://") for origin in CSRF_TRUSTED_ORIGINS):
     errors.append("Every trusted CSRF origin must use HTTPS")
+if any(_hostname(origin) in local_hostnames for origin in CSRF_TRUSTED_ORIGINS):
+    errors.append("Production CSRF origins cannot use local hostnames")
 if EMAIL_BACKEND in {
     "django.core.mail.backends.console.EmailBackend",
     "django.core.mail.backends.locmem.EmailBackend",
@@ -112,5 +114,7 @@ if "*" in CORS_ALLOWED_ORIGINS:
     errors.append("CORS_ALLOWED_ORIGINS cannot contain a wildcard")
 if any(not origin.startswith("https://") for origin in CORS_ALLOWED_ORIGINS):
     errors.append("Every configured CORS origin must use HTTPS")
+if any(_hostname(origin) in local_hostnames for origin in CORS_ALLOWED_ORIGINS):
+    errors.append("Production CORS origins cannot use local hostnames")
 if errors:
     raise ImproperlyConfigured("; ".join(errors))

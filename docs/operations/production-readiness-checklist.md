@@ -990,12 +990,12 @@ Verify:
 
 Review and configure appropriately:
 
-- [ ] Content-Security-Policy;
+- [x] Content-Security-Policy;
 - [ ] HSTS;
-- [ ] `X-Content-Type-Options`;
-- [ ] frame/clickjacking protection;
-- [ ] Referrer-Policy;
-- [ ] Permissions-Policy.
+- [x] `X-Content-Type-Options`;
+- [x] frame/clickjacking protection;
+- [x] Referrer-Policy;
+- [x] Permissions-Policy.
 
 Do not blindly paste a restrictive policy that breaks real app resources. Verify the resulting app works.
 
@@ -1003,13 +1003,13 @@ Do not blindly paste a restrictive policy that breaks real app resources. Verify
 
 Verify session/security cookies:
 
-- [ ] `Secure`;
-- [ ] `HttpOnly` where appropriate;
-- [ ] correct `SameSite`;
+- [x] `Secure`;
+- [x] `HttpOnly` where appropriate;
+- [x] correct `SameSite`;
 - [ ] correct expiry;
-- [ ] logout invalidation;
+- [x] logout invalidation;
 - [ ] correct production domain/path;
-- [ ] frontend JS cannot access sensitive cookies unnecessarily.
+- [x] frontend JS cannot access sensitive cookies unnecessarily.
 
 # 52. BASIC SECURITY ABUSE TESTS
 
@@ -1216,12 +1216,12 @@ Verify a production error-monitoring system if one is expected:
 
 Logs should contain enough information to debug incidents, such as:
 
-- [ ] timestamp;
-- [ ] severity;
-- [ ] action/route;
-- [ ] request ID/correlation ID where useful;
-- [ ] error information;
-- [ ] useful non-sensitive context.
+- [x] timestamp;
+- [x] severity;
+- [x] action/route;
+- [x] request ID/correlation ID where useful;
+- [x] error information;
+- [x] useful non-sensitive context.
 
 Never log:
 
@@ -1266,9 +1266,9 @@ If appropriate, ensure the application has useful health/readiness checks.
 
 Distinguish where needed between:
 
-- [ ] process alive;
-- [ ] application ready;
-- [ ] DB reachable;
+- [x] process alive;
+- [x] application ready;
+- [x] DB reachable;
 - [ ] required dependencies available.
 
 Health output must not leak secrets/configuration.
@@ -1531,12 +1531,12 @@ For every important API endpoint verify relevant:
 
 Verify:
 
-- [ ] production frontend origin is allowed;
+- [x] production frontend origin is allowed;
 - [ ] staging is handled intentionally;
-- [ ] localhost is not unnecessarily allowed in production;
-- [ ] wildcard origin is not incorrectly combined with credentials;
-- [ ] cookies/credentials actually work;
-- [ ] preflight requests work.
+- [x] localhost is not unnecessarily allowed in production;
+- [x] wildcard origin is not incorrectly combined with credentials;
+- [x] cookies/credentials actually work;
+- [x] preflight requests work.
 
 # 84. FEATURE FLAGS
 
@@ -1579,9 +1579,9 @@ Remove anything inappropriate for production.
 Verify:
 
 - [ ] test users do not have inappropriate production permissions;
-- [ ] demo data is clearly intentional;
+- [x] demo data is clearly intentional;
 - [ ] staging data is not accidentally mixed with production;
-- [ ] test payments do not pollute live payment systems.
+- [x] test payments do not pollute live payment systems.
 
 # 87. ADMIN PANEL
 
