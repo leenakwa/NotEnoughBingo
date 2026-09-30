@@ -154,6 +154,34 @@ describe("API error presentation", () => {
   });
 
   it.each([
+    {
+      status: 429,
+      code: "throttled",
+      message: "Too many requests. Try again in 60 seconds.",
+      details: { retry_after_seconds: 60 },
+    },
+    {
+      status: 400,
+      code: "parse_error",
+      message: "The request could not be read. Refresh the page and try again.",
+      details: {},
+    },
+  ])("preserves safe API feedback for $code", async ({ status, ...error }) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: async () => ({ error }),
+      }),
+    );
+    const request = api.auth.me();
+    await expect(request).rejects.toMatchObject({ status, code: error.code });
+    expect(errorMessage(await request.catch((caught) => caught))).toBe(error.message);
+  });
+
+  it.each([
     [400, "Please check the fields and try again."],
     [401, "Log in to continue."],
     [403, "You do not have permission to perform this action."],

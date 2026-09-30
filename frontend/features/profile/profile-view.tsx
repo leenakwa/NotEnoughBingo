@@ -42,6 +42,7 @@ export function ProfileView({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [feedbackAction, setFeedbackAction] = useState("profile");
   const [viewer, setViewer] = useState<AuthenticatedUser | "guest" | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
@@ -144,6 +145,7 @@ export function ProfileView({
   async function saveProfile() {
     if (!profile || actionInFlight.current) return;
     actionInFlight.current = true;
+    setFeedbackAction("profile");
     setPending(true);
     setError("");
     setMessage("");
@@ -170,10 +172,12 @@ export function ProfileView({
   async function updatePrivacy(key: keyof UserPrivacySettings, checked: boolean) {
     if (!profile || actionInFlight.current) return;
     actionInFlight.current = true;
+    setFeedbackAction("privacy");
     const privacy = { ...profile.privacy, [key]: checked };
     setProfile({ ...profile, privacy });
     setPending(true);
     setError("");
+    setMessage("");
     try {
       const saved = await api.profiles.updatePrivacy(privacy);
       setProfile((current) => (current ? { ...current, privacy: saved } : current));
@@ -190,8 +194,10 @@ export function ProfileView({
   async function saveLanguagePreferences() {
     if (actionInFlight.current) return;
     actionInFlight.current = true;
+    setFeedbackAction("languages");
     setPending(true);
     setError("");
+    setMessage("");
     try {
       const updated = await api.profiles.update({ preferred_languages: preferredLanguages });
       setProfile(updated);
@@ -208,9 +214,11 @@ export function ProfileView({
   async function toggleFollow() {
     if (!profile || actionInFlight.current) return;
     actionInFlight.current = true;
+    setFeedbackAction("follow");
     const next = !profile.is_following;
     setPending(true);
     setError("");
+    setMessage("");
     try {
       if (next) await api.follows.follow(profile.id);
       else await api.follows.unfollow(profile.id);
@@ -257,6 +265,15 @@ export function ProfileView({
   }
 
   const avatarUrl = profile.avatar?.thumbnail_url ?? profile.avatar?.url;
+  const feedback =
+    error || message || pending ? (
+      <p
+        className={error ? "form-message form-message--error" : "form-message"}
+        role={error ? "alert" : "status"}
+      >
+        {error || (pending ? "Saving changes…" : message)}
+      </p>
+    ) : null;
   return (
     <main id="main-content" className="page-shell profile-page">
       <header className="profile-header">
@@ -291,7 +308,7 @@ export function ProfileView({
             disabled={pending}
             onClick={() => void toggleFollow()}
           >
-            {profile.is_following ? "Following" : "Follow"}
+            {pending ? "Saving…" : profile.is_following ? "Following" : "Follow"}
           </button>
         ) : !ownProfile && viewer === "guest" ? (
           <Link
@@ -359,8 +376,9 @@ export function ProfileView({
               />
             </label>
             <button type="submit" className="button button--primary" disabled={pending}>
-              Save profile
+              {pending && feedbackAction === "profile" ? "Saving profile…" : "Save profile"}
             </button>
+            {feedbackAction === "profile" ? feedback : null}
           </form>
           <div className="settings-card">
             <h2>Bingo languages</h2>
@@ -377,8 +395,9 @@ export function ProfileView({
               disabled={pending}
               onClick={() => void saveLanguagePreferences()}
             >
-              Save languages
+              {pending && feedbackAction === "languages" ? "Saving languages…" : "Save languages"}
             </button>
+            {feedbackAction === "languages" ? feedback : null}
           </div>
           <div className="settings-card">
             <h2>Privacy</h2>
@@ -398,16 +417,12 @@ export function ProfileView({
                 </label>
               ))}
             </div>
+            {feedbackAction === "privacy" ? feedback : null}
           </div>
         </section>
       ) : null}
 
-      <p
-        className={error ? "form-message form-message--error" : "form-message"}
-        role={error ? "alert" : "status"}
-      >
-        {error || message}
-      </p>
+      {!ownProfile ? feedback : null}
 
       <ProfileCollections username={profile.username} ownProfile={ownProfile} />
       {ownProfile ? (

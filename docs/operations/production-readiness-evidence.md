@@ -2177,3 +2177,86 @@ observed results and their limits. Do not include credentials or session data.
   unreviewed original bullets, operator/legal inputs and real target services
   remain open. The follow-up source still requires CI. Neither these local
   results nor the tracker count claim completed production readiness.
+
+
+### 2026-09-30 — Rate quotas and safe malformed-input feedback (sections 6, 52–53, 82)
+
+- Added real API regressions for nine sensitive paths: login, signup,
+  verification, verification resend, password-reset request/confirmation,
+  email-change request/confirmation and upload intent. A one-request test quota
+  accepts validation of the first invalid payload (400), then returns 429 on
+  the second request before further work. Existing tests cover login brute
+  force, reset-link confirmation independent of the request quota, and
+  idempotent share/export retries with no extra records/counters.
+- Eight public-read cases check guest/signed-in catalog search, feed, tags and
+  author suggestions with changed query or endpoint. Author suggestions
+  intentionally ignore sessions and use their per-IP anonymous quota for all
+  callers; this is reflected in the regression rather than changing their
+  privacy projection. Forged leading forwarded-IP protection was already
+  exercised in the security regressions and rendered proxy configuration.
+- Standard 429 responses now retain Retry-After and expose a plain message
+  with the delay plus numeric `retry_after_seconds`; framework throttle prose
+  no longer becomes a field error. The tests verify code, message, header and
+  details. This closes every applicable section 53 bullet; AI endpoints are
+  absent. Real edge/provider policies and capacity tuning remain rollout
+  concerns, separate from repository quota protection.
+- Malformed request JSON now returns a generic safe 400/parse_error envelope,
+  without parser diagnostics or the marked request body. Verified in the API
+  regression and with actual raw bytes through QA Nginx. The first native probe
+  sent a JSON string through Playwright's serializer and correctly received
+  a field-validation error; resending raw bytes exercised the intended parser
+  case. No successful parser check is inferred from that initial probe.
+- Two frontend client regressions consume the exact new rate/parser envelopes
+  and show the safe message without field prefixes or diagnostics. Full
+  backend gate passed **189 tests / one infrastructure-location skip**,
+  including Ruff/format/mypy/migration drift. Frontend ESLint/TypeScript/
+  Prettier and **134/134** tests passed. The full 52-scenario live gate passed
+  before this API-message change; no user journey code changed afterward.
+- The copied checklist/hash validator and final diff check pass. Follow-up
+  source needs its own CI gate; native manager/device/zoom checks, unreviewed
+  product/API bullets and real deployment gates still remain.
+
+
+### 2026-09-30 — Real literal-content abuse journey and repaired CI (sections 52, 72)
+
+- CI run **36720920271**, source **b4643312ed23eb7cd88c8a83f0e3704ad6d51fce**,
+  passed all **nine jobs**, including full-stack flows, both production images
+  and Release gate. This confirms the language-race/submission/profile batch.
+  The subsequent API-feedback changes still need their own source gate.
+- A new live Chromium regression creates and publishes a board containing
+  literal HTML, a script tag, an image onerror handler, a JavaScript URL and
+  SQL-looking text. Public SSR/client rendering displays the exact text,
+  produces no script/image/link descendants, and never sets the attack marker.
+  A literal title search containing quotes/SQL-looking syntax returns exactly
+  that board. Signed-in login with an external return URL resolves to Discover.
+- The same real-API journey rejects negative, decimal and huge board sizes and
+  an unknown content-language enum with 400; a negative board identifier returns
+  404. An upload intent using a path-traversal/HTML filename receives a server
+  storage key containing none of those values, then is deleted as cleanup.
+  The targeted journey passed. Its initial assertion incorrectly expected
+  publication 200; source and checked-in OpenAPI specify 201, so the regression
+  was corrected to that existing contract. No application status was changed.
+- The other section 52 requirements map to the previously observed 17 MiB/413
+  proxy limit, new scoped repeated-request and existing brute-login tests, real
+  malformed-byte 400 check, and cross-owner UUID/staff-spoof tests in
+  `test_api_boundaries.py`. All original relevant inputs have concrete evidence;
+  this bounded local audit is not a penetration-test guarantee.
+
+- The expanded complete live regression subsequently passed **53/53** on all
+  five configured browser projects after the rate/parser-message change.
+- Navigation section 3 now maps to the real branded-home/header/footer route
+  walk, current-route ARIA, profile Back/Forward recovery, direct/reloaded/new
+  tab board/profile/Explore/share cases, combined-filter query restoration and
+  sections 93–96's observed sticky-anchor/dialog/disclosure behavior. There is
+  no collapsible mobile navigation menu in this release, so its closing bullet
+  is N/A; navigation remains visible at narrow widths. No copied URL relies on
+  a previously opened parent route for its documented state.
+- Profile Save/Language/Privacy feedback now sits beside the corresponding
+  control. A held real profile PATCH at 320 px confirms disabled inputs and
+  button, a visible Saving state, then successful completion; four focused live
+  scenarios passed after this UI edit. ESLint, TypeScript, Prettier, 134 frontend
+  tests and the optimized build passed again. A production Next start then
+  checked 16 public routes at both 320 and 1710 px, three signed-in routes and
+  seven private-file probes: zero console errors or warnings, failed assets,
+  overflow or exposed private files. The exact new source CI gate is still
+  required.

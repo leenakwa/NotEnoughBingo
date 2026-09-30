@@ -59,6 +59,93 @@ async function authenticateAs(page: Page, role: FixtureRole) {
   await page.context().addCookies(state.cookies);
 }
 
+test("adversarial content stays literal and unsafe inputs cannot change resource boundaries", async ({
+  page,
+}) => {
+  await authenticateAs(page, "author");
+  await page.goto("/discover");
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const headers = { "X-CSRFToken": csrf!.value, Origin: new URL(page.url()).origin };
+  const samples = [
+    "<script>globalThis.__nebInjected=true</script>",
+    '<img src=x onerror="globalThis.__nebInjected=true">',
+    "javascript:alert('x')",
+    "' OR 1=1 --",
+  ];
+  const title = `Safe <script> marker '${Date.now()}' OR 1=1 --`;
+  const document = {
+    title,
+    size: 3,
+    visibility: "public",
+    language: "en",
+    cells: Array.from({ length: 9 }, (_, position) => ({
+      position,
+      row: Math.floor(position / 3),
+      column: position % 3,
+      text: samples[position] ?? "Literal text",
+    })),
+  };
+  const created = await page.context().request.post("/api/v1/drafts/", {
+    headers: { ...headers, "Idempotency-Key": randomUUID() },
+    data: document,
+  });
+  expect(created.status()).toBe(201);
+  const draft = (await created.json()) as { bingo_id: string };
+  const published = await page.context().request.post(`/api/v1/bingos/${draft.bingo_id}/publish/`, {
+    headers: { ...headers, "Idempotency-Key": randomUUID() },
+  });
+  expect(published.status()).toBe(201);
+
+  for (const changes of [
+    { size: -1 },
+    { size: 3.5 },
+    { size: 1_000_000 },
+    { language: "invalid" },
+  ]) {
+    const invalid = await page.context().request.post("/api/v1/drafts/", {
+      headers: { ...headers, "Idempotency-Key": randomUUID() },
+      data: { ...document, ...changes },
+    });
+    expect(invalid.status()).toBe(400);
+  }
+  const upload = await page.context().request.post("/api/v1/uploads/intents/", {
+    headers,
+    data: {
+      kind: "cell_image",
+      file_name: "../../<script>alert(1)</script>.png",
+      content_type: "image/png",
+      size: cellImagePng.length,
+    },
+  });
+  expect(upload.status()).toBe(201);
+  const intent = (await upload.json()) as {
+    id: string;
+    upload: { fields: { key?: string }; url: string };
+  };
+  const destination = intent.upload.fields.key ?? new URL(intent.upload.url, page.url()).pathname;
+  expect(destination).not.toMatch(/\.\.|<|>|script|alert/);
+  expect(
+    (await page.context().request.delete(`/api/v1/uploads/${intent.id}/`, { headers })).status(),
+  ).toBe(204);
+
+  await page.goto(`/login?next=${encodeURIComponent("https://example.invalid/unsafe-return")}`);
+  await expect(page).toHaveURL(/\/discover$/);
+  await page.context().clearCookies();
+  await page.goto(`/bingo/${draft.bingo_id}`);
+  await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+  for (const text of samples)
+    await expect(page.locator(".play-cell__text").filter({ hasText: text })).toHaveText(text);
+  expect(await page.evaluate(() => "__nebInjected" in window)).toBe(false);
+  await expect(
+    page.locator(".play-cell__text script, .play-cell__text img, .play-cell__text a"),
+  ).toHaveCount(0);
+  const result = await page.context().request.get("/api/v1/bingos/", { params: { search: title } });
+  expect(result.status()).toBe(200);
+  expect((await result.json()).count).toBe(1);
+  expect((await page.context().request.get("/api/v1/bingos/-1/")).status()).toBe(404);
+});
+
 test("published multilingual bingo downloads as PNG and PDF through the real worker", async ({
   page,
 }) => {
@@ -2035,6 +2122,7 @@ test.describe("live full-stack product flows", () => {
   test("unsaved profile changes warn before leaving and stop warning after saving", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 320, height: 900 });
     await authenticateAs(page, "author");
     await page.goto("/explore");
     await page.getByRole("link", { name: /^Profile for/ }).click();
@@ -2058,9 +2146,28 @@ test.describe("live full-stack product flows", () => {
     await page.getByRole("link", { name: "Explore", exact: true }).click();
     await expect(page).toHaveURL(/\/profile$/);
     await expect(displayName).toHaveValue("Unsaved profile example");
-    await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+    let releaseSave!: () => void;
+    const heldSave = new Promise<void>((resolve) => {
+      releaseSave = resolve;
+    });
+    await page.route("**/api/v1/profiles/me/", async (route) => {
+      if (route.request().method() === "PATCH") await heldSave;
+      await route.continue();
+    });
+    const saving = waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
       page.getByRole("button", { name: "Save profile", exact: true }).click(),
     );
+    try {
+      await expect(page.getByRole("button", { name: "Saving profile…" })).toBeDisabled();
+      await expect(displayName).toBeDisabled();
+      await expect(displayName.locator("xpath=ancestor::form").getByRole("status")).toHaveText(
+        "Saving changes…",
+      );
+    } finally {
+      releaseSave();
+    }
+    await saving;
+    await page.unroute("**/api/v1/profiles/me/");
     await expect(
       page.getByRole("heading", { name: "Unsaved profile example", level: 1 }),
     ).toBeVisible();

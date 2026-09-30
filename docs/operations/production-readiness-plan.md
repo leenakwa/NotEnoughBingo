@@ -36,12 +36,13 @@ of work; it does not reduce the checklist.
 | 5. Deployment handoff | Domain, TLS, email, object storage, monitoring, alerts, external recovery, and scripted live smoke/rollback checks. | Predeployment checklist is complete; external configuration is supplied; deployment-only checks are automated and pass on the target environment. |
 
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
-open for itemized review: the 2026-09-30 tracker has 49 verified sections,
-49 partial, six N/A and one deployment-only. The latest live regression is
-52/52 and the frontend gate has 132 tests; these counts do not close unreviewed
-requirements. Stage 4 is in progress: the previous candidate passed CI; source 07c4d6b failed one live language-filter
-scenario. The lost early selection was reproduced with delayed JavaScript and
-fixed. The current follow-up still needs its committed source release gate.
+open for itemized review: the 2026-09-30 tracker has 52 verified sections,
+46 partial, six N/A and one deployment-only. The latest live regression is
+53/53 and the frontend gate has 134 tests; these counts do not close unreviewed
+requirements. Stage 4 is in progress: source b464331 passed all nine CI jobs,
+including the repaired live language-filter scenario. The current abuse-limit,
+API-error, adversarial-input, and profile-feedback batch still needs its
+committed source release gate.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
 and a domain have not been selected.
@@ -50,14 +51,14 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Finish the follow-up release batch: delayed-script language selection,
-   simultaneous form/publication guards, publication retry keys, profile
-   Back/Forward preservation and unavailable notification targets. The local
-   backend/frontend/full-live gates passed (171/132/52). Inspect the final diff,
-   commit and push the existing draft PR, then verify CI for that source head.
-   The logging/recovery/gateway/export batch is already committed in 07c4d6b.
+1. Finish the current release batch: readable scoped rate-limit and malformed
+   request errors, bounded adversarial-input checks, and local profile action
+   feedback. The local backend/frontend/full-live gates passed (189/134/53),
+   with four focused live profile scenarios after the final UI edit. Inspect
+   the final diff, commit and push the existing draft PR, then verify CI for
+   that source head.
 2. Complete remaining repository-specific work in sections 1–8, 21, 24–25,
-   34/36, 42/45–46, 52–53, 61–63, 67, 71–72, 76–77, 82 and 105. Prioritize
+   34/36, 42/45, 61–63, 67, 71–72, 76–77, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager
    behavior, native zoom/ARIA/UI contrast, endpoint-by-endpoint contracts,
    database indexes/migration scale and notification/email failure paths.

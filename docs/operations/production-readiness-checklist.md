@@ -101,21 +101,21 @@ Verify:
 
 Verify:
 
-- [ ] logo → Home;
-- [ ] all menu links work;
-- [ ] current page can be identified where appropriate;
-- [ ] browser Back works;
-- [ ] browser Forward works;
-- [ ] deep links work;
-- [ ] refreshing nested routes does not 404;
-- [ ] URL updates appropriately;
-- [ ] meaningful state can be opened from a copied URL where expected;
-- [ ] query parameters survive where appropriate;
-- [ ] there are no navigation dead ends;
-- [ ] mobile menu closes correctly;
-- [ ] Escape closes dialogs/dropdowns where appropriate;
-- [ ] click-outside behavior is sensible;
-- [ ] anchors are not hidden behind sticky headers.
+- [x] logo → Home;
+- [x] all menu links work;
+- [x] current page can be identified where appropriate;
+- [x] browser Back works;
+- [x] browser Forward works;
+- [x] deep links work;
+- [x] refreshing nested routes does not 404;
+- [x] URL updates appropriately;
+- [x] meaningful state can be opened from a copied URL where expected;
+- [x] query parameters survive where appropriate;
+- [x] there are no navigation dead ends;
+- [x] mobile menu closes correctly;
+- [x] Escape closes dialogs/dropdowns where appropriate;
+- [x] click-outside behavior is sensible;
+- [x] anchors are not hidden behind sticky headers.
 
 # 4. UI STATES
 
@@ -1015,19 +1015,19 @@ Verify session/security cookies:
 
 Test inputs such as:
 
-- [ ] HTML;
-- [ ] `<script>`;
-- [ ] SQL-looking strings;
-- [ ] URL injection;
-- [ ] path traversal strings;
-- [ ] huge payloads;
-- [ ] rapid repeated requests;
-- [ ] brute-force-like login attempts;
-- [ ] malicious filenames;
-- [ ] malformed JSON;
-- [ ] unexpected enum values;
-- [ ] negative IDs;
-- [ ] another user's UUID/ID.
+- [x] HTML;
+- [x] `<script>`;
+- [x] SQL-looking strings;
+- [x] URL injection;
+- [x] path traversal strings;
+- [x] huge payloads;
+- [x] rapid repeated requests;
+- [x] brute-force-like login attempts;
+- [x] malicious filenames;
+- [x] malformed JSON;
+- [x] unexpected enum values;
+- [x] negative IDs;
+- [x] another user's UUID/ID.
 
 Verify input validation, output escaping, access control, and rate limiting.
 
@@ -1035,14 +1035,14 @@ Verify input validation, output escaping, access control, and rate limiting.
 
 Protect relevant endpoints such as:
 
-- [ ] login;
-- [ ] signup;
-- [ ] password reset;
-- [ ] email sending;
-- [ ] expensive AI endpoints;
-- [ ] uploads;
-- [ ] search;
-- [ ] public APIs.
+- [x] login;
+- [x] signup;
+- [x] password reset;
+- [x] email sending;
+- [x] expensive AI endpoints;
+- [x] uploads;
+- [x] search;
+- [x] public APIs.
 
 Make rate-limit responses understandable.
 

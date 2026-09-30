@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **49 verified**, **49 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **52 verified**, **46 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -50,7 +50,7 @@ unresolved failures or missing evidence.
 
 - [ ] 1. BASIC LAUNCH DETAILS — Partial: guest Create path, status codes, assets, and session behavior recorded; review remaining bullets.
 - [ ] 2. FIRST-SCREEN / PRODUCT CLARITY — Partial: Discover mobile/desktop first screen and its two primary actions walked; continue copy and content review.
-- [ ] 3. NAVIGATION — Partial: Discover → Explore and Discover → Create plus Back verified; continue Forward, deep links, and menus.
+- [x] 3. NAVIGATION — Verified before deployment: branded home and header/footer links, active-route labels, Back/Forward with profile recovery, direct/new-tab/reloaded routes and URL-restored Explore/share state passed. Dialog/disclosure Escape/outside and sticky-anchor behavior have live evidence. Navigation is always visible; no mobile menu is present.
 - [ ] 4. UI STATES — Partial: first load, loaded/empty/error, offline/retry, authorization, and expired-session journeys were observed in representative routes; partial-data behavior and a component-by-component sweep remain.
 - [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, and completion feedback were exercised; duplicate submission coverage, layout stability, and byte-level large-upload progress still need an itemized sweep. Skeletons are not used in this release.
 - [x] 6. ERROR HANDLING — Verified before deployment: relevant 400/401/403/404/409/413/422/429/500 and gateway/network/timeout cases have safe human-readable feedback, retained work and appropriate retry; proxy HTML and parser/exception internals stay out of the interface.
@@ -99,8 +99,8 @@ unresolved failures or missing evidence.
 - — 49. WEBHOOKS — N/A for current release: capability absent in source inventory.
 - [ ] 50. SECURITY HEADERS — Partial: live QA responses and production CSP policy cover all listed headers except public HTTPS HSTS behavior, which needs the target edge.
 - [ ] 51. COOKIES — Partial: Secure production settings, HttpOnly session, SameSite, logout revocation, and CSRF-only JS access verified; settle final expiry and inspect host/path on the real origin.
-- [ ] 52. BASIC SECURITY ABUSE TESTS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 53. RATE LIMITING — Partial: local evidence recorded; review remaining original bullets.
+- [x] 52. BASIC SECURITY ABUSE TESTS — Verified before deployment: actual published HTML/script/image-handler/JavaScript/SQL-looking text remains literal; search returns only its literal match; external return URLs are rejected. Malicious path/HTML filenames cannot affect storage keys, large/decimal/negative sizes and unknown languages return 400, negative IDs return 404, malformed bytes are safe, and cross-user UUID/rate/brute-force tests pass. This is bounded abuse testing, not a penetration-test certification.
+- [x] 53. RATE LIMITING — Verified before deployment: login/signup/verification/reset/email-change/upload scopes reject repeated invalid requests; search/catalog/feed/tag/author quotas work for guests and signed-in callers, without resetting on query changes. HTTP 429 retains Retry-After and understandable delay text; shares/exports preserve idempotent retries. AI endpoints are absent; target quotas remain configurable.
 - — 54. AI/LLM FEATURES — N/A for current release: capability absent in source inventory.
 - [ ] 55. PRIVACY — Partial: collection/analytics disclosures, account export and scheduled deletion, and query-free application logging were reviewed and exercised. Final policy/terms, consent obligations, historical recovery links and token behavior across target telemetry, and actual third-party processor inventory still require review against the chosen operator, jurisdiction, and production providers.
 - [x] 56. ACCOUNT SETTINGS — Verified before deployment: names, email change/reverification, settings password change/recovery, logout/session revocation, deletion/cancel/anonymization, avatar upload/remove/reload, and language/privacy/notification persistence; separate timezone and logout-all controls are absent.
@@ -120,7 +120,7 @@ unresolved failures or missing evidence.
 - [x] 70. PRODUCTION BUILD — Verified before deployment: current optimized Next build/start, SSR/static routes, dynamic route assets and browser console passed on the production candidate; actual domain/provider values remain rollout inputs.
 - [ ] 71. DEPENDENCIES — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [x] 73. TESTS — Verified before deployment: 171 PostgreSQL tests plus 132 frontend tests and 52 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
+- [x] 73. TESTS — Verified before deployment: 189 PostgreSQL tests plus 134 frontend tests and 53 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial: local evidence recorded; review remaining original bullets.
