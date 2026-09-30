@@ -513,27 +513,27 @@ Do not degrade existing accessibility while making other fixes.
 
 Search the repository and visible product for accidental leftovers such as:
 
-- [ ] `Lorem`;
-- [ ] `TODO`;
-- [ ] `FIXME`;
-- [ ] `test`;
-- [ ] `dummy`;
-- [ ] `example.com`;
-- [ ] `John Doe`;
-- [ ] `foo`;
-- [ ] `bar`;
-- [ ] `localhost`;
-- [ ] `127.0.0.1`;
-- [ ] staging URLs;
+- [x] `Lorem`;
+- [x] `TODO`;
+- [x] `FIXME`;
+- [x] `test`;
+- [x] `dummy`;
+- [x] `example.com`;
+- [x] `John Doe`;
+- [x] `foo`;
+- [x] `bar`;
+- [x] `localhost`;
+- [x] `127.0.0.1`;
+- [x] staging URLs;
 - [ ] temporary copy;
-- [ ] obsolete “Coming soon” text.
+- [x] obsolete “Coming soon” text.
 
 Verify:
 
-- [ ] consistent capitalization;
-- [ ] consistent terminology;
-- [ ] product name is consistent;
-- [ ] sign-in/login terminology is consistent;
+- [x] consistent capitalization;
+- [x] consistent terminology;
+- [x] product name is consistent;
+- [x] sign-in/login terminology is consistent;
 - [ ] error messages are user-facing;
 - [ ] internal enum/debug values never appear to users.
 
@@ -541,24 +541,24 @@ Verify:
 
 Test relevant fields with:
 
-- [ ] 100-character username/name;
-- [ ] 200-character project/item name;
-- [ ] very long email;
-- [ ] very long URL;
-- [ ] long unbroken string;
-- [ ] emoji;
-- [ ] Cyrillic;
-- [ ] Chinese or another non-Latin script;
-- [ ] empty string;
-- [ ] very large text content.
+- [x] 100-character username/name;
+- [x] 200-character project/item name;
+- [x] very long email;
+- [x] very long URL;
+- [x] long unbroken string;
+- [x] emoji;
+- [x] Cyrillic;
+- [x] Chinese or another non-Latin script;
+- [x] empty string;
+- [x] very large text content.
 
 Check:
 
-- [ ] wrapping;
-- [ ] overflow;
-- [ ] truncation;
-- [ ] layout stability;
-- [ ] useful tooltip/full-view behavior for truncated content where appropriate.
+- [x] wrapping;
+- [x] overflow;
+- [x] truncation;
+- [x] layout stability;
+- [x] useful tooltip/full-view behavior for truncated content where appropriate.
 
 # 27. DATES AND TIME
 

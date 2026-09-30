@@ -35,7 +35,7 @@ export function ForgotPasswordForm() {
       eyebrow="Account recovery"
       title="Reset your password"
       description="We will email a time-limited reset link."
-      footer={{ text: "Remembered it?", href: "/login", label: "Back to login" }}
+      footer={{ text: "Remembered it?", href: "/login", label: "Back to log in" }}
     >
       <form className="stack-form" onSubmit={submit}>
         <label className="field">
@@ -124,7 +124,7 @@ export function ResetPasswordForm() {
         >
           {error || message}
         </p>
-        {message ? <Link href="/login">Continue to login</Link> : null}
+        {message ? <Link href="/login">Continue to log in</Link> : null}
       </form>
     </AuthShell>
   );

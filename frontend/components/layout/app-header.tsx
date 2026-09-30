@@ -81,7 +81,7 @@ export function ClassicAppHeader({ avatarUrl, pathname, unreadCount, user }: Hea
     <header className="site-header site-header--classic">
       <div className="classic-header__left">
         <Link className="brand-link" href="/discover" aria-label="Not Enough Bingo home">
-          Not-Enough-Bingo
+          Not Enough Bingo
         </Link>
       </div>
 

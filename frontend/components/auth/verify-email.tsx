@@ -85,7 +85,7 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
           className="button button--primary"
           href={mode === "email-change" ? "/profile" : "/login"}
         >
-          {mode === "email-change" ? "Back to profile" : "Continue to login"}
+          {mode === "email-change" ? "Back to profile" : "Continue to log in"}
         </Link>
       ) : null}
       {mode === "registration" && state !== "verified" && email ? (

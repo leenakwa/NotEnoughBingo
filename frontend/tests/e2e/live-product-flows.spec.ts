@@ -281,7 +281,7 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByRole("heading", { name: "Email verified" })).toBeVisible({
       timeout: 15_000,
     });
-    await page.getByRole("link", { name: "Continue to login" }).click();
+    await page.getByRole("link", { name: "Continue to log in" }).click();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
     await page.getByLabel("Email").fill(email);
@@ -1150,6 +1150,59 @@ test.describe("live full-stack product flows", () => {
     }
     await page.reload();
     await expect(page.getByRole("heading", { name })).toBeVisible();
+  });
+
+  test("long URL and multilingual comments remain readable on narrow and wide screens", async ({
+    page,
+  }) => {
+    const bingoId = readLiveFixture().bingos.public.id;
+    const url = `https://example.invalid/${"long-segment-".repeat(55)}`;
+    const body = `${url} 中文 🎲 Привет`;
+    await authenticateAs(page, "player");
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto(`/bingo/${bingoId}`);
+    const composer = page.getByRole("textbox", { name: "Add a comment" });
+    await expect(page.getByRole("button", { name: "Post comment" })).toBeDisabled();
+    await composer.fill(body);
+    await waitForResponse(page, `/api/v1/bingos/${bingoId}/comments/`, "POST", () =>
+      page.getByRole("button", { name: "Post comment" }).click(),
+    );
+    const comment = page.locator(".comment-list article").filter({ hasText: url });
+    await expect(comment).toContainText("中文 🎲 Привет");
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 800 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width,
+      );
+      await expect(comment).toContainText(url);
+    }
+  });
+
+  test("long account and bingo names respect input limits without widening the page", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto("/register");
+    await page.getByLabel("Username").fill("u".repeat(100));
+    await expect(page.getByLabel("Username")).toHaveValue("u".repeat(30));
+    await expect(
+      page.getByText("3–30 characters. Letters, numbers, and underscores."),
+    ).toBeVisible();
+    await page.getByLabel("Email").fill(`${"long".repeat(65)}@example.invalid`);
+    expect((await page.getByLabel("Email").inputValue()).length).toBe(254);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+
+    await authenticateAs(page, "author");
+    await page.goto("/create");
+    await page.getByRole("button", { name: "Finish creating →" }).click();
+    await page.getByRole("textbox", { name: "Title" }).fill("T".repeat(200));
+    await expect(page.getByRole("textbox", { name: "Title" })).toHaveValue("T".repeat(70));
+    await expect(page.getByText("Up to 70 characters.")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
   });
 
   test("account language, privacy, and notification preferences persist", async ({ page }) => {

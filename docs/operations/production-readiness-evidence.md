@@ -913,6 +913,44 @@ observed results and their limits. Do not include credentials or session data.
   evaluation. The focused live mobile WebKit scenario passed 5/5 repeated
   runs after this test stabilization; exact-commit CI remains pending.
 
+### 2026-09-30 — Visible copy and placeholder inventory (section 25)
+
+- A case-insensitive search of user-facing frontend source found no Lorem,
+  TODO/FIXME, dummy names, `example.com`, loopback addresses, staging links,
+  or obsolete “Coming soon” copy. Test fixtures, CI-only `.invalid` origins,
+  internal URL parsing, and local API defaults are intentional developer
+  inputs; the production image build validates its public HTTPS origin before
+  publishing metadata. The classic visible wordmark was the lone mismatch
+  (`Not-Enough-Bingo`); it now reads “Not Enough Bingo,” matching the page
+  title, footer, and sharing surfaces. Authentication links now consistently
+  say “Log in,” “Back to log in,” or “Continue to log in.” Screenshots at 320
+  and 844 px showed the revised wordmark fits the header without overflow.
+- Privacy, Terms, and Support still contain explicit public-beta/operator
+  wording and an issue-tracker fallback. They cannot be finalized honestly
+  without a real operator identity, jurisdiction, and private support contact;
+  the user has been asked for those inputs. Temporary legal copy, the wider
+  error-message inventory, and internal-value exposure remain unchecked.
+
+### 2026-09-30 — Long input and readable content limits (section 26)
+
+- The live 320 px registration and editor flow pasted a 100-character
+  username, over-254-character email, and 200-character bingo title. The
+  fields kept 30, 254, and 70 characters respectively, matching product
+  limits, with no page overflow. Username and title now state their limits
+  beside the controls so a pasted value's truncation is predictable. This
+  focused scenario passed 1/1.
+- A live player posted a roughly 800-character unbroken URL followed by
+  Chinese, emoji, and Cyrillic text as a comment. The full body remained
+  readable without horizontal overflow at 320 and 1710 px; an empty comment
+  could not be submitted. The focused scenario passed 1/1. A prior live
+  profile scenario saved 80 unbroken Cyrillic characters as the display name
+  and Chinese, emoji, and unbroken Latin text in the bio at both widths,
+  then retained them after reload. The static maximum-length card test
+  covered long title, author, and tag wrapping at 320/1710 px; the 10×10
+  board test exposed a clipped cell's full text in the cell-detail region.
+  These controls use their product-specific length limits; 100- or
+  200-character names are intentionally capped rather than stored.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

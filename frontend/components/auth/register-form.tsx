@@ -42,6 +42,7 @@ export function RegisterForm() {
             type="email"
             autoComplete="email"
             required
+            maxLength={254}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
@@ -57,7 +58,7 @@ export function RegisterForm() {
             value={username}
             onChange={(event) => setUsername(event.target.value)}
           />
-          <small>Letters, numbers, and underscores.</small>
+          <small>3–30 characters. Letters, numbers, and underscores.</small>
         </label>
         <PasswordField
           label="Password"

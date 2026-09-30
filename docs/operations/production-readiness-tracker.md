@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **14 verified**, **47 partial**, **38 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **15 verified**, **46 partial**, **38 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -72,8 +72,8 @@ unresolved failures or missing evidence.
 - [x] 22. TOUCH UX — Verified before deployment: 44 px mobile touch targets, tap navigation/language/play/editor actions, optional drag alternatives, and no hover/tooltip-only critical controls.
 - [x] 23. KEYBOARD UX — Verified before deployment: navigation, Enter/Space/Escape, visible focus, and cross-browser report-dialog focus trap/return.
 - [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy, discretionary ARIA, actual 200% zoom, and UI contrast remain.
-- [ ] 25. COPY AND PLACEHOLDERS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 26. LONG-CONTENT TORTURE TEST — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 25. COPY AND PLACEHOLDERS — Partial: placeholder inventory and product/auth names checked; legal operator copy and broader error-message exposure remain.
+- [x] 26. LONG-CONTENT TORTURE TEST — Verified before deployment: account/title limits, 254-character email, long URL/multilingual comment, profile/card/cell wrapping, and 320/1710 px layout.
 - [ ] 27. DATES AND TIME — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 28. NUMBERS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 29. LOCALIZATION / INTERNATIONALIZATION — Partial: local evidence recorded; review remaining original bullets.

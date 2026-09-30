@@ -67,6 +67,7 @@ export function BingoDetails({
           onChange={(event) => dispatch({ type: "set-title", value: event.target.value })}
           aria-invalid={Boolean(error && !state.title.trim())}
         />
+        <small>Up to 70 characters.</small>
       </label>
       <label className="field">
         <span>Bingo language</span>
