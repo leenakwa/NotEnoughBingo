@@ -1059,6 +1059,38 @@ observed results and their limits. Do not include credentials or session data.
   into a friendly service-unavailable message. External error tracking setup
   and alert delivery are assessed separately in sections 63–66.
 
+### 2026-09-30 — Offline, slow requests, timeouts, and rollback (section 32)
+
+- The live Chromium editor scenario used Playwright offline mode while editing a
+  cell. The save status reported failure, local recovery retained the edit,
+  “Retry now” saved it after reconnecting, and a reload showed the saved cell.
+  The registered-player scenario aborted the reset DELETE, showed a connection
+  error, restored the selected cell, then completed a real reset and confirmed
+  it stayed clear after reload. A guest-player component check also retained
+  the selected cell when the browser blocked local-storage removal. These
+  targeted live flows passed 2/2; the focused component checks passed.
+- A routed Explore search withheld the response while the results region
+  remained visibly busy and said “Updating results,” then completed normally
+  after release (1/1 Chromium scenario). The shared browser API client now
+  aborts reads and writes after 20 seconds; unit checks covered a stalled read,
+  a stalled write with an ambiguity warning, caller cancellation, and a broken
+  JSON error response. CSRF bootstrap uses the same deadline. Direct object
+  storage transfers and proxy upload bodies have a 120-second deadline so a
+  slow large image can finish while a stalled transfer eventually exits. The
+  direct-upload timeout test confirmed that processing and attachment do not
+  run after the transfer fails. The editor's live image flow displayed upload
+  stages, allowed cancellation, and succeeded on retry (1/1).
+- Registered progress reset now clears saved recovery only after a successful
+  server reset and refresh; on failure it rolls back the visible selection and
+  retains a session recovery copy. Guest reset similarly rolls back when local
+  storage denies deletion. Protected local and session storage reads no longer
+  throw if both reading and removal fail. The full frontend suite passed 104
+  tests in 24 files, with TypeScript, ESLint, and Prettier passing. The exact
+  previous commit `499859d` passed all nine CI jobs; this section's commit
+  still needs its own exact-head CI. Network deadlines and browser offline mode
+  are local predeployment evidence; public edge and service availability remain
+  launch-environment checks.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

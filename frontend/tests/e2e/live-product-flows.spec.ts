@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { Buffer } from "node:buffer";
 
 import AxeBuilder from "@axe-core/playwright";
-import type { APIRequestContext, BrowserContext, Page, Response } from "@playwright/test";
+import type { APIRequestContext, BrowserContext, Page, Response, Route } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import {
@@ -1023,6 +1023,19 @@ test.describe("live full-stack product flows", () => {
     await expect(
       page.getByRole("button", { name: `${bingo.cell_texts[2]}, selected` }),
     ).toHaveAttribute("aria-pressed", "true");
+
+    const progressPath = `**/api/v1/progress/${bingo.id}/`;
+    const blockReset = (route: Route) =>
+      route.request().method() === "DELETE" ? route.abort("failed") : route.continue();
+    await page.route(progressPath, blockReset);
+    await page.getByRole("button", { name: "Reset" }).click();
+    await expect(
+      page.getByText("Unable to reach the service. Check your connection and try again."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: `${bingo.cell_texts[2]}, selected` }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.unroute(progressPath, blockReset);
 
     await waitForResponse(page, `/api/v1/progress/${bingo.id}/`, "DELETE", () =>
       page.getByRole("button", { name: "Reset" }).click(),

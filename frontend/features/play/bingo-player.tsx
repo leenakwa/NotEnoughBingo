@@ -261,23 +261,30 @@ export function BingoPlayer({
   }
 
   async function reset() {
+    const previousCells = [...selected];
+    const resetVersion = ++requestVersion.current;
     if (saving) setSaving(false);
-    requestVersion.current += 1;
     skipNextSync.current = true;
     setSelected(new Set());
     setProgressError("");
     completedRevision.current = null;
-    if (bingo?.current_revision) {
-      trackInteraction("reset", {
-        bingoId,
-        revisionId: bingo.current_revision.id,
-      });
-    }
     if (viewer === "guest") {
       if (!clearGuestProgress(bingoId)) {
+        setSelected(new Set(previousCells));
+        if (
+          bingo?.current_revision &&
+          previousCells.length === bingo.current_revision.cells.length
+        ) {
+          completedRevision.current = bingo.current_revision.id;
+        }
         setProgressError(
-          "This browser blocked local storage. Your selection is clear now but may return after a reload.",
+          "This browser blocked local storage, so progress could not be reset. Your selection is still here.",
         );
+      } else if (bingo?.current_revision) {
+        trackInteraction("reset", {
+          bingoId,
+          revisionId: bingo.current_revision.id,
+        });
       }
       return;
     }
@@ -287,9 +294,30 @@ export function BingoPlayer({
         await api.progress.reset(bingoId);
         const latest = await api.progress.get(bingoId);
         progressVersion.current = latest.version;
+        if (viewer) clearProgressRecovery(viewer.id, bingoId);
+        if (bingo?.current_revision) {
+          trackInteraction("reset", {
+            bingoId,
+            revisionId: bingo.current_revision.id,
+          });
+        }
       })
-      .catch((caught) => setProgressError(errorMessage(caught)))
-      .finally(() => setSaving(false));
+      .catch((caught) => {
+        if (resetVersion !== requestVersion.current) return;
+        skipNextSync.current = true;
+        setSelected(new Set(previousCells));
+        if (viewer && bingo?.current_revision) {
+          writeProgressRecovery(viewer.id, bingoId, bingo.current_revision.id, previousCells);
+          completedRevision.current =
+            previousCells.length === bingo.current_revision.cells.length
+              ? bingo.current_revision.id
+              : null;
+        }
+        setProgressError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (resetVersion === requestVersion.current) setSaving(false);
+      });
   }
 
   async function toggleBingoLike() {

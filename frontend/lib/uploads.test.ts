@@ -29,7 +29,10 @@ describe("uploadImage", () => {
     });
   });
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it("reports preparation, transfer, and processing before the ready image", async () => {
     const phases: UploadPhase[] = [];
@@ -49,8 +52,31 @@ describe("uploadImage", () => {
     expect(phases).toEqual(["preparing", "uploading", "processing"]);
     expect(fetchMock).toHaveBeenCalledWith(
       "https://storage.example.test/upload",
-      expect.objectContaining({ method: "POST", signal: undefined }),
+      expect.objectContaining({ method: "POST", signal: expect.any(AbortSignal) }),
     );
+  });
+
+  it("ends a stalled storage transfer and leaves the image unattached", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(
+      (_url: string, options: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          options.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Upload aborted", "AbortError")),
+          );
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const operation = uploadImage(new File(["image"], "image.png", { type: "image/png" }), "cover");
+    const rejection = expect(operation).rejects.toThrow(
+      "Image upload timed out. Check your connection and try again.",
+    );
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    await rejection;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mocks.complete).not.toHaveBeenCalled();
   });
 
   it("aborts the transfer without completing or attaching the asset", async () => {

@@ -31,7 +31,11 @@ export function readProgressRecovery(
     }
     return value.selectedCells;
   } catch {
-    window.sessionStorage.removeItem(key(accountId, bingoId));
+    try {
+      window.sessionStorage.removeItem(key(accountId, bingoId));
+    } catch {
+      // Private browsing may block both reading and removing recovery data.
+    }
     return null;
   }
 }

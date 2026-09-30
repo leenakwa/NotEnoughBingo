@@ -654,20 +654,20 @@ Verify:
 
 Test:
 
-- [ ] Offline;
-- [ ] slow connection;
-- [ ] high latency;
-- [ ] timeout;
-- [ ] failed requests.
+- [x] Offline;
+- [x] slow connection;
+- [x] high latency;
+- [x] timeout;
+- [x] failed requests.
 
 Verify:
 
-- [ ] app does not appear frozen forever;
-- [ ] sensible timeout behavior exists;
-- [ ] user understands what happened;
-- [ ] Retry exists where useful;
-- [ ] failed optimistic updates roll back;
-- [ ] unsaved work is preserved when practical.
+- [x] app does not appear frozen forever;
+- [x] sensible timeout behavior exists;
+- [x] user understands what happened;
+- [x] Retry exists where useful;
+- [x] failed optimistic updates roll back;
+- [x] unsaved work is preserved when practical.
 
 # 33. BROWSER COMPATIBILITY
 

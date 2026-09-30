@@ -1,8 +1,9 @@
 import { act, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
 import type { AuthenticatedUser, BingoDetail, PlayProgress } from "@/lib/api/types";
+import { writeGuestProgress } from "@/lib/guest-progress";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   getViewer: vi.fn(),
   getProgress: vi.fn(),
   saveProgress: vi.fn(),
+  resetProgress: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
   track: vi.fn(),
@@ -42,7 +44,7 @@ vi.mock("@/lib/api/client", () => ({
     progress: {
       get: mocks.getProgress,
       save: mocks.saveProgress,
-      reset: vi.fn(),
+      reset: mocks.resetProgress,
     },
   },
   ApiClientError: class extends Error {
@@ -151,6 +153,7 @@ describe("BingoPlayer", () => {
     mocks.getProgress.mockResolvedValue(progress);
     mocks.getProfile.mockRejectedValue(new Error("Profile is optional here"));
   });
+  afterEach(() => vi.restoreAllMocks());
 
   it("does not write progress merely because server state was hydrated", async () => {
     render(<BingoPlayer bingoId={bingo.id} />);
@@ -160,5 +163,46 @@ describe("BingoPlayer", () => {
 
     expect(mocks.getProgress).toHaveBeenCalledWith(bingo.id);
     expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("restores selected cells when a registered reset fails offline", async () => {
+    mocks.getProgress.mockResolvedValue({
+      ...progress,
+      selected_cells: [bingo.current_revision!.cells[0]!.id],
+    });
+    mocks.resetProgress.mockRejectedValueOnce(new Error("Unable to reach the service"));
+    render(<BingoPlayer bingoId={bingo.id} />);
+
+    const cell = await screen.findByRole("button", { name: "Open the board, selected" });
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    await act(async () => {
+      screen.getByRole("button", { name: "Reset" }).click();
+      await Promise.resolve();
+    });
+
+    expect(await screen.findByText("Unable to reach the service")).toBeVisible();
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    expect(mocks.track).not.toHaveBeenCalledWith("reset", expect.anything());
+  });
+
+  it("keeps guest selections when browser storage blocks reset", async () => {
+    mocks.getViewer.mockResolvedValue(null);
+    writeGuestProgress(bingo.id, bingo.current_revision!.id, [
+      bingo.current_revision!.cells[0]!.id!,
+    ]);
+    render(<BingoPlayer bingoId={bingo.id} />);
+
+    const cell = await screen.findByRole("button", { name: "Open the board, selected" });
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("Storage denied", "SecurityError");
+    });
+    await act(async () => {
+      screen.getByRole("button", { name: "Reset" }).click();
+    });
+
+    expect(screen.getByText(/progress could not be reset/)).toBeVisible();
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    expect(mocks.track).not.toHaveBeenCalledWith("reset", expect.anything());
+    window.localStorage.clear();
   });
 });

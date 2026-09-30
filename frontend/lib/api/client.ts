@@ -45,12 +45,15 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   query?: Query;
   idempotencyKey?: string;
   skipCsrfBootstrap?: boolean;
+  timeoutMs?: number;
 }
 
 const publicApiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "/api/v1";
 const serverApiBase =
   process.env.API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8000/api/v1";
 const csrfCookieName = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME ?? "neb_csrf";
+const requestTimeoutMs = 20_000;
+const uploadRequestTimeoutMs = 120_000;
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -115,12 +118,41 @@ function getCookie(name: string): string | null {
 
 async function bootstrapCsrf(): Promise<void> {
   if (typeof window === "undefined" || getCookie(csrfCookieName)) return;
-  await fetch(buildUrl("auth/csrf/"), {
-    method: "GET",
-    credentials: "include",
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
+  await apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true });
+}
+
+async function withRequestDeadline<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  upstream: AbortSignal | null | undefined,
+  method: string,
+  timeoutMs: number,
+): Promise<T> {
+  const controller = new AbortController();
+  const cancel = () => controller.abort(upstream?.reason);
+  if (upstream?.aborted) cancel();
+  else upstream?.addEventListener("abort", cancel, { once: true });
+  let timedOut = false;
+  const timer = globalThis.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    return await run(controller.signal);
+  } catch (error) {
+    if (timedOut && !upstream?.aborted) {
+      throw new ApiClientError(0, {
+        code: "request_timeout",
+        message: unsafeMethods.has(method)
+          ? "The request timed out. It may have completed. Refresh before trying again."
+          : "The service took too long to respond. Try again.",
+      });
+    }
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timer);
+    upstream?.removeEventListener("abort", cancel);
+  }
 }
 
 function normalizeError(status: number, data: unknown): ApiErrorPayload {
@@ -182,17 +214,42 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(buildUrl(path, options.query), {
-    ...options,
+  const { response, data } = await withRequestDeadline(
+    async (signal) => {
+      const response = await fetch(buildUrl(path, options.query), {
+        ...options,
+        method,
+        body,
+        headers,
+        credentials: "include",
+        cache: options.cache ?? "no-store",
+        signal,
+      });
+      const contentType = response.headers.get("content-type") ?? "";
+      let data: unknown = null;
+      if (
+        response.status !== 204 &&
+        response.status !== 205 &&
+        contentType.includes("application/json")
+      ) {
+        try {
+          data = await response.json();
+        } catch {
+          throw new ApiClientError(response.status, {
+            code: "invalid_response",
+            message:
+              response.status >= 500
+                ? "The service is temporarily unavailable."
+                : "The service returned an invalid response. Try again.",
+          });
+        }
+      }
+      return { response, data };
+    },
+    options.signal,
     method,
-    body,
-    headers,
-    credentials: "include",
-    cache: options.cache ?? "no-store",
-  });
-
-  const contentType = response.headers.get("content-type") ?? "";
-  const data: unknown = contentType.includes("application/json") ? await response.json() : null;
+    options.timeoutMs ?? requestTimeoutMs,
+  );
 
   if (!response.ok) {
     const error = new ApiClientError(response.status, normalizeError(response.status, data));
@@ -386,6 +443,7 @@ export const api = {
         headers,
         body: file,
         signal,
+        timeoutMs: uploadRequestTimeoutMs,
       }),
     get: (assetId: PublicId, signal?: AbortSignal) =>
       apiRequest<MediaAsset>(`uploads/${assetId}/`, { signal }),

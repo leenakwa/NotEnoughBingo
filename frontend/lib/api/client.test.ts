@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, ApiClientError, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe("API error presentation", () => {
   it("surfaces the first field-level validation message", () => {
@@ -31,6 +34,92 @@ describe("API error presentation", () => {
     expect(errorMessage(new TypeError("Failed to fetch"))).toBe(
       "Unable to reach the service. Check your connection and try again.",
     );
+  });
+
+  it("stops a stalled read request and gives a retryable timeout message", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("The operation was aborted.", "AbortError")),
+            );
+          }),
+      ),
+    );
+
+    const pending = api.auth.me();
+    const rejection = expect(pending).rejects.toMatchObject({
+      code: "request_timeout",
+      message: "The service took too long to respond. Try again.",
+    });
+    await vi.advanceTimersByTimeAsync(20_000);
+    await rejection;
+  });
+
+  it("warns that a timed-out write may already have completed", async () => {
+    vi.useFakeTimers();
+    document.cookie = "neb_csrf=test-csrf; path=/";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("The operation was aborted.", "AbortError")),
+            );
+          }),
+      ),
+    );
+
+    const pending = api.auth.logout();
+    const rejection = expect(pending).rejects.toMatchObject({
+      code: "request_timeout",
+      message: "The request timed out. It may have completed. Refresh before trying again.",
+    });
+    await vi.advanceTimersByTimeAsync(20_000);
+    await rejection;
+  });
+
+  it("preserves caller cancellation instead of reporting a timeout", async () => {
+    const controller = new AbortController();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("The operation was aborted.", "AbortError")),
+            );
+          }),
+      ),
+    );
+
+    const pending = api.feeds.discover(1, controller.signal);
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("does not show a parser exception when a server error has broken JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: async () => {
+          throw new SyntaxError("Unexpected token <internal payload>");
+        },
+      }),
+    );
+
+    await expect(api.auth.me()).rejects.toMatchObject({
+      code: "invalid_response",
+      message: "The service is temporarily unavailable.",
+    });
   });
 
   it("explains a non-JSON gateway rate limit", async () => {
