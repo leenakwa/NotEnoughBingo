@@ -33,7 +33,13 @@ export function FeedPage({
   const [onboardingLanguages, setOnboardingLanguages] = useState<string[]>([]);
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [preferenceError, setPreferenceError] = useState("");
+  const [interactive, setInteractive] = useState(false);
+  const preferenceSaveInFlight = useRef(false);
   const skipInitialRequest = useRef(Boolean(initialResult));
+
+  useEffect(() => {
+    setInteractive(true);
+  }, []);
 
   const load = useCallback(
     async (signal: AbortSignal) => {
@@ -87,7 +93,8 @@ export function FeedPage({
   }, [kind]);
 
   async function saveLanguagePreferences(languages: string[] = onboardingLanguages) {
-    if (savingPreferences) return;
+    if (preferenceSaveInFlight.current) return;
+    preferenceSaveInFlight.current = true;
     setSavingPreferences(true);
     setPreferenceError("");
     try {
@@ -99,6 +106,7 @@ export function FeedPage({
     } catch (caught) {
       setPreferenceError(errorMessage(caught));
     } finally {
+      preferenceSaveInFlight.current = false;
       setSavingPreferences(false);
     }
   }
@@ -157,6 +165,7 @@ export function FeedPage({
             <LanguagePicker
               value={selectedLanguages}
               label="Show bingos in"
+              disabled={!interactive}
               onChange={(next) => {
                 setLanguageFilter(next);
                 setPage(1);
@@ -166,6 +175,7 @@ export function FeedPage({
             <button
               type="button"
               className="text-button"
+              disabled={!interactive}
               onClick={() => {
                 setLanguageFilter([]);
                 setPage(1);

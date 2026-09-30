@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordField } from "@/components/auth/password-field";
@@ -11,12 +11,14 @@ import { api, errorMessage } from "@/lib/api/client";
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [pending, setPending] = useState(false);
+  const submissionInFlight = useRef(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
+    if (submissionInFlight.current) return;
+    submissionInFlight.current = true;
     setPending(true);
     setMessage("");
     setError("");
@@ -26,6 +28,7 @@ export function ForgotPasswordForm() {
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      submissionInFlight.current = false;
       setPending(false);
     }
   }
@@ -42,6 +45,7 @@ export function ForgotPasswordForm() {
           <span>Email</span>
           <input
             type="email"
+            name="email"
             autoComplete="email"
             required
             value={email}
@@ -72,16 +76,18 @@ export function ResetPasswordForm() {
   const token = searchParams.get("token") ?? "";
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
+  const submissionInFlight = useRef(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || message) return;
+    if (submissionInFlight.current || message) return;
     if (!uid || !token) {
       setError("This reset link is incomplete.");
       return;
     }
+    submissionInFlight.current = true;
     setPending(true);
     setError("");
     try {
@@ -96,6 +102,7 @@ export function ResetPasswordForm() {
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      submissionInFlight.current = false;
       setPending(false);
     }
   }

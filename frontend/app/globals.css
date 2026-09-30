@@ -724,10 +724,11 @@ h3 {
 
 .filter-panel {
   display: grid;
+  min-width: 0;
   grid-template-columns: repeat(3, minmax(180px, 1fr)) minmax(220px, 1.1fr);
   gap: 18px;
   align-items: end;
-  margin-bottom: 34px;
+  margin: 0 0 34px;
   padding: 22px;
   border: var(--line-heavy);
   box-shadow: var(--shadow);

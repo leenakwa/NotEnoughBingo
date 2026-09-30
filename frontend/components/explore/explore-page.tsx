@@ -39,7 +39,12 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   const [authorSuggestions, setAuthorSuggestions] = useState<AuthorSuggestion[]>([]);
   const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
   const [requestVersion, setRequestVersion] = useState(0);
+  const [interactive, setInteractive] = useState(false);
   const skipInitialRequest = useRef(Boolean(initialResult));
+
+  useEffect(() => {
+    setInteractive(true);
+  }, []);
 
   const load = useCallback(
     async (signal: AbortSignal) => {
@@ -146,6 +151,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!interactive) return;
     if (search.trim()) {
       trackInteraction("search", {
         metadata: {
@@ -206,114 +212,117 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
         <p>Search every public bingo by title, author, or tag.</p>
       </header>
 
-      <form className="filter-panel" onSubmit={submit}>
-        <label className="field">
-          <span>Search by title</span>
-          <span className="input-with-icon">
-            <SearchIcon />
+      <form onSubmit={submit}>
+        <fieldset className="filter-panel" disabled={!interactive} aria-busy={!interactive}>
+          <legend className="sr-only">Search filters</legend>
+          <label className="field">
+            <span>Search by title</span>
+            <span className="input-with-icon">
+              <SearchIcon />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Enter a title"
+                maxLength={80}
+              />
+            </span>
+          </label>
+          <label className="field">
+            <span>Author</span>
             <input
               type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Enter a title"
+              value={author}
+              onChange={(event) => setAuthor(event.target.value)}
+              placeholder="Username or display name"
+              list="explore-author-suggestions"
               maxLength={80}
             />
-          </span>
-        </label>
-        <label className="field">
-          <span>Author</span>
-          <input
-            type="search"
-            value={author}
-            onChange={(event) => setAuthor(event.target.value)}
-            placeholder="Username or display name"
-            list="explore-author-suggestions"
-            maxLength={80}
-          />
-          <datalist id="explore-author-suggestions">
-            {authorSuggestions.map((suggestion) => (
-              <option
-                key={suggestion.id}
-                value={suggestion.username}
-                label={
-                  suggestion.display_name
-                    ? `${suggestion.display_name} (@${suggestion.username})`
-                    : `@${suggestion.username}`
-                }
+            <datalist id="explore-author-suggestions">
+              {authorSuggestions.map((suggestion) => (
+                <option
+                  key={suggestion.id}
+                  value={suggestion.username}
+                  label={
+                    suggestion.display_name
+                      ? `${suggestion.display_name} (@${suggestion.username})`
+                      : `@${suggestion.username}`
+                  }
+                />
+              ))}
+            </datalist>
+          </label>
+          <label className="field">
+            <span>Tags</span>
+            <input
+              type="search"
+              value={tags}
+              onChange={(event) => setTags(event.target.value)}
+              placeholder="travel, friends"
+              list="explore-tag-suggestions"
+            />
+            <datalist id="explore-tag-suggestions">
+              {tagSuggestions.map((tag) => (
+                <option key={tag.id} value={[...tagPrefix, tag.slug].join(", ")}>
+                  {tag.name}
+                </option>
+              ))}
+            </datalist>
+          </label>
+          <LanguagePicker value={languages} onChange={setLanguages} label="Bingo languages" />
+          <fieldset className="sort-options">
+            <legend>Sort</legend>
+            <label>
+              <input
+                type="radio"
+                name="ordering"
+                value="popular"
+                checked={ordering === "popular"}
+                onChange={() => setOrdering("popular")}
               />
-            ))}
-          </datalist>
-        </label>
-        <label className="field">
-          <span>Tags</span>
-          <input
-            type="search"
-            value={tags}
-            onChange={(event) => setTags(event.target.value)}
-            placeholder="travel, friends"
-            list="explore-tag-suggestions"
-          />
-          <datalist id="explore-tag-suggestions">
-            {tagSuggestions.map((tag) => (
-              <option key={tag.id} value={[...tagPrefix, tag.slug].join(", ")}>
-                {tag.name}
-              </option>
-            ))}
-          </datalist>
-        </label>
-        <LanguagePicker value={languages} onChange={setLanguages} label="Bingo languages" />
-        <fieldset className="sort-options">
-          <legend>Sort</legend>
-          <label>
-            <input
-              type="radio"
-              name="ordering"
-              value="popular"
-              checked={ordering === "popular"}
-              onChange={() => setOrdering("popular")}
-            />
-            <span>
-              <b>Popular</b>
-              <small>Engagement with time decay</small>
-            </span>
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="ordering"
-              value="newest"
-              checked={ordering === "newest"}
-              onChange={() => setOrdering("newest")}
-            />
-            <span>
-              <b>New</b>
-              <small>Recently published</small>
-            </span>
-          </label>
-        </fieldset>
-        <button className="button button--primary filter-submit" type="submit">
-          Search
-        </button>
-        {appliedSearch ||
-        appliedAuthor ||
-        appliedTags ||
-        appliedLanguages.length ||
-        appliedOrdering !== "popular" ? (
-          <button
-            className="button button--secondary filter-clear"
-            type="button"
-            onClick={() => {
-              setSearch("");
-              setAuthor("");
-              setTags("");
-              setLanguages([]);
-              setOrdering("popular");
-              router.replace(pathname, { scroll: false });
-            }}
-          >
-            Clear all filters
+              <span>
+                <b>Popular</b>
+                <small>Engagement with time decay</small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="ordering"
+                value="newest"
+                checked={ordering === "newest"}
+                onChange={() => setOrdering("newest")}
+              />
+              <span>
+                <b>New</b>
+                <small>Recently published</small>
+              </span>
+            </label>
+          </fieldset>
+          <button className="button button--primary filter-submit" type="submit">
+            Search
           </button>
-        ) : null}
+          {appliedSearch ||
+          appliedAuthor ||
+          appliedTags ||
+          appliedLanguages.length ||
+          appliedOrdering !== "popular" ? (
+            <button
+              className="button button--secondary filter-clear"
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setAuthor("");
+                setTags("");
+                setLanguages([]);
+                setOrdering("popular");
+                router.replace(pathname, { scroll: false });
+              }}
+            >
+              Clear all filters
+            </button>
+          ) : null}
+        </fieldset>
       </form>
 
       {appliedSearch ||
@@ -325,6 +334,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
           {appliedSearch ? (
             <button
               type="button"
+              disabled={!interactive}
               onClick={() => removeFilter("search")}
               aria-label={`Remove title filter: ${appliedSearch}`}
             >
@@ -334,6 +344,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
           {appliedAuthor ? (
             <button
               type="button"
+              disabled={!interactive}
               onClick={() => removeFilter("author")}
               aria-label={`Remove author filter: ${appliedAuthor}`}
             >
@@ -348,6 +359,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
               <button
                 key={tag}
                 type="button"
+                disabled={!interactive}
                 onClick={() => removeFilter("tag", tag)}
                 aria-label={`Remove tag filter: ${tag}`}
               >
@@ -358,6 +370,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
             <button
               key={code}
               type="button"
+              disabled={!interactive}
               onClick={() => removeFilter("language", code)}
               aria-label={`Remove language filter: ${languageLabel(code)}`}
             >
@@ -367,6 +380,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
           {appliedOrdering === "newest" ? (
             <button
               type="button"
+              disabled={!interactive}
               onClick={() => removeFilter("ordering")}
               aria-label="Remove newest-first sorting"
             >
@@ -399,7 +413,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
           <button
             type="button"
             className="button button--secondary"
-            disabled={!result.previous || loading}
+            disabled={!interactive || !result.previous || loading}
             onClick={() => changePage(Math.max(1, page - 1))}
           >
             Previous
@@ -408,7 +422,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
           <button
             type="button"
             className="button button--secondary"
-            disabled={!result.next || loading}
+            disabled={!interactive || !result.next || loading}
             onClick={() => changePage(page + 1)}
           >
             Next

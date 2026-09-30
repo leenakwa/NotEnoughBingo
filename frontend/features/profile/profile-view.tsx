@@ -8,6 +8,7 @@ import { AvatarImage } from "@/components/ui/avatar-image";
 import { LanguagePicker } from "@/components/ui/language-picker";
 import { AccountSettings } from "@/features/profile/account-settings";
 import { ProfileCollections } from "@/features/profile/profile-collections";
+import { readProfileEdits, rememberProfileEdits } from "@/features/profile/profile-edit-cache";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { notifyAuthChanged } from "@/lib/auth-events";
 import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
@@ -46,6 +47,7 @@ export function ProfileView({
   const [authRequired, setAuthRequired] = useState(false);
   const [loadVersion, setLoadVersion] = useState(0);
   const initialProfileConsumed = useRef(false);
+  const actionInFlight = useRef(false);
 
   useUnsavedChangesWarning(
     ownProfile &&
@@ -57,6 +59,27 @@ export function ProfileView({
         [...preferredLanguages].sort().join(",") !== [...savedPreferredLanguages].sort().join(",")),
     "Your profile changes have not been saved. Leave anyway?",
   );
+
+  useEffect(() => {
+    if (!ownProfile || loading || !profile) return;
+    rememberProfileEdits(profile.id, {
+      ...(usernameValue !== profile.username ? { username: usernameValue } : {}),
+      ...(displayName !== profile.display_name ? { displayName } : {}),
+      ...(bio !== profile.bio ? { bio } : {}),
+      ...([...preferredLanguages].sort().join(",") !== [...savedPreferredLanguages].sort().join(",")
+        ? { preferredLanguages }
+        : {}),
+    });
+  }, [
+    ownProfile,
+    loading,
+    profile,
+    usernameValue,
+    displayName,
+    bio,
+    preferredLanguages,
+    savedPreferredLanguages,
+  ]);
 
   useEffect(() => {
     if (!initialProfileConsumed.current && loadVersion === 0 && initialProfile) {
@@ -71,16 +94,20 @@ export function ProfileView({
     const request = username ? api.profiles.get(username, controller.signal) : api.profiles.me();
     request
       .then((value) => {
+        if (controller.signal.aborted) return;
+        const edits = ownProfile ? readProfileEdits(value.id) : undefined;
         setProfile(value);
-        setDisplayName(value.display_name);
-        setUsernameValue(value.username);
-        setBio(value.bio);
+        setDisplayName(edits?.displayName ?? value.display_name);
+        setUsernameValue(edits?.username ?? value.username);
+        setBio(edits?.bio ?? value.bio);
+        if (edits)
+          setMessage("Your unsaved profile changes have been restored. Save them when ready.");
         if (
           ownProfile &&
           "preferred_languages" in value &&
           Array.isArray(value.preferred_languages)
         ) {
-          setPreferredLanguages(value.preferred_languages);
+          setPreferredLanguages(edits?.preferredLanguages ?? value.preferred_languages);
           setSavedPreferredLanguages(value.preferred_languages);
         }
       })
@@ -115,13 +142,14 @@ export function ProfileView({
   }, [ownProfile]);
 
   async function saveProfile() {
-    if (!profile || pending) return;
+    if (!profile || actionInFlight.current) return;
+    actionInFlight.current = true;
     setPending(true);
     setError("");
     setMessage("");
     try {
       const updated = await api.profiles.update({
-        username: usernameValue,
+        username: usernameValue.trim(),
         display_name: displayName,
         bio,
       });
@@ -134,12 +162,14 @@ export function ProfileView({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      actionInFlight.current = false;
       setPending(false);
     }
   }
 
   async function updatePrivacy(key: keyof UserPrivacySettings, checked: boolean) {
-    if (!profile || pending) return;
+    if (!profile || actionInFlight.current) return;
+    actionInFlight.current = true;
     const privacy = { ...profile.privacy, [key]: checked };
     setProfile({ ...profile, privacy });
     setPending(true);
@@ -152,12 +182,14 @@ export function ProfileView({
       setProfile((current) => (current ? { ...current, privacy: profile.privacy } : current));
       setError(errorMessage(caught));
     } finally {
+      actionInFlight.current = false;
       setPending(false);
     }
   }
 
   async function saveLanguagePreferences() {
-    if (pending) return;
+    if (actionInFlight.current) return;
+    actionInFlight.current = true;
     setPending(true);
     setError("");
     try {
@@ -168,12 +200,14 @@ export function ProfileView({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      actionInFlight.current = false;
       setPending(false);
     }
   }
 
   async function toggleFollow() {
-    if (!profile || pending) return;
+    if (!profile || actionInFlight.current) return;
+    actionInFlight.current = true;
     const next = !profile.is_following;
     setPending(true);
     setError("");
@@ -188,6 +222,7 @@ export function ProfileView({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      actionInFlight.current = false;
       setPending(false);
     }
   }
@@ -289,18 +324,24 @@ export function ProfileView({
             <label className="field">
               <span>Username</span>
               <input
+                name="username"
+                disabled={pending}
                 minLength={3}
                 maxLength={30}
-                pattern="[A-Za-z0-9_]+"
+                pattern="\s*[A-Za-z0-9_]+\s*"
                 autoComplete="username"
                 required
                 value={usernameValue}
                 onChange={(event) => setUsernameValue(event.target.value)}
+                onBlur={(event) => setUsernameValue(event.target.value.trim())}
               />
             </label>
             <label className="field">
               <span>Display name</span>
               <input
+                name="name"
+                autoComplete="name"
+                disabled={pending}
                 maxLength={80}
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
@@ -309,6 +350,8 @@ export function ProfileView({
             <label className="field">
               <span>Bio</span>
               <textarea
+                name="bio"
+                disabled={pending}
                 rows={4}
                 maxLength={280}
                 value={bio}
@@ -372,9 +415,13 @@ export function ProfileView({
           profile={profile}
           onProfileChange={(updated) => {
             setProfile(updated);
-            setDisplayName(updated.display_name);
-            setUsernameValue(updated.username);
-            setBio(updated.bio);
+            setDisplayName((current) =>
+              current === profile.display_name ? updated.display_name : current,
+            );
+            setUsernameValue((current) =>
+              current === profile.username ? updated.username : current,
+            );
+            setBio((current) => (current === profile.bio ? updated.bio : current));
           }}
         />
       ) : null}

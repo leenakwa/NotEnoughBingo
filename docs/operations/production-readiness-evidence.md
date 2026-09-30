@@ -2122,3 +2122,58 @@ observed results and their limits. Do not include credentials or session data.
   Frontend remains **126/126**, full live suite **52/52**, and the final proxy
   restart check passes. Native runtime/font packages are installed in both
   Docker targets and in the Python-only CI test runner.
+
+
+### 2026-09-30 — CI language-race fix, submission guards and profile navigation (sections 3, 5, 7, 17, 43, 46)
+
+- CI run 36715579877 for source **07c4d6b** passed foundation, secret scan,
+  backend, frontend, static browser and both production-image jobs. The live
+  suite failed one language-filter assertion (only Russian reached the URL),
+  so the release gate failed. This failure is not recorded as a passing release.
+- Reproduced the underlying problem on the optimized build by holding Next
+  JavaScript requests: the SSR English checkbox was enabled, accepted a check,
+  then reset after React initialized. Explore now renders a disabled semantic
+  fieldset until its handlers are ready; Discover language choices have the
+  same guard. The live regression holds scripts, verifies disabled controls,
+  releases them and checks both languages, URL restoration and 320/1710 px
+  layout. No retries/timeouts were increased to hide the failure.
+- Registration, login, password reset request/confirmation and verification
+  resend use immediate in-flight guards. Five frontend regressions submit
+  twice in the same event batch, verify one pending request, preserve fields
+  on failure and permit a retry. Inputs have stable names and password-manager
+  autocomplete semantics; that is not a claim that a real manager was tested.
+  Registration with a padded username passed the real Mailpit verification
+  and login flow after blur normalization; email/username payloads trim spaces.
+- Editor Save/Publish/Export also share an immediate action guard. Retrying an
+  unchanged publication after a lost response reuses its idempotency key. A
+  regression checks one pending publication and the same key on retry.
+- Profile edits now remain in a small account-keyed memory cache across SPA
+  Back/Forward; no password/email/account-secret fields enter it. Reload/closing
+  and ordinary link navigation retain the existing dirty-form warning. Explicit
+  logout, current-session revocation and account deletion clear the cache.
+  Avatar updates preserve fields being edited. The live test checks Back,
+  Forward, restored content, cancelled navigation, successful save and removal
+  of the warning. Account-deletion regression checks account isolation and
+  cache clearing. This does not close every other product form's dirty-state
+  review.
+- Notification evidence maps creation/dedupe/preferences/self-suppression and
+  user-scoped unread/read to `test_notifications.py`, all social activity
+  types to `test_api_boundaries.py`, and UI timestamps/link/Mark All Read/reload
+  to the live author-notification journey plus date-format tests. New real
+  publication/reply API cases make the board deleted or private: generic
+  notifications remain readable, expose neither title/cell/reply content, and
+  board/comments return 404. Repeated Read preserves `read_at`; unread filter
+  and count reach zero and repeated Mark All Read updates zero rows. Mark
+  Unread is not a feature of this release. Section 46's applicable bullets are
+  now checked.
+- Local final gates: Ruff lint/163-file formatting, mypy/74 sources, migration
+  drift, **171 PostgreSQL tests passed / one infrastructure-location skip**;
+  ESLint/TypeScript/Prettier and **132 frontend tests in 27 files**; optimized
+  Next build; full live **52/52** across all five browser projects. Installed
+  Chrome on the production build checked 16 public routes at 320 and 1710 px,
+  three signed-in routes and seven private-file probes, with zero script or
+  console errors/warnings, failed assets or horizontal overflow.
+- Native password managers/autofill, actual browser zoom/devices, remaining
+  unreviewed original bullets, operator/legal inputs and real target services
+  remain open. The follow-up source still requires CI. Neither these local
+  results nor the tracker count claim completed production readiness.

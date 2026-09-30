@@ -9,6 +9,7 @@ import { ErrorState, LoadingState } from "@/components/ui/page-state";
 import { UploadStatus } from "@/components/ui/upload-status";
 import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
 import { clearAllProgressRecovery } from "@/lib/progress-recovery";
+import { clearProfileEdits } from "@/features/profile/profile-edit-cache";
 import { notifyAuthChanged } from "@/lib/auth-events";
 import { api, errorMessage } from "@/lib/api/client";
 import type {
@@ -225,6 +226,7 @@ export function AccountSettings({
       if (session.current) {
         clearAllEditorRecovery();
         clearAllProgressRecovery();
+        clearProfileEdits();
         notifyAuthChanged();
         router.replace("/login");
         router.refresh();
@@ -305,6 +307,7 @@ export function AccountSettings({
       const scheduled = await api.auth.scheduleAccountDeletion(deletionPassword);
       clearAllEditorRecovery();
       clearAllProgressRecovery();
+      clearProfileEdits();
       setDeletionPassword("");
       setDeletionScheduledFor(scheduled.scheduled_for);
       notifyAuthChanged();
@@ -337,6 +340,7 @@ export function AccountSettings({
       await api.auth.logout();
       clearAllEditorRecovery();
       clearAllProgressRecovery();
+      clearProfileEdits();
       notifyAuthChanged();
       router.replace("/login");
       router.refresh();

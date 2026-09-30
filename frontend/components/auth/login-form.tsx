@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordField } from "@/components/auth/password-field";
@@ -47,6 +47,7 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
+  const submissionInFlight = useRef(false);
   const [error, setError] = useState("");
   const [sessionStatus, setSessionStatus] = useState<"checking" | "guest" | "error">("checking");
   const next = searchParams.get("next");
@@ -71,14 +72,17 @@ export function LoginForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submissionInFlight.current) return;
+    submissionInFlight.current = true;
     setPending(true);
     setError("");
     try {
-      await api.auth.login({ email, password });
+      await api.auth.login({ email: email.trim(), password });
       notifyAuthChanged();
       router.replace(safeNext(next));
       router.refresh();
     } catch (caught) {
+      submissionInFlight.current = false;
       setError(errorMessage(caught));
       setPending(false);
     }
@@ -108,7 +112,8 @@ export function LoginForm() {
             <span>Email</span>
             <input
               type="email"
-              autoComplete="email"
+              name="email"
+              autoComplete="username"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}

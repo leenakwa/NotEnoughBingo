@@ -18,6 +18,7 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
   const [message, setMessage] = useState("");
   const [resending, setResending] = useState(false);
   const submittedToken = useRef<string | null>(null);
+  const resendInFlight = useRef(false);
 
   useEffect(() => {
     if (!token || submittedToken.current === token) return;
@@ -40,7 +41,8 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
   }, [mode, token]);
 
   async function resend() {
-    if (!email || resending) return;
+    if (!email || resendInFlight.current || state === "verifying") return;
+    resendInFlight.current = true;
     setResending(true);
     setMessage("");
     try {
@@ -53,6 +55,7 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
       setState("error");
       setMessage(errorMessage(caught));
     } finally {
+      resendInFlight.current = false;
       setResending(false);
     }
   }

@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **48 verified**, **50 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **49 verified**, **49 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -54,7 +54,7 @@ unresolved failures or missing evidence.
 - [ ] 4. UI STATES — Partial: first load, loaded/empty/error, offline/retry, authorization, and expired-session journeys were observed in representative routes; partial-data behavior and a component-by-component sweep remain.
 - [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, and completion feedback were exercised; duplicate submission coverage, layout stability, and byte-level large-upload progress still need an itemized sweep. Skeletons are not used in this release.
 - [x] 6. ERROR HANDLING — Verified before deployment: relevant 400/401/403/404/409/413/422/429/500 and gateway/network/timeout cases have safe human-readable feedback, retained work and appropriate retry; proxy HTML and parser/exception internals stay out of the interface.
-- [ ] 7. FORMS — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 7. FORMS — Partial: registration/login/reset/resend and publication now reject simultaneous submissions; padded usernames normalize; profile edits survive client Back/Forward and remain separate by account. Native autofill/password-manager behavior and the remaining per-form validation/label sweep are still open.
 - [ ] 8. BUTTONS AND CONTROLS — Partial: semantic button/link markup, focus and disabled states, destructive styling/confirmation, and 44px editor touch targets at 320/1710px were checked; hover/active/loading states and form ownership need the remaining per-control sweep.
 - [x] 9. DESTRUCTIVE ACTIONS — Verified before deployment: confirmed permanent Delete/Reset, authorization and repeat safety, account-deletion cancellation, and live Archive/Restore with guest 404/200 and reload persistence; permanent actions do not promise undo.
 - [x] 10. SIGNUP — Verified before deployment: browser validation, password visibility and Enter, Mailpit verification and resend, duplicate and weak-password API behavior, expired and reused links.
@@ -93,7 +93,7 @@ unresolved failures or missing evidence.
 - [x] 43. DATA INTEGRITY — Verified before deployment: PostgreSQL concurrent likes/follows, versioned editor/progress conflicts, idempotent draft/publication/export/session/report/notification calls, soft-delete threads, reference-aware media and abandoned-job recovery passed; webhook duplication is N/A.
 - [ ] 44. BACKUPS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 45. EMAILS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 46. NOTIFICATIONS — Partial: local evidence recorded; review remaining original bullets.
+- [x] 46. NOTIFICATIONS — Verified before deployment: all activity types and deduplication, recipient-scoped unread/read/Mark All Read and timestamps, live link navigation/reload, and real deleted/private target denial passed. There is no separate Mark Unread action.
 - — 47. OAUTH / SOCIAL LOGIN — N/A for current release: capability absent in source inventory.
 - — 48. PAYMENTS — N/A for current release: capability absent in source inventory.
 - — 49. WEBHOOKS — N/A for current release: capability absent in source inventory.
@@ -120,7 +120,7 @@ unresolved failures or missing evidence.
 - [x] 70. PRODUCTION BUILD — Verified before deployment: current optimized Next build/start, SSR/static routes, dynamic route assets and browser console passed on the production candidate; actual domain/provider values remain rollout inputs.
 - [ ] 71. DEPENDENCIES — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [x] 73. TESTS — Verified before deployment: 169 PostgreSQL tests plus 126 frontend tests and 52 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
+- [x] 73. TESTS — Verified before deployment: 171 PostgreSQL tests plus 132 frontend tests and 52 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial: local evidence recorded; review remaining original bullets.

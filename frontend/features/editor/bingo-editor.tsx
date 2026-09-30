@@ -95,6 +95,12 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const saveLoop = useRef<Promise<BingoDraft | null> | null>(null);
   const serverDraft = useRef({ bingoId: bingoId ?? null, version: 0 });
   const pendingCreation = useRef<PendingDraftCreation | null>(null);
+  const actionInFlight = useRef(false);
+  const pendingPublication = useRef<{
+    fingerprint: string;
+    bingoId: string;
+    idempotencyKey: string;
+  } | null>(null);
   const failedFingerprint = useRef<string | null>(null);
   const recoveredConflictDocument = useRef<EditorDocumentSnapshot | null>(null);
   const preserveRecovery = useRef(false);
@@ -449,7 +455,8 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   }, []);
 
   async function saveDraft() {
-    if (pendingAction || saveStatusRef.current === "conflict") return;
+    if (actionInFlight.current || saveStatusRef.current === "conflict") return;
+    actionInFlight.current = true;
     setPendingAction("save");
     failedFingerprint.current = null;
     setError("");
@@ -459,6 +466,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     } catch {
       // The persistent save status presents the actionable failure.
     } finally {
+      actionInFlight.current = false;
       setPendingAction(null);
     }
   }
@@ -523,7 +531,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   }
 
   async function publish() {
-    if (pendingAction) return;
+    if (actionInFlight.current) return;
     if (!state.title.trim()) {
       setError("Add a title before publishing.");
       return;
@@ -549,6 +557,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       setError("Describe this image-only cell before publishing.");
       return;
     }
+    actionInFlight.current = true;
     setPendingAction("publish");
     setError("");
     setMessage("");
@@ -556,9 +565,26 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       await flushDraft();
       const persistedBingoId = serverDraft.current.bingoId;
       if (!persistedBingoId) throw new Error("The server did not return a bingo identifier.");
-      const published = await api.bingos.publishDraft(persistedBingoId, makeIdempotencyKey());
+      const fingerprint = latestFingerprint.current;
+      if (
+        pendingPublication.current?.fingerprint !== fingerprint ||
+        pendingPublication.current.bingoId !== persistedBingoId
+      ) {
+        pendingPublication.current = {
+          fingerprint,
+          bingoId: persistedBingoId,
+          idempotencyKey: makeIdempotencyKey(),
+        };
+      }
+      // A lost response may follow a successful publication. Retrying the same
+      // document must reuse its key rather than create another revision.
+      const published = await api.bingos.publishDraft(
+        persistedBingoId,
+        pendingPublication.current.idempotencyKey,
+      );
       router.push(`/bingo/${published.id}`);
     } catch (caught) {
+      actionInFlight.current = false;
       if (!isDraftConflict(caught)) setError(errorMessage(caught));
       setPendingAction(null);
     }
@@ -575,11 +601,12 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   }
 
   async function exportBoard(format: BingoExportFormat) {
-    if (pendingAction) return;
+    if (actionInFlight.current) return;
     if (!exportAvailable) {
       setError("Publish this bingo before requesting a permanent PNG or PDF export.");
       return;
     }
+    actionInFlight.current = true;
     setPendingAction(`export-${format}`);
     setError("");
     setMessage(`Preparing published ${format.toUpperCase()} export…`);
@@ -598,6 +625,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      actionInFlight.current = false;
       setPendingAction(null);
     }
   }

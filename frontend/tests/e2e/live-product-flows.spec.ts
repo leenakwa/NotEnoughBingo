@@ -370,8 +370,9 @@ test.describe("live full-stack product flows", () => {
     await page.goto("/register");
     await expect(page.getByRole("heading", { name: "Join Not Enough Bingo" })).toBeVisible();
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Username").fill(username);
+    await page.getByLabel("Username").fill(`  ${username}  `);
     await page.getByLabel("Password").fill(password);
+    await expect(page.getByLabel("Username")).toHaveValue(username);
     await waitForResponse(page, "/api/v1/auth/register/", "POST", () =>
       page.getByRole("button", { name: "Create account" }).click(),
     );
@@ -1112,8 +1113,24 @@ test.describe("live full-stack product flows", () => {
       await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
     }
 
-    await page.goto("/explore");
+    let releaseScripts!: () => void;
+    const scriptsReady = new Promise<void>((resolve) => {
+      releaseScripts = resolve;
+    });
+    await page.route("**/_next/static/**/*.js", async (route) => {
+      await scriptsReady;
+      await route.continue();
+    });
+    await page.goto("/explore", { waitUntil: "commit" });
     const picker = page.getByRole("group", { name: "Bingo languages" });
+    try {
+      await expect(picker.getByLabel("English")).toBeVisible();
+      await expect(picker.getByLabel("English")).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Search", exact: true })).toBeDisabled();
+    } finally {
+      releaseScripts();
+    }
+    await expect(picker.getByLabel("English")).toBeEnabled();
     await picker.getByLabel("English").check();
     await picker.getByLabel("Russian").check();
     await page.getByRole("button", { name: "Search", exact: true }).click();
@@ -2019,11 +2036,19 @@ test.describe("live full-stack product flows", () => {
     page,
   }) => {
     await authenticateAs(page, "author");
-    await page.goto("/profile");
+    await page.goto("/explore");
+    await page.getByRole("link", { name: /^Profile for/ }).click();
     const displayName = page.getByLabel("Display name", { exact: true });
     await expect(displayName).toBeVisible();
     const original = await displayName.inputValue();
     await displayName.fill("Unsaved profile example");
+    await page.goBack();
+    await expect(page).toHaveURL(/\/explore$/);
+    await page.goForward();
+    await expect(displayName).toHaveValue("Unsaved profile example");
+    await expect(
+      page.getByRole("status").filter({ hasText: "unsaved profile changes" }),
+    ).toBeVisible();
     let confirmations = 0;
     page.on("dialog", async (dialog) => {
       confirmations += 1;

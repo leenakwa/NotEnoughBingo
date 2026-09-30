@@ -918,15 +918,15 @@ Infrastructure:
 
 If notifications exist, test:
 
-- [ ] creation;
-- [ ] unread count;
-- [ ] read/unread;
-- [ ] click destination;
-- [ ] target object deleted;
-- [ ] user no longer has access;
-- [ ] duplicate prevention;
-- [ ] timestamp formatting;
-- [ ] Mark All Read.
+- [x] creation;
+- [x] unread count;
+- [x] read/unread;
+- [x] click destination;
+- [x] target object deleted;
+- [x] user no longer has access;
+- [x] duplicate prevention;
+- [x] timestamp formatting;
+- [x] Mark All Read.
 
 # 47. OAUTH / SOCIAL LOGIN
 

@@ -3,6 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AccountSettings } from "@/features/profile/account-settings";
+import {
+  clearProfileEdits,
+  readProfileEdits,
+  rememberProfileEdits,
+} from "@/features/profile/profile-edit-cache";
 import type { AuthenticatedUser, NotificationPreferences, UserProfile } from "@/lib/api/types";
 import { uploadImage } from "@/lib/uploads";
 
@@ -86,6 +91,7 @@ const preferences: NotificationPreferences = {
 
 describe("AccountSettings deletion grace period", () => {
   beforeEach(() => {
+    clearProfileEdits();
     vi.restoreAllMocks();
     vi.clearAllMocks();
     vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -137,6 +143,8 @@ describe("AccountSettings deletion grace period", () => {
 
   it("routes through an explanatory login screen after scheduling revokes sessions", async () => {
     const user = userEvent.setup();
+    rememberProfileEdits(currentUser.id, { bio: "Unsaved private profile text" });
+    expect(readProfileEdits("another-account")).toBeUndefined();
     mocks.scheduleAccountDeletion.mockResolvedValue({
       request_id: "22222222-2222-4222-8222-222222222222",
       status: "scheduled",
@@ -153,6 +161,7 @@ describe("AccountSettings deletion grace period", () => {
     expect(mocks.notifyAuthChanged).toHaveBeenCalledOnce();
     expect(mocks.replace).toHaveBeenCalledWith("/login?next=%2Fprofile&reason=deletion-scheduled");
     expect(mocks.refresh).toHaveBeenCalledOnce();
+    expect(readProfileEdits(currentUser.id)).toBeUndefined();
   });
 
   it("focuses mismatched confirmation and keeps the error beside that field", async () => {

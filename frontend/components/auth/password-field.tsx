@@ -32,7 +32,7 @@ export function PasswordField({
       <div className="password-field__control">
         <input
           id={id}
-          name={name}
+          name={name ?? (autoComplete === "current-password" ? "password" : "new-password")}
           type={visible ? "text" : "password"}
           autoComplete={autoComplete}
           required

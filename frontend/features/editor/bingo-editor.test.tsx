@@ -463,4 +463,35 @@ describe("BingoEditor autosave and safety", () => {
     expect(mocks.updateDraft).not.toHaveBeenCalled();
     expect(screen.getByText(/Downloads use the currently published revision/)).toBeVisible();
   });
+
+  it("guards publication and reuses its key after a lost response", async () => {
+    const filledCells = cells(3);
+    filledCells[0]!.text = "Publish once";
+    mocks.getDraft.mockResolvedValueOnce(draft({ cells: filledCells }));
+    let reject!: (error: Error) => void;
+    mocks.publishDraft.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    const publish = screen.getByRole("button", { name: "Publish bingo" });
+    await act(async () => {
+      fireEvent.click(publish);
+      fireEvent.click(publish);
+    });
+    expect(mocks.publishDraft).toHaveBeenCalledOnce();
+    const firstKey = mocks.publishDraft.mock.calls[0]![1];
+    await act(async () => {
+      reject(new Error("The response was lost."));
+    });
+    mocks.publishDraft.mockResolvedValueOnce(bingo);
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+    await settle();
+    expect(mocks.publishDraft).toHaveBeenCalledTimes(2);
+    expect(mocks.publishDraft.mock.calls[1]![1]).toBe(firstKey);
+    expect(mocks.push).toHaveBeenCalledWith(`/bingo/${BINGO_ID}`);
+  });
 });
