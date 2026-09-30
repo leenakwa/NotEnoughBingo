@@ -673,9 +673,9 @@ Verify:
 
 Test important functionality in:
 
-- [ ] Chrome;
-- [ ] Safari;
-- [ ] Firefox;
+- [x] Chrome;
+- [x] Safari;
+- [x] Firefox;
 - [ ] Edge;
 - [ ] iOS Safari;
 - [ ] Android Chrome.

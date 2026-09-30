@@ -44,6 +44,39 @@ export default defineConfig({
           testMatch: /live-mobile-webkit\.spec\.ts/,
           use: { ...devices["iPhone 13"] },
         },
+        {
+          name: "live-firefox-compat",
+          testMatch: /live-browser-compat\.spec\.ts/,
+          use: { ...devices["Desktop Firefox"] },
+        },
+        {
+          name: "live-webkit-compat",
+          testMatch: /live-browser-compat\.spec\.ts/,
+          use: { ...devices["Desktop Safari"] },
+        },
+        {
+          name: "live-android-compat",
+          testMatch: /live-browser-compat\.spec\.ts/,
+          use: { ...devices["Pixel 7"] },
+        },
+        ...(process.env.E2E_SYSTEM_CHROME === "1"
+          ? [
+              {
+                name: "live-system-chrome",
+                testMatch: /live-browser-compat\.spec\.ts/,
+                use: { ...devices["Desktop Chrome"], channel: "chrome" as const },
+              },
+            ]
+          : []),
+        ...(process.env.E2E_SYSTEM_EDGE === "1"
+          ? [
+              {
+                name: "live-system-edge",
+                testMatch: /live-browser-compat\.spec\.ts/,
+                use: { ...devices["Desktop Chrome"], channel: "msedge" as const },
+              },
+            ]
+          : []),
       ]
     : [
         {

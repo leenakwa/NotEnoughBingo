@@ -80,7 +80,7 @@ unresolved failures or missing evidence.
 - [x] 30. 404 HANDLING — Verified before deployment: unknown/legacy routes, malformed and deleted bingo IDs, private/missing resources, real SSR 404 status, explanation and Discover return path.
 - [x] 31. GLOBAL / 500 ERROR HANDLING — Verified before deployment: route and root error boundaries, safe retry/navigation, logged 500, generic public response, and X-Request-ID correlation; external error tracking remains in section 63.
 - [x] 32. OFFLINE / BAD NETWORK — Verified before deployment: offline draft recovery, slow-search loading, finite API/upload deadlines, actionable failures, retry/cancel, and progress-reset rollback with recovery.
-- [ ] 33. BROWSER COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 33. BROWSER COMPATIBILITY — Partial: installed Chrome and Safari, Playwright Firefox, WebKit, and mobile emulation cover core flows; actual Edge and iOS/Android browser devices remain unverified.
 - [ ] 34. PERFORMANCE — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 35. FONTS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 36. SEO FOR PUBLIC PAGES — Partial: local evidence recorded; review remaining original bullets.

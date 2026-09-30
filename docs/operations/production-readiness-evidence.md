@@ -1091,6 +1091,34 @@ observed results and their limits. Do not include credentials or session data.
   are local predeployment evidence; public edge and service availability remain
   launch-environment checks.
 
+### 2026-09-30 — Browser-engine and native Safari checks (section 33, partial)
+
+- A new live full-stack compatibility scenario exercised Discover cards and a
+  two-language filter, bingo mark selection and progress after reload, an
+  immutable share, then authenticated draft creation by typing directly into a
+  focused cell and verifying persistence after reload. It passed in Playwright
+  Firefox, desktop WebKit, Pixel 7 Chromium emulation, and the installed Google
+  Chrome app (4/4). The earlier live iPhone 13 WebKit scenarios cover mobile
+  guest play/share, language and mark controls, navigation targets, and narrow
+  overflow; the broad static browser suite runs Chromium, Firefox, WebKit, and
+  Pixel 7 emulation.
+- The first desktop WebKit run exposed an intermittent page error when a pending
+  analytics POST was cancelled by navigation: 1/4 failed, then 1/3 failed on
+  repetition. Analytics batches now use `keepalive`, while their catch still
+  prevents analytics failures from interrupting product actions. Five repeated
+  WebKit runs and the subsequent four-engine run passed with no page errors.
+- In the installed native Safari app, a fresh guest opened the isolated
+  `/discover` stack. Selecting Russian showed the accurate empty state;
+  selecting English as a second language restored the public boards. The guest
+  opened a board, chose the cross mark, selected a cell, created a share link,
+  and reached a read-only result showing that selected cell. Native Safari
+  product behavior is observed through its accessibility tree; Playwright
+  WebKit supplies the repeatable regression test.
+- The Microsoft Edge app is not installed on this host. Pixel 7 and iPhone 13
+  tests emulate Android Chrome and iOS Safari browser behavior; physical
+  devices and their browser versions have not been tested. Those three
+  checklist bullets remain open before a full section verdict.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

@@ -609,6 +609,7 @@ export const api = {
       apiRequest<{ accepted: number }>("interactions/", {
         method: "POST",
         body: { events },
+        keepalive: true,
       }),
   },
 };
