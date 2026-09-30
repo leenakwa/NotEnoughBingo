@@ -49,52 +49,52 @@ Follow the checklist below completely.
 
 Verify all of the following:
 
-- [ ] favicon exists and loads;
-- [ ] page titles are correct;
-- [ ] public pages have appropriate meta descriptions;
-- [ ] Open Graph/social previews are configured;
-- [ ] logo links to the correct home page;
-- [ ] real 404 handling exists;
-- [ ] global/server error handling exists;
-- [ ] loading states exist;
-- [ ] empty states exist;
-- [ ] success states exist;
-- [ ] errors are understandable;
-- [ ] submit buttons have loading/disabled states;
-- [ ] duplicate submission is prevented;
-- [ ] browser Back/Forward work correctly;
-- [ ] refreshing nested/deep routes works;
-- [ ] mobile layout works;
-- [ ] assets do not reference localhost;
-- [ ] no mock/demo/test content remains unintentionally;
-- [ ] no unnecessary console logs/debug UI remain;
+- [x] favicon exists and loads;
+- [x] page titles are correct;
+- [x] public pages have appropriate meta descriptions;
+- [x] Open Graph/social previews are configured;
+- [x] logo links to the correct home page;
+- [x] real 404 handling exists;
+- [x] global/server error handling exists;
+- [x] loading states exist;
+- [x] empty states exist;
+- [x] success states exist;
+- [x] errors are understandable;
+- [x] submit buttons have loading/disabled states;
+- [x] duplicate submission is prevented;
+- [x] browser Back/Forward work correctly;
+- [x] refreshing nested/deep routes works;
+- [x] mobile layout works;
+- [x] assets do not reference localhost;
+- [x] no mock/demo/test content remains unintentionally;
+- [x] no unnecessary console logs/debug UI remain;
 - [ ] production does not use staging APIs accidentally;
-- [ ] staging `noindex` has not leaked into production;
-- [ ] emails use production URLs;
-- [ ] password reset works;
-- [ ] logout really clears/invalidate sessions;
-- [ ] switching accounts cannot reveal the previous user's cached data;
-- [ ] Safari compatibility is checked;
-- [ ] a first-time user can understand what the product does and what to do next.
+- [x] staging `noindex` has not leaked into production;
+- [x] emails use production URLs;
+- [x] password reset works;
+- [x] logout really clears/invalidate sessions;
+- [x] switching accounts cannot reveal the previous user's cached data;
+- [x] Safari compatibility is checked;
+- [x] a first-time user can understand what the product does and what to do next.
 
 # 2. FIRST-SCREEN / PRODUCT CLARITY
 
 A new visitor should understand within a few seconds:
 
 - [x] what the product is;
-- [ ] what problem it solves;
+- [x] what problem it solves;
 - [x] what they can do;
 - [x] what the primary CTA is;
 - [x] whether signup is required;
-- [ ] whether it is free/paid if relevant;
+- [x] whether it is free/paid if relevant;
 - [x] how to begin.
 
 Verify:
 
 - [x] technical/internal terminology is not used unnecessarily;
 - [x] primary CTA is obvious;
-- [ ] competing buttons do not create unnecessary ambiguity;
-- [ ] copy is understandable to users, not only developers;
+- [x] competing buttons do not create unnecessary ambiguity;
+- [x] copy is understandable to users, not only developers;
 - [x] the user does not have to guess the next step.
 
 # 3. NAVIGATION

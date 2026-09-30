@@ -158,6 +158,21 @@ export function FeedPage({
               ) : null}
             </section>
           ) : null}
+          <aside className="product-intro" aria-label="How Not Enough Bingo works">
+            <div>
+              <p className="eyebrow">New here?</p>
+              <h2>Pick a board. Tap what applies. Share the result.</h2>
+              <p>Free to play as a guest. Sign up to make your own board.</p>
+            </div>
+            <div className="inline-actions">
+              <Link className="button button--primary" href="/explore">
+                Find a bingo
+              </Link>
+              <Link className="button button--secondary" href="/create">
+                Create your own
+              </Link>
+            </div>
+          </aside>
           <details className="language-filter">
             <summary>
               Languages: {selectedLanguages.length ? `${selectedLanguages.length} selected` : "All"}
@@ -186,24 +201,6 @@ export function FeedPage({
             </button>
           </details>
         </>
-      ) : null}
-
-      {kind === "discover" ? (
-        <aside className="product-intro" aria-label="How Not Enough Bingo works">
-          <div>
-            <p className="eyebrow">New here?</p>
-            <h2>Pick a board. Tap what applies. Share the result.</h2>
-            <p>You can play public boards as a guest, then make your own whenever you are ready.</p>
-          </div>
-          <div className="inline-actions">
-            <Link className="button button--primary" href="/explore">
-              Find a bingo
-            </Link>
-            <Link className="button button--secondary" href="/create">
-              Create your own
-            </Link>
-          </div>
-        </aside>
       ) : null}
 
       {loading && !result ? <LoadingState label={`Loading ${title.toLowerCase()}…`} /> : null}

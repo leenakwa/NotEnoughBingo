@@ -419,7 +419,12 @@ test.describe("live full-stack product flows", () => {
           .toBeLessThanOrEqual(width);
       }
     }
+    await page.setViewportSize({ width: 320, height: 667 });
     await page.goto("/discover");
+    await expect(page.getByText("Free to play as a guest.", { exact: false })).toBeVisible();
+    const primaryAction = await page.getByRole("link", { name: "Find a bingo" }).boundingBox();
+    expect(primaryAction).not.toBeNull();
+    expect(primaryAction!.y + primaryAction!.height).toBeLessThanOrEqual(667);
     await page.getByRole("link", { name: "Create your own" }).click();
     await expect(page).toHaveURL(/\/create$/);
     await expect(

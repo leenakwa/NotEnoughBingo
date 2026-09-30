@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **52 verified**, **46 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **53 verified**, **45 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -49,7 +49,7 @@ unresolved failures or missing evidence.
 ## Section verdicts
 
 - [ ] 1. BASIC LAUNCH DETAILS — Partial: guest Create path, status codes, assets, and session behavior recorded; review remaining bullets.
-- [ ] 2. FIRST-SCREEN / PRODUCT CLARITY — Partial: Discover mobile/desktop first screen and its two primary actions walked; continue copy and content review.
+- [x] 2. FIRST-SCREEN / PRODUCT CLARITY — Verified before deployment: a guest can see what to do, the primary Find a bingo action and secondary Create action, free guest play and signup requirement; at 320×667 both actions fit entirely in the first viewport after moving the intro ahead of the language filter. This is a manual browser/heuristic check, not an external user-comprehension study.
 - [x] 3. NAVIGATION — Verified before deployment: branded home and header/footer links, active-route labels, Back/Forward with profile recovery, direct/new-tab/reloaded routes and URL-restored Explore/share state passed. Dialog/disclosure Escape/outside and sticky-anchor behavior have live evidence. Navigation is always visible; no mobile menu is present.
 - [ ] 4. UI STATES — Partial: first load, loaded/empty/error, offline/retry, authorization, and expired-session journeys were observed in representative routes; partial-data behavior and a component-by-component sweep remain.
 - [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, and completion feedback were exercised; duplicate submission coverage, layout stability, and byte-level large-upload progress still need an itemized sweep. Skeletons are not used in this release.
@@ -99,7 +99,7 @@ unresolved failures or missing evidence.
 - — 49. WEBHOOKS — N/A for current release: capability absent in source inventory.
 - [ ] 50. SECURITY HEADERS — Partial: live QA responses and production CSP policy cover all listed headers except public HTTPS HSTS behavior, which needs the target edge.
 - [ ] 51. COOKIES — Partial: Secure production settings, HttpOnly session, SameSite, logout revocation, and CSRF-only JS access verified; settle final expiry and inspect host/path on the real origin.
-- [x] 52. BASIC SECURITY ABUSE TESTS — Verified before deployment: actual published HTML/script/image-handler/JavaScript/SQL-looking text remains literal; search returns only its literal match; external return URLs are rejected. Malicious path/HTML filenames cannot affect storage keys, large/decimal/negative sizes and unknown languages return 400, negative IDs return 404, malformed bytes are safe, and cross-user UUID/rate/brute-force tests pass. This is bounded abuse testing, not a penetration-test certification.
+- [x] 52. BASIC SECURITY ABUSE TESTS — Verified before deployment: actual published HTML/script/image-handler/JavaScript/SQL-looking text remains literal; search returns only its literal match; external return URLs are rejected. Malicious path/HTML filenames cannot change the generated object location. Oversized, decimal or negative board sizes and unknown languages return 400; negative IDs return 404. Malformed bytes are safe, and cross-user UUID/rate/brute-force tests pass. This is bounded abuse testing, not a penetration-test certification.
 - [x] 53. RATE LIMITING — Verified before deployment: login/signup/verification/reset/email-change/upload scopes reject repeated invalid requests; search/catalog/feed/tag/author quotas work for guests and signed-in callers, without resetting on query changes. HTTP 429 retains Retry-After and understandable delay text; shares/exports preserve idempotent retries. AI endpoints are absent; target quotas remain configurable.
 - — 54. AI/LLM FEATURES — N/A for current release: capability absent in source inventory.
 - [ ] 55. PRIVACY — Partial: collection/analytics disclosures, account export and scheduled deletion, and query-free application logging were reviewed and exercised. Final policy/terms, consent obligations, historical recovery links and token behavior across target telemetry, and actual third-party processor inventory still require review against the chosen operator, jurisdiction, and production providers.

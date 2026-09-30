@@ -2260,3 +2260,42 @@ observed results and their limits. Do not include credentials or session data.
   seven private-file probes: zero console errors or warnings, failed assets,
   overflow or exposed private files. The exact new source CI gate is still
   required.
+
+### 2026-09-30 — Basic launch item mapping (sections 1–2)
+
+- The working checklist now marks the locally observed section 1 items
+  individually. Favicon/title/description and Open Graph evidence comes from
+  the icon, metadata, 1200×630 image and production HTML checks above. Logo,
+  routes, Back/Forward and mobile/deep-link behavior come from the navigation
+  and 16-route browser walks. Unknown and deleted pages returned real 404;
+  the branded gateway outage and application error/retry paths cover server
+  failures. Loading, empty, success, failure and duplicate-action guards are
+  exercised in the editor, account, catalog and profile journeys.
+- The production build with a configured HTTPS origin used that origin for
+  canonical and social assets. Production-mode metadata omitted staging
+  noindex, while staging mode included it. Seed E2E refuses production settings;
+  the source/content scan found no intentional demo/debug control or console
+  logging. Reset email rendering uses the configured HTTPS frontend origin;
+  real Mailpit delivery and token use passed. Session revocation, cross-tab
+  logout, account switching and a native Safari guest play/share journey were
+  observed locally. These checks do not assert what the eventual public
+  hosting provider will actually serve.
+- A phone-size and desktop visual review of Discover found two distinct
+  actions, with Find a bingo primary, and a direct explanation of playing and
+  sharing. The intro now states that guest play is free and creating a board
+  requires signup. At 320×667 the earlier ordering placed the primary CTA at
+  y=649–693, clipped by the viewport. Moving the intro ahead of the language
+  filter put Find a bingo at y=545–589 and Create your own at y=601–645;
+  neither overflows. The focused real-browser public-route journey passed on
+  the optimized build, including guest Create navigation and 320/1710 px route
+  checks. Section 2 is now checked as a manual browser/heuristic review, not
+  as a claim of external user-comprehension research.
+- CI run 36725451055 for source 37832bd passed backend, frontend, browser
+  smoke, both production images and the full-stack product flows. Its secret
+  scan and aggregate release gate failed: the generic-api-key heuristic
+  matched ordinary words in one historical checklist summary about generated
+  storage locations and invalid size values. The reported line contains no
+  credential. That sentence was rewritten, and an exact historical finding
+  fingerprint was added to `.gitleaksignore`, without widening the rule or
+  suppressing future findings. The same Gitleaks v8.30.1 Docker history scan
+  then passed locally over 59 commits. Exact-source CI still needs to pass.
