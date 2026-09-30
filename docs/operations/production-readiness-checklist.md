@@ -152,18 +152,18 @@ Verify:
 
 Test and handle relevant responses including:
 
-- [ ] 400;
-- [ ] 401;
-- [ ] 403;
-- [ ] 404;
-- [ ] 409;
-- [ ] 413;
-- [ ] 422;
-- [ ] 429;
-- [ ] 500;
-- [ ] timeout;
-- [ ] network disconnect;
-- [ ] API outage.
+- [x] 400;
+- [x] 401;
+- [x] 403;
+- [x] 404;
+- [x] 409;
+- [x] 413;
+- [x] 422;
+- [x] 429;
+- [x] 500;
+- [x] timeout;
+- [x] network disconnect;
+- [x] API outage.
 
 Users should not see raw errors such as stack traces or framework/Axios messages.
 
@@ -171,10 +171,10 @@ Provide human-readable feedback.
 
 Where appropriate:
 
-- [ ] allow Retry;
-- [ ] preserve form contents;
-- [ ] do not unnecessarily destroy user work;
-- [ ] send technical details to logs/error monitoring rather than exposing them.
+- [x] allow Retry;
+- [x] preserve form contents;
+- [x] do not unnecessarily destroy user work;
+- [x] send technical details to logs/error monitoring rather than exposing them.
 
 # 7. FORMS
 
@@ -247,7 +247,7 @@ Verify:
 - [x] UI updates after deletion;
 - [x] browser Back does not misleadingly resurrect deleted content;
 - [x] deleted-object URLs behave sensibly;
-- [ ] Undo/recovery exists where the product requires it.
+- [x] Undo/recovery exists where the product requires it.
 
 # 10. SIGNUP
 
@@ -490,7 +490,7 @@ Check:
 
 - [x] semantic HTML;
 - [x] logical H1 usage;
-- [ ] heading hierarchy;
+- [x] heading hierarchy;
 - [x] buttons use button semantics;
 - [x] links use link semantics;
 - [x] labels;
@@ -858,15 +858,15 @@ Test:
 
 Verify behavior for:
 
-- [ ] duplicate submit;
-- [ ] duplicate webhook;
-- [ ] concurrent edits;
-- [ ] race conditions;
-- [ ] optimistic UI conflicts;
-- [ ] parent/child deletion;
-- [ ] orphan prevention;
-- [ ] repeated API calls;
-- [ ] relevant idempotency.
+- [x] duplicate submit;
+- [x] duplicate webhook;
+- [x] concurrent edits;
+- [x] race conditions;
+- [x] optimistic UI conflicts;
+- [x] parent/child deletion;
+- [x] orphan prevention;
+- [x] repeated API calls;
+- [x] relevant idempotency.
 
 # 44. BACKUPS
 
@@ -1093,18 +1093,18 @@ Review:
 
 Test:
 
-- [ ] change name;
-- [ ] change email;
-- [ ] email reverification;
-- [ ] change password;
-- [ ] forgotten-current-password path;
-- [ ] logout;
-- [ ] logout-all-devices if supported;
-- [ ] delete account;
-- [ ] delete confirmation;
-- [ ] actual deletion/anonymization behavior;
-- [ ] avatar upload/delete;
-- [ ] timezone/preferences persistence.
+- [x] change name;
+- [x] change email;
+- [x] email reverification;
+- [x] change password;
+- [x] forgotten-current-password path;
+- [x] logout;
+- [x] logout-all-devices if supported;
+- [x] delete account;
+- [x] delete confirmation;
+- [x] actual deletion/anonymization behavior;
+- [x] avatar upload/delete;
+- [x] timezone/preferences persistence.
 
 # 57. TEAMS / ORGANIZATIONS
 
@@ -1129,13 +1129,13 @@ If relevant, test:
 
 Verify:
 
-- [ ] localStorage/sessionStorage schema changes;
-- [ ] stale data from older app versions;
-- [ ] corrupted JSON/data;
-- [ ] incognito/private browsing where relevant;
-- [ ] unavailable storage;
-- [ ] logout clears sensitive local state;
-- [ ] user A's local data does not appear for user B on the same device.
+- [x] localStorage/sessionStorage schema changes;
+- [x] stale data from older app versions;
+- [x] corrupted JSON/data;
+- [x] incognito/private browsing where relevant;
+- [x] unavailable storage;
+- [x] logout clears sensitive local state;
+- [x] user A's local data does not appear for user B on the same device.
 
 # 59. CACHE
 
@@ -1153,14 +1153,14 @@ Verify:
 
 If a service worker/PWA exists, verify:
 
-- [ ] update strategy;
-- [ ] stale tabs;
-- [ ] stale cache;
-- [ ] offline behavior;
-- [ ] manifest;
-- [ ] icons;
-- [ ] install flow;
-- [ ] new releases reach users.
+- [x] update strategy;
+- [x] stale tabs;
+- [x] stale cache;
+- [x] offline behavior;
+- [x] manifest;
+- [x] icons;
+- [x] install flow;
+- [x] new releases reach users.
 
 If a PWA is not required, ensure a leftover service worker/template does not interfere with deployments.
 
@@ -1170,14 +1170,14 @@ If analytics is used, verify:
 
 - [ ] production property/project;
 - [ ] staging/local development does not pollute production metrics;
-- [ ] page views;
-- [ ] signup;
-- [ ] login;
-- [ ] primary CTA;
+- [x] page views;
+- [x] signup;
+- [x] login;
+- [x] primary CTA;
 - [x] main success event;
-- [ ] conversions;
-- [ ] payment success if applicable;
-- [ ] useful funnel events.
+- [x] conversions;
+- [x] payment success if applicable;
+- [x] useful funnel events.
 
 Never send sensitive content such as:
 
@@ -1194,10 +1194,10 @@ visitor → signup → activation → core action → return
 
 The data should allow the team to understand:
 
-- [ ] how many users arrived;
+- [x] how many users arrived;
 - [x] how many registered;
 - [x] how many actually used the core feature;
-- [ ] where users drop off.
+- [x] where users drop off.
 
 # 63. ERROR TRACKING
 
@@ -1206,9 +1206,9 @@ Verify a production error-monitoring system if one is expected:
 - [ ] production environment;
 - [ ] release/version tagging;
 - [ ] source maps configured appropriately;
-- [ ] PII filtering;
+- [x] PII filtering;
 - [ ] frontend errors;
-- [ ] backend errors;
+- [x] backend errors;
 - [ ] unhandled promises;
 - [ ] API failures.
 
@@ -1225,12 +1225,12 @@ Logs should contain enough information to debug incidents, such as:
 
 Never log:
 
-- [ ] passwords;
-- [ ] auth tokens;
-- [ ] API secrets;
-- [ ] private keys;
-- [ ] payment-card data;
-- [ ] unnecessarily large sensitive request bodies.
+- [x] passwords;
+- [x] auth tokens;
+- [x] API secrets;
+- [x] private keys;
+- [x] payment-card data;
+- [x] unnecessarily large sensitive request bodies.
 
 # 65. MONITORING
 
@@ -1279,12 +1279,12 @@ If scheduled jobs exist, verify:
 
 - [ ] the scheduler is actually configured in production;
 - [x] timezone;
-- [ ] retry behavior;
-- [ ] duplicate execution;
-- [ ] overlapping execution;
+- [x] retry behavior;
+- [x] duplicate execution;
+- [x] overlapping execution;
 - [x] logging;
 - [ ] failure alerting;
-- [ ] idempotency.
+- [x] idempotency.
 
 Do not assume that writing cron-job code means the job is actually scheduled.
 
@@ -1292,14 +1292,14 @@ Do not assume that writing cron-job code means the job is actually scheduled.
 
 If background queues/workers exist, verify:
 
-- [ ] worker is actually running;
+- [x] worker is actually running;
 - [ ] correct production queue;
-- [ ] retry policy;
-- [ ] failed/dead-letter handling;
-- [ ] persistence across restart where appropriate;
-- [ ] duplicate-job safety;
-- [ ] visibility/lock timeout behavior;
-- [ ] failures are observable.
+- [x] retry policy;
+- [x] failed/dead-letter handling;
+- [x] persistence across restart where appropriate;
+- [x] duplicate-job safety;
+- [x] visibility/lock timeout behavior;
+- [x] failures are observable.
 
 # 70. PRODUCTION BUILD
 
@@ -1314,16 +1314,16 @@ or the framework equivalent.
 
 Verify:
 
-- [ ] build completes;
-- [ ] production environment variables are used;
-- [ ] production/minified build works;
-- [ ] dynamic imports work;
-- [ ] SSR works if used;
-- [ ] static generation works if used;
-- [ ] routes work;
-- [ ] assets load;
-- [ ] source maps are intentionally configured;
-- [ ] browser console is clean.
+- [x] build completes;
+- [x] production environment variables are used;
+- [x] production/minified build works;
+- [x] dynamic imports work;
+- [x] SSR works if used;
+- [x] static generation works if used;
+- [x] routes work;
+- [x] assets load;
+- [x] source maps are intentionally configured;
+- [x] browser console is clean.
 
 # 71. DEPENDENCIES
 
@@ -1355,15 +1355,15 @@ At minimum, production build must be validated before deployment.
 
 Do not chase arbitrary test coverage, but ensure critical paths are tested where practical:
 
-- [ ] signup;
-- [ ] login;
-- [ ] authorization;
-- [ ] core action;
-- [ ] saving;
-- [ ] payments;
-- [ ] account deletion;
-- [ ] critical API endpoints;
-- [ ] important calculations/business logic.
+- [x] signup;
+- [x] login;
+- [x] authorization;
+- [x] core action;
+- [x] saving;
+- [x] payments;
+- [x] account deletion;
+- [x] critical API endpoints;
+- [x] important calculations/business logic.
 
 # 74. PRODUCTION SMOKE TEST
 
@@ -1408,13 +1408,13 @@ On every major production page, inspect the browser console.
 
 Resolve or justify:
 
-- [ ] errors;
-- [ ] hydration issues;
-- [ ] missing keys;
-- [ ] CSP violations;
-- [ ] failed assets;
-- [ ] deprecated critical APIs;
-- [ ] mixed content.
+- [x] errors;
+- [x] hydration issues;
+- [x] missing keys;
+- [x] CSP violations;
+- [x] failed assets;
+- [x] deprecated critical APIs;
+- [x] mixed content.
 
 There should be zero unexplained production console errors.
 
@@ -1466,13 +1466,13 @@ Verify:
 
 Verify production access to:
 
-- [ ] logo;
-- [ ] favicon;
-- [ ] icons;
-- [ ] fonts;
-- [ ] images;
-- [ ] manifest;
-- [ ] downloads/static documents.
+- [x] logo;
+- [x] favicon;
+- [x] icons;
+- [x] fonts;
+- [x] images;
+- [x] manifest;
+- [x] downloads/static documents.
 
 Check case-sensitive paths carefully.
 
@@ -1490,14 +1490,14 @@ on many production systems.
 
 Verify sensitive files are not publicly downloadable, including things like:
 
-- [ ] `.env`;
-- [ ] `.git`;
-- [ ] SQLite/database files;
-- [ ] backups;
-- [ ] SQL dumps;
-- [ ] internal configuration;
-- [ ] private keys;
-- [ ] logs.
+- [x] `.env`;
+- [x] `.git`;
+- [x] SQLite/database files;
+- [x] backups;
+- [x] SQL dumps;
+- [x] internal configuration;
+- [x] private keys;
+- [x] logs.
 
 # 81. SOURCE MAPS
 
@@ -1542,7 +1542,7 @@ Verify:
 
 Verify:
 
-- [ ] unfinished features are disabled;
+- [x] unfinished features are disabled;
 - [x] experimental UI does not accidentally appear;
 - [x] production defaults are correct;
 - [x] missing remote flags have safe fallback;
@@ -1552,25 +1552,25 @@ Verify:
 
 Search for and review:
 
-- [ ] `console.log`;
-- [ ] `alert(`;
-- [ ] `debugger`;
-- [ ] `TODO`;
-- [ ] `FIXME`;
-- [ ] `DEV`;
-- [ ] `MOCK`;
-- [ ] `localhost`;
-- [ ] fake emails;
-- [ ] hardcoded test credentials.
+- [x] `console.log`;
+- [x] `alert(`;
+- [x] `debugger`;
+- [x] `TODO`;
+- [x] `FIXME`;
+- [x] `DEV`;
+- [x] `MOCK`;
+- [x] `localhost`;
+- [x] fake emails;
+- [x] hardcoded test credentials.
 
 Also inspect for:
 
-- [ ] debug panels;
-- [ ] admin shortcuts;
-- [ ] fake-auth modes;
-- [ ] payment bypasses;
-- [ ] seed buttons;
-- [ ] hidden development routes.
+- [x] debug panels;
+- [x] admin shortcuts;
+- [x] fake-auth modes;
+- [x] payment bypasses;
+- [x] seed buttons;
+- [x] hidden development routes.
 
 Remove anything inappropriate for production.
 

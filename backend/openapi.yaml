@@ -2359,24 +2359,16 @@ components:
       required:
       - job_id
       - status
-    ActionEnum:
+    AnalyticsActionEnum:
       enum:
-      - hide
-      - restore
-      - soft_delete
-      - suspend_user
-      - unsuspend_user
-      - dismiss
-      - resolve_no_action
+      - create
+      - register
+      - login
       type: string
       description: |-
-        * `hide` - Hide content
-        * `restore` - Restore content
-        * `soft_delete` - Soft delete content
-        * `suspend_user` - Suspend user
-        * `unsuspend_user` - Unsuspend user
-        * `dismiss` - Dismiss report
-        * `resolve_no_action` - Resolve without action
+        * `create` - create
+        * `register` - register
+        * `login` - login
     ApiErrorDetail:
       type: object
       properties:
@@ -3508,6 +3500,8 @@ components:
       - follow
       - search
       - tag_interaction
+      - page_view
+      - cta
       type: string
       description: |-
         * `impression` - Impression
@@ -3523,6 +3517,8 @@ components:
         * `follow` - Follow
         * `search` - Search
         * `tag_interaction` - Tag interaction
+        * `page_view` - Page view
+        * `cta` - Primary action
     ExportJob:
       type: object
       properties:
@@ -3684,6 +3680,8 @@ components:
       properties:
         surface:
           $ref: '#/components/schemas/SurfaceEnum'
+        action:
+          $ref: '#/components/schemas/AnalyticsActionEnum'
         author:
           type: string
           maxLength: 150
@@ -3896,7 +3894,7 @@ components:
         moderator:
           type: string
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/ModerationActionEnum'
         target_type:
           $ref: '#/components/schemas/TargetTypeEnum'
         target_public_id:
@@ -3924,11 +3922,29 @@ components:
       - reason
       - target_public_id
       - target_type
+    ModerationActionEnum:
+      enum:
+      - hide
+      - restore
+      - soft_delete
+      - suspend_user
+      - unsuspend_user
+      - dismiss
+      - resolve_no_action
+      type: string
+      description: |-
+        * `hide` - Hide content
+        * `restore` - Restore content
+        * `soft_delete` - Soft delete content
+        * `suspend_user` - Suspend user
+        * `unsuspend_user` - Unsuspend user
+        * `dismiss` - Dismiss report
+        * `resolve_no_action` - Resolve without action
     ModerationActionRequestRequest:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/ModerationActionEnum'
         reason:
           type: string
           minLength: 1
@@ -4998,6 +5014,11 @@ components:
       - profile
       - share
       - direct
+      - create
+      - register
+      - login
+      - settings
+      - notifications
       type: string
       description: |-
         * `discover` - discover
@@ -5006,6 +5027,11 @@ components:
         * `profile` - profile
         * `share` - share
         * `direct` - direct
+        * `create` - create
+        * `register` - register
+        * `login` - login
+        * `settings` - settings
+        * `notifications` - notifications
     Tag:
       type: object
       properties:

@@ -40,7 +40,9 @@ class RequestLogMiddleware:
             extra={
                 "request_id": getattr(request, "request_id", ""),
                 "method": request.method,
-                "path": request.path,
+                # Route templates exclude user-provided path components and
+                # unknown 404 paths, which can themselves contain secrets.
+                "path": f"/{resolver_match.route}" if resolver_match else "/unmatched",
                 "route": getattr(resolver_match, "view_name", "") or "",
                 "status_code": response.status_code,
                 "duration_ms": duration_ms,

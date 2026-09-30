@@ -179,14 +179,21 @@ function normalizeError(status: number, data: unknown): ApiErrorPayload {
     };
   }
 
+  const statusMessages: Record<number, string> = {
+    400: "Please check the fields and try again.",
+    401: "Log in to continue.",
+    403: "You do not have permission to perform this action.",
+    404: "This item is unavailable or no longer exists.",
+    409: "This item changed. Refresh it before trying again.",
+    413: "The upload is too large. Choose a smaller file and try again.",
+    422: "Please check the fields and try again.",
+    429: "Too many requests. Wait a moment and try again.",
+  };
   return {
     code: `http_${status}`,
     message:
-      status === 429
-        ? "Too many requests. Wait a moment and try again."
-        : status >= 500
-          ? "The service is temporarily unavailable."
-          : "The request failed.",
+      statusMessages[status] ??
+      (status >= 500 ? "The service is temporarily unavailable." : "The request failed."),
   };
 }
 

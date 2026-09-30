@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   scheduleAccountDeletion: vi.fn(),
   sessions: vi.fn(),
+  changePassword: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -36,6 +37,7 @@ vi.mock("@/lib/api/client", () => ({
       me: mocks.me,
       scheduleAccountDeletion: mocks.scheduleAccountDeletion,
       sessions: mocks.sessions,
+      changePassword: mocks.changePassword,
     },
     profiles: {
       notificationPreferences: mocks.notificationPreferences,
@@ -151,5 +153,52 @@ describe("AccountSettings deletion grace period", () => {
     expect(mocks.notifyAuthChanged).toHaveBeenCalledOnce();
     expect(mocks.replace).toHaveBeenCalledWith("/login?next=%2Fprofile&reason=deletion-scheduled");
     expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("focuses mismatched confirmation and keeps the error beside that field", async () => {
+    const user = userEvent.setup();
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    await user.type(
+      await screen.findByLabelText("Current password", { exact: true }),
+      "example value",
+    );
+    await user.type(screen.getByLabelText("New password", { exact: true }), "new example value");
+    const confirmation = screen.getByLabelText("Confirm new password", { exact: true });
+    await user.type(confirmation, "different example value");
+    await user.click(screen.getByRole("button", { name: "Change password" }));
+
+    expect(confirmation).toHaveFocus();
+    expect(confirmation).toHaveAttribute("aria-invalid", "true");
+    expect(confirmation).toHaveAccessibleDescription("The new passwords do not match.");
+    expect(mocks.changePassword).not.toHaveBeenCalled();
+    await user.type(confirmation, "x");
+    expect(confirmation).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("keeps a failed password form intact, shows its error locally, and allows retry", async () => {
+    const user = userEvent.setup();
+    mocks.changePassword.mockRejectedValueOnce(new Error("Current password is incorrect."));
+    mocks.changePassword.mockResolvedValueOnce(undefined);
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const current = await screen.findByLabelText("Current password", { exact: true });
+    await user.type(current, "example value");
+    await user.type(screen.getByLabelText("New password", { exact: true }), "new example value");
+    await user.type(
+      screen.getByLabelText("Confirm new password", { exact: true }),
+      "new example value",
+    );
+    const submit = screen.getByRole("button", { name: "Change password" });
+    await user.click(submit);
+
+    const error = await screen.findByRole("alert");
+    expect(error).toHaveTextContent("Current password is incorrect.");
+    expect(error.closest("form")).toBe(submit.closest("form"));
+    expect(current).toHaveValue("example value");
+    await user.click(submit);
+    expect(
+      await screen.findByText("Password changed. Other sessions were signed out."),
+    ).toBeVisible();
+    expect(current).toHaveValue("");
+    expect(mocks.changePassword).toHaveBeenCalledTimes(2);
   });
 });

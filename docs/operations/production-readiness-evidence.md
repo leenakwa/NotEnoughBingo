@@ -1850,8 +1850,275 @@ observed results and their limits. Do not include credentials or session data.
   should classify this test fixture as a false positive in GitGuardian so
   the PR warning is not mistaken for an active credential leak.
 
-### Remaining local evidence to gather
+### 2026-09-30 — Keyboard uploads, local errors, and profile edits (sections 7, 23–24, 56)
 
-- Broader invalid input cases, keyboard and responsive flows for newly added
-  controls, and real service-outage behavior remain in the work queue. None of
-  the external launch gates has been closed by these local tests.
+- All four native image choosers (cell, board background, cover, avatar) were
+  hidden from keyboard navigation. Replaced `hidden`/`display:none` with a
+  visually hidden focusable input and a visible parent focus ring. Chromium
+  exercised Tab/Enter/file chooser at **320 and 1710 px**, without overflow.
+- Account settings now place action feedback in its own card, protect all
+  actions with one synchronous in-flight guard, and focus a labeled, described
+  confirmation-password error. Component tests cover mismatch, a failed
+  password change with preserved input, and successful retry. Profile edits
+  warn on link navigation and full unload; saving normalized values clears the
+  warning. Live navigation cancel/save/retry passed. SPA browser Back behavior
+  is not claimed by that warning evidence.
+- Live avatar upload, reload, removal and second reload persisted the correct
+  asset/null state. The password-recovery journey additionally changed the
+  password through Account Settings, preserved the current session, logged
+  out, and logged in with the new credential. Backend tests verify revocation
+  of other sessions. Earlier Mailpit email change/reverification, name/bio and
+  language/privacy/notification preferences, current-session logout, deletion
+  confirmation/cancel and worker anonymization cover the remaining settings.
+  A separate logout-all button and a saved user timezone are absent; dates use
+  the browser timezone and other sessions can be revoked individually.
+- Reordered editor DOM so its H1 precedes the inspector H2 while preserving
+  the desktop grid with CSS. The live accessibility helper now checks one H1,
+  the first heading, and heading-level progression alongside full-severity Axe
+  for language, editor, play, settings and the report dialog.
+
+### 2026-09-30 — Initial state races and reversible archive (sections 5, 9, 43, 101)
+
+- A mobile first click could be overwritten by late progress hydration.
+  Cells, Reset, Share and mark selection now wait for progress readiness.
+  A later two-tab like probe exposed the same race in social state: only one
+  POST was sent while the other button changed under the click. Like, Follow,
+  Archive/Delete now wait for initial state; the optional author fetch finishes
+  before actions become ready. The regression asserts disabled/enabled state,
+  and concurrent live likes explicitly wait for both views to be ready.
+  The full repeat proves two requests, statuses 200/201 and one stored like.
+- An author archived the fixture board, observed its read-only state and a
+  guest 404, reloaded, restored it and observed guest 200; restore persisted
+  across reload. Account deletion already has a tested fourteen-day cancel
+  period. Permanent Delete and progress Reset explicitly describe irreversible
+  effects and require confirmation; no undo is promised for those actions.
+  This closes section 9's conditional recovery requirement.
+
+### 2026-09-30 — Safe application, worker, server and error-provider logs (sections 55, 63–64)
+
+- The JSON formatter projects approved event/context fields. It drops arbitrary
+  library messages and arguments, request bodies/headers, exception messages,
+  source lines and locals. Exceptions retain type and at most 32 basename/
+  function/line frames. Request paths use resolved templates, with `/unmatched`
+  for unknown routes. Tests inject synthetic sensitive text into vendor logs,
+  arguments, exceptions and unmatched paths and prove it is omitted.
+- Celery applies this logging configuration and emits safe task start/completion/
+  retry/failure records. Gunicorn loads `python:config.gunicorn` in the production
+  Docker command; its master/worker and access loggers use the same formatter,
+  and ordinary raw access records are suppressed. The installed Gunicorn logger
+  subprocess test verifies redaction. A real temporary Gunicorn process on the
+  isolated backend returned 200 for the query-marked health probe and emitted
+  only the query-free correlated application record. It was stopped afterward.
+- Sentry's event/transaction hooks retain grouping locations and timing while
+  dropping request/user fields, free-text messages, breadcrumbs, SQL/URL span
+  descriptions, task values and locals. **3/3** focused tests include delivery
+  through the installed SDK to an in-memory transport with synthetic markers.
+  This proves local filtering, not a production DSN, frontend integration,
+  private source-map upload or an externally delivered alert; section 63 stays
+  partial. Context7's Gunicorn query was unavailable; configuration was checked
+  against the official settings documentation and the installed 23.0.0 runtime.
+- The repository logging requirements are verified before deployment. CDN,
+  ingress and provider-specific telemetry must follow the same query/body
+  exclusion contract and remain separate rollout/privacy gates.
+
+### 2026-09-30 — Proxy outage recovery and recovery-link privacy (sections 6, 31–32, 50, 55, 64)
+
+- Nginx's default upstream error text included full request URLs, even though
+  access logs excluded queries. Request-level error text and raw user-agent
+  access fields are now suppressed; original query-free path, upstream status,
+  HTTP status, timing and request ID remain in JSON. Startup/configuration
+  diagnostics remain enabled.
+- Stopped the isolated frontend and requested marked Reset Password and Explore
+  query URLs. Responses were 504 (about five seconds), with the independent
+  branded recovery HTML, `Cache-Control: no-store` and `no-referrer`. Marker
+  values did not appear in proxy logs; the original paths did. Recovery actions
+  and layout were checked at 320/1710 px and the 320 px screenshot was inspected.
+  Restart restored service. The repeatable `verify-proxy-recovery.sh` passed and
+  is wired into full-stack CI; it requires an explicitly isolated local E2E
+  stack and restarts only its existing frontend container.
+- Used verification/reset/email-change tokens are removed from the current
+  browser URL; the original link is reopened to verify one-time rejection.
+  Those pages use `no-referrer`. An initial blanket no-referrer policy broke
+  Django Admin POST origin verification; it was caught and corrected to use
+  `strict-origin-when-cross-origin` on other pages. Admin moderation and email/
+  reset/reuse journeys passed in the final live suite. Existing historical
+  links and the target edge's log policy still require rollout attention.
+
+### 2026-09-30 — Scheduled overlap, abandoned claims and broker restart (sections 42, 68–69)
+
+- Scheduled maintenance uses PostgreSQL session advisory locks, released in
+  `finally`; concurrent deliveries skip work and bounded database/storage
+  retries use backoff and jitter. An independent PostgreSQL connection held
+  a real lock while the task skipped; failure released it and the next run
+  proceeded. Workers require direct/session-pooled PostgreSQL, which is now an
+  explicit deployment contract; transaction pooling is incompatible.
+- Every five minutes, the bounded recovery sweep locks/rechecks old export and
+  upload claims after the hard time limit plus 60 seconds. A second sweep does
+  not enqueue duplicates or affect recent claims. Persistent attempts stop
+  repeated crashes at five; terminal failed/rejected state and structured
+  failure records are observable. Storage exhaustion no longer leaves exports
+  queued forever, and expired exports cannot restart processing. API errors
+  map internal codes to actionable text, and polling exits on expiry/failure.
+- Applied the additive media attempt-count migration to QA. Real Redis/worker
+  rehearsal stopped worker/Beat, queued the heartbeat task
+  `0b5e4667-21af-4eb8-a0ca-553b9d536e64`, restarted Redis and workers, then observed
+  start and SUCCESS for the retained task. All services were restored. This is
+  local AOF/queue recovery evidence; the chosen broker, worker platform,
+  scheduler singleton and alert delivery remain unverified.
+
+### 2026-09-30 — Categorical product activity and cohort report (sections 55, 61–62)
+
+- Page views and Create/Register/Login navigation now use allowlisted surface/
+  action categories without URLs, IDs, names, query strings or form values.
+  Recovery routes do not generate these events. Server validation, ingestion
+  retry idempotency, strict-mode duplicate prevention and cancelled navigation
+  are covered. The live browser proved accepted page/CTA events with marked URL
+  values absent. The first CTA implementation incorrectly ignored Next Link's
+  normal `preventDefault`; live evidence exposed it and the regression now
+  covers framework navigation.
+- `product_metrics --days 30` produces read-only aggregate JSON with environment/
+  UTC window, separate guest-browser and signed-in estimates, server signup/
+  login counts, and a mature signup cohort. Activation is play start/publication
+  within seven days; return is an activated account visit on days 8–14. The
+  fixture proves 3 mature registrations, 2 activations and 1 return, excluding
+  immature/staff accounts; the report uses at most five queries and emits no
+  user data. It does not claim an exact visitor-to-signup conversion or recover
+  blocked analytics, deleted accounts or pre-instrumentation visits. Separate
+  production/staging databases, actual early-user observations and legal
+  consent decisions still require deployment/operator inputs.
+- The choice-only analytics migration and regenerated OpenAPI/client types
+  preserve old event compatibility. `spectacular --validate --fail-on-warn`
+  passes after naming both analytics and moderation action enums explicitly.
+
+### 2026-09-30 — PWA and remaining debug-feature inventory (sections 60, 84–85)
+
+- Runtime source inventory found no service-worker registration, worker file,
+  web manifest, PWA install flow, fake-auth switch, hidden seed control, payment
+  bypass, unfinished feature CTA, debug shortcut, `console.log`, `alert`,
+  `debugger`, TODO or FIXME in production app modules. The remaining local
+  address/example email defaults are in development configuration or guarded
+  origin helpers; production validators reject them. Legal/support identity
+  remains a mandatory operator input, not a placeholder feature promise.
+- A fresh live Chromium context at Discover returned 200, with **zero service
+  worker registrations and zero CacheStorage entries**. PWA-specific bullets
+  are N/A. No previously deployed origin exists to have a historical worker;
+  version/CDN changes remain assessed separately in section 59.
+- Agentation is development-only, staff actions are permission-checked,
+  production debug/fake seed mode is rejected, and the inspected production
+  build contains no Agentation bundle. This completes the predeployment
+  feature/debug inventory without claiming target hosting configuration.
+
+### 2026-09-30 — Final local regression for this batch (sections 70, 73, 105)
+
+- PostgreSQL suite: **166 passed, 1 infrastructure-location skip**. Ruff lint,
+  formatting (163 files), mypy (74 source files), migration drift and validated
+  OpenAPI passed. Test settings now force local in-memory storage instead of
+  inheriting the QA S3 setting.
+- Frontend: ESLint, TypeScript, Prettier and **117 tests in 26 files** passed.
+  Current Next production build completed, including dynamic SSR and static
+  icon/social assets. The required full live run passed **51/51** across
+  Chromium, mobile WebKit, Firefox, desktop WebKit and Android emulation.
+- Earlier failed runs are not counted as passes: the blanket referrer regression,
+  first-mark hydration race, wrong guest Create assertion, CTA tracking issue,
+  and two-tab hydration race were investigated and corrected. The final run
+  above includes those affected journeys. New backend pytest and live fixture
+  seeding are run sequentially against the isolated environment.
+- The exact final commit still needs its CI release gate. Production-provider,
+  real device, full form/autofill/dirty-navigation, remaining itemized API/data
+  and deployment evidence are not implied by this local pass.
+
+
+### 2026-09-30 — Multilingual export defect and actual downloads (sections 26, 29, 35, 69, 79)
+
+- Found a real worker defect: its Pillow fallback font could not cover all
+  supported content languages, text was silently limited to six lines, and
+  Helvetica PDF titles could replace non-Latin characters. Replaced text
+  layout with installed Pango/Cairo and Noto core/CJK/color-emoji families in
+  both development and production images. Escaped user text is passed in a
+  private temporary file with no shell, a UTF-8 locale, finite subprocess
+  deadline and safe errors. Native shaping handles Arabic/Devanagari, bidi,
+  combining glyphs and fallback; measured text shrinks to fit without dropping
+  lines. PDF titles wrap and use the same renderer.
+- The installed native layout regression covers every one of the 15 supported
+  languages, literal markup/ampersand, mixed scripts, emoji, formatting and
+  explicit text after line six. Serialized native output reported **zero
+  unknown glyphs and zero ellipsized layouts**. Timeout diagnostics cannot
+  expose user text. A missing required image now fails/retries instead of
+  delivering an apparently successful export with a blank cell.
+- Rebuilt backend/worker/Beat and restarted only the isolated services. In
+  installed Chrome, created and published a multilingual board through the
+  authenticated API, opened its editor and downloaded Published PNG and PDF
+  using the real queue and protected file route. Downloads completed in
+  **2.4 s and 1.2 s** without browser errors. PNG and a Poppler rasterization of
+  the single A4 PDF were visually inspected: title, all scripts, colored emoji,
+  literal markup and final END line were visible without clipping/overlap.
+  Artifacts are private, ignored `tmp/pdfs` verification output.
+- A production image ran the native renderer as UID **10001**, with visible
+  mixed-script text. A separate bounded probe rendered **100 unique 100-character
+  multilingual cells in 6.74 s**, all within a 152-pixel text box. This is local
+  timing, not a target concurrency/SLA claim. Python-only CI explicitly installs
+  the native font/runtime packages; container vulnerability/SBOM gates still
+  apply. Export PDFs remain a raster board, as before, and are not claimed to
+  be tagged/searchable accessible documents.
+
+### 2026-09-30 — Loaded production routes, safe gateway errors and data/storage audit (sections 6, 43, 58, 70, 75, 79–80)
+
+- Installed Chrome inspected the actual optimized production candidate on
+  `localhost:18081`: **16 public routes at both 320 and 1710 px**, plus three
+  authenticated routes. Waited for loading/busy states to finish and asserted
+  no page-level error states; all routes returned 200, with zero script/console
+  errors or warnings, failed static assets or horizontal overflow. Loaded
+  Discover screenshots were visually reviewed at both widths. Seven private
+  environment/Git/backup/SQLite/key/log/internal-server HTTP probes returned
+  404. These are configured staging-origin checks, not public-domain evidence.
+- Safe API presentation now covers non-JSON gateway 400/401/403/404/409/413/422/
+  429/500/503, without reading raw HTML; broken JSON, finite read/write timeout,
+  caller cancellation, disconnect and expired-session behavior are also
+  covered. A real 17 MiB Content-Length probe returned **413** from Nginx before
+  accepting a body. Form/draft/progress preservation and appropriate retry
+  were exercised in the live outage/conflict flows; technical failure details
+  use private projected logs/SDK events. 422 is defensive compatibility;
+  this API uses 400 for its own field validation.
+- Data-integrity evidence maps every applicable original bullet to
+  `test_social.py` (real concurrent duplicate likes/follows, exact counters),
+  `test_api_boundaries.py` (repeated publication/export/report/progress/delete),
+  draft/revision version tests and the live two-tab conflict/like journeys,
+  `test_notifications.py` (deduplication), and security/job tests for retained
+  reply threads, referenced-media protection and duplicate/abandoned claims.
+  No webhook feature exists. This closes section 43's repository checks.
+- Browser-storage evidence maps to guest progress, progress recovery and
+  editor-recovery tests: schema/revision/owner mismatch, corrupt JSON/numeric
+  data, unavailable storage, legacy recovery and safe clear. The real live
+  two-tab logout revoked private server state and cleared both recovery
+  versions/session progress, then logged in as another account. Non-persistent
+  browser contexts exercised isolated storage; signed-in recovery cannot cross
+  account IDs. No password, cookie or auth token is stored in local/session
+  storage. This closes section 58's relevant bullets.
+- The reproducible proxy fault script now verifies recovery as well as the
+  outage: after two forced gateway failures and query-marker redaction, the
+  same frontend container restarts and `/discover` returns a successful page.
+  The final script passed; it preserves the existing container environment
+  and restores the service on failure.
+- Latest local checks: **168 PostgreSQL tests passed, one infrastructure-location
+  skip**; subsequent changed export/metrics tests are recorded separately until
+  the final full gate. **126 frontend tests in 26 files**, ESLint, TypeScript and
+  Prettier passed. The expanded full live suite passed **52/52** across all five
+  configured desktop/mobile browser projects, including real PNG/PDF downloads.
+  The aggregate metrics regression now excludes anonymized/deleted accounts
+  explicitly, in addition to immature/staff cohorts.
+- Sections 6, 43 and 58 are now checked with the above itemized evidence. Full
+  forms/autofill/password-manager/Back behavior, actual native 200% zoom, real
+  devices, unreviewed original bullets, operator/legal inputs and the target
+  deployment remain open. Final source head still requires CI; no local result
+  is described as complete production readiness.
+
+
+### 2026-09-30 — Current source regression after the export-image safeguard
+
+- Full backend gate after all changes: Ruff lint, 163-file formatting, 74-source
+  mypy, migration drift and **169 passed / one infrastructure-location skip**.
+  The changed export/metrics subset passed **8/8** before this full run.
+- Current optimized Next build completed after the gateway-message change.
+  Frontend remains **126/126**, full live suite **52/52**, and the final proxy
+  restart check passes. Native runtime/font packages are installed in both
+  Docker targets and in the Python-only CI test runner.

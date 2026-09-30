@@ -35,25 +35,40 @@ of work; it does not reduce the checklist.
 | 4. Release mechanics | Clean install, migrations, image builds, worker/Beat, CI, scans, backup/restore, rollback, production config, and smoke instructions. | Exact release artifact has a passing gate and rehearsed deployment/rollback procedures. |
 | 5. Deployment handoff | Domain, TLS, email, object storage, monitoring, alerts, external recovery, and scripted live smoke/rollback checks. | Predeployment checklist is complete; external configuration is supplied; deployment-only checks are automated and pass on the target environment. |
 
-Stages 1–3 have substantial local evidence but remain open for itemized review
-against every applicable original bullet. Stage 4 is in progress: the current
-release candidate passed the exact-commit CI gate, but the final PR head must
-pass it again after further changes. Registry promotion and rollback on the
-target platform remain untested. Stage 5 has no real deployment evidence yet.
+Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
+open for itemized review: the 2026-09-30 tracker has 48 verified sections,
+50 partial, six N/A and one deployment-only. The latest live regression is
+52/52 and the frontend gate has 126 tests; these counts do not close unreviewed
+requirements. Stage 4 is in progress: the previous candidate passed CI, while
+the current changes still need a committed source head and its release gate.
+Registry promotion and rollback on the target platform remain untested.
+Stage 5 has no real deployment evidence yet; the user confirmed that providers
+and a domain have not been selected.
 The aim is to complete product and repository QA before deployment, leaving
 only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Work through the full copied checklist against repository paths and the
-   isolated stack. Record each bullet's result; fix product friction and
-   remaining invalid-input, media, keyboard, responsive, and outage cases.
-2. Review the draft PR and target migration compatibility. Record the exact
-   registry digests and rehearse rollback once a deployment platform exists.
-3. Obtain the actual domain, DNS/TLS edge, production service endpoints,
-   support/legal owner decisions, and access needed for the real deployment.
-4. Configure production backups/monitoring, perform an off-site database and
-   media restore drill, then run the full real-domain user and smoke sequence.
+1. Finish the current release batch: safe logging/Sentry, task recovery and
+   overlap, keyboard uploads/settings feedback, analytics, hydration races,
+   safe proxy faults and multilingual PNG/PDF. Record the final backend gate,
+   inspect the diff, commit and push the existing draft PR, then verify CI for
+   that exact source head and fix any failures.
+2. Complete remaining repository-specific work in sections 1–8, 21, 24–25,
+   34/36, 42/45–46, 52–53, 61–63, 67, 71–72, 76–77, 82 and 105. Prioritize
+   important dirty forms and Back navigation, autofill/password-manager
+   behavior, native zoom/ARIA/UI contrast, endpoint-by-endpoint contracts,
+   database indexes/migration scale and notification/email failure paths.
+   Record explicit N/A or target-only limits for each original bullet.
+3. Prepare provider-independent release/rollback and monitoring artifacts;
+   preserve configuration contracts, keep demo identities out of a production
+   database and retain previous images/configuration. External inputs stay
+   separately listed; do not stop local work merely because providers are absent.
+4. Once an operator supplies the actual domain, services, support/legal
+   decisions and access, configure and verify DNS/TLS, delivery, alerts,
+   off-site database/media restoration and target rollback. Run the scripted
+   real-domain smoke as part of rollout. These checks cannot be claimed in
+   advance or removed by a local build.
 
 ## Local milestones already exercised
 

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
+import { PageActivity } from "@/components/layout/page-activity";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { absoluteSiteUrl, isPublicProduction, siteUrl } from "@/lib/site";
 
@@ -53,6 +54,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           Skip to content
         </a>
         <AppHeader />
+        <PageActivity />
         {children}
         <SiteFooter />
         {process.env.NODE_ENV === "development" && process.env.AGENTATION_ENABLED !== "false" ? (

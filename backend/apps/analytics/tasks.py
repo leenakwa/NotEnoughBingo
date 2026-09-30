@@ -4,7 +4,6 @@ import math
 from datetime import timedelta
 from decimal import Decimal
 
-from celery import shared_task
 from django.conf import settings
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -14,6 +13,7 @@ from apps.analytics.counter_reconciliation import (
 )
 from apps.analytics.models import InteractionEvent
 from apps.bingos.models import Bingo
+from apps.common.jobs import periodic_task
 
 EVENT_WEIGHTS = {
     InteractionEvent.Type.IMPRESSION: 0.05,
@@ -31,7 +31,7 @@ INTERACTION_DELETE_BATCH_SIZE = 5_000
 TRENDING_BATCH_SIZE = 500
 
 
-@shared_task(ignore_result=True)
+@periodic_task
 def reconcile_denormalized_counters(batch_size: int = 500) -> dict[str, int]:
     return reconcile_counters(batch_size=batch_size)
 
@@ -48,7 +48,7 @@ def calculate_trending_score(
     return Decimal(f"{confidence_adjusted:.6f}")
 
 
-@shared_task(ignore_result=True)
+@periodic_task
 def recompute_trending_scores(batch_size: int = TRENDING_BATCH_SIZE) -> int:
     now = timezone.now()
     cutoff = now - timedelta(days=7)
@@ -110,7 +110,7 @@ def recompute_trending_scores(batch_size: int = TRENDING_BATCH_SIZE) -> int:
     return updated
 
 
-@shared_task(ignore_result=True)
+@periodic_task
 def purge_expired_interaction_events(
     batch_size: int = INTERACTION_DELETE_BATCH_SIZE,
 ) -> int:

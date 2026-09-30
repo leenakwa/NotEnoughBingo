@@ -204,7 +204,7 @@ export function BingoDetails({
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/avif"
-              hidden
+              className="sr-only"
               disabled={uploadPending}
               onChange={(event) => {
                 const file = event.target.files?.[0];

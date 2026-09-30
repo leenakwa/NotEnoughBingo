@@ -43,7 +43,7 @@ def test_existing_search_events_drop_free_text_on_migration() -> None:
         },
         occurred_at=timezone.now(),
     )
-    current_target = [("analytics", "0002_redact_search_event_text")]
+    current_target = [("analytics", "0003_alter_interactionevent_event_type")]
     try:
         MigrationExecutor(connection).migrate([("analytics", "0001_initial")])
         MigrationExecutor(connection).migrate(current_target)

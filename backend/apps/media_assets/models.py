@@ -68,6 +68,7 @@ class MediaAsset(PublicIdModel, TimeStampedModel):
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
     uploaded_at = models.DateTimeField(null=True, blank=True)
     processing_task_id = models.CharField(max_length=64, blank=True)
+    processing_attempt_count = models.PositiveSmallIntegerField(default=0)
     ready_at = models.DateTimeField(null=True, blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
     rejection_reason = models.CharField(max_length=120, blank=True)

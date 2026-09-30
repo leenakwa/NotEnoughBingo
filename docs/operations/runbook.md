@@ -158,6 +158,17 @@ migrate --noinput` as the explicit one-shot release command instead.
 - A task scheduled from a database transaction is queued with
   `transaction.on_commit()`.
 - Worker shutdown allows in-flight task policy to complete or safely redeliver.
+- Periodic maintenance tasks use PostgreSQL session advisory locks to skip
+  overlapping deliveries across workers. **Workers need a direct PostgreSQL
+  endpoint or session pooling; PgBouncer transaction pooling is incompatible
+  with these locks.** Keep exactly one Beat, enable new schedules after all
+  workers are compatible, and alert on skipped/failing maintenance.
+- Every five minutes, `recover_stalled_jobs` inspects at most 100 exports and
+  100 uploads whose claim is older than the hard task time limit plus 60 seconds.
+  It rechecks under row locks and requeues after commit. Persistent attempts
+  stop repeated crashes after five executions, expose a terminal product error,
+  and emit a structured failure event. Alert on that event and the age of queued
+  jobs; it is not a substitute for monitoring the broker and worker.
 
 ## Object-storage operations
 
@@ -214,12 +225,30 @@ supports it; neither receives bucket-administration permission.
 ## Observability and alerts
 
 Django emits one structured completion record per request with request ID,
-method, path (without query string), resolved route, status, duration, service,
-environment, and release. Celery emits explicit retry/failure records with task
-name, ID, attempt/outcome, and exception type. Set `APP_RELEASE` to the exact
+method, resolved route template, status, duration, service, environment, and
+release. Arbitrary log messages/arguments and exception messages, source lines,
+and locals are omitted; exceptions retain type and file/function/line locations.
+Celery uses the same formatter and emits started/completed/retry/failure records
+with task name, ID, attempt/outcome, and exception type. Set `APP_RELEASE` to the exact
 image/git release and use a distinct `SERVICE_NAME` for web, worker, and Beat.
-Sentry receives the same environment/release metadata when configured and does
-not collect default PII.
+Gunicorn loads `python:config.gunicorn` to apply that formatter in its master
+and workers. Its raw access log is disabled because request middleware already
+records safe access diagnostics. Retain this configuration when overriding
+the container command; never enable a raw request/referrer logging format.
+Sentry receives environment/release and diagnostic exception locations when
+configured. The event/transaction hooks drop request/user data, breadcrumbs,
+free-text messages, SQL/URL descriptions, task arguments and local variables.
+Installed-SDK tests exercise delivery to an in-memory transport; a real DSN,
+private source maps, frontend capture and alert delivery remain rollout gates.
+
+Nginx emits query-free JSON access records with the original path, status,
+upstream status, timing and request ID. Request-level Nginx error text and raw
+user-agent headers are suppressed because they can expose full URLs or values;
+startup/configuration diagnostics remain enabled. Ship `infra/nginx/html`
+with the proxy: its self-contained upstream-failure page requires no frontend
+or assets. Verification/reset/email-change pages use `no-referrer`; other
+routes retain `strict-origin-when-cross-origin` so Django Admin POSTs have a
+valid origin. Used recovery tokens are removed from the current browser URL.
 
 Minimum dashboards:
 
@@ -270,3 +299,22 @@ personal exports into tickets/chat.
   it with `python manage.py reconcile_counters`. This intentionally excludes
   lifetime view/play totals, which cannot be rebuilt after raw-event expiry.
 - Privacy deletion/export sampling: regularly in staging with synthetic users.
+
+## Product activity report
+
+`python manage.py product_metrics --days 30` is read-only and prints aggregate
+JSON labeled with the environment and UTC observation window. Page views and
+primary Create/Register/Login links record categories only. Signup/login
+counts come from server security events. The report separates anonymous
+browsers from signed-in accounts; they are estimates and must not be added to
+claim unique people or guest-to-signup conversion.
+
+Activation means starting a play or publishing within seven days of signup.
+Return means a page visit on days 8–14 by an activated account. Only accounts
+with a full fourteen-day observation window enter the cohort. The report
+identifies no-core-action and no-return drop-offs; blocked analytics, deleted
+accounts and visits before instrumentation cannot be reconstructed. The
+requested window must be at least 14 days and at most raw-event retention.
+Use separate databases for local, staging and production; never seed production
+with fixtures or combine their reports. No third-party analytics property is
+used. Consent and legal obligations still depend on the operator/jurisdiction.

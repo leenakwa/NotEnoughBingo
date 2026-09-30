@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { Buffer } from "node:buffer";
+import { randomUUID } from "node:crypto";
 
 import AxeBuilder from "@axe-core/playwright";
 import type { APIRequestContext, BrowserContext, Page, Response, Route } from "@playwright/test";
@@ -19,6 +20,37 @@ const cellImagePng = Buffer.from(
 );
 let moderationReportId = "";
 
+test("page arrivals and primary navigation reach first-party analytics without URL values", async ({
+  page,
+}) => {
+  const events: Array<{ event_type: string; metadata: Record<string, string> }> = [];
+  page.on("response", (response) => {
+    if (response.url().includes("/api/v1/interactions/") && response.status() === 202) {
+      events.push(...response.request().postDataJSON().events);
+    }
+  });
+  await page.goto("/discover?private-marker=never-record-this");
+  await expect(page.getByRole("heading", { name: "Discover", exact: true })).toBeVisible();
+  await expect
+    .poll(() =>
+      events.some(
+        (event) => event.event_type === "page_view" && event.metadata.surface === "discover",
+      ),
+    )
+    .toBe(true);
+  await page.getByRole("link", { name: "Create", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Create your own bingo", exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(() =>
+      events.some((event) => event.event_type === "cta" && event.metadata.action === "create"),
+    )
+    .toBe(true);
+  expect(JSON.stringify(events.map((event) => event.metadata))).not.toContain("marker");
+  expect(JSON.stringify(events.map((event) => event.metadata))).not.toContain("never-record-this");
+});
+
 async function authenticateAs(page: Page, role: FixtureRole) {
   const state = JSON.parse(readFileSync(authStatePath(role), "utf8")) as {
     cookies: Parameters<BrowserContext["addCookies"]>[0];
@@ -26,6 +58,68 @@ async function authenticateAs(page: Page, role: FixtureRole) {
   await page.context().clearCookies();
   await page.context().addCookies(state.cookies);
 }
+
+test("published multilingual bingo downloads as PNG and PDF through the real worker", async ({
+  page,
+}) => {
+  await authenticateAs(page, "author");
+  await page.goto("/discover");
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const headers = {
+    "X-CSRFToken": csrf!.value,
+    Origin: new URL(page.url()).origin,
+    "Idempotency-Key": randomUUID(),
+  };
+  const samples = [
+    "Привет мир",
+    "Привіт світ",
+    "مرحبا بالعالم",
+    "नमस्ते दुनिया",
+    "こんにちは世界",
+    "안녕하세요 세계",
+    "你好世界",
+    "Grüße, çığ, ação 🎉 👩🏽‍💻",
+    "<b>&\n1\n2\n3\n4\n5\n6\n7\nEND",
+  ];
+  const created = await page.context().request.post("/api/v1/drafts/", {
+    headers,
+    data: {
+      title: "Бинго 日本語 العربية हिन्दी 🎉",
+      size: 3,
+      language: "ru",
+      cells: samples.map((text, position) => ({
+        position,
+        row: Math.floor(position / 3),
+        column: position % 3,
+        text,
+      })),
+    },
+  });
+  expect(created.status()).toBe(201);
+  const draft = (await created.json()) as { bingo_id: string };
+  const published = await page.context().request.post(`/api/v1/bingos/${draft.bingo_id}/publish/`, {
+    headers: { ...headers, "Idempotency-Key": randomUUID() },
+  });
+  expect(published.ok()).toBe(true);
+  await page.goto(`/create?bingo=${draft.bingo_id}`);
+  await expect(page.getByRole("heading", { name: "Edit bingo", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Finish creating →" }).click();
+  await page.getByText("Download published version", { exact: true }).click();
+  for (const format of ["PNG", "PDF"] as const) {
+    const downloadPromise = page.waitForEvent("download", { timeout: 60_000 });
+    const button = page.getByRole("button", { name: `Published ${format}`, exact: true });
+    await button.click();
+    const download = await downloadPromise;
+    expect(await download.failure()).toBeNull();
+    expect(download.suggestedFilename()).toMatch(new RegExp(`\\.${format.toLowerCase()}$`));
+    const bytes = readFileSync((await download.path())!);
+    expect(bytes.subarray(0, format === "PNG" ? 8 : 4)).toEqual(
+      format === "PNG" ? Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]) : Buffer.from("%PDF"),
+    );
+    await expect(button).toBeEnabled();
+  }
+});
 
 async function waitForResponse(
   page: Page,
@@ -48,6 +142,18 @@ async function waitForResponse(
 }
 
 async function expectNoAccessibilityViolations(page: Page) {
+  const levels = await page
+    .locator("h1, h2, h3, h4, h5, h6")
+    .evaluateAll((headings) =>
+      headings
+        .filter((heading) => heading.getClientRects().length > 0)
+        .map((heading) => Number(heading.tagName.slice(1))),
+    );
+  expect(levels.filter((level) => level === 1)).toHaveLength(1);
+  expect(levels[0]).toBe(1);
+  for (let index = 1; index < levels.length; index += 1) {
+    expect(levels[index]).toBeLessThanOrEqual(levels[index - 1]! + 1);
+  }
   const results = await new AxeBuilder({ page }).analyze();
   expect(
     results.violations,
@@ -589,6 +695,30 @@ test.describe("live full-stack product flows", () => {
     await page.goto(`/profile/${fixture.users.author.username}`);
     await expect(page.getByRole("tab", { name: "Drafts" })).toHaveCount(0);
     await expect(page.getByText("A separate draft category")).toHaveCount(0);
+  });
+
+  test("an author can archive a bingo and restore its public availability", async ({
+    page,
+    request,
+  }) => {
+    const bingo = readLiveFixture().bingos.public;
+    await authenticateAs(page, "author");
+    await page.goto(`/bingo/${bingo.id}`);
+    await waitForResponse(page, `/api/v1/bingos/${bingo.id}/archive/`, "POST", () =>
+      page.getByRole("button", { name: "Archive", exact: true }).click(),
+    );
+    await expect(
+      page.getByText("This bingo is archived and shown read-only to its author."),
+    ).toBeVisible();
+    expect((await request.get(`/api/v1/bingos/${bingo.id}/`)).status()).toBe(404);
+    await page.reload();
+    await waitForResponse(page, `/api/v1/bingos/${bingo.id}/restore/`, "POST", () =>
+      page.getByRole("button", { name: "Restore", exact: true }).click(),
+    );
+    await expect(page.getByRole("button", { name: "Archive", exact: true })).toBeVisible();
+    expect((await request.get(`/api/v1/bingos/${bingo.id}/`)).status()).toBe(200);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Archive", exact: true })).toBeVisible();
   });
 
   test("offline editor preserves work and retries when the connection returns", async ({
@@ -1607,7 +1737,8 @@ test.describe("live full-stack product flows", () => {
     const secondTab = await page.context().newPage();
     try {
       await secondTab.goto(`/bingo/${bingo.id}`);
-      await expect(likeButton(secondTab)).toBeVisible();
+      await expect(likeButton(secondTab)).toBeEnabled();
+      await expect(likeButton(page)).toBeEnabled();
       const firstResponse = page.waitForResponse(
         (response) => response.url().includes(likePath) && response.request().method() === "POST",
       );
@@ -1647,6 +1778,30 @@ test.describe("live full-stack product flows", () => {
     expect(bytes.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
   });
 
+  test("avatar upload and removal persist after reload", async ({ page }) => {
+    await authenticateAs(page, "author");
+    await page.goto("/profile");
+    const avatarCard = page
+      .locator(".settings-card")
+      .filter({ has: page.getByRole("heading", { name: "Avatar", exact: true }) });
+    await avatarCard
+      .getByLabel("Upload avatar", { exact: true })
+      .setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: cellImagePng });
+    await expect(avatarCard.getByRole("status")).toHaveText("Avatar updated.");
+    await expect(avatarCard.getByRole("button", { name: "Remove", exact: true })).toBeVisible();
+    await page.reload();
+    await expect(avatarCard.getByRole("button", { name: "Remove", exact: true })).toBeVisible();
+    expect((await page.request.get("/api/v1/profiles/me/")).ok()).toBe(true);
+    await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      avatarCard.getByRole("button", { name: "Remove", exact: true }).click(),
+    );
+    await expect(avatarCard.getByRole("status")).toHaveText("Avatar removed.");
+    await page.reload();
+    await expect(avatarCard.getByRole("heading", { name: "Avatar", exact: true })).toBeVisible();
+    await expect(avatarCard.getByRole("button", { name: "Remove", exact: true })).toHaveCount(0);
+    expect((await (await page.request.get("/api/v1/profiles/me/")).json()).avatar).toBeNull();
+  });
+
   test("password reset handles an outage, email link, expired session, and token reuse", async ({
     page,
     request,
@@ -1677,9 +1832,11 @@ test.describe("live full-stack product flows", () => {
       page.getByRole("button", { name: "Update password" }).click(),
     );
     await expect(page.getByRole("status")).toContainText("Password changed");
+    await expect(page).toHaveURL(/\/reset-password$/);
+    await expect(page.getByLabel("New password", { exact: true })).toHaveValue("");
     expect((await page.request.get("/api/v1/auth/me/")).status()).toBe(403);
 
-    await page.reload();
+    await page.goto(`${link.pathname}${link.search}`);
     await page.getByLabel("New password", { exact: true }).fill(nextPassword);
     const repeated = page.waitForResponse(
       (response) =>
@@ -1696,6 +1853,28 @@ test.describe("live full-stack product flows", () => {
     await page.getByRole("button", { name: "Log in" }).click();
     await expect(page.locator(".form-message--error")).toBeVisible();
     await page.getByLabel("Password").fill(nextPassword);
+    await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
+      page.getByRole("button", { name: "Log in" }).click(),
+    );
+    await expect(page).toHaveURL(/\/discover$/);
+
+    await page.goto("/profile");
+    const changePassword = page
+      .locator("form.settings-card")
+      .filter({ has: page.getByRole("heading", { name: "Change password", exact: true }) });
+    const changedPassword = `${nextPassword}-changed`;
+    await changePassword.getByLabel("Current password", { exact: true }).fill(nextPassword);
+    await changePassword.getByLabel("New password", { exact: true }).fill(changedPassword);
+    await changePassword.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);
+    await waitForResponse(page, "/api/v1/auth/password-change/", "POST", () =>
+      changePassword.getByRole("button", { name: "Change password", exact: true }).click(),
+    );
+    await expect(changePassword.getByRole("status")).toContainText("Password changed");
+    expect((await page.request.get("/api/v1/auth/me/")).status()).toBe(200);
+    await page.getByRole("button", { name: "Log out", exact: true }).click();
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(changedPassword);
     await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
       page.getByRole("button", { name: "Log in" }).click(),
     );
@@ -1758,6 +1937,7 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByRole("heading", { name: "Email changed" })).toBeVisible({
       timeout: 15_000,
     });
+    await expect(page).toHaveURL(/\/confirm-email-change$/);
     expect(
       ((await (await page.context().request.get("/api/v1/auth/me/")).json()) as { email: string })
         .email,
@@ -1781,7 +1961,7 @@ test.describe("live full-stack product flows", () => {
         { timeout: 15_000 },
       )
       .toBe(true);
-    await page.reload();
+    await page.goto(`${link.pathname}${link.search}`);
     await expect(page.locator(".form-message--error")).toContainText("already been used");
 
     await page.goto("/profile");
@@ -1794,5 +1974,78 @@ test.describe("live full-stack product flows", () => {
       page.getByRole("button", { name: "Log in" }).click(),
     );
     await expect(page).toHaveURL(/\/discover$/);
+  });
+
+  test("all image choosers work with Tab and Enter and show focus", async ({ page }) => {
+    await authenticateAs(page, "author");
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    async function openChooser(name: string) {
+      const input = page.getByLabel(name, { exact: true });
+      await input.focus();
+      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Tab");
+      await expect(input).toBeFocused();
+      expect(
+        await input.evaluate((node) => getComputedStyle(node.closest("label")!).outlineWidth),
+      ).toBe("3px");
+      const chooser = page.waitForEvent("filechooser");
+      await page.keyboard.press("Enter");
+      await (await chooser).setFiles([]);
+    }
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/create");
+      await expect(page.getByRole("heading", { name: "Create bingo" })).toBeVisible();
+      await openChooser("Upload background");
+      await page.getByRole("gridcell").first().click();
+      if (width === 320) await page.keyboard.press("Escape");
+      await expect(page.getByRole("heading", { name: "Cell editor" })).toBeVisible();
+      await openChooser("Add image to cell");
+      await page.getByRole("button", { name: "Close cell editor" }).click();
+      await page.getByRole("button", { name: "Finish creating" }).click();
+      await openChooser("Choose file");
+      await page.goto("/profile");
+      await expect(page.getByRole("heading", { name: "Account settings" })).toBeVisible();
+      await openChooser("Upload avatar");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width,
+      );
+    }
+    expect(errors).toEqual([]);
+  });
+
+  test("unsaved profile changes warn before leaving and stop warning after saving", async ({
+    page,
+  }) => {
+    await authenticateAs(page, "author");
+    await page.goto("/profile");
+    const displayName = page.getByLabel("Display name", { exact: true });
+    await expect(displayName).toBeVisible();
+    const original = await displayName.inputValue();
+    await displayName.fill("Unsaved profile example");
+    let confirmations = 0;
+    page.on("dialog", async (dialog) => {
+      confirmations += 1;
+      expect(dialog.message()).toContain("have not been saved");
+      await dialog.dismiss();
+    });
+    await page.getByRole("link", { name: "Explore", exact: true }).click();
+    await expect(page).toHaveURL(/\/profile$/);
+    await expect(displayName).toHaveValue("Unsaved profile example");
+    await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      page.getByRole("button", { name: "Save profile", exact: true }).click(),
+    );
+    await expect(
+      page.getByRole("heading", { name: "Unsaved profile example", level: 1 }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "Explore", exact: true }).click();
+    await expect(page).toHaveURL(/\/explore$/);
+    expect(confirmations).toBe(1);
+    await page.goto("/profile");
+    await displayName.fill(original);
+    await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      page.getByRole("button", { name: "Save profile", exact: true }).click(),
+    );
   });
 });

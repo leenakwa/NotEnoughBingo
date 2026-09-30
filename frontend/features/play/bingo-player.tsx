@@ -46,6 +46,7 @@ export function BingoPlayer({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [markStyle, setMarkStyle] = useState<PlayMarkStyle>("checkmark");
   const [loading, setLoading] = useState(!initialBingo);
+  const [progressReady, setProgressReady] = useState(false);
   const [error, setError] = useState("");
   const [progressError, setProgressError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -92,6 +93,7 @@ export function BingoPlayer({
       setSocialPending("");
       setReportOpen(false);
       hydrated.current = false;
+      setProgressReady(false);
       skipNextSync.current = false;
       try {
         const detail = canUseInitial && initialBingo ? initialBingo : await api.bingos.get(bingoId);
@@ -137,16 +139,18 @@ export function BingoPlayer({
           user.id !== detail.author.id &&
           (!canUseInitial || !initialAuthorProfile)
         ) {
-          void api.profiles
-            .get(detail.author.username)
-            .then((profile) => {
-              if (active) setAuthorProfile(profile);
-            })
-            .catch(() => undefined);
+          try {
+            const profile = await api.profiles.get(detail.author.username);
+            if (!active) return;
+            setAuthorProfile(profile);
+          } catch {
+            // The board still works when an optional author profile is unavailable.
+          }
         }
 
         if (detail.status !== "published") {
           hydrated.current = true;
+          setProgressReady(true);
           return;
         }
         if (user === "guest") {
@@ -183,6 +187,7 @@ export function BingoPlayer({
         }
         if (!active) return;
         hydrated.current = true;
+        setProgressReady(true);
       } catch (caught) {
         if (active) setError(errorMessage(caught));
       } finally {
@@ -248,6 +253,7 @@ export function BingoPlayer({
   }, [bingo, bingoId, selected, viewer]);
 
   function toggleCell(key: string) {
+    if (!hydrated.current) return;
     setSelected((current) => {
       const next = new Set(current);
       if (next.has(key)) next.delete(key);
@@ -343,7 +349,7 @@ export function BingoPlayer({
   }
 
   async function toggleBingoLike() {
-    if (!bingo || socialPending) return;
+    if (!bingo || !hydrated.current || socialPending) return;
     setSocialPending("like");
     setProgressError("");
     try {
@@ -381,7 +387,7 @@ export function BingoPlayer({
   }
 
   async function toggleFollow() {
-    if (!authorProfile || socialPending) return;
+    if (!authorProfile || !hydrated.current || socialPending) return;
     setSocialPending("follow");
     setProgressError("");
     try {
@@ -406,7 +412,7 @@ export function BingoPlayer({
   }
 
   async function manageBingo(action: "archive" | "restore" | "delete") {
-    if (!bingo || socialPending || manageInFlight.current) return;
+    if (!bingo || !hydrated.current || socialPending || manageInFlight.current) return;
     if (
       action === "delete" &&
       !window.confirm(
@@ -525,7 +531,7 @@ export function BingoPlayer({
               type="button"
               className="button button--secondary"
               aria-pressed={bingo.liked_by_me}
-              disabled={Boolean(socialPending)}
+              disabled={!progressReady || Boolean(socialPending)}
               onClick={() => void toggleBingoLike()}
             >
               {bingo.liked_by_me ? "Liked" : "Like"} · {bingo.stats.likes}
@@ -547,7 +553,7 @@ export function BingoPlayer({
               type="button"
               className="button button--secondary"
               aria-pressed={authorProfile.is_following}
-              disabled={Boolean(socialPending)}
+              disabled={!progressReady || Boolean(socialPending)}
               onClick={() => void toggleFollow()}
             >
               {authorProfile.is_following ? "Following" : "Follow author"}
@@ -570,7 +576,7 @@ export function BingoPlayer({
               <button
                 type="button"
                 className="button button--secondary"
-                disabled={Boolean(socialPending)}
+                disabled={!progressReady || Boolean(socialPending)}
                 onClick={() =>
                   void manageBingo(bingo.status === "archived" ? "restore" : "archive")
                 }
@@ -580,7 +586,7 @@ export function BingoPlayer({
               <button
                 type="button"
                 className="button button--danger"
-                disabled={Boolean(socialPending)}
+                disabled={!progressReady || Boolean(socialPending)}
                 onClick={() => void manageBingo("delete")}
               >
                 Delete
@@ -592,7 +598,7 @@ export function BingoPlayer({
               <button
                 type="button"
                 className="button button--secondary"
-                disabled={saving || selected.size === 0}
+                disabled={!progressReady || saving || selected.size === 0}
                 onClick={() => void reset()}
               >
                 Reset
@@ -603,6 +609,7 @@ export function BingoPlayer({
                 className="button button--primary"
                 aria-expanded={shareOpen}
                 aria-controls="share-result-panel"
+                disabled={!progressReady}
                 onClick={() => setShareOpen(true)}
               >
                 Share result
@@ -622,7 +629,7 @@ export function BingoPlayer({
       </header>
 
       {playable ? (
-        <fieldset className="play-mark-menu">
+        <fieldset className="play-mark-menu" disabled={!progressReady}>
           <legend>Mark cells with</legend>
           {(
             [
@@ -657,13 +664,14 @@ export function BingoPlayer({
         revision={revision}
         selected={selected}
         completionStyle={markStyle}
-        readOnly={!playable || !viewer}
+        readOnly={!playable}
+        disabled={playable && !progressReady}
         onToggle={toggleCell}
       />
 
       <p className="progress-status" aria-live="polite">
         {playable
-          ? !viewer
+          ? !progressReady
             ? "Loading your progress…"
             : saving
               ? "Saving progress…"

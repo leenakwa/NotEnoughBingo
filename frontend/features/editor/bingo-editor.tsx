@@ -567,7 +567,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   async function waitForExport(job: ExportJob): Promise<ExportJob> {
     let current = job;
     for (let attempt = 0; attempt < 30 && current.status !== "ready"; attempt += 1) {
-      if (current.status === "failed") return current;
+      if (current.status === "failed" || current.status === "expired") return current;
       await new Promise((resolve) => window.setTimeout(resolve, 1000));
       current = await api.exports.get(current.id);
     }
@@ -590,10 +590,10 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       const completed = await waitForExport(job);
       if (completed.status === "ready" && completed.download_url) {
         window.location.assign(completed.download_url);
-      } else if (completed.status === "failed") {
+      } else if (completed.status === "failed" || completed.status === "expired") {
         throw new Error(completed.error ?? "Export generation failed.");
       } else {
-        setMessage("The export is still processing. It will be available from your profile.");
+        setMessage("The export is still processing. Try downloading again shortly.");
       }
     } catch (caught) {
       setError(errorMessage(caught));
@@ -738,15 +738,6 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         }
       }}
     >
-      <CellInspector
-        state={state}
-        dispatch={dispatch}
-        uploadPending={uploading !== null}
-        uploadPhase={uploading === "cell" ? uploadPhase : undefined}
-        onCancelUpload={cancelUpload}
-        uploadFeedback={cellUploadFeedback}
-        onImageSelected={(file) => void handleUpload("cell", file, "cell_image")}
-      />
       <section className="editor-workspace" aria-labelledby="create-title">
         <div className="editor-toolbar">
           <div>
@@ -802,7 +793,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/avif"
-              hidden
+              className="sr-only"
               disabled={uploading !== null}
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -861,6 +852,15 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           {error || message}
         </p>
       </section>
+      <CellInspector
+        state={state}
+        dispatch={dispatch}
+        uploadPending={uploading !== null}
+        uploadPhase={uploading === "cell" ? uploadPhase : undefined}
+        onCancelUpload={cancelUpload}
+        uploadFeedback={cellUploadFeedback}
+        onImageSelected={(file) => void handleUpload("cell", file, "cell_image")}
+      />
     </main>
   );
 }

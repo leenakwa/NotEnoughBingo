@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
@@ -190,6 +190,33 @@ describe("BingoPlayer", () => {
     ]);
     expect(mocks.getViewer).not.toHaveBeenCalled();
     window.localStorage.clear();
+  });
+
+  it("waits for initial progress before allowing the first mark", async () => {
+    let finish!: (value: PlayProgress) => void;
+    mocks.getProgress.mockImplementationOnce(
+      () =>
+        new Promise<PlayProgress>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    expect(cell).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Share result" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Like · 0" })).toBeDisabled();
+    expect(screen.getByText("Loading your progress…")).toBeVisible();
+    cell.click();
+    await waitFor(() => expect(mocks.getProgress).toHaveBeenCalled());
+    await act(async () => {
+      finish(progress);
+    });
+    expect(cell).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Like · 0" })).toBeEnabled();
+    await act(async () => {
+      cell.click();
+    });
+    expect(cell).toHaveAttribute("aria-pressed", "true");
   });
 
   it("restores selected cells when a registered reset fails offline", async () => {

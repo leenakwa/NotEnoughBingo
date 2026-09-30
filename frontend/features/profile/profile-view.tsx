@@ -10,6 +10,7 @@ import { AccountSettings } from "@/features/profile/account-settings";
 import { ProfileCollections } from "@/features/profile/profile-collections";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { notifyAuthChanged } from "@/lib/auth-events";
+import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
 import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import type { AuthenticatedUser, UserPrivacySettings, UserProfile } from "@/lib/api/types";
 
@@ -35,6 +36,7 @@ export function ProfileView({
   const [usernameValue, setUsernameValue] = useState(initialProfile?.username ?? "");
   const [bio, setBio] = useState(initialProfile?.bio ?? "");
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
+  const [savedPreferredLanguages, setSavedPreferredLanguages] = useState<string[]>([]);
   const [loading, setLoading] = useState(!initialProfile);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -44,6 +46,17 @@ export function ProfileView({
   const [authRequired, setAuthRequired] = useState(false);
   const [loadVersion, setLoadVersion] = useState(0);
   const initialProfileConsumed = useRef(false);
+
+  useUnsavedChangesWarning(
+    ownProfile &&
+      !loading &&
+      Boolean(profile) &&
+      (displayName !== profile?.display_name ||
+        usernameValue !== profile?.username ||
+        bio !== profile?.bio ||
+        [...preferredLanguages].sort().join(",") !== [...savedPreferredLanguages].sort().join(",")),
+    "Your profile changes have not been saved. Leave anyway?",
+  );
 
   useEffect(() => {
     if (!initialProfileConsumed.current && loadVersion === 0 && initialProfile) {
@@ -68,6 +81,7 @@ export function ProfileView({
           Array.isArray(value.preferred_languages)
         ) {
           setPreferredLanguages(value.preferred_languages);
+          setSavedPreferredLanguages(value.preferred_languages);
         }
       })
       .catch((caught) => {
@@ -113,6 +127,8 @@ export function ProfileView({
       });
       setProfile(updated);
       setUsernameValue(updated.username);
+      setDisplayName(updated.display_name);
+      setBio(updated.bio);
       notifyAuthChanged();
       setMessage("Profile saved.");
     } catch (caught) {
@@ -147,6 +163,7 @@ export function ProfileView({
     try {
       const updated = await api.profiles.update({ preferred_languages: preferredLanguages });
       setProfile(updated);
+      setSavedPreferredLanguages(preferredLanguages);
       setMessage("Bingo languages saved.");
     } catch (caught) {
       setError(errorMessage(caught));
@@ -220,7 +237,7 @@ export function ProfileView({
         />
         <div>
           <p className="eyebrow">@{profile.username}</p>
-          <h1>{profile.display_name}</h1>
+          <h1>{profile.display_name || profile.username}</h1>
           {profile.bio ? <p>{profile.bio}</p> : null}
           <p className="profile-counts">
             <span>

@@ -1120,16 +1120,12 @@ export interface components {
             readonly status: string;
         };
         /**
-         * @description * `hide` - Hide content
-         *     * `restore` - Restore content
-         *     * `soft_delete` - Soft delete content
-         *     * `suspend_user` - Suspend user
-         *     * `unsuspend_user` - Unsuspend user
-         *     * `dismiss` - Dismiss report
-         *     * `resolve_no_action` - Resolve without action
+         * @description * `create` - create
+         *     * `register` - register
+         *     * `login` - login
          * @enum {string}
          */
-        ActionEnum: "hide" | "restore" | "soft_delete" | "suspend_user" | "unsuspend_user" | "dismiss" | "resolve_no_action";
+        AnalyticsActionEnum: "create" | "register" | "login";
         ApiErrorDetail: {
             readonly code: string;
             readonly message: string;
@@ -1503,9 +1499,11 @@ export interface components {
          *     * `follow` - Follow
          *     * `search` - Search
          *     * `tag_interaction` - Tag interaction
+         *     * `page_view` - Page view
+         *     * `cta` - Primary action
          * @enum {string}
          */
-        EventTypeEnum: "impression" | "view" | "open" | "like" | "unlike" | "start" | "complete" | "reset" | "share" | "comment" | "follow" | "search" | "tag_interaction";
+        EventTypeEnum: "impression" | "view" | "open" | "like" | "unlike" | "start" | "complete" | "reset" | "share" | "comment" | "follow" | "search" | "tag_interaction" | "page_view" | "cta";
         ExportJob: {
             /** Format: uuid */
             readonly id: string;
@@ -1580,6 +1578,7 @@ export interface components {
         };
         InteractionMetadataRequest: {
             surface?: components["schemas"]["SurfaceEnum"];
+            action?: components["schemas"]["AnalyticsActionEnum"];
             author?: string;
             tags?: string;
             ordering?: components["schemas"]["OrderingEnum"] | components["schemas"]["BlankEnum"];
@@ -1669,7 +1668,7 @@ export interface components {
             /** Format: uuid */
             readonly public_id: string;
             moderator: string;
-            action: components["schemas"]["ActionEnum"];
+            action: components["schemas"]["ModerationActionEnum"];
             target_type: components["schemas"]["TargetTypeEnum"];
             target_public_id: string;
             reason: string;
@@ -1679,8 +1678,19 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
         };
+        /**
+         * @description * `hide` - Hide content
+         *     * `restore` - Restore content
+         *     * `soft_delete` - Soft delete content
+         *     * `suspend_user` - Suspend user
+         *     * `unsuspend_user` - Unsuspend user
+         *     * `dismiss` - Dismiss report
+         *     * `resolve_no_action` - Resolve without action
+         * @enum {string}
+         */
+        ModerationActionEnum: "hide" | "restore" | "soft_delete" | "suspend_user" | "unsuspend_user" | "dismiss" | "resolve_no_action";
         ModerationActionRequestRequest: {
-            action: components["schemas"]["ActionEnum"];
+            action: components["schemas"]["ModerationActionEnum"];
             reason: string;
         };
         Notification: {
@@ -2140,9 +2150,14 @@ export interface components {
          *     * `profile` - profile
          *     * `share` - share
          *     * `direct` - direct
+         *     * `create` - create
+         *     * `register` - register
+         *     * `login` - login
+         *     * `settings` - settings
+         *     * `notifications` - notifications
          * @enum {string}
          */
-        SurfaceEnum: "discover" | "trending" | "explore" | "profile" | "share" | "direct";
+        SurfaceEnum: "discover" | "trending" | "explore" | "profile" | "share" | "direct" | "create" | "register" | "login" | "settings" | "notifications";
         Tag: {
             /** Format: uuid */
             readonly id: string;

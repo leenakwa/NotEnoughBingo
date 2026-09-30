@@ -153,6 +153,31 @@ describe("API error presentation", () => {
     });
   });
 
+  it.each([
+    [400, "Please check the fields and try again."],
+    [401, "Log in to continue."],
+    [403, "You do not have permission to perform this action."],
+    [404, "This item is unavailable or no longer exists."],
+    [409, "This item changed. Refresh it before trying again."],
+    [413, "The upload is too large. Choose a smaller file and try again."],
+    [422, "Please check the fields and try again."],
+    [500, "The service is temporarily unavailable."],
+    [503, "The service is temporarily unavailable."],
+  ])("presents HTTP %s gateway failures without exposing HTML", async (status, message) => {
+    const readRawBody = vi.fn().mockResolvedValue("<html>internal framework detail</html>");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status,
+        headers: new Headers({ "content-type": "text/html" }),
+        text: readRawBody,
+      }),
+    );
+    await expect(api.auth.me()).rejects.toMatchObject({ status, message });
+    expect(readRawBody).not.toHaveBeenCalled();
+  });
+
   it("does not expose missing-authentication API errors in the interface", () => {
     const error = new ApiClientError(403, {
       code: "not_authenticated",

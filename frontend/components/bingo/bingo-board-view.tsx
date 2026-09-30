@@ -20,12 +20,14 @@ export function BingoBoardView({
   selected,
   completionStyle,
   readOnly,
+  disabled = false,
   onToggle,
 }: {
   revision: BingoRevision;
   selected: Set<string>;
   completionStyle: PlayMarkStyle;
   readOnly: boolean;
+  disabled?: boolean;
   onToggle?: (key: string) => void;
 }) {
   const cells = [...revision.cells].sort(
@@ -104,6 +106,7 @@ export function BingoBoardView({
           aria-label={`${revision.title}, ${revision.size} by ${revision.size} bingo board`}
           aria-describedby={boardHelpId}
           aria-readonly={readOnly}
+          aria-busy={disabled}
           data-completion-style={completionStyle}
         >
           {rows.map((row) => (
@@ -126,6 +129,7 @@ export function BingoBoardView({
                   >
                     <button
                       type="button"
+                      disabled={disabled}
                       lang={
                         cell.text || imageDescription ? revision.language || undefined : undefined
                       }

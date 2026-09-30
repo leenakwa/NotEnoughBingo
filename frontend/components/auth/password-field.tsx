@@ -9,6 +9,8 @@ export function PasswordField({
   autoComplete,
   minLength,
   hint,
+  name,
+  error,
 }: {
   label: string;
   value: string;
@@ -16,6 +18,8 @@ export function PasswordField({
   autoComplete: "current-password" | "new-password";
   minLength?: number;
   hint?: string;
+  name?: string;
+  error?: string;
 }) {
   const id = useId();
   const [visible, setVisible] = useState(false);
@@ -28,11 +32,16 @@ export function PasswordField({
       <div className="password-field__control">
         <input
           id={id}
+          name={name}
           type={visible ? "text" : "password"}
           autoComplete={autoComplete}
           required
           minLength={minLength}
-          aria-describedby={hint ? `${id}-hint` : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={
+            [hint ? `${id}-hint` : "", error ? `${id}-error` : ""].filter(Boolean).join(" ") ||
+            undefined
+          }
           value={value}
           onChange={onChange}
         />
@@ -46,6 +55,11 @@ export function PasswordField({
         </button>
       </div>
       {hint ? <small id={`${id}-hint`}>{hint}</small> : null}
+      {error ? (
+        <small id={`${id}-error`} className="form-message--error" role="alert">
+          {error}
+        </small>
+      ) : null}
     </div>
   );
 }

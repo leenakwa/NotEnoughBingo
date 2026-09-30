@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **34 verified**, **64 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **48 verified**, **50 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -53,10 +53,10 @@ unresolved failures or missing evidence.
 - [ ] 3. NAVIGATION — Partial: Discover → Explore and Discover → Create plus Back verified; continue Forward, deep links, and menus.
 - [ ] 4. UI STATES — Partial: first load, loaded/empty/error, offline/retry, authorization, and expired-session journeys were observed in representative routes; partial-data behavior and a component-by-component sweep remain.
 - [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, and completion feedback were exercised; duplicate submission coverage, layout stability, and byte-level large-upload progress still need an itemized sweep. Skeletons are not used in this release.
-- [ ] 6. ERROR HANDLING — Partial: local evidence recorded; review remaining original bullets.
+- [x] 6. ERROR HANDLING — Verified before deployment: relevant 400/401/403/404/409/413/422/429/500 and gateway/network/timeout cases have safe human-readable feedback, retained work and appropriate retry; proxy HTML and parser/exception internals stay out of the interface.
 - [ ] 7. FORMS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 8. BUTTONS AND CONTROLS — Partial: semantic button/link markup, focus and disabled states, destructive styling/confirmation, and 44px editor touch targets at 320/1710px were checked; hover/active/loading states and form ownership need the remaining per-control sweep.
-- [ ] 9. DESTRUCTIVE ACTIONS — Partial: account deletion schedule/cancel/worker, bingo deletion and old-link 404, guest/server progress reset, confirmations, authorization, repeat safety, and Back behavior were exercised. Member/integration removal is N/A; decide whether creator-owned deleted bingos need user-facing recovery before closing the Undo item.
+- [x] 9. DESTRUCTIVE ACTIONS — Verified before deployment: confirmed permanent Delete/Reset, authorization and repeat safety, account-deletion cancellation, and live Archive/Restore with guest 404/200 and reload persistence; permanent actions do not promise undo.
 - [x] 10. SIGNUP — Verified before deployment: browser validation, password visibility and Enter, Mailpit verification and resend, duplicate and weak-password API behavior, expired and reused links.
 - [x] 11. LOGIN — Verified before deployment: valid/invalid credentials, rate limit, safe return navigation, signed-in redirect, and session-error fallback.
 - [x] 12. PASSWORD RESET — Verified before deployment: Mailpit delivery, configured HTTPS link, TTL, one-time use, credential change, and session revocation.
@@ -71,7 +71,7 @@ unresolved failures or missing evidence.
 - [ ] 21. RESPONSIVE DESIGN — Partial: 320–2560 px board/editor gate, mobile WebKit, landscape/short-height inspector, and simulated keyboard-sized modal passed; real address-bar, keyboard, and iPhone safe-area behavior still need device evidence.
 - [x] 22. TOUCH UX — Verified before deployment: 44 px mobile touch targets, tap navigation/language/play/editor actions, optional drag alternatives, and no hover/tooltip-only critical controls.
 - [x] 23. KEYBOARD UX — Verified before deployment: navigation, Enter/Space/Escape, visible focus, and cross-browser report-dialog focus trap/return.
-- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy, discretionary ARIA, actual 200% zoom, and UI contrast remain.
+- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy now passes; discretionary ARIA, actual 200% zoom, and UI contrast remain.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: placeholder inventory and product/auth names checked; legal operator copy and broader error-message exposure remain.
 - [x] 26. LONG-CONTENT TORTURE TEST — Verified before deployment: account/title limits, 254-character email, long URL/multilingual comment, profile/card/cell wrapping, and 320/1710 px layout.
 - [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.
@@ -82,7 +82,7 @@ unresolved failures or missing evidence.
 - [x] 32. OFFLINE / BAD NETWORK — Verified before deployment: offline draft recovery, slow-search loading, finite API/upload deadlines, actionable failures, retry/cancel, and progress-reset rollback with recovery.
 - [ ] 33. BROWSER COMPATIBILITY — Partial: installed Chrome and Safari, Playwright Firefox, WebKit, and mobile emulation cover core flows; actual Edge and iOS/Android browser devices remain unverified.
 - [ ] 34. PERFORMANCE — Partial: production bundles, request counts, N+1, gzip, cache policy, image/font assets, and layout shifts reviewed; target CDN choice and real-network/load budgets remain open.
-- [x] 35. FONTS — Verified before deployment: no external font files or loading/404 path by design; system stacks include fallbacks and standard weights, and multilingual content remains visible at narrow/wide widths.
+- [x] 35. FONTS — Verified before deployment: UI uses system stacks; the worker ships Pango/Noto fallback and shaping for all 15 content languages plus emoji. Real PNG/PDF downloads were visually checked, with zero missing glyphs in native layout diagnostics and no line truncation.
 - [ ] 36. SEO FOR PUBLIC PAGES — Partial: production-mode metadata, sitemap, robots, staging noindex, and slash redirects verified; heading hierarchy, URL policy, sitemap scale, and real HTTPS host remain.
 - [ ] 37. SOCIAL SHARING — Partial: real HTML now emits absolute branded 1200×630 OG/Twitter images for catalog, bingo, profile, and shared result; external service previews and the final domain remain.
 - [ ] 38. DOMAIN AND DNS — Partial: public smoke script is prepared; the actual domain, records, and propagation need target-environment evidence.
@@ -90,7 +90,7 @@ unresolved failures or missing evidence.
 - [ ] 40. ENVIRONMENT VARIABLES — Partial: frontend image build/runtime origin contract, Django production origin consistency, and local-env isolation verified; real DB, storage, email, monitoring, and public origin values remain.
 - [x] 41. SECRETS — Verified before deployment: complete-history Gitleaks, tracked-path and ignore rules, Docker build contexts, and client-bundle marker scan found no real secret; OAuth is absent.
 - [ ] 42. DATABASE — Partial: fresh and existing-data migrations, author/publication preservation, and isolated QA dump restore passed; managed backups, schema/index audit, scale, and release rollback drill remain.
-- [ ] 43. DATA INTEGRITY — Partial: local evidence recorded; review remaining original bullets.
+- [x] 43. DATA INTEGRITY — Verified before deployment: PostgreSQL concurrent likes/follows, versioned editor/progress conflicts, idempotent draft/publication/export/session/report/notification calls, soft-delete threads, reference-aware media and abandoned-job recovery passed; webhook duplication is N/A.
 - [ ] 44. BACKUPS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 45. EMAILS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 46. NOTIFICATIONS — Partial: local evidence recorded; review remaining original bullets.
@@ -102,37 +102,37 @@ unresolved failures or missing evidence.
 - [ ] 52. BASIC SECURITY ABUSE TESTS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 53. RATE LIMITING — Partial: local evidence recorded; review remaining original bullets.
 - — 54. AI/LLM FEATURES — N/A for current release: capability absent in source inventory.
-- [ ] 55. PRIVACY — Partial: collection/analytics disclosures, account export and scheduled deletion, and query-free application logging were reviewed and exercised. Final policy/terms, consent obligations, recovery-link URL handling, password/token behavior across target telemetry, and actual third-party processor inventory still require review against the chosen operator, jurisdiction, and production providers.
-- [ ] 56. ACCOUNT SETTINGS — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 55. PRIVACY — Partial: collection/analytics disclosures, account export and scheduled deletion, and query-free application logging were reviewed and exercised. Final policy/terms, consent obligations, historical recovery links and token behavior across target telemetry, and actual third-party processor inventory still require review against the chosen operator, jurisdiction, and production providers.
+- [x] 56. ACCOUNT SETTINGS — Verified before deployment: names, email change/reverification, settings password change/recovery, logout/session revocation, deletion/cancel/anonymization, avatar upload/remove/reload, and language/privacy/notification persistence; separate timezone and logout-all controls are absent.
 - — 57. TEAMS / ORGANIZATIONS — N/A for current release: capability absent in source inventory.
-- [ ] 58. BROWSER STORAGE — Partial: local evidence recorded; review remaining original bullets.
+- [x] 58. BROWSER STORAGE — Verified before deployment: version/revision and owner checks, corrupt/stale/unavailable storage, non-persistent browser contexts, and real two-tab logout followed by a different account passed; no credential is stored in browser storage.
 - [ ] 59. CACHE — Partial: dynamic HTML/API no-store policy, immutable hashed assets, no service worker, and logout isolation checked; version-swap and CDN invalidation require a target release path.
-- [ ] 60. SERVICE WORKER / PWA — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 61. ANALYTICS — Partial: play completion and other core interactions are recorded without free-text search/filter values after a client/server privacy fix and backfill; landing/signup/login/CTA events, an operator funnel, and target-environment isolation remain.
-- [ ] 62. PRODUCT METRICS — Partial: registration counts and core board/play actions are queryable from first-party records; unique visitor arrivals, activation/return cohort definitions, and drop-off measurement need an explicit funnel implementation.
-- [ ] 63. ERROR TRACKING — Partial: Django can send errors to Sentry with environment/release metadata and default PII disabled; no production DSN, capture proof, frontend/unhandled-promise integration, or private source-map upload exists yet. API failures have structured server logs but no verified alerting pipeline.
-- [ ] 64. LOGGING — Partial: structured request/task logs expose timestamp, severity, route, request ID, failure fields, and bounded context; review third-party/exception text for sensitive values before closing.
+- [x] 60. SERVICE WORKER / PWA — Verified before deployment: no PWA/manifest/worker/install capability in source; live browser had zero service workers and CacheStorage entries. Conditional PWA bullets are N/A; there is no previously deployed origin.
+- [ ] 61. ANALYTICS — Partial: play completion and other core interactions are recorded without free-text search/filter values after a client/server privacy fix and backfill; categorical page/CTA and server signup/login counts plus a mature activation/return report are now implemented; exact guest-to-signup conversion, target isolation and real observations remain.
+- [ ] 62. PRODUCT METRICS — Partial: registration counts and core board/play actions are queryable from first-party records; the read-only cohort report measures estimated arrivals, mature signup-to-activation/return and their drop-offs; exact guest conversion and real production data remain unavailable.
+- [ ] 63. ERROR TRACKING — Partial: Django can send errors to Sentry with environment/release metadata and default PII disabled; installed-SDK in-memory delivery proves local filtering, but no production DSN, frontend/unhandled-promise integration, or private source-map upload exists yet. API failures have structured server logs but no verified alerting pipeline.
+- [x] 64. LOGGING — Verified before deployment: application/Celery/Gunicorn use projected safe JSON, normalized route templates and exception locations without arbitrary messages/bodies/args; SDK and proxy fault probes exclude marked values. Target edge/provider policies remain rollout inputs.
 - [ ] 65. MONITORING — Partial: QA proves proxy/frontend, API/DB/cache readiness, and Beat heartbeat endpoints; Docker healthchecks cover processes. External uptime, queue/worker, capacity, error-rate, and latency monitors need a production host and provider.
 - [ ] 66. ALERTS — Partial: the runbook defines pages for availability, errors, database, worker, backup, and capacity, but no destination or delivered alert is configured. Payment webhook failure is N/A; email and object-storage dependency alerts still need a real provider.
 - [ ] 67. HEALTH ENDPOINT — Partial: live, readiness, database, migration, cache, and Beat checks respond on QA without secrets; target storage/email and external monitor coverage remain.
-- [ ] 68. CRON / SCHEDULED JOBS — Partial: UTC schedule and QA Beat heartbeat observed; structured task retry/failure logging is configured. Production singleton, overlap, and alerts still need a target platform.
-- [ ] 69. QUEUES / WORKERS — Partial: QA worker/Redis healthy on a durable default queue; media/export retries and duplicate guards exist, and trending work is bounded; production queue durability, dead-letter policy, and outage behavior remain.
-- [ ] 70. PRODUCTION BUILD — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 68. CRON / SCHEDULED JOBS — Partial: UTC schedule and QA Beat heartbeat observed; structured task retry/failure logging is configured. PostgreSQL advisory locks and bounded retries now prove local overlap/duplicate safety; the actual singleton deployment and alerts need a target platform.
+- [ ] 69. QUEUES / WORKERS — Partial: QA worker/Redis healthy on a durable default queue; media/export retries and duplicate guards exist, and trending work is bounded; local Redis/worker restart replay, stalled-claim recovery and terminal storage failures passed; the actual production queue/platform and delivered alerts remain.
+- [x] 70. PRODUCTION BUILD — Verified before deployment: current optimized Next build/start, SSR/static routes, dynamic route assets and browser console passed on the production candidate; actual domain/provider values remain rollout inputs.
 - [ ] 71. DEPENDENCIES — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 73. TESTS — Partial: local evidence recorded; review remaining original bullets.
+- [x] 73. TESTS — Verified before deployment: 169 PostgreSQL tests plus 126 frontend tests and 52 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
-- [ ] 75. BROWSER CONSOLE — Partial: local evidence recorded; review remaining original bullets.
+- [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 77. HTTP STATUS CODES — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 78. REDIRECTS — Partial: login/logout, root, and trailing-slash redirects work with preserved query and no loop; public HTTP→HTTPS, host alias, and legacy URL policy need a domain.
-- [ ] 79. STATIC ASSETS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 80. PUBLIC FILE EXPOSURE — Partial: local evidence recorded; review remaining original bullets.
+- [x] 79. STATIC ASSETS — Verified before deployment: production candidate icon/social/static assets, normalized images, protected ZIP downloads, branding and case-sensitive routing were observed; external fonts, PWA manifest and standalone static documents are absent.
+- [x] 80. PUBLIC FILE EXPOSURE — Verified before deployment: current production server returned 404 for environment/Git, SQL backup, SQLite, private key, log and internal Next server probes; release image/context guards exclude sensitive files. Target edge/bucket smoke remains a rollout gate.
 - [x] 81. SOURCE MAPS — Verified before deployment: private map policy, production-image file inspection, HTTP probes, and CI guard.
 - [ ] 82. API READINESS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 83. CORS — Partial: QA preflight allows its configured origin with credentials and denies an outside origin; production rejects wildcard, HTTP, and local CSRF/CORS origins; staging target remains unspecified.
-- [ ] 84. FEATURE FLAGS — Partial: production builds suppress the development Agentation UI, production Django rejects debug mode, and no remote-flag service or client-query debug switch exists. Complete the broader unfinished-feature inventory before this section passes; remote-flag fallback is N/A for this release.
-- [ ] 85. DEBUG ARTIFACTS — Partial: local evidence recorded; review remaining original bullets.
+- [x] 84. FEATURE FLAGS — Verified before deployment: complete runtime feature inventory, development-only Agentation, production debug/seed rejection and server staff permissions; remote flags are absent and no unfinished feature CTA is exposed.
+- [x] 85. DEBUG ARTIFACTS — Verified before deployment: runtime source and production build reviewed for console/debug/TODO/mock/fake-auth/seed/credential artifacts; retained local defaults are guarded development/configuration values rejected by production checks.
 - [ ] 86. TEST / DEMO ACCOUNTS — Partial: deterministic `.test` fixtures and elevated E2E moderator cannot be created by the seed command under production settings; verify the target database has none and is isolated from staging. Payments are absent.
 - [ ] 87. ADMIN PANEL — Partial: Django staff permissions, moderation audit, search/pagination, hard-delete guards, and confirmation for bounded moderation actions verified; external staff gateway remains.
 - [ ] 88. SUPPORT — Partial: local evidence recorded; review remaining original bullets.

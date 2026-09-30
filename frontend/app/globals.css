@@ -977,6 +977,16 @@ h3 {
   grid-template-columns: 260px minmax(0, 760px);
 }
 
+.editor-layout.has-inspector > .editor-workspace {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.editor-layout.has-inspector > .cell-inspector {
+  grid-column: 1;
+  grid-row: 1;
+}
+
 .editor-workspace {
   min-width: 0;
 }
@@ -1051,8 +1061,13 @@ h3 {
   margin-bottom: 14px;
 }
 
-.upload-button input {
-  display: none;
+.upload-button {
+  position: relative;
+}
+
+.upload-button:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .board-scroll-region {

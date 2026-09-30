@@ -35,6 +35,8 @@ Provide secrets from a secret manager and configure at least:
   `CSRF_TRUSTED_ORIGINS`, and `FRONTEND_URL`;
 - managed `DATABASE_URL`, `REDIS_URL`, Celery broker/result URLs, and a shared
   Redis cache backend;
+- direct/session-pooled PostgreSQL connections for Celery maintenance workers;
+  their advisory overlap locks do not work through transaction pooling;
 - private S3 credentials, bucket, region, endpoint, and HTTPS browser endpoint
   when a private signing endpoint is set;
 - transactional SMTP host/credentials with TLS, verified

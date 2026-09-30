@@ -1,44 +1,101 @@
 from __future__ import annotations
 
 import io
-import textwrap
+import os
+import subprocess
+import tempfile
+from html import escape
+from pathlib import Path
 
 from django.core.files.storage import default_storage
-from PIL import Image, ImageColor, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageColor, ImageDraw, ImageOps
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-from apps.bingos.models import BingoCell, BingoRevision
+from apps.bingos.models import BingoRevision
 
 BOARD_PIXELS = 1800
 BOARD_PADDING = 20
 
 
-def _font(cell: BingoCell, size: int):
-    name = "DejaVuSans"
-    if cell.bold and cell.italic:
-        name += "-BoldOblique"
-    elif cell.bold:
-        name += "-Bold"
-    elif cell.italic:
-        name += "-Oblique"
-    try:
-        return ImageFont.truetype(f"{name}.ttf", size=size)
-    except OSError:
-        return ImageFont.load_default(size=max(10, size))
+def _render_text(
+    text: str,
+    *,
+    width: int,
+    height: int,
+    font_size: int,
+    color: str = "#000000",
+    bold: bool = False,
+    italic: bool = False,
+    underline: bool = False,
+    strikethrough: bool = False,
+    align: str = "center",
+) -> Image.Image:
+    # Pango supplies font fallback, bidi ordering and complex-script shaping.
+    # Plain user text must never be interpreted as markup or shell syntax.
+    text = "".join(char for char in text if ord(char) >= 32 or char in "\n\t")
+    markup = escape(text, quote=False)
+    if underline:
+        markup = f"<u>{markup}</u>"
+    if strikethrough:
+        markup = f"<s>{markup}</s>"
+    style = "Sans" + (" Bold" if bold else "") + (" Italic" if italic else "")
+    with tempfile.TemporaryDirectory(prefix="bingo-text-") as directory:
+        source = Path(directory) / "text.txt"
+        output = Path(directory) / "text.png"
+        source.write_text(markup, encoding="utf-8")
+        while True:
+            try:
+                subprocess.run(  # noqa: S603 — fixed executable, no shell; text is in a file.
+                    [
+                        "/usr/bin/pango-view",
+                        "--no-display",
+                        "--pixels",
+                        "--markup",
+                        f"--font={style} {font_size}",
+                        f"--width={width}",
+                        "--wrap=word-char",
+                        f"--align={align}",
+                        "--margin=0",
+                        "--background=transparent",
+                        f"--foreground={color}",
+                        f"--output={output}",
+                        str(source),
+                    ],
+                    check=True,
+                    timeout=10,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    env={**os.environ, "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"},
+                )
+            except (subprocess.SubprocessError, OSError):
+                # Do not expose subprocess arguments, file contents or native diagnostics.
+                raise RuntimeError("text_rendering_unavailable") from None
+            with Image.open(output) as rendered:
+                image = rendered.convert("RGBA")
+            if image.height <= height or font_size == 1:
+                break
+            font_size = max(1, min(font_size - 1, int(font_size * height / image.height)))
+    # Preserve all text, even pathological inputs with many explicit line breaks.
+    if image.width > width or image.height > height:
+        image.thumbnail((width, height), Image.Resampling.LANCZOS)
+    return image
 
 
 def _open_asset(asset, size: tuple[int, int]) -> Image.Image | None:
-    if not asset or not asset.is_ready or not default_storage.exists(asset.storage_key):
+    if not asset or not asset.is_ready:
         return None
+    if not default_storage.exists(asset.storage_key):
+        raise OSError("export_image_unavailable")
     try:
         with default_storage.open(asset.storage_key, "rb") as source:
             with Image.open(source) as image:
                 image.load()
                 return ImageOps.fit(ImageOps.exif_transpose(image).convert("RGBA"), size)
     except (OSError, ValueError):
-        return None
+        # Never deliver an apparently successful export with a missing image.
+        raise OSError("export_image_unavailable") from None
 
 
 def _draw_border(
@@ -112,35 +169,25 @@ def render_revision_png(revision: BingoRevision) -> bytes:
         )
         if cell.text:
             font_size = max(16, min(52, cell_size // 6))
-            font = _font(cell, font_size)
-            max_chars = max(4, int(cell_size / max(8, font_size * 0.55)))
-            lines = textwrap.wrap(
+            inset = max(12, cell.border_width + 6)
+            text_image = _render_text(
                 cell.text,
-                width=max_chars,
-                break_long_words=True,
-                replace_whitespace=False,
-            )[:6]
-            line_boxes = [draw.textbbox((0, 0), line, font=font) for line in lines]
-            line_height = max((box[3] - box[1] for box in line_boxes), default=font_size)
-            total_height = line_height * len(lines) + max(0, len(lines) - 1) * 4
-            y = top + (cell_size - total_height) / 2
-            for line, box in zip(lines, line_boxes, strict=False):
-                line_width = box[2] - box[0]
-                x = left + (cell_size - line_width) / 2
-                draw.text((x, y), line, font=font, fill=cell.text_color)
-                if cell.underline:
-                    draw.line(
-                        (x, y + line_height + 1, x + line_width, y + line_height + 1),
-                        fill=cell.text_color,
-                        width=max(1, font_size // 14),
-                    )
-                if cell.strikethrough:
-                    draw.line(
-                        (x, y + line_height / 2, x + line_width, y + line_height / 2),
-                        fill=cell.text_color,
-                        width=max(1, font_size // 14),
-                    )
-                y += line_height + 4
+                width=cell_size - inset * 2,
+                height=cell_size - inset * 2,
+                font_size=font_size,
+                color=cell.text_color,
+                bold=cell.bold,
+                italic=cell.italic,
+                underline=cell.underline,
+                strikethrough=cell.strikethrough,
+            )
+            board.alpha_composite(
+                text_image,
+                (
+                    left + (cell_size - text_image.width) // 2,
+                    top + (cell_size - text_image.height) // 2,
+                ),
+            )
     output = io.BytesIO()
     board.convert("RGB").save(output, format="PNG", optimize=True)
     return output.getvalue()
@@ -152,12 +199,26 @@ def render_revision_pdf(revision: BingoRevision) -> bytes:
     pdf = canvas.Canvas(output, pagesize=A4, pageCompression=1)
     page_width, page_height = A4
     margin = 36
-    title_height = 36
+    title = _render_text(
+        revision.title,
+        width=round((page_width - margin * 2) * 3),
+        height=108,
+        font_size=48,
+        bold=True,
+        align="left",
+    )
+    title_height = title.height / 3 + 14
     available = min(page_width - margin * 2, page_height - margin * 2 - title_height)
     pdf.setTitle(revision.title)
     pdf.setAuthor(revision.published_by.username)
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(margin, page_height - margin, revision.title[:100])
+    pdf.drawImage(
+        ImageReader(title),
+        margin,
+        page_height - margin - title.height / 3,
+        width=title.width / 3,
+        height=title.height / 3,
+        mask="auto",
+    )
     pdf.drawImage(
         ImageReader(io.BytesIO(png)),
         margin,

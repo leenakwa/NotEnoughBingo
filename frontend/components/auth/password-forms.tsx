@@ -77,6 +77,7 @@ export function ResetPasswordForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending || message) return;
     if (!uid || !token) {
       setError("This reset link is incomplete.");
       return;
@@ -90,6 +91,8 @@ export function ResetPasswordForm() {
         new_password: password,
       });
       setMessage("Password changed. You can now log in.");
+      setPassword("");
+      window.history.replaceState(null, "", window.location.pathname);
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {

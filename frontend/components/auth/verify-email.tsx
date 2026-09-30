@@ -26,6 +26,7 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
       .then(() => {
         if (mode === "email-change") notifyAuthChanged();
         setState("verified");
+        window.history.replaceState(null, "", window.location.pathname);
         setMessage(
           mode === "email-change"
             ? "Your new email address is confirmed. Use it the next time you log in."

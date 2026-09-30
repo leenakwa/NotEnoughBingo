@@ -35,9 +35,11 @@ export default function PrivacyPage() {
             agent summaries, timestamps, delivery outcomes, and redacted application logs.
           </li>
           <li>
-            Product interactions such as views, opens, starts, completions, shares, likes, and
-            searches. A random browser identifier is stored locally for guests; the server stores
-            only its one-way hash, not the raw identifier.
+            Product interactions such as page visits, primary navigation actions, board views,
+            opens, starts, completions, shares, likes, and searches. Page visits record a page
+            category, without URLs, query strings, names, or form values. A random browser
+            identifier is stored locally for guests; the server stores only its one-way hash, not
+            the raw identifier. Aggregate reports measure feature use and return visits.
           </li>
         </ul>
       </section>

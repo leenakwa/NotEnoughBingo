@@ -31,6 +31,13 @@ RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
 
 FROM builder AS development
 
+# Use the same multilingual text renderer and fonts as the production worker.
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+       pango1.0-tools fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \
+    && rm -rf /var/lib/apt/lists/*
+
 # Development tool versions are constrained centrally by pyproject.toml.
 # hadolint ignore=DL3013
 RUN python -m pip install --no-cache-dir ".[dev]"
@@ -46,7 +53,9 @@ FROM python-base AS production
 # Runtime libraries only; build tools never reach the production image.
 # hadolint ignore=DL3008
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y libjpeg62-turbo libpq5 zlib1g \
+    && apt-get install --no-install-recommends -y \
+       libjpeg62-turbo libpq5 zlib1g \
+       pango1.0-tools fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 10001 app
 
@@ -75,4 +84,4 @@ USER app
 
 EXPOSE 8000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--timeout", "60", "--graceful-timeout", "30", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--access-logfile", "-", "--error-logfile", "-"]
+CMD ["gunicorn", "config.wsgi:application", "--config", "python:config.gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--timeout", "60", "--graceful-timeout", "30", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--error-logfile", "-"]

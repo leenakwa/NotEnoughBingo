@@ -48,6 +48,7 @@ export function AccountSettings({
   const [emailFeedback, setEmailFeedback] = useState<{ error: boolean; text: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [deletionPassword, setDeletionPassword] = useState("");
   const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
   const [exportJob, setExportJob] = useState<ExportJob | null>(null);
@@ -55,7 +56,8 @@ export function AccountSettings({
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarUploadPhase, setAvatarUploadPhase] = useState<UploadPhase>("preparing");
   const avatarUploadController = useRef<AbortController | null>(null);
-  const deletionActionInFlight = useRef(false);
+  const actionInFlight = useRef(false);
+  const [feedbackAction, setFeedbackAction] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -94,18 +96,39 @@ export function AccountSettings({
   }
 
   function beginAction(action: string) {
+    if (actionInFlight.current) return false;
+    actionInFlight.current = true;
     setPending(action);
+    setFeedbackAction(action);
     setMessage("");
     setError("");
     setEmailFeedback(null);
+    return true;
+  }
+
+  function finishAction() {
+    actionInFlight.current = false;
+    setPending("");
+  }
+
+  function actionFeedback(action: string) {
+    if (!(feedbackAction === action || feedbackAction.startsWith(`${action}-`))) return null;
+    if (!error && !message) return null;
+    return (
+      <p
+        className={error ? "form-message form-message--error" : "form-message"}
+        role={error ? "alert" : "status"}
+      >
+        {error || message}
+      </p>
+    );
   }
 
   async function updateAvatar(file: File) {
-    if (pending) return;
+    if (pending || !beginAction("avatar")) return;
     const controller = new AbortController();
     avatarUploadController.current = controller;
     setAvatarUploading(true);
-    beginAction("avatar");
     setAvatarUploadPhase("preparing");
     try {
       const asset = await uploadImage(file, "avatar", {
@@ -125,13 +148,12 @@ export function AccountSettings({
     } finally {
       if (avatarUploadController.current === controller) avatarUploadController.current = null;
       setAvatarUploading(false);
-      setPending("");
+      finishAction();
     }
   }
 
   async function removeAvatar() {
-    if (pending) return;
-    beginAction("avatar");
+    if (pending || !beginAction("avatar")) return;
     try {
       const updated = await api.profiles.update({ avatar_id: null });
       onProfileChange(updated);
@@ -141,18 +163,24 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction();
     }
   }
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
+    if (pending || actionInFlight.current) return;
     if (newPassword !== confirmPassword) {
-      setError("The new passwords do not match.");
+      setError("");
+      setMessage("");
+      setConfirmPasswordError("The new passwords do not match.");
+      event.currentTarget
+        .querySelector<HTMLInputElement>('input[name="confirm-new-password"]')
+        ?.focus();
       return;
     }
-    beginAction("password");
+    setConfirmPasswordError("");
+    if (!beginAction("password")) return;
     try {
       await api.auth.changePassword({
         current_password: currentPassword,
@@ -166,14 +194,13 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction();
     }
   }
 
   async function requestEmailChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
-    beginAction("email");
+    if (pending || !beginAction("email")) return;
     try {
       await api.auth.requestEmailChange({
         current_password: emailChangePassword,
@@ -187,13 +214,12 @@ export function AccountSettings({
     } catch (caught) {
       setEmailFeedback({ error: true, text: errorMessage(caught) });
     } finally {
-      setPending("");
+      finishAction();
     }
   }
 
   async function revokeSession(session: SessionMetadata) {
-    if (pending) return;
-    beginAction(`session-${session.id}`);
+    if (pending || !beginAction(`session-${session.id}`)) return;
     try {
       await api.auth.revokeSession(session.id);
       if (session.current) {
@@ -217,15 +243,14 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction();
     }
   }
 
   async function updatePreference(key: keyof NotificationPreferences, value: boolean) {
-    if (!preferences || pending) return;
+    if (!preferences || pending || !beginAction(`preference-${key}`)) return;
     const previous = preferences;
     setPreferences({ ...preferences, [key]: value });
-    beginAction(`preference-${key}`);
     try {
       setPreferences(await api.profiles.updateNotificationPreferences({ [key]: value }));
       setMessage("Notification preferences saved.");
@@ -233,13 +258,12 @@ export function AccountSettings({
       setPreferences(previous);
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction();
     }
   }
 
   async function requestExport() {
-    if (pending) return;
-    beginAction("export");
+    if (pending || !beginAction("export")) return;
     try {
       const requested = await api.auth.requestAccountExport();
       let job = await api.exports.get(requested.job_id);
@@ -263,7 +287,7 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction();
     }
   }
 
@@ -271,13 +295,12 @@ export function AccountSettings({
     event.preventDefault();
     if (
       pending ||
-      deletionActionInFlight.current ||
+      actionInFlight.current ||
       !window.confirm("Schedule account deletion? You can cancel during the grace period.")
     ) {
       return;
     }
-    deletionActionInFlight.current = true;
-    beginAction("deletion");
+    if (!beginAction("deletion")) return;
     try {
       const scheduled = await api.auth.scheduleAccountDeletion(deletionPassword);
       clearAllEditorRecovery();
@@ -290,15 +313,12 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      deletionActionInFlight.current = false;
-      setPending("");
+      finishAction();
     }
   }
 
   async function cancelDeletion() {
-    if (pending || deletionActionInFlight.current) return;
-    deletionActionInFlight.current = true;
-    beginAction("deletion");
+    if (pending || !beginAction("deletion")) return;
     try {
       await api.auth.cancelAccountDeletion();
       setDeletionScheduledFor(null);
@@ -307,14 +327,12 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      deletionActionInFlight.current = false;
-      setPending("");
+      finishAction();
     }
   }
 
   async function logout() {
-    if (pending) return;
-    beginAction("logout");
+    if (pending || !beginAction("logout")) return;
     try {
       await api.auth.logout();
       clearAllEditorRecovery();
@@ -324,7 +342,7 @@ export function AccountSettings({
       router.refresh();
     } catch (caught) {
       setError(errorMessage(caught));
-      setPending("");
+      finishAction();
     }
   }
 
@@ -365,7 +383,7 @@ export function AccountSettings({
               {pending === "avatar" ? "Processing…" : "Upload avatar"}
               <input
                 type="file"
-                hidden
+                className="sr-only"
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 disabled={Boolean(pending)}
                 onChange={(event) => {
@@ -389,6 +407,7 @@ export function AccountSettings({
           {avatarUploading ? (
             <UploadStatus phase={avatarUploadPhase} onCancel={cancelAvatarUpload} />
           ) : null}
+          {actionFeedback("avatar")}
         </div>
 
         <div className="settings-card">
@@ -403,6 +422,7 @@ export function AccountSettings({
           >
             {pending === "logout" ? "Logging out…" : "Log out"}
           </button>
+          {actionFeedback("logout")}
         </div>
 
         <form className="settings-card" onSubmit={requestEmailChange}>
@@ -460,10 +480,15 @@ export function AccountSettings({
           />
           <PasswordField
             label="Confirm new password"
+            name="confirm-new-password"
             autoComplete="new-password"
             minLength={12}
             value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              setConfirmPasswordError("");
+            }}
+            error={confirmPasswordError}
           />
           <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
             {pending === "password" ? "Changing…" : "Change password"}
@@ -471,6 +496,7 @@ export function AccountSettings({
           <Link href="/forgot-password" className="text-button">
             Forgot your current password?
           </Link>
+          {actionFeedback("password")}
         </form>
 
         <div className="settings-card">
@@ -500,6 +526,7 @@ export function AccountSettings({
           ) : (
             <p>No active sessions were returned.</p>
           )}
+          {actionFeedback("session")}
         </div>
 
         <div className="settings-card">
@@ -519,6 +546,7 @@ export function AccountSettings({
               </label>
             ))}
           </div>
+          {actionFeedback("preference")}
         </div>
 
         <div className="settings-card">
@@ -538,6 +566,7 @@ export function AccountSettings({
               {pending === "export" ? "Preparing export…" : "Request data export"}
             </button>
           )}
+          {actionFeedback("export")}
         </div>
 
         <form className="settings-card settings-card--danger" onSubmit={scheduleDeletion}>
@@ -576,15 +605,9 @@ export function AccountSettings({
               </button>
             </>
           )}
+          {actionFeedback("deletion")}
         </form>
       </div>
-
-      <p
-        className={error ? "form-message form-message--error" : "form-message"}
-        role={error ? "alert" : "status"}
-      >
-        {error || message}
-      </p>
     </section>
   );
 }

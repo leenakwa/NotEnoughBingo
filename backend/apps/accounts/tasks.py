@@ -19,6 +19,7 @@ from apps.accounts.models import (
     User,
 )
 from apps.accounts.session_management import invalidate_session_keys
+from apps.common.jobs import periodic_task
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +222,7 @@ def _process_account_deletion_request(request_id: int) -> bool:
         return True
 
 
-@shared_task(ignore_result=True)
+@periodic_task
 def process_scheduled_account_deletions() -> int:
     due = AccountDeletionRequest.objects.filter(
         status=AccountDeletionRequest.Status.SCHEDULED,
@@ -251,7 +252,7 @@ def process_scheduled_account_deletions() -> int:
     return processed
 
 
-@shared_task(ignore_result=True)
+@periodic_task
 def cleanup_expired_auth_records() -> dict[str, int]:
     now = timezone.now()
     Session.objects.clear_expired()

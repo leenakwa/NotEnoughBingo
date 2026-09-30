@@ -2,14 +2,41 @@ from __future__ import annotations
 
 import json
 import logging
+import subprocess
+import sys
 from datetime import timedelta
+from types import SimpleNamespace
 
+import pytest
 from django.core.cache import cache
 from django.test import Client
 from django.utils import timezone
 
 from apps.common.logging import JsonFormatter
 from apps.common.tasks import BEAT_HEARTBEAT_CACHE_KEY, record_beat_heartbeat
+
+
+def test_installed_gunicorn_uses_safe_formatter_for_master_and_access_logs() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from gunicorn.config import Config; from gunicorn.glogging import Logger; "
+            "from config.gunicorn import logconfig_dict; "
+            "config = Config(); config.set('logconfig_dict', logconfig_dict); "
+            "logger = Logger(config); "
+            "logger.error('private-marker URL and request %s', {'token': 'private-marker'}); "
+            "logger.access_log.warning('private-marker query string')",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=15,
+    )
+    assert "private-marker" not in result.stdout + result.stderr
+    records = [json.loads(line) for line in result.stderr.splitlines()]
+    assert {record["logger"] for record in records} == {"gunicorn.error", "gunicorn.access"}
+    assert all(record["message"] == "log.record" for record in records)
 
 
 def test_request_completion_log_has_safe_correlation_fields(caplog) -> None:
@@ -59,6 +86,68 @@ def test_json_formatter_includes_release_context_without_headers_or_body() -> No
     assert payload["outcome"] == "failure"
     assert "headers" not in payload
     assert "body" not in payload
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Connection to https://example.test/?token=private-marker failed",
+        "Task failed with arguments %s",
+    ],
+)
+def test_formatter_excludes_library_messages_arguments_and_exception_text(message) -> None:
+    try:
+        raise ValueError("private-marker from a request body")
+    except ValueError:
+        record = logging.LogRecord(
+            name="celery.app.trace",
+            level=logging.ERROR,
+            pathname=__file__,
+            lineno=1,
+            msg=message,
+            args=({"email": "private-marker@example.test"},),
+            exc_info=sys.exc_info(),
+        )
+    record.body = "private-marker"
+    record.headers = {"Authorization": "private-marker"}
+    record.task_args = ["private-marker"]
+    record.outcome = {"sensitive": "private-marker"}
+
+    serialized = JsonFormatter().format(record)
+    payload = json.loads(serialized)
+
+    assert "private-marker" not in serialized
+    assert payload["message"] == "log.record"
+    assert payload["exception_type"] == "ValueError"
+    assert payload["exception_frames"][-1]["file"] == "test_observability.py"
+    assert payload["exception_frames"][-1]["line"] > 0
+    assert "outcome" not in payload
+
+
+@pytest.mark.django_db
+def test_request_logs_route_template_instead_of_user_path_values(caplog) -> None:
+    with caplog.at_level(logging.INFO, logger="app.request"):
+        Client().get("/api/v1/profiles/private-marker/?token=private-marker")
+        Client().get("/private-marker/")
+    records = [record for record in caplog.records if record.msg == "http.request.complete"]
+    assert len(records) == 2
+    assert "private-marker" not in records[0].path
+    assert records[1].path == "/unmatched"
+
+
+def test_celery_lifecycle_logs_task_identity_without_arguments_or_result(caplog) -> None:
+    from config.celery import log_task_completed, log_task_started
+
+    with caplog.at_level(logging.INFO, logger="app.celery"):
+        task = SimpleNamespace(name="apps.exports.tasks.process_export_job")
+        log_task_started(task_id="task-id", task=task, args=["private-marker"])
+        log_task_completed(task_id="task-id", task=task, state="SUCCESS", retval="private-marker")
+    records = [record for record in caplog.records if record.name == "app.celery"]
+    assert [record.msg for record in records] == ["celery.task.started", "celery.task.completed"]
+    payloads = [json.loads(JsonFormatter().format(record)) for record in records]
+    assert all(payload["task_id"] == "task-id" for payload in payloads)
+    assert payloads[1]["outcome"] == "SUCCESS"
+    assert "private-marker" not in json.dumps(payloads)
 
 
 def test_beat_health_reports_recent_and_stale_heartbeats() -> None:

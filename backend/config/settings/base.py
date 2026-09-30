@@ -202,6 +202,8 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {
+        "AnalyticsActionEnum": ["create", "register", "login"],
+        "ModerationActionEnum": "apps.moderation.models.ModerationAction.Action",
         "AccountDeletionStatus": [
             ("scheduled", "Scheduled"),
             ("cancelled", "Cancelled"),
@@ -275,6 +277,10 @@ if ANALYTICS_RAW_EVENT_RETENTION_DAYS < 7:
         "ANALYTICS_RAW_EVENT_RETENTION_DAYS must retain the seven-day trending window."
     )
 CELERY_BEAT_SCHEDULE = {
+    "recover-stalled-jobs-every-five-minutes": {
+        "task": "apps.common.tasks.recover_stalled_jobs",
+        "schedule": timedelta(minutes=5),
+    },
     "record-beat-heartbeat-every-minute": {
         "task": "apps.common.tasks.record_beat_heartbeat",
         "schedule": timedelta(minutes=1),
@@ -413,6 +419,10 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
     "loggers": {
         "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "celery": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "celery.task": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "gunicorn.error": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "gunicorn.access": {"handlers": ["console"], "level": "WARNING", "propagate": False},
     },
 }
 
@@ -420,10 +430,16 @@ SENTRY_DSN = env("SENTRY_DSN", default="")
 if SENTRY_DSN:
     import sentry_sdk
 
+    from apps.common.error_tracking import scrub_error_event
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         environment=APP_ENVIRONMENT,
         release=APP_RELEASE or None,
         send_default_pii=False,
+        include_local_variables=False,
+        max_request_body_size="never",
+        before_send=scrub_error_event,
+        before_send_transaction=scrub_error_event,
         traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05),
     )

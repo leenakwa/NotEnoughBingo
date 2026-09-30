@@ -15,9 +15,22 @@ from apps.bingos.models import Bingo, BingoRevision, Tag
 
 class InteractionMetadataSerializer(serializers.Serializer):
     surface = serializers.ChoiceField(
-        choices=("discover", "trending", "explore", "profile", "share", "direct"),
+        choices=(
+            "discover",
+            "trending",
+            "explore",
+            "profile",
+            "share",
+            "direct",
+            "create",
+            "register",
+            "login",
+            "settings",
+            "notifications",
+        ),
         required=False,
     )
+    action = serializers.ChoiceField(choices=("create", "register", "login"), required=False)
     author = serializers.CharField(max_length=150, required=False, allow_blank=True)
     tags = serializers.CharField(max_length=500, required=False, allow_blank=True)
     ordering = serializers.ChoiceField(
@@ -76,11 +89,23 @@ class InteractionEventSerializer(serializers.ModelSerializer[InteractionEvent]):
                 {"anonymous_id": "An anonymous session identifier is required."}
             )
         metadata = attrs.get("metadata", {})
-        search_only_keys = set(metadata) - {"surface"}
+        event_type = attrs["event_type"]
+        search_only_keys = set(metadata) - {"surface", "action"}
         if search_only_keys and attrs["event_type"] != InteractionEvent.Type.SEARCH:
             raise serializers.ValidationError(
                 {"metadata": "Client metadata is only accepted for search events."}
             )
+        if "action" in metadata and event_type != InteractionEvent.Type.CTA:
+            raise serializers.ValidationError(
+                {"metadata": "Actions are only accepted for CTA events."}
+            )
+        if event_type in {InteractionEvent.Type.PAGE_VIEW, InteractionEvent.Type.CTA}:
+            if "surface" not in metadata or (
+                event_type == InteractionEvent.Type.CTA and "action" not in metadata
+            ):
+                raise serializers.ValidationError(
+                    {"metadata": "A page surface and CTA action are required."}
+                )
         # Older clients may still send free-text search and filter values.
         # Keep accepting their event shape during rollout but retain only
         # categorical fields needed to count search use.

@@ -21,6 +21,10 @@ provides one browser origin for both applications.
 - Node.js 22 only when running live Playwright tests from the host
 
 No local Python, PostgreSQL, Redis, or S3 server installation is required.
+Backend/worker images include Pango and Noto fonts for multilingual PNG/PDF
+exports. Python-only development/test runners need `pango1.0-tools`,
+`fonts-noto-core`, `fonts-noto-cjk`, and `fonts-noto-color-emoji` installed;
+the backend CI job installs them explicitly.
 
 ## Start locally
 

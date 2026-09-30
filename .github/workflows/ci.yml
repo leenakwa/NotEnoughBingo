@@ -171,7 +171,13 @@ jobs:
           diff -u openapi.yaml /tmp/openapi.yaml
 
       - name: Run backend tests
-        run: pytest --cov=apps --cov=config --cov-report=term-missing
+        # Export tests exercise native shaping and the same font families as the worker.
+        # Install rather than skip multilingual coverage on the Python-only runner.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y \
+            pango1.0-tools fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji
+          pytest --cov=apps --cov=config --cov-report=term-missing
 
   frontend:
     name: Frontend quality and tests
@@ -336,6 +342,9 @@ jobs:
             --header 'Accept-Encoding: gzip' \
             http://localhost:8080/api/v1/feeds/discover/)
           printf '%s\n' "$headers" | grep -qi '^Content-Encoding: gzip'
+
+      - name: Verify proxy outage recovery and private query redaction
+        run: bash infra/scripts/verify-proxy-recovery.sh
 
       - name: Capture application logs on failure
         if: ${{ failure() }}

@@ -45,6 +45,10 @@ ASSET_ERROR_MESSAGES = {
     "declared_mime_mismatch": "The uploaded image type does not match the selected file.",
     "upload_cannot_be_completed": "This upload cannot be completed. Start a new upload.",
     "uploaded_object_not_found": "The uploaded image was not found. Try uploading it again.",
+    "storage_unavailable": (
+        "The image service is temporarily unavailable. Please try uploading again shortly."
+    ),
+    "processing_interrupted": "Image processing was interrupted. Please upload the image again.",
 }
 
 
