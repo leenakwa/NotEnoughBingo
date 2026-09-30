@@ -212,13 +212,13 @@ export function EditorBoard({
                     className="editor-cell-wrap"
                     role="gridcell"
                     aria-selected={selected}
-                    aria-label={`Row ${cell.row + 1}, column ${cell.column + 1}: ${cell.text || "empty"}`}
+                    aria-label={`Row ${cell.row + 1}, column ${cell.column + 1}: ${cell.text || cell.imageAlt || "empty"}`}
                   >
                     <button
                       type="button"
                       className={`editor-cell${selected ? " is-selected" : ""}${state.primaryKey === key ? " is-primary" : ""}`}
                       data-cell-key={key}
-                      aria-label={`Row ${cell.row + 1}, column ${cell.column + 1}: ${cell.text || "empty"}`}
+                      aria-label={`Row ${cell.row + 1}, column ${cell.column + 1}: ${cell.text || cell.imageAlt || "empty"}`}
                       tabIndex={key === focusKey ? 0 : -1}
                       style={{
                         color: cell.textColor,

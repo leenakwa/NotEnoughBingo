@@ -53,6 +53,8 @@ function safeCell(value: unknown, row: number, column: number): EditorCell | nul
     typeof raw.backgroundColor !== "string" ||
     typeof raw.backgroundOpacity !== "number" ||
     !image ||
+    (raw.imageAlt !== undefined &&
+      (typeof raw.imageAlt !== "string" || raw.imageAlt.length > 160)) ||
     typeof raw.imageOpacity !== "number" ||
     typeof raw.borderColor !== "string" ||
     typeof raw.borderWidth !== "number" ||
@@ -67,6 +69,7 @@ function safeCell(value: unknown, row: number, column: number): EditorCell | nul
     row,
     column,
     image,
+    imageAlt: typeof raw.imageAlt === "string" ? raw.imageAlt : "",
     borderStyle: raw.borderStyle as EditorCell["borderStyle"],
   };
 }

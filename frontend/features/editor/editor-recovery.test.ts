@@ -19,7 +19,10 @@ describe("editor emergency recovery", () => {
       anchor: { row: 2, column: 2 },
       focus: { row: 2, column: 2 },
     });
-    state = editorReducer(state, { type: "patch-selected", patch: { text: "Recover me" } });
+    state = editorReducer(state, {
+      type: "patch-selected",
+      patch: { text: "Recover me", imageAlt: "A red kite" },
+    });
     state = editorReducer(state, {
       type: "set-board-background",
       media: { asset: null, previewUrl: "blob:temporary" },
@@ -29,6 +32,7 @@ describe("editor emergency recovery", () => {
     const recovery = readEditorRecovery(authorId);
 
     expect(recovery?.document.cells[cellKey(2, 2)]?.text).toBe("Recover me");
+    expect(recovery?.document.cells[cellKey(2, 2)]?.imageAlt).toBe("A red kite");
     expect(recovery?.document.boardBackground.previewUrl).toBeNull();
     expect(recovery?.serverVersion).toBe(0);
   });

@@ -38,6 +38,7 @@ const result: SharedResult = {
       background_color: "#ffffff",
       background_opacity: 1,
       image: null,
+      image_alt: "",
       image_opacity: 1,
       border_color: "#000000",
       border_width: 1,

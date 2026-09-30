@@ -91,6 +91,7 @@ test("bingo card keeps tags with actions and handles guest likes without an API 
     background_opacity: 1,
     image_asset_id: null,
     image: null,
+    image_alt: "",
     image_opacity: 1,
     border_color: "#000000",
     border_width: 1,

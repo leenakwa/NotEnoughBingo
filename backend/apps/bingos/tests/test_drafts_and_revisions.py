@@ -5,6 +5,7 @@ import importlib
 import pytest
 from django.apps import apps as django_apps
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from freezegun import freeze_time
 from rest_framework.test import APIClient
@@ -44,6 +45,30 @@ def _asset(*, owner: User, kind: str, name: str) -> MediaAsset:
         storage_key=f"media/tests/{name}.webp",
         expected_size=1,
     )
+
+
+def test_image_only_cell_requires_description_and_publishes_accessible_name() -> None:
+    user = _user()
+    image = _asset(owner=user, kind=MediaAsset.Kind.CELL_IMAGE, name="image-only")
+    document = empty_draft_document(title="Picture bingo", size=3, language="en")
+    document["visibility"] = "public"
+    document["cells"][0]["image_asset_id"] = str(image.public_id)
+
+    with pytest.raises(ValidationError, match="Describe each image-only cell"):
+        normalize_draft_document(document, require_publishable=True)
+
+    document["cells"][0]["image_alt"] = "x" * 161
+    with pytest.raises(ValidationError, match="longer than 160 characters"):
+        normalize_draft_document(document)
+
+    document["cells"][0]["image_alt"] = "A red kite over a field"
+    bingo = create_bingo(author=user, document=document)
+    revision = publish_bingo(bingo=bingo, actor=user, idempotency_key="image-alt-publish")
+
+    assert revision.cells.get(position=0).image_alt == "A red kite over a field"
+    detail = APIClient().get(f"/api/v1/bingos/{bingo.public_id}/")
+    assert detail.status_code == 200
+    assert detail.data["current_revision"]["cells"][0]["image_alt"] == "A red kite over a field"
 
 
 def test_draft_save_uses_optimistic_version() -> None:

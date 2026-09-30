@@ -117,6 +117,7 @@ def _normalize_cell(raw: Any, *, position: int, size: int) -> dict:
         "background_color",
         "background_opacity",
         "image_asset_id",
+        "image_alt",
         "image_opacity",
         "border_color",
         "border_width",
@@ -147,6 +148,9 @@ def _normalize_cell(raw: Any, *, position: int, size: int) -> dict:
     text = raw.get("text", "")
     if not isinstance(text, str) or len(text) > 100:
         raise _invalid("cells", f"Cell {position} text is longer than 100 characters.")
+    image_alt = raw.get("image_alt", "")
+    if not isinstance(image_alt, str) or len(image_alt) > 160:
+        raise _invalid("cells", f"Cell {position} image description is longer than 160 characters.")
     border_width = raw.get("border_width", 1)
     if (
         isinstance(border_width, bool)
@@ -178,6 +182,7 @@ def _normalize_cell(raw: Any, *, position: int, size: int) -> dict:
             "cells.background_opacity",
         ),
         "image_asset_id": _asset_id(raw.get("image_asset_id"), "cells.image_asset_id"),
+        "image_alt": image_alt.strip(),
         "image_opacity": _opacity(raw.get("image_opacity"), "cells.image_opacity"),
         "border_color": _color(
             raw.get("border_color"),
@@ -257,6 +262,14 @@ def normalize_draft_document(document: Any, *, require_publishable: bool = False
         cell["text"].strip() or cell["image_asset_id"] for cell in cells
     ):
         raise _invalid("cells", "Add text or an image to at least one cell before publishing.")
+    if require_publishable and any(
+        cell["image_asset_id"] and not cell["text"].strip() and not cell["image_alt"]
+        for cell in cells
+    ):
+        raise _invalid(
+            "cells",
+            "Describe each image-only cell before publishing so everyone can understand it.",
+        )
     ids = [cell["id"] for cell in cells]
     if len(ids) != len(set(ids)):
         raise _invalid("cells", "Cell ids must be unique within a board.")

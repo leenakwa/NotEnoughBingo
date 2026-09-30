@@ -418,16 +418,16 @@ Test:
 
 Verify:
 
-- [ ] useful alt text exists where appropriate;
-- [ ] decorative images do not create screen-reader noise;
-- [ ] broken images degrade gracefully;
-- [ ] aspect ratio is preserved;
-- [ ] massive originals are not unnecessarily delivered;
-- [ ] lazy loading is used where appropriate;
-- [ ] placeholders/loading are sensible;
-- [ ] high-DPI rendering is acceptable;
-- [ ] user-generated images are served safely;
-- [ ] thumbnails do not fetch unnecessarily huge originals.
+- [x] useful alt text exists where appropriate;
+- [x] decorative images do not create screen-reader noise;
+- [x] broken images degrade gracefully;
+- [x] aspect ratio is preserved;
+- [x] massive originals are not unnecessarily delivered;
+- [x] lazy loading is used where appropriate;
+- [x] placeholders/loading are sensible;
+- [x] high-DPI rendering is acceptable;
+- [x] user-generated images are served safely;
+- [x] thumbnails do not fetch unnecessarily huge originals.
 
 # 21. RESPONSIVE DESIGN
 

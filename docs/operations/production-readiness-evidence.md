@@ -761,6 +761,46 @@ observed results and their limits. Do not include credentials or session data.
   provisioned with the runbook's private/versioned/IAM contract; its actual
   provider permissions cannot be measured until that external service exists.
 
+### 2026-09-30 — Image delivery and semantics (section 20)
+
+- Card previews now use native lazy loading and derived thumbnails for cell
+  images and board backgrounds. Play boards use a 512 px cell thumbnail and a
+  1536 px board-background thumbnail where available; the authoring editor
+  retains the source image for editing. An oversized source image produced a
+  512×256 WebP cell thumbnail with its aspect ratio intact in the backend
+  test, which passed in the 9/9 media validation module. The live upload
+  returned a ready thumbnail URL, served WebP from the media API, then used
+  that URL in the published play board and Discover card. The card carried
+  `loading="lazy"`, used `object-fit: cover`, and had no page overflow at 320
+  or 1710 px. The live scenario passed 1/1.
+- The card preview has an accessible board label while its individual images
+  have empty alt attributes. Avatars are decorative beside an account link or
+  name and use empty alt; broken avatar URLs fall back to the account icon or
+  initial. A failed card image disappears, leaving its cell color and text;
+  a failed editor cover shows “Cover unavailable.” The cover preview alt now
+  includes the bingo title. Focused frontend card, play-board, avatar, cover,
+  editor, and recovery tests passed 39/39. CSS cover sizing preserves aspect
+  ratio by cropping rather than
+  stretching; visible cell color/text serve as placeholders while lazy media
+  loads. The 512 px cell, 720×450 cover, 512 px avatar, and 1536 px board
+  background limits support the current board/card sizes at common high-DPI
+  scales.
+- Uploaded image bytes are decoded, checked for type and dimensions, rewritten
+  without source metadata, served through an authorization-aware API with
+  `nosniff`, and kept in private object storage (sections 14 and 19).
+- Image-only cells now require an author-supplied description of at most 160
+  characters before publication. The editor selects the first missing cell
+  and exposes the description field; the backend independently rejects an
+  undescribed image-only cell. The value survives draft normalization,
+  publication, revision serialization, and local recovery, and becomes the
+  play control's accessible name. A backend test rejected the missing
+  description and then published and retrieved “A red kite over a field”; the
+  revision module passed 8/8. The live browser attempted publication without
+  a description, received the editor prompt, added one, published, and found
+  the described cell on the play board. The generated OpenAPI schema and
+  frontend types include the field; the database migration was applied to
+  the QA stack.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

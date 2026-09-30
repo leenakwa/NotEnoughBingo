@@ -92,6 +92,7 @@ export interface RevisionCell {
   background_color: string;
   background_opacity: number;
   image: MediaAsset | null;
+  image_alt: string;
   image_opacity: number;
   border_color: string;
   border_width: number;

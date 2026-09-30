@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BingoBoardView, revisionCellKey } from "@/components/bingo/bingo-board-view";
-import type { BingoRevision, RevisionCell } from "@/lib/api/types";
+import type { BingoRevision, MediaAsset, RevisionCell } from "@/lib/api/types";
 
 const cell: RevisionCell = {
   id: "cell-public-id",
@@ -17,6 +17,7 @@ const cell: RevisionCell = {
   background_color: "#ffffff",
   background_opacity: 1,
   image: null,
+  image_alt: "",
   image_opacity: 1,
   border_color: "#000000",
   border_width: 1,
@@ -37,7 +38,52 @@ const revision: BingoRevision = {
   published_at: "2026-01-01T00:00:00Z",
 };
 
+const image: MediaAsset = {
+  id: "44444444-4444-4444-8444-444444444444",
+  kind: "cell_image",
+  status: "ready",
+  url: "/api/v1/media/full/",
+  thumbnail_url: "/api/v1/media/thumbnail/",
+  mime_type: "image/webp",
+};
+
 describe("BingoBoardView", () => {
+  it("announces the description of an image-only cell", () => {
+    render(
+      <BingoBoardView
+        revision={{ ...revision, cells: [{ ...cell, text: "", image, image_alt: "A red kite" }] }}
+        selected={new Set()}
+        completionStyle="checkmark"
+        readOnly={false}
+      />,
+    );
+    const imageCell = screen.getByRole("button", { name: "Image: A red kite" });
+    expect(imageCell).toBeVisible();
+    fireEvent.click(imageCell);
+    expect(screen.getByText("A red kite", { selector: ".play-cell-detail p" })).toBeVisible();
+  });
+
+  it("uses the higher-density thumbnail for playable cells and board backgrounds", () => {
+    const view = render(
+      <BingoBoardView
+        revision={{
+          ...revision,
+          board_background: { ...image, kind: "board_background" },
+          cells: [{ ...cell, image }],
+        }}
+        selected={new Set()}
+        completionStyle="checkmark"
+        readOnly={false}
+      />,
+    );
+    expect(view.container.querySelector(".play-board")).toHaveStyle({
+      backgroundImage: `url("${image.thumbnail_url}")`,
+    });
+    expect(view.container.querySelector(".play-cell__image")).toHaveStyle({
+      backgroundImage: `url("${image.thumbnail_url}")`,
+    });
+  });
+
   it("calls the toggle handler with the stable cell identifier", () => {
     const onToggle = vi.fn();
     render(

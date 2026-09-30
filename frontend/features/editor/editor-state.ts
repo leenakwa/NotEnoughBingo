@@ -31,6 +31,7 @@ export interface EditorCell {
   backgroundColor: string;
   backgroundOpacity: number;
   image: EditorMedia;
+  imageAlt: string;
   imageOpacity: number;
   borderColor: string;
   borderWidth: number;
@@ -84,6 +85,7 @@ type CellPatch = Partial<
     | "textColor"
     | "backgroundColor"
     | "backgroundOpacity"
+    | "imageAlt"
     | "imageOpacity"
     | "borderColor"
     | "borderWidth"
@@ -138,6 +140,7 @@ export function createDefaultCell(row: number, column: number): EditorCell {
     backgroundColor: "#ffffff",
     backgroundOpacity: 1,
     image: { asset: null, previewUrl: null },
+    imageAlt: "",
     imageOpacity: 1,
     borderColor: "#000000",
     borderWidth: 1,
@@ -294,12 +297,22 @@ function reduceDocumentAction(state: EditorState, action: EditorAction): EditorS
       }));
     }
     case "set-selected-image":
-      return updateSelected(state, (cell) => ({ ...cell, image: action.media }));
+      return updateSelected(state, (cell) => ({
+        ...cell,
+        image: action.media,
+        imageAlt: cell.image.asset?.id === action.media.asset?.id ? cell.imageAlt : "",
+      }));
     case "set-cell-images": {
       const cells = { ...state.cells };
       for (const key of action.keys) {
         const cell = cells[key];
-        if (cell) cells[key] = { ...cell, image: action.media };
+        if (cell) {
+          cells[key] = {
+            ...cell,
+            image: action.media,
+            imageAlt: cell.image.asset?.id === action.media.asset?.id ? cell.imageAlt : "",
+          };
+        }
       }
       return { ...state, cells };
     }
@@ -438,6 +451,7 @@ function isDefaultCell(cell: EditorCell): boolean {
     cell.backgroundOpacity === defaultCell.backgroundOpacity &&
     !cell.image.asset &&
     !cell.image.previewUrl &&
+    cell.imageAlt === defaultCell.imageAlt &&
     cell.imageOpacity === defaultCell.imageOpacity &&
     cell.borderColor === defaultCell.borderColor &&
     cell.borderWidth === defaultCell.borderWidth &&
@@ -486,6 +500,7 @@ function revisionCellToEditor(cell: RevisionCell): EditorCell {
     backgroundColor: cell.background_color,
     backgroundOpacity: cell.background_opacity,
     image: { asset: cell.image, previewUrl: null },
+    imageAlt: cell.image_alt ?? "",
     imageOpacity: cell.image_opacity,
     borderColor: cell.border_color,
     borderWidth: cell.border_width,
@@ -548,6 +563,7 @@ export function editorPayload(state: EditorState) {
       background_color: cell.backgroundColor,
       background_opacity: cell.backgroundOpacity,
       image_asset_id: cell.image.asset?.id ?? null,
+      image_alt: cell.imageAlt,
       image_opacity: cell.imageOpacity,
       border_color: cell.borderColor,
       border_width: cell.borderWidth,

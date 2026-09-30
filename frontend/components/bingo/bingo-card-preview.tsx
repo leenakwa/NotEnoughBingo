@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+"use client";
+
+import { useState, type CSSProperties } from "react";
 
 import type { BingoCardPreview as BingoCardPreviewData, RevisionCell } from "@/lib/api/types";
 
@@ -9,6 +11,32 @@ interface PreviewStyle extends CSSProperties {
 
 const BOARD_REFERENCE_WIDTH_PX = 760;
 const ROOT_FONT_SIZE_PX = 16;
+
+function PreviewImage({
+  src,
+  className,
+  style,
+}: {
+  src: string;
+  className: string;
+  style?: CSSProperties;
+}) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (failedSrc === src) return null;
+  return (
+    // API media is validated raster content; native lazy loading avoids offscreen requests.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      className={className}
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      style={style}
+      onError={() => setFailedSrc(src)}
+    />
+  );
+}
 
 export function boardFontSizeRem(size: number): number {
   return Math.max(0.55, Math.min(1.5, 5 / size + 0.15));
@@ -45,10 +73,9 @@ export function BingoCardPreview({
   const style: PreviewStyle = {
     "--preview-font-size": previewFontSize(size),
     "--preview-size": size,
-    backgroundImage: preview?.board_background?.url
-      ? `url("${preview.board_background.url}")`
-      : undefined,
   };
+  const background = preview?.board_background;
+  const backgroundUrl = background?.thumbnail_url ?? background?.url;
 
   return (
     <div
@@ -57,13 +84,16 @@ export function BingoCardPreview({
       aria-label={`Preview of ${title}, ${size} by ${size} bingo`}
       style={style}
     >
+      {backgroundUrl ? (
+        <PreviewImage className="bingo-card-preview__board-image" src={backgroundUrl} />
+      ) : null}
       {cells.length
         ? cells.map((cell) => (
             <span
               key={cell.id ?? `${cell.row}:${cell.column}`}
               className="bingo-card-preview__cell"
               style={cellStyle(cell)}
-              title={cell.text || undefined}
+              title={cell.text || cell.image_alt || undefined}
               aria-hidden="true"
             >
               <span
@@ -74,12 +104,10 @@ export function BingoCardPreview({
                 }}
               />
               {cell.image?.url ? (
-                <span
+                <PreviewImage
                   className="bingo-card-preview__image"
-                  style={{
-                    backgroundImage: `url("${cell.image.url}")`,
-                    opacity: cell.image_opacity,
-                  }}
+                  src={cell.image.thumbnail_url ?? cell.image.url}
+                  style={{ opacity: cell.image_opacity }}
                 />
               ) : null}
               <span

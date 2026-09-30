@@ -258,6 +258,7 @@ def create_thumbnail(*, original: MediaAsset, data: bytes) -> MediaAsset | None:
         MediaAsset.Kind.COVER,
         MediaAsset.Kind.AVATAR,
         MediaAsset.Kind.BOARD_BACKGROUND,
+        MediaAsset.Kind.CELL_IMAGE,
     }:
         return None
     existing = original.derivatives.filter(
@@ -266,7 +267,12 @@ def create_thumbnail(*, original: MediaAsset, data: bytes) -> MediaAsset | None:
     ).first()
     if existing:
         return existing
-    maximum = (720, 450) if original.kind != MediaAsset.Kind.AVATAR else (512, 512)
+    maximum = {
+        MediaAsset.Kind.COVER: (720, 450),
+        MediaAsset.Kind.AVATAR: (512, 512),
+        MediaAsset.Kind.BOARD_BACKGROUND: (1536, 1536),
+        MediaAsset.Kind.CELL_IMAGE: (512, 512),
+    }[original.kind]
     thumbnail_data = _thumbnail_bytes(data, max_size=maximum)
     key = f"media/derived/{original.public_id}/thumbnail.webp"
     if default_storage.exists(key):

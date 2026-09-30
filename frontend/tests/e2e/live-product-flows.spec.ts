@@ -748,6 +748,7 @@ test.describe("live full-stack product flows", () => {
     await page.getByRole("gridcell").first().click();
     const input = page.getByLabel("Add image to cell");
     const assetIds: string[] = [];
+    let lastThumbnailUrl = "";
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const intent = page.waitForResponse(
         (response) =>
@@ -763,9 +764,55 @@ test.describe("live full-stack product flows", () => {
       expect(response.status()).toBe(201);
       assetIds.push((await response.json()).asset_id);
       await expect(page.getByRole("button", { name: "Remove cell image" })).toBeVisible();
-      await page.getByRole("button", { name: "Remove cell image" }).click();
+      const detail = await page.context().request.get(`/api/v1/uploads/${assetIds.at(-1)}/`);
+      expect(detail.status()).toBe(200);
+      const thumbnailUrl = (await detail.json()).thumbnail_url;
+      expect(thumbnailUrl).toMatch(/^\/api\/v1\/media\//);
+      lastThumbnailUrl = thumbnailUrl;
+      const thumbnail = await page.context().request.get(thumbnailUrl);
+      expect(thumbnail.status()).toBe(200);
+      expect(thumbnail.headers()["content-type"]).toContain("image/webp");
+      if (attempt === 0) await page.getByRole("button", { name: "Remove cell image" }).click();
     }
     expect(assetIds[0]).not.toBe(assetIds[1]);
+
+    await page.getByRole("button", { name: "Finish creating →" }).click();
+    const title = "Thumbnail image test";
+    await page.getByLabel("Title").fill(title);
+    await page.getByLabel("Bingo language").selectOption("en");
+    await page.getByRole("button", { name: "Publish bingo" }).click();
+    await expect(page.getByRole("heading", { name: "Cell editor" })).toBeVisible();
+    await expect(page.locator(".form-message--error")).toContainText(
+      "Describe this image-only cell before publishing.",
+    );
+    await page.setViewportSize({ width: 320, height: 900 });
+    await expect(page.getByLabel("Image description")).toBeVisible();
+    await page.getByLabel("Image description").fill("A small square sample image");
+    await page.getByRole("button", { name: "Close cell editor" }).click();
+    await page.getByRole("button", { name: "Finish creating →" }).click();
+    await page.getByRole("button", { name: "Publish bingo" }).click();
+    await expect(page).toHaveURL(/\/bingo\/[0-9a-f-]+$/);
+    await expect(
+      page.getByRole("button", { name: "Image: A small square sample image" }),
+    ).toBeVisible();
+    const cellBackground = await page
+      .locator(".play-cell__image")
+      .first()
+      .evaluate((element) => getComputedStyle(element).backgroundImage);
+    expect(cellBackground).toContain(lastThumbnailUrl);
+    await page.goto("/discover");
+    const card = page.locator(".bingo-card").filter({ hasText: title });
+    await expect(card).toBeVisible();
+    const previewImage = card.locator(".bingo-card-preview__image");
+    await expect(previewImage).toHaveAttribute("src", lastThumbnailUrl);
+    await expect(previewImage).toHaveAttribute("loading", "lazy");
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(previewImage).toHaveCSS("object-fit", "cover");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width,
+      );
+    }
   });
 
   test("image upload shows its stage and can be cancelled before retry", async ({ page }) => {

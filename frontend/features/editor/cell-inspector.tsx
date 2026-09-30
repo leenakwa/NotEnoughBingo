@@ -208,6 +208,26 @@ export function CellInspector({
           Remove cell image
         </button>
       ) : null}
+      {cell.image.asset || cell.image.previewUrl ? (
+        state.selectedKeys.length === 1 ? (
+          <label className="field">
+            <span>Image description</span>
+            <input
+              type="text"
+              maxLength={160}
+              value={cell.imageAlt}
+              placeholder="Describe what this image shows"
+              aria-invalid={!cell.text.trim() && !cell.imageAlt.trim()}
+              onChange={(event) =>
+                dispatch({ type: "patch-selected", patch: { imageAlt: event.target.value } })
+              }
+            />
+            <small>Required for image-only cells so everyone can understand them.</small>
+          </label>
+        ) : (
+          <p className="field-hint">Select one cell at a time to describe its image.</p>
+        )
+      ) : null}
       <label className="field">
         <span className="range-heading">
           Image opacity <output>{Math.round(cell.imageOpacity * 100)}%</output>

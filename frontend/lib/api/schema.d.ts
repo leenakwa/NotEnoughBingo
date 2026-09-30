@@ -1220,6 +1220,7 @@ export interface components {
             /** Format: uuid */
             readonly image_asset_id: string | null;
             readonly image: components["schemas"]["MediaAsset"] | null;
+            image_alt?: string;
             /** Format: double */
             image_opacity?: number;
             border_color?: string;
@@ -1292,6 +1293,7 @@ export interface components {
             background_opacity?: number;
             /** Format: uuid */
             image_asset_id?: string | null;
+            image_alt?: string;
             /** Format: double */
             image_opacity?: number;
             border_color?: string;
@@ -1451,6 +1453,7 @@ export interface components {
             /** Format: double */
             readonly background_opacity: number;
             readonly image: components["schemas"]["MediaAsset"] | null;
+            readonly image_alt: string;
             /** Format: double */
             readonly image_opacity: number;
             readonly border_color: string;

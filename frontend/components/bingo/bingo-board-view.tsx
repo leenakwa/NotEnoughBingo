@@ -53,11 +53,10 @@ export function BingoBoardView({
   const detailCell = cells.find((cell) => revisionCellKey(cell) === detailKey) ?? null;
   const boardHelpId = useId();
   const cellDetailId = useId();
+  const backgroundUrl = revision.board_background?.thumbnail_url ?? revision.board_background?.url;
   const style: BoardStyle = {
     "--board-size": revision.size,
-    backgroundImage: revision.board_background?.url
-      ? `url("${revision.board_background.url}")`
-      : undefined,
+    backgroundImage: backgroundUrl ? `url("${backgroundUrl}")` : undefined,
   };
 
   function moveFocus(event: KeyboardEvent<HTMLButtonElement>, row: number, column: number) {
@@ -112,6 +111,12 @@ export function BingoBoardView({
               {row.cells.map((cell) => {
                 const key = revisionCellKey(cell);
                 const isSelected = selected.has(key);
+                const imageDescription = cell.image ? (cell.image_alt ?? "").trim() : "";
+                const cellLabel = cell.text.trim()
+                  ? `${cell.text}${imageDescription ? `. Image: ${imageDescription}` : ""}`
+                  : imageDescription
+                    ? `Image: ${imageDescription}`
+                    : `Row ${cell.row + 1}, column ${cell.column + 1}`;
                 return (
                   <div
                     key={key}
@@ -122,11 +127,11 @@ export function BingoBoardView({
                     <button
                       type="button"
                       className={`play-cell${isSelected ? " is-complete" : ""}`}
-                      title={cell.text || undefined}
+                      title={cell.text || imageDescription || undefined}
                       data-cell-key={key}
                       data-cell-position={`${cell.row}:${cell.column}`}
                       aria-pressed={readOnly ? undefined : isSelected}
-                      aria-label={`${cell.text || `Row ${cell.row + 1}, column ${cell.column + 1}`}${isSelected ? ", selected" : ""}`}
+                      aria-label={`${cellLabel}${isSelected ? ", selected" : ""}`}
                       tabIndex={key === activeFocusKey ? 0 : -1}
                       onFocus={() => {
                         setFocusedKey(key);
@@ -157,7 +162,7 @@ export function BingoBoardView({
                           className="play-cell__image"
                           aria-hidden="true"
                           style={{
-                            backgroundImage: `url("${cell.image.url}")`,
+                            backgroundImage: `url("${cell.image.thumbnail_url ?? cell.image.url}")`,
                             opacity: cell.image_opacity,
                           }}
                         />
@@ -197,10 +202,12 @@ export function BingoBoardView({
         aria-live="polite"
         data-empty={!detailCell}
       >
-        <span>Full cell text</span>
+        <span>Cell content</span>
         <p>
           {detailCell
-            ? detailCell.text || `Row ${detailCell.row + 1}, column ${detailCell.column + 1}`
+            ? detailCell.text ||
+              detailCell.image_alt ||
+              `Row ${detailCell.row + 1}, column ${detailCell.column + 1}`
             : "Tap or focus a cell to read its complete text here."}
         </p>
       </div>

@@ -287,6 +287,7 @@ class BingoCell(models.Model):
         on_delete=models.PROTECT,
         related_name="revision_cells",
     )
+    image_alt = models.CharField(max_length=160, blank=True, default="")
     image_opacity = models.DecimalField(max_digits=4, decimal_places=3, default=1)
     border_color = models.CharField(max_length=7, default="#000000")
     border_width = models.PositiveSmallIntegerField(default=1)

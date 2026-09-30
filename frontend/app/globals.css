@@ -585,6 +585,7 @@ h3 {
 }
 
 .bingo-card-preview {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(var(--preview-size), minmax(0, 1fr));
   grid-template-rows: repeat(var(--preview-size), minmax(0, 1fr));
@@ -595,6 +596,14 @@ h3 {
   background-color: var(--paper);
   background-position: center;
   background-size: cover;
+}
+
+.bingo-card-preview__board-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .bingo-card-preview__cell {
@@ -615,8 +624,9 @@ h3 {
 }
 
 .bingo-card-preview__image {
-  background-position: center;
-  background-size: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .bingo-card-preview__text {

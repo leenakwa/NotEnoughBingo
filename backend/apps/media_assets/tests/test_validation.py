@@ -3,11 +3,12 @@ from __future__ import annotations
 import io
 
 import pytest
+from django.core.files.storage import default_storage
 from django.test import override_settings
 from PIL import Image
 
 from apps.media_assets.models import MediaAsset
-from apps.media_assets.services import create_upload_intent
+from apps.media_assets.services import create_thumbnail, create_upload_intent
 from apps.media_assets.validators import (
     AssetValidationError,
     asset_error_message,
@@ -138,3 +139,35 @@ def test_upload_intents_keep_only_safe_basename_and_use_distinct_storage_keys(
     assert [asset.original_filename for asset in assets] == [expected for _, expected in names]
     assert len({asset.storage_key for asset in assets}) == len(names)
     assert all(asset.storage_key.startswith("staging/uploads/") for asset in assets)
+
+
+@pytest.mark.django_db
+def test_cell_thumbnail_is_bounded_and_keeps_aspect_ratio(django_user_model, tmp_path) -> None:
+    with override_settings(MEDIA_ROOT=tmp_path):
+        owner = django_user_model.objects.create_user(
+            username="thumbnail_owner",
+            email="thumbnail-owner@example.test",
+            password="Long-test-password-42",
+        )
+        original = create_upload_intent(
+            owner=owner,
+            kind=MediaAsset.Kind.CELL_IMAGE,
+            filename="large.png",
+            content_type="image/png",
+            size_bytes=2048,
+        )
+        original.status = MediaAsset.Status.READY
+        original.save(update_fields=("status",))
+        source = io.BytesIO()
+        Image.new("RGB", (1024, 512), "#123456").save(source, format="PNG")
+
+        thumbnail = create_thumbnail(original=original, data=source.getvalue())
+
+        assert thumbnail is not None
+        assert thumbnail.variant == MediaAsset.Variant.THUMBNAIL
+        assert (thumbnail.width, thumbnail.height) == (512, 256)
+        assert default_storage.exists(thumbnail.storage_key)
+        with default_storage.open(thumbnail.storage_key, "rb") as saved:
+            with Image.open(saved) as image:
+                assert image.format == "WEBP"
+                assert image.size == (512, 256)

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
+import { AvatarImage } from "@/components/ui/avatar-image";
 import { LanguagePicker } from "@/components/ui/language-picker";
 import { AccountSettings } from "@/features/profile/account-settings";
 import { ProfileCollections } from "@/features/profile/profile-collections";
@@ -203,19 +204,20 @@ export function ProfileView({
     );
   }
 
-  const avatarUrl = profile.avatar?.url;
+  const avatarUrl = profile.avatar?.thumbnail_url ?? profile.avatar?.url;
   return (
     <main id="main-content" className="page-shell profile-page">
       <header className="profile-header">
-        {avatarUrl ? (
-          // The API returns a sanitized avatar asset.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" width={112} height={112} />
-        ) : (
-          <span className="profile-avatar" aria-hidden="true">
-            {(profile.display_name || profile.username).slice(0, 1).toUpperCase()}
-          </span>
-        )}
+        <AvatarImage
+          src={avatarUrl}
+          width={112}
+          height={112}
+          fallback={
+            <span className="profile-avatar" aria-hidden="true">
+              {(profile.display_name || profile.username).slice(0, 1).toUpperCase()}
+            </span>
+          }
+        />
         <div>
           <p className="eyebrow">@{profile.username}</p>
           <h1>{profile.display_name}</h1>

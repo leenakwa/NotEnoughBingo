@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BellIcon, PlusIcon, UserIcon } from "@/components/ui/icons";
+import { AvatarImage } from "@/components/ui/avatar-image";
 import { api, isAuthenticationRequiredError } from "@/lib/api/client";
 import { AUTH_CHANGED_EVENT, AUTH_REQUIRED_EVENT, AUTH_SYNC_KEY } from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
@@ -67,13 +68,7 @@ function AccountNavigation({ avatarUrl, pathname, unreadCount, user }: HeaderVie
         aria-label={user ? `Profile for ${user.display_name}` : "Log in"}
         aria-current={pathname.startsWith("/profile") ? "page" : undefined}
       >
-        {avatarUrl ? (
-          // The API controls avatar URLs and supplies sanitized raster media.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" width={34} height={34} />
-        ) : (
-          <UserIcon />
-        )}
+        <AvatarImage src={avatarUrl} width={34} height={34} fallback={<UserIcon />} />
       </Link>
     </div>
   );

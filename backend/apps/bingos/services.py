@@ -271,6 +271,7 @@ def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision
                 background_color=cell["background_color"],
                 background_opacity=cell["background_opacity"],
                 image=assets["cells"].get(cell["image_asset_id"]),
+                image_alt=cell["image_alt"],
                 image_opacity=cell["image_opacity"],
                 border_color=cell["border_color"],
                 border_width=cell["border_width"],

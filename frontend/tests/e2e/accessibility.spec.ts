@@ -18,6 +18,7 @@ const cells = Array.from({ length: 9 }, (_, index) => ({
   background_opacity: 1,
   image_asset_id: null,
   image: null,
+  image_alt: "",
   image_opacity: 1,
   border_color: "#000000",
   border_width: 1,

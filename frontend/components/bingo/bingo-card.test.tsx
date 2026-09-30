@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoCard } from "@/components/bingo/bingo-card";
-import type { BingoSummary, RevisionCell } from "@/lib/api/types";
+import type { BingoSummary, MediaAsset, RevisionCell } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
   unlike: vi.fn(),
@@ -45,6 +45,7 @@ const previewCells: RevisionCell[] = Array.from({ length: 9 }, (_, index) => ({
   background_color: "#ffffff",
   background_opacity: 1,
   image: null,
+  image_alt: "",
   image_opacity: 1,
   border_color: "#000000",
   border_width: 1,
@@ -85,6 +86,15 @@ const bingo: BingoSummary = {
   updated_at: "2026-07-20T00:00:00Z",
 };
 
+const image: MediaAsset = {
+  id: "44444444-4444-4444-8444-444444444444",
+  kind: "cell_image",
+  status: "ready",
+  url: "/api/v1/media/full/",
+  thumbnail_url: "/api/v1/media/thumbnail/",
+  mime_type: "image/webp",
+};
+
 describe("BingoCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -114,6 +124,34 @@ describe("BingoCard", () => {
     expect(preview.style.getPropertyValue("--preview-font-size")).toBe("3.1579cqw");
     expect(card.lastElementChild).toHaveClass("bingo-card__actions");
     expect(card.lastElementChild?.previousElementSibling).toHaveClass("bingo-card__tags");
+  });
+
+  it("loads small preview images lazily and hides decorative images from screen readers", () => {
+    render(
+      <BingoCard
+        bingo={{
+          ...bingo,
+          preview: {
+            size: 3,
+            board_background: { ...image, kind: "board_background" },
+            cells: [{ ...previewCells[0]!, image }, ...previewCells.slice(1)],
+          },
+        }}
+      />,
+    );
+    const images = screen
+      .getByRole("img", { name: /Preview of Production readiness/ })
+      .querySelectorAll("img");
+    expect(images).toHaveLength(2);
+    for (const item of images) {
+      expect(item).toHaveAttribute("src", image.thumbnail_url);
+      expect(item).toHaveAttribute("loading", "lazy");
+      expect(item).toHaveAttribute("alt", "");
+    }
+    fireEvent.error(images[0]!);
+    expect(
+      screen.getByRole("img", { name: /Preview of Production readiness/ }).querySelectorAll("img"),
+    ).toHaveLength(1);
   });
 
   it("opens an unpublished creator card directly in the editor", () => {

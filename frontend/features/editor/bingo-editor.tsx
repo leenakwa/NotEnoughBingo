@@ -536,6 +536,19 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       setError("Add text or an image to at least one cell before publishing.");
       return;
     }
+    const imageWithoutDescription = Object.values(state.cells).find(
+      (cell) => cell.image.asset && !cell.text.trim() && !cell.imageAlt.trim(),
+    );
+    if (imageWithoutDescription) {
+      dispatch({
+        type: "select-rectangle",
+        anchor: { row: imageWithoutDescription.row, column: imageWithoutDescription.column },
+        focus: { row: imageWithoutDescription.row, column: imageWithoutDescription.column },
+      });
+      setStep("board");
+      setError("Describe this image-only cell before publishing.");
+      return;
+    }
     setPendingAction("publish");
     setError("");
     setMessage("");

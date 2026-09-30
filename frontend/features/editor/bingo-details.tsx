@@ -40,6 +40,7 @@ export function BingoDetails({
   saveStatus: ReactNode;
 }) {
   const [tagInput, setTagInput] = useState("");
+  const [failedCoverUrl, setFailedCoverUrl] = useState<string | null>(null);
   const coverUrl = state.cover.previewUrl ?? state.cover.asset?.url;
 
   function addTag() {
@@ -180,14 +181,20 @@ export function BingoDetails({
           Cover image <small>optional</small>
         </span>
         <div className="cover-control">
-          {coverUrl ? (
+          {coverUrl && failedCoverUrl !== coverUrl ? (
             // The preview is either a local object URL or an API-owned asset.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverUrl} alt="Selected bingo cover preview" width={170} height={105} />
+            <img
+              src={coverUrl}
+              alt={`Cover preview for ${state.title.trim() || "this bingo"}`}
+              width={170}
+              height={105}
+              onError={() => setFailedCoverUrl(coverUrl)}
+            />
           ) : (
             <div className="cover-empty">
               <ImageIcon />
-              <span>No cover selected</span>
+              <span>{coverUrl ? "Cover unavailable" : "No cover selected"}</span>
             </div>
           )}
           <label className="button button--secondary upload-button">

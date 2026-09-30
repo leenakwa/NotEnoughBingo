@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
 
 import { BingoGrid } from "@/components/bingo/bingo-grid";
+import { AvatarImage } from "@/components/ui/avatar-image";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage } from "@/lib/api/client";
 import type {
@@ -233,15 +234,17 @@ export function ProfileCollections({
               return (
                 <li key={person.id}>
                   <Link href={`/profile/${person.username}`}>
-                    {avatarUrl ? (
-                      // The backend serves validated raster avatars.
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarUrl} alt="" width={44} height={44} />
-                    ) : (
-                      <span aria-hidden="true">
-                        {(person.display_name || person.username).slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
+                    <AvatarImage
+                      src={avatarUrl}
+                      width={44}
+                      height={44}
+                      loading="lazy"
+                      fallback={
+                        <span aria-hidden="true">
+                          {(person.display_name || person.username).slice(0, 1).toUpperCase()}
+                        </span>
+                      }
+                    />
                     <span>
                       <b>{person.display_name || person.username}</b>
                       <small>@{person.username}</small>

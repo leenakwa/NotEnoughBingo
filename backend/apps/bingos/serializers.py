@@ -96,6 +96,7 @@ class BingoDocumentCellInputSerializer(serializers.Serializer):
     background_color = serializers.RegexField(r"^#[0-9a-fA-F]{6}$", required=False)
     background_opacity = serializers.FloatField(min_value=0, max_value=1, required=False)
     image_asset_id = serializers.UUIDField(required=False, allow_null=True)
+    image_alt = serializers.CharField(max_length=160, required=False, allow_blank=True)
     image_opacity = serializers.FloatField(min_value=0, max_value=1, required=False)
     border_color = serializers.RegexField(r"^#[0-9a-fA-F]{6}$", required=False)
     border_width = serializers.IntegerField(min_value=0, max_value=12, required=False)
@@ -162,6 +163,7 @@ class BingoCellSerializer(serializers.ModelSerializer):
             "background_opacity",
             "image_asset_id",
             "image",
+            "image_alt",
             "image_opacity",
             "border_color",
             "border_width",
@@ -378,6 +380,7 @@ class CreatorBingoCardSerializer(BingoCardSerializer):
                     "background_opacity": cell["background_opacity"],
                     "image_asset_id": cell.get("image_asset_id"),
                     "image": serialized_asset(cell.get("image_asset_id")),
+                    "image_alt": cell["image_alt"],
                     "image_opacity": cell["image_opacity"],
                     "border_color": cell["border_color"],
                     "border_width": cell["border_width"],
@@ -488,6 +491,7 @@ class DraftCellSerializer(serializers.Serializer):
     background_color = serializers.CharField(read_only=True)
     background_opacity = serializers.FloatField(read_only=True)
     image = MediaAssetSerializer(read_only=True, allow_null=True)
+    image_alt = serializers.CharField(read_only=True)
     image_opacity = serializers.FloatField(read_only=True)
     border_color = serializers.CharField(read_only=True)
     border_width = serializers.IntegerField(read_only=True)
@@ -564,6 +568,7 @@ class DraftSerializer(serializers.Serializer):
                     "background_color": cell["background_color"],
                     "background_opacity": cell["background_opacity"],
                     "image": MediaAssetSerializer(image).data if image else None,
+                    "image_alt": cell["image_alt"],
                     "image_opacity": cell["image_opacity"],
                     "border_color": cell["border_color"],
                     "border_width": cell["border_width"],
