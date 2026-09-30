@@ -906,7 +906,7 @@ test.describe("live full-stack product flows", () => {
         response.request().method() === "PUT",
     );
     await page.getByRole("button", { name: bingo.cell_texts[0], exact: true }).click();
-    expect((await denied).status()).toBe(403);
+    expect((await denied).status()).toBe(401);
     await expect(page).toHaveURL(
       new RegExp(`/login\\?reason=session-expired&next=%2Fbingo%2F${bingo.id}$`),
     );
@@ -1744,7 +1744,7 @@ test.describe("live full-stack product flows", () => {
     });
     await secondTab.getByRole("button", { name: "Log out" }).click();
     await expect(secondTab).toHaveURL(/\/login$/);
-    expect((await secondTab.request.get("/api/v1/auth/me/")).status()).toBe(403);
+    expect((await secondTab.request.get("/api/v1/auth/me/")).status()).toBe(401);
     expect(
       await secondTab.evaluate(() =>
         window.sessionStorage.getItem("not-enough-bingo:progress-recovery:v1:test"),
@@ -1943,7 +1943,7 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByRole("status")).toContainText("Password changed");
     await expect(page).toHaveURL(/\/reset-password$/);
     await expect(page.getByLabel("New password", { exact: true })).toHaveValue("");
-    expect((await page.request.get("/api/v1/auth/me/")).status()).toBe(403);
+    expect((await page.request.get("/api/v1/auth/me/")).status()).toBe(401);
 
     await page.goto(`${link.pathname}${link.search}`);
     await page.getByLabel("New password", { exact: true }).fill(nextPassword);

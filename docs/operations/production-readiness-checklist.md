@@ -1439,12 +1439,12 @@ Look for:
 
 Verify appropriate behavior such as:
 
-- [ ] `/` → 200;
-- [ ] valid page → 200;
-- [ ] missing page → 404;
-- [ ] permanent move → 301/308 as appropriate;
-- [ ] unauthenticated API → 401;
-- [ ] forbidden → 403.
+- [x] `/` → 200;
+- [x] valid page → 200;
+- [x] missing page → 404;
+- [x] permanent move → 301/308 as appropriate;
+- [x] unauthenticated API → 401;
+- [x] forbidden → 403.
 
 Do not let a SPA visually display 404 while the server incorrectly returns 200 for public pages if correct status handling is possible.
 

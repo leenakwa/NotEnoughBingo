@@ -430,7 +430,7 @@ def test_unverified_user_cannot_create_bingo(user_factory) -> None:
         format="json",
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 401
     assert not Bingo.objects.filter(author=user).exists()
 
 
@@ -462,7 +462,7 @@ def test_registered_progress_and_guest_share_routes_keep_immutable_revision_snap
     assert repeated_reset.data["reset_at"] == reset_progress.data["reset_at"]
 
     guest = _api_client()
-    assert guest.get(progress_url).status_code == 403
+    assert guest.get(progress_url).status_code == 401
     share_created = guest.post(
         f"/api/v1/bingos/{bingo.public_id}/shares/",
         {"selected_cells": [first_cell_id], "display_name": "Guest player"},
@@ -573,7 +573,7 @@ def test_upload_intent_content_and_complete_are_owner_scoped(
         },
         format="json",
     )
-    assert denied.status_code == 403
+    assert denied.status_code == 401
 
 
 def test_upload_rejection_has_actionable_message(verified_user_factory) -> None:

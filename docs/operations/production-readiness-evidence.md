@@ -2334,13 +2334,14 @@ observed results and their limits. Do not include credentials or session data.
   server `/api/v1` URL. Production mode also rejects test, preview and staging
   hostnames for both the public origin and backend address. This prevents a
   production image from embedding an external staging API URL in the browser or
-  silently falling back to localhost when
-  the server URL is omitted. A valid internal backend and nine invalid/missing
+  silently falling back to localhost when the server URL is omitted. A valid
+  internal backend and nine invalid/missing
   destinations, including IPv6 loopback and staging hosts, passed ten focused
   validator subprocess checks. The real target service routing still requires
-  rollout smoke on the selected platform. The complete frontend gate after this change
-  passed ESLint, TypeScript, Prettier and **144 tests across 28 files**. The
-  exact-source container build and CI gate have not yet run for the validator.
+  rollout smoke on the selected platform. The complete frontend gate after this
+  change passed ESLint, TypeScript, Prettier and **144 tests across 28 files**.
+  CI run 36746583513 at source `f0588c4` built the frontend production image
+  with this validator and passed all nine jobs, including the release gate.
 
 ### 2026-09-30 — x86_64 dependency proof and mobile WebKit click correction (sections 71, 93)
 
@@ -2355,10 +2356,32 @@ observed results and their limits. Do not include credentials or session data.
   Playwright trace shows document scroll position changing from 388 to 412
   during the click while global `scroll-behavior: smooth` was active. This is
   consistent with the click missing the moving input after the stability check.
-  Removed
-  global smooth scrolling and the matching Next HTML declaration. The live QA
+  Removed global smooth scrolling and the matching Next HTML declaration. The live QA
   browser now computes `scroll-behavior: auto`; the language/mark touch scenario
   passed 20 consecutive mobile WebKit runs. The complete live QA run then
   passed all 53 scenarios across Chromium, mobile WebKit, Firefox, desktop
-  WebKit and Android Chromium in 3.5 minutes. Exact-source CI confirmation
-  remains pending.
+  WebKit and Android Chromium in 3.5 minutes. CI run 36746583513 at source
+  `f0588c4` passed all 53 full-stack flows and the aggregate release gate.
+
+### 2026-09-30 — Protected API status contract (section 77)
+
+- Before correction, live QA returned HTTP 403 for an anonymous GET to
+  `/api/v1/auth/me/`. Django REST Framework was replacing its 401 response
+  because session authentication did not advertise a challenge. The session
+  authenticator now sends `WWW-Authenticate: Session realm="api"`, so protected
+  guest GET and CSRF-valid write requests return 401. Authenticated permission
+  failures and invalid CSRF remain 403. The frontend continues to recognize
+  both 401 and 403 missing-session responses for compatibility with an older
+  API during rollout; two status-specific unit cases cover each path.
+- QA HTTP probes saw direct `/discover` and health routes return 200, an
+  unknown route return 404, guest `/auth/me/` and progress return 401, and
+  `/discover/` return 308 while preserving language/page query parameters.
+  The intentional root 307 resolves to canonical `/discover` with final 200;
+  it is not advertised as a permanent move. Backend authorization tests retain
+  403 for an authenticated forbidden mutation. The full backend test suite
+  passed **189 tests with one environment-dependent skip**, Ruff and mypy
+  passed, and the frontend gate passed **146 tests**, ESLint, TypeScript and
+  Prettier. The refreshed live QA suite passed **53/53** scenarios after
+  updating exact status assertions, including protected-action session expiry,
+  logout in another tab and password reset. This is local QA evidence; real
+  domain/edge status responses still require rollout verification.

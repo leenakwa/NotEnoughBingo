@@ -68,7 +68,9 @@ def test_session_status_is_guest_safe_and_never_cacheable(client, verified_user_
     assert guest.status_code == 200
     assert guest.data == {"user": None}
     assert guest["Cache-Control"] == "private, no-store"
-    assert client.get("/api/v1/auth/me/").status_code == 403
+    protected = client.get("/api/v1/auth/me/")
+    assert protected.status_code == 401
+    assert protected["WWW-Authenticate"] == 'Session realm="api"'
 
     user = verified_user_factory()
     client.force_login(user)

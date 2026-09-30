@@ -206,8 +206,8 @@ describe("API error presentation", () => {
     expect(readRawBody).not.toHaveBeenCalled();
   });
 
-  it("does not expose missing-authentication API errors in the interface", () => {
-    const error = new ApiClientError(403, {
+  it.each([401, 403])("does not expose HTTP %s missing-authentication errors", (status) => {
+    const error = new ApiClientError(status, {
       code: "not_authenticated",
       message: "Authentication credentials were not provided.",
     });
@@ -226,33 +226,36 @@ describe("API error presentation", () => {
     expect(errorMessage(error)).toBe("The email or password is incorrect.");
   });
 
-  it("notifies the app when a protected action finds an expired session", async () => {
-    const listener = vi.fn();
-    window.addEventListener(AUTH_REQUIRED_EVENT, listener);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 403,
-        headers: new Headers({ "content-type": "application/json" }),
-        json: async () => ({
-          error: {
-            code: "not_authenticated",
-            message: "Authentication credentials were not provided.",
-          },
+  it.each([401, 403])(
+    "notifies the app when a protected action finds an expired session with HTTP %s",
+    async (status) => {
+      const listener = vi.fn();
+      window.addEventListener(AUTH_REQUIRED_EVENT, listener);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status,
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => ({
+            error: {
+              code: "not_authenticated",
+              message: "Authentication credentials were not provided.",
+            },
+          }),
         }),
-      }),
-    );
+      );
 
-    try {
-      await expect(api.profiles.me()).rejects.toMatchObject({ status: 403 });
-      expect(listener).toHaveBeenCalledTimes(1);
-      await expect(api.auth.me()).rejects.toMatchObject({ status: 403 });
-      expect(listener).toHaveBeenCalledTimes(1);
-    } finally {
-      window.removeEventListener(AUTH_REQUIRED_EVENT, listener);
-    }
-  });
+      try {
+        await expect(api.profiles.me()).rejects.toMatchObject({ status });
+        expect(listener).toHaveBeenCalledTimes(1);
+        await expect(api.auth.me()).rejects.toMatchObject({ status });
+        expect(listener).toHaveBeenCalledTimes(1);
+      } finally {
+        window.removeEventListener(AUTH_REQUIRED_EVENT, listener);
+      }
+    },
+  );
 });
 
 describe("draft concurrency headers", () => {

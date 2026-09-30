@@ -16,6 +16,9 @@ ACCOUNT_DELETION_WRITE_ALLOWLIST = {
 class StrictSessionAuthentication(SessionAuthentication):
     """Django sessions with CSRF enforcement for authenticated and anonymous unsafe calls."""
 
+    def authenticate_header(self, request) -> str:  # type: ignore[no-untyped-def]
+        return 'Session realm="api"'
+
     def authenticate(self, request):  # type: ignore[no-untyped-def]
         self.enforce_csrf(request)
         user = getattr(request._request, "user", None)
