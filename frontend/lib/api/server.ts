@@ -123,7 +123,12 @@ export const getServerExplore = cache((input: ExploreServerQuery, cookieHeader =
   const query = new URLSearchParams();
   if (input.search) query.set("search", input.search);
   if (input.author) query.set("author", input.author);
-  if (input.tags) query.set("tags", input.tags);
+  for (const tag of input.tags
+    ?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean) ?? []) {
+    query.append("tags", tag);
+  }
   for (const language of input.languages ?? []) query.append("languages", language);
   if (input.ordering && input.ordering !== "popular") query.set("ordering", input.ordering);
   if (input.page && input.page > 1) query.set("page", String(input.page));

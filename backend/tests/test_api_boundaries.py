@@ -153,6 +153,8 @@ def test_catalog_search_handles_unicode_literals_limits_and_pagination(
     assert guest.get("/api/v1/bingos/", {"author": "nobody"}).data["count"] == 0
     assert guest.get("/api/v1/bingos/", {"search": "x" * 81}).status_code == 400
     assert guest.get("/api/v1/bingos/", {"author": "x" * 81}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"tags": ["public"] * 16}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"tags": ["x" * 51]}).status_code == 400
 
 
 def test_catalog_orders_real_instants_and_serializes_calendar_boundaries(

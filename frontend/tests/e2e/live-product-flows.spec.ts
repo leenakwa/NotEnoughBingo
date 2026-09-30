@@ -593,6 +593,25 @@ test.describe("live full-stack product flows", () => {
     await expect(page).toHaveURL(/\/explore$/);
     await expect(search).toHaveValue("");
     await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
+
+    await page.goto("/explore?tags=e2e%2C%20public");
+    await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
+    await page.reload();
+    await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
+
+    await page.getByRole("combobox", { name: "Tags" }).fill(Array(16).fill("public").join(", "));
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "Tags" })).toBeFocused();
+    await expect(page.getByRole("combobox", { name: "Tags" })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    await expect(page.locator("#explore-tags-error")).toHaveText("Choose at most 15 tags.");
+    await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
+
+    await page.goto(`/explore?tags=${encodeURIComponent(Array(16).fill("public").join(", "))}`);
+    await expect(page.locator("main [role='alert']")).toContainText("Choose at most 15 tags.");
+    await expect(page.locator(".bingo-card")).toHaveCount(0);
   });
 
   test("author creates, saves, edits, and publishes a draft", async ({ page }, testInfo) => {

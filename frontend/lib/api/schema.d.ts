@@ -2713,7 +2713,7 @@ export interface operations {
                 page_size?: number;
                 /** @description Case-insensitive title, username, or display-name search. */
                 search?: string;
-                /** @description Repeat for every tag name or slug that must match. */
+                /** @description Repeat for each matching tag name or slug, up to 15 values of 50 characters each. */
                 tags?: string[];
             };
             header?: never;

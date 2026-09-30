@@ -44,8 +44,9 @@ passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
 Python dependency locks, abuse/error/privacy work, API destination guard, and
 mobile WebKit scroll correction. Source `3d3c7cc` then passed all nine jobs
-with the unauthenticated-API 401 correction. The newer registration/reset
-field-error and form-affordance changes passed local checks and need their own
+with the unauthenticated-API 401 correction. The registration/reset
+field-error and form-affordance commit `dd621d7` passed all nine CI jobs. A
+subsequent local Explore direct-tag/invalid-filter correction needs a new
 exact-source CI gate.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
@@ -55,10 +56,10 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Verify the form field-error and control-affordance batch on its exact source
-   in CI. Source `3d3c7cc` passed all nine jobs; the newer local changes passed
-   189 backend tests, 148 frontend tests, and 53 live scenarios. Keep the draft
-   PR open while remaining local checklist items are audited.
+1. Commit and verify the Explore direct-tag/invalid-filter correction on its
+   own exact source. Source `dd621d7` passed all nine CI jobs; the new local
+   correction passed its PostgreSQL and live Chromium regressions. Keep the
+   draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager

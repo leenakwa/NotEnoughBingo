@@ -36,11 +36,13 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   const [result, setResult] = useState<Page<BingoSummary> | null>(initialResult ?? null);
   const [loading, setLoading] = useState(!initialResult);
   const [error, setError] = useState("");
+  const [tagError, setTagError] = useState("");
   const [authorSuggestions, setAuthorSuggestions] = useState<AuthorSuggestion[]>([]);
   const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
   const [requestVersion, setRequestVersion] = useState(0);
   const [interactive, setInteractive] = useState(false);
   const skipInitialRequest = useRef(Boolean(initialResult));
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setInteractive(true);
@@ -68,7 +70,10 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
           ),
         );
       } catch (caught) {
-        if (!signal.aborted) setError(errorMessage(caught));
+        if (!signal.aborted) {
+          setResult(null);
+          setError(errorMessage(caught));
+        }
       } finally {
         if (!signal.aborted) setLoading(false);
       }
@@ -90,6 +95,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
     setSearch(appliedSearch);
     setAuthor(appliedAuthor);
     setTags(appliedTags);
+    setTagError("");
     setLanguages(appliedLanguages);
     setOrdering(appliedOrdering);
   }, [appliedAuthor, appliedOrdering, appliedSearch, appliedTags, appliedLanguages]);
@@ -152,6 +158,20 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!interactive) return;
+    const selectedTags = tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    if (selectedTags.length > 15 || selectedTags.some((tag) => tag.length > 50)) {
+      setTagError(
+        selectedTags.length > 15
+          ? "Choose at most 15 tags."
+          : "Each tag must be at most 50 characters.",
+      );
+      tagInputRef.current?.focus();
+      return;
+    }
+    setTagError("");
     if (search.trim()) {
       trackInteraction("search", {
         metadata: {
@@ -258,16 +278,31 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
             </datalist>
           </label>
           <label className="field">
-            <span>Tags</span>
+            <span id="explore-tags-label">Tags</span>
             <input
+              ref={tagInputRef}
               type="search"
               name="tags"
+              aria-labelledby="explore-tags-label"
+              aria-describedby={
+                tagError ? "explore-tags-help explore-tags-error" : "explore-tags-help"
+              }
+              aria-invalid={Boolean(tagError)}
               autoComplete="off"
               value={tags}
-              onChange={(event) => setTags(event.target.value)}
+              onChange={(event) => {
+                setTags(event.target.value);
+                setTagError("");
+              }}
               placeholder="travel, friends"
               list="explore-tag-suggestions"
             />
+            <small id="explore-tags-help">Up to 15 tags, separated by commas.</small>
+            {tagError ? (
+              <small id="explore-tags-error" className="form-message--error" role="alert">
+                {tagError}
+              </small>
+            ) : null}
             <datalist id="explore-tag-suggestions">
               {tagSuggestions.map((tag) => (
                 <option key={tag.id} value={[...tagPrefix, tag.slug].join(", ")}>

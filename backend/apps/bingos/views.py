@@ -220,7 +220,10 @@ def _expected_draft_version(request) -> int:
                 many=True,
                 style="form",
                 explode=True,
-                description="Repeat for every tag name or slug that must match.",
+                description=(
+                    "Repeat for each matching tag name or slug, up to 15 values "
+                    "of 50 characters each."
+                ),
             ),
             OpenApiParameter(
                 name="mine",
@@ -311,7 +314,12 @@ class BingoViewSet(
                 Q(author__username__icontains=author)
                 | Q(author__profile__display_name__icontains=author)
             )
-        for tag in [item.strip() for item in params.getlist("tags") if item.strip()]:
+        tags = [item.strip() for item in params.getlist("tags") if item.strip()]
+        if len(tags) > 15:
+            raise ValidationError({"tags": "Choose at most 15 tags."})
+        if any(len(tag) > 50 for tag in tags):
+            raise ValidationError({"tags": "Each tag must be at most 50 characters."})
+        for tag in tags:
             queryset = queryset.filter(
                 Q(tag_links__tag__slug__iexact=tag) | Q(tag_links__tag__name__iexact=tag)
             )

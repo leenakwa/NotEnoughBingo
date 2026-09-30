@@ -2417,4 +2417,25 @@ observed results and their limits. Do not include credentials or session data.
   skip, Ruff and mypy passed, and the frontend gate passed ESLint, TypeScript,
   Prettier and 148 tests. The complete live QA suite passed 53/53 scenarios
   across Chromium, mobile WebKit, Firefox, desktop WebKit and Android Chromium.
-  Exact-source CI confirmation for this batch remains pending.
+- CI run 36752834409 at source `dd621d7` passed all nine jobs, including the
+  form changes, browser smoke, 53 full-stack scenarios, production images and
+  the release gate.
+
+### 2026-09-30 — Direct Explore tags and bounded catalog queries (sections 4, 17, 82)
+
+- A live QA request with two repeated tag parameters (`e2e`, `public`) returned
+  two public boards, while the comma-joined query sent by Explore server
+  rendering returned zero. This made a direct multi-tag Explore URL or reload
+  show a false empty result. Server rendering now splits and repeats the tag
+  parameter as the browser API client already does. The live Chromium journey
+  opens and reloads that direct URL and sees the expected board (1/1 passed).
+- The public catalog now rejects more than 15 tag filters and tag values over
+  50 characters, matching the published-board limits and bounding query joins.
+  An isolated PostgreSQL API regression passed for both cases. Interactive
+  Explore shows either limit error beside the tag input and focuses it without
+  replacing valid results. An invalid direct URL shows an error and no stale
+  cards. The browser journey passed both cases. The tag input's accessible
+  name and separate limit hint were also confirmed through that journey.
+- The final frontend quality gate passed ESLint, TypeScript, Prettier and 148
+  tests. Ruff and mypy passed for the touched backend files; the exact-source
+  CI gate remains pending.

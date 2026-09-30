@@ -473,7 +473,8 @@ paths:
           type: array
           items:
             type: string
-        description: Repeat for every tag name or slug that must match.
+        description: Repeat for each matching tag name or slug, up to 15 values of
+          50 characters each.
         explode: true
         style: form
       tags:
