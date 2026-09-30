@@ -55,6 +55,7 @@ export function AccountSettings({
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarUploadPhase, setAvatarUploadPhase] = useState<UploadPhase>("preparing");
   const avatarUploadController = useRef<AbortController | null>(null);
+  const deletionActionInFlight = useRef(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -270,10 +271,12 @@ export function AccountSettings({
     event.preventDefault();
     if (
       pending ||
+      deletionActionInFlight.current ||
       !window.confirm("Schedule account deletion? You can cancel during the grace period.")
     ) {
       return;
     }
+    deletionActionInFlight.current = true;
     beginAction("deletion");
     try {
       const scheduled = await api.auth.scheduleAccountDeletion(deletionPassword);
@@ -287,12 +290,14 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      deletionActionInFlight.current = false;
       setPending("");
     }
   }
 
   async function cancelDeletion() {
-    if (pending) return;
+    if (pending || deletionActionInFlight.current) return;
+    deletionActionInFlight.current = true;
     beginAction("deletion");
     try {
       await api.auth.cancelAccountDeletion();
@@ -302,6 +307,7 @@ export function AccountSettings({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      deletionActionInFlight.current = false;
       setPending("");
     }
   }

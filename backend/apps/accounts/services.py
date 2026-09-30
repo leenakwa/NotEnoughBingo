@@ -383,11 +383,13 @@ def revoke_session(*, user: User, session: SessionMetadata) -> None:
 def schedule_account_deletion(user: User) -> AccountDeletionRequest:
     now = timezone.now()
     user = User.objects.select_for_update().get(pk=user.pk)
+    existing = AccountDeletionRequest.objects.filter(
+        user=user, status=AccountDeletionRequest.Status.SCHEDULED
+    ).first()
+    if existing:
+        return existing
     grace_days = settings.ACCOUNT_DELETION_GRACE_DAYS
     scheduled_for = now + timedelta(days=grace_days)
-    AccountDeletionRequest.objects.filter(
-        user=user, status=AccountDeletionRequest.Status.SCHEDULED
-    ).update(status=AccountDeletionRequest.Status.CANCELLED)
     deletion = AccountDeletionRequest.objects.create(
         user=user,
         status=AccountDeletionRequest.Status.SCHEDULED,

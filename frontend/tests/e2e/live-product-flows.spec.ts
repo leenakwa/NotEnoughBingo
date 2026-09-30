@@ -497,6 +497,72 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByRole("heading", { name: "A required fields test" })).toBeVisible();
   });
 
+  test("editor controls keep touch-sized targets without horizontal overflow", async ({ page }) => {
+    await authenticateAs(page, "author");
+    await page.goto("/create");
+    await page.getByRole("gridcell").first().click();
+    await expect(page.getByRole("heading", { name: "Cell editor" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    const controls = page.locator(
+      ".editor-history-actions button, .size-control button, .format-row button, .color-input",
+    );
+    await expect(controls).toHaveCount(11);
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 900 });
+      const targets = await controls.evaluateAll((elements) =>
+        elements.map((element) => {
+          const bounds = element.getBoundingClientRect();
+          return { width: bounds.width, height: bounds.height };
+        }),
+      );
+      for (const target of targets) {
+        expect(target.width).toBeGreaterThanOrEqual(44);
+        expect(target.height).toBeGreaterThanOrEqual(44);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width,
+      );
+    }
+  });
+
+  test("deleting a bingo requires confirmation and removes its old link", async ({ page }) => {
+    await authenticateAs(page, "author");
+    await page.goto("/create");
+    await page.getByRole("gridcell").first().click();
+    await page
+      .getByRole("textbox", { name: "Text for row 1, column 1" })
+      .fill("A board to delete safely");
+    await page.getByRole("button", { name: "Finish creating →" }).click();
+    const title = "E2E Deletion Confirmation";
+    await page.getByLabel("Title").fill(title);
+    await page.getByLabel("Bingo language").selectOption("en");
+    await waitForResponse(page, "/publish/", "POST", () =>
+      page.getByRole("button", { name: "Publish bingo" }).click(),
+    );
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    const deletedPath = new URL(page.url()).pathname;
+
+    page.once("dialog", (dialog) => {
+      expect(dialog.message()).toContain("its link will stop working");
+      return dialog.dismiss();
+    });
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+
+    page.once("dialog", (dialog) => void dialog.accept());
+    await waitForResponse(page, `/api/v1/bingos/${deletedPath.split("/").at(-1)}/`, "DELETE", () =>
+      page.getByRole("button", { name: "Delete", exact: true }).click(),
+    );
+    await expect(page).toHaveURL(/\/profile$/);
+    await page.getByRole("tab", { name: "Created" }).click();
+    await expect(page.locator(".bingo-card").filter({ hasText: title })).toHaveCount(0);
+    await page.goBack();
+    await expect(page.getByRole("heading", { name: title })).toHaveCount(0);
+    const deletedPage = await page.goto(deletedPath);
+    expect(deletedPage?.status()).toBe(404);
+    await expect(page.getByRole("heading", { name: "Nothing on this square" })).toBeVisible();
+  });
+
   test("drafts stay in a separate private profile category", async ({ page }) => {
     const fixture = readLiveFixture();
     await authenticateAs(page, "author");
@@ -1007,8 +1073,13 @@ test.describe("live full-stack product flows", () => {
     await page.getByRole("radio", { name: "Diagonal line" }).check();
     await expect(page.locator(".play-board")).toHaveAttribute("data-completion-style", "crossout");
 
+    page.once("dialog", (dialog) => void dialog.dismiss());
+    await page.getByRole("button", { name: "Reset" }).click();
+    await expect(page.getByText(`1 of ${bingo.cell_ids.length} selected`)).toBeVisible();
+    page.once("dialog", (dialog) => void dialog.accept());
     await page.getByRole("button", { name: "Reset" }).click();
     await expect(page.getByText(`0 of ${bingo.cell_ids.length} selected`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reset" })).toBeDisabled();
     await page.getByRole("button", { name: bingo.cell_texts[1], exact: true }).click();
     await page.getByRole("button", { name: "Share result" }).click();
     await page.getByLabel("Your nickname").fill("Guest Browser");
@@ -1055,6 +1126,7 @@ test.describe("live full-stack product flows", () => {
     const blockReset = (route: Route) =>
       route.request().method() === "DELETE" ? route.abort("failed") : route.continue();
     await page.route(progressPath, blockReset);
+    page.once("dialog", (dialog) => void dialog.accept());
     await page.getByRole("button", { name: "Reset" }).click();
     await expect(
       page.getByText("Unable to reach the service. Check your connection and try again."),
@@ -1064,6 +1136,7 @@ test.describe("live full-stack product flows", () => {
     ).toHaveAttribute("aria-pressed", "true");
     await page.unroute(progressPath, blockReset);
 
+    page.once("dialog", (dialog) => void dialog.accept());
     await waitForResponse(page, `/api/v1/progress/${bingo.id}/`, "DELETE", () =>
       page.getByRole("button", { name: "Reset" }).click(),
     );
@@ -1411,7 +1484,12 @@ test.describe("live full-stack product flows", () => {
 
   test("logout in another tab clears private state and editor recovery", async ({ page }) => {
     const fixture = readLiveFixture();
-    await authenticateAs(page, "author");
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(fixture.users.author.email);
+    await page.getByLabel("Password").fill(E2E_FIXTURE_PASSWORD);
+    await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
+      page.getByRole("button", { name: "Log in" }).click(),
+    );
     const secondTab = await page.context().newPage();
     await page.goto("/profile");
     await secondTab.goto("/discover");
@@ -1510,11 +1588,15 @@ test.describe("live full-stack product flows", () => {
     const bingo = readLiveFixture().bingos.public;
     await authenticateAs(page, "player");
     const likePath = `/api/v1/bingos/${bingo.id}/likes/`;
+    const initialResponse = await page.request.get(`/api/v1/bingos/${bingo.id}/`);
+    expect(initialResponse.status()).toBe(200);
+    const initial = (await initialResponse.json()) as { liked_by_me: boolean };
     await page.goto(`/bingo/${bingo.id}`);
-    const likedButton = page.getByRole("button", { name: /^Liked ·/ });
-    const likeButton = (tab: Page) => tab.getByRole("button", { name: /^Like ·/ });
-    await expect(likedButton.or(likeButton(page))).toBeVisible();
-    if (await likedButton.isVisible()) {
+    const likedButton = page.locator(".play-actions").getByRole("button", { name: /^Liked ·/ });
+    const likeButton = (tab: Page) =>
+      tab.locator(".play-actions").getByRole("button", { name: /^Like ·/ });
+    await expect(initial.liked_by_me ? likedButton : likeButton(page)).toBeVisible();
+    if (initial.liked_by_me) {
       await waitForResponse(page, likePath, "DELETE", () => likedButton.click());
     }
     await expect(likeButton(page)).toBeVisible();
@@ -1542,7 +1624,7 @@ test.describe("live full-stack product flows", () => {
       const after = (await afterResponse.json()) as { stats: { likes: number } };
       expect(after.stats.likes).toBe(before.stats.likes + 1);
       await page.reload();
-      await expect(page.getByRole("button", { name: /^Liked ·/ })).toBeVisible();
+      await expect(likedButton).toBeVisible();
     } finally {
       await secondTab.close();
     }

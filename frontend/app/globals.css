@@ -1025,7 +1025,7 @@ h3 {
 }
 
 .editor-history-actions .button {
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 10px;
   font-size: 0.75rem;
 }
@@ -1039,8 +1039,8 @@ h3 {
 }
 
 .size-control button {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border: var(--line);
   background: var(--paper);
   font-size: 1.55rem;
@@ -1297,8 +1297,8 @@ h3 {
 }
 
 .format-button {
-  width: 37px;
-  height: 35px;
+  width: 44px;
+  height: 44px;
   border: var(--line);
   background: var(--paper);
   font-weight: 700;
@@ -1310,7 +1310,7 @@ h3 {
 }
 
 .color-input {
-  min-height: 34px !important;
+  min-height: 44px !important;
   padding: 2px !important;
 }
 
@@ -1460,7 +1460,7 @@ input[type="range"] {
 }
 
 .conflict-actions .button {
-  min-height: 38px;
+  min-height: 44px;
   padding: 7px 10px;
   font-size: 0.75rem;
 }

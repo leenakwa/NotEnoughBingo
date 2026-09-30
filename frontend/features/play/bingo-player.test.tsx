@@ -148,6 +148,7 @@ const progress: PlayProgress = {
 describe("BingoPlayer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     mocks.getBingo.mockResolvedValue(bingo);
     mocks.getViewer.mockResolvedValue(viewer);
     mocks.getProgress.mockResolvedValue(progress);
@@ -169,7 +170,7 @@ describe("BingoPlayer", () => {
     render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
 
     expect(screen.getByRole("button", { name: "Like · 0" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Reset" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
     await act(() => Promise.resolve());
     expect(mocks.getViewer).not.toHaveBeenCalled();
   });
@@ -209,6 +210,23 @@ describe("BingoPlayer", () => {
     expect(await screen.findByText("Unable to reach the service")).toBeVisible();
     expect(cell).toHaveAttribute("aria-pressed", "true");
     expect(mocks.track).not.toHaveBeenCalledWith("reset", expect.anything());
+  });
+
+  it("keeps marks when reset is cancelled", async () => {
+    mocks.getProgress.mockResolvedValue({
+      ...progress,
+      selected_cells: [bingo.current_revision!.cells[0]!.id],
+    });
+    vi.mocked(window.confirm).mockReturnValue(false);
+    render(<BingoPlayer bingoId={bingo.id} />);
+
+    const cell = await screen.findByRole("button", { name: "Open the board, selected" });
+    screen.getByRole("button", { name: "Reset" }).click();
+    expect(window.confirm).toHaveBeenCalledWith(
+      "Clear all marks on this bingo? This cannot be undone.",
+    );
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    expect(mocks.resetProgress).not.toHaveBeenCalled();
   });
 
   it("keeps guest selections when browser storage blocks reset", async () => {

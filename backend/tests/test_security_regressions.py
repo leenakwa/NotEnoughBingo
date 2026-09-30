@@ -347,6 +347,27 @@ def test_scheduled_deletion_revokes_sessions_blocks_writes_and_scrubs_identity(
     assert erased_events.get().metadata == {}
 
 
+def test_repeated_account_deletion_request_reuses_schedule(verified_user_factory) -> None:
+    user = verified_user_factory()
+    first = schedule_account_deletion(user)
+    second = schedule_account_deletion(user)
+
+    assert second.pk == first.pk
+    assert second.scheduled_for == first.scheduled_for
+    assert (
+        AccountDeletionRequest.objects.filter(
+            user=user, status=AccountDeletionRequest.Status.SCHEDULED
+        ).count()
+        == 1
+    )
+    assert (
+        SecurityEvent.objects.filter(
+            user=user, event_type=SecurityEvent.EventType.ACCOUNT_DELETION_REQUESTED
+        ).count()
+        == 1
+    )
+
+
 def test_pending_deletion_is_visible_after_reauthentication_and_can_be_cancelled(
     verified_user_factory,
 ) -> None:

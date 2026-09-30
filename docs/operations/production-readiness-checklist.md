@@ -121,16 +121,16 @@ Verify:
 
 For every component that loads or manipulates data, verify relevant states:
 
-- [ ] initial;
-- [ ] loading;
-- [ ] loaded;
-- [ ] empty;
+- [x] initial;
+- [x] loading;
+- [x] loaded;
+- [x] empty;
 - [ ] partial;
-- [ ] error;
-- [ ] offline;
-- [ ] retrying;
-- [ ] permission denied;
-- [ ] expired session.
+- [x] error;
+- [x] offline;
+- [x] retrying;
+- [x] permission denied;
+- [x] expired session.
 
 Do not allow an empty page/table/dashboard to appear without guidance where an empty state would be useful.
 
@@ -138,15 +138,15 @@ Do not allow an empty page/table/dashboard to appear without guidance where an e
 
 Verify:
 
-- [ ] requests visibly show progress when appropriate;
-- [ ] buttons display loading/progress;
+- [x] requests visibly show progress when appropriate;
+- [x] buttons display loading/progress;
 - [ ] submit cannot be accidentally triggered twice;
 - [ ] layout does not jump unnecessarily;
-- [ ] skeletons resemble final layout if used;
-- [ ] slow operations do not look frozen;
+- [x] skeletons resemble final layout if used;
+- [x] slow operations do not look frozen;
 - [ ] large uploads show progress if practical;
-- [ ] long-running jobs expose status;
-- [ ] operation completion is clearly communicated.
+- [x] long-running jobs expose status;
+- [x] operation completion is clearly communicated.
 
 # 6. ERROR HANDLING
 
@@ -210,43 +210,43 @@ For every form verify:
 
 For each important button/control verify:
 
-- [ ] normal state;
+- [x] normal state;
 - [ ] hover state;
-- [ ] keyboard focus state;
+- [x] keyboard focus state;
 - [ ] active state;
-- [ ] disabled state;
+- [x] disabled state;
 - [ ] loading state.
 
 Also verify:
 
-- [ ] semantic `<button>` is used for buttons;
-- [ ] links are links;
-- [ ] clickable `<div>` is not used unnecessarily;
-- [ ] pointer/interaction feedback is sensible;
+- [x] semantic `<button>` is used for buttons;
+- [x] links are links;
+- [x] clickable `<div>` is not used unnecessarily;
+- [x] pointer/interaction feedback is sensible;
 - [ ] submit buttons submit only the intended form;
-- [ ] destructive actions are visually recognizable;
-- [ ] irreversible actions require confirmation where appropriate;
-- [ ] confirmation describes exactly what will happen.
+- [x] destructive actions are visually recognizable;
+- [x] irreversible actions require confirmation where appropriate;
+- [x] confirmation describes exactly what will happen.
 
 # 9. DESTRUCTIVE ACTIONS
 
 Test actions such as:
 
-- [ ] delete account;
-- [ ] delete project;
-- [ ] remove member;
-- [ ] reset data;
-- [ ] disconnect integration.
+- [x] delete account;
+- [x] delete project;
+- [x] remove member;
+- [x] reset data;
+- [x] disconnect integration.
 
 Verify:
 
-- [ ] confirmation exists where needed;
-- [ ] double-triggering is prevented;
-- [ ] backend authorization is enforced;
-- [ ] repeated requests do not corrupt state;
-- [ ] UI updates after deletion;
-- [ ] browser Back does not misleadingly resurrect deleted content;
-- [ ] deleted-object URLs behave sensibly;
+- [x] confirmation exists where needed;
+- [x] double-triggering is prevented;
+- [x] backend authorization is enforced;
+- [x] repeated requests do not corrupt state;
+- [x] UI updates after deletion;
+- [x] browser Back does not misleadingly resurrect deleted content;
+- [x] deleted-object URLs behave sensibly;
 - [ ] Undo/recovery exists where the product requires it.
 
 # 10. SIGNUP

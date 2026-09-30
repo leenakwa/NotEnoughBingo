@@ -222,6 +222,12 @@ def test_direct_urls_and_spoofed_role_cannot_change_another_users_bingo(
     assert (
         Bingo.objects.filter(pk__in=(public.pk, private.pk), deleted_at__isnull=True).count() == 2
     )
+    owner_client = _api_client(author)
+    assert owner_client.delete(f"/api/v1/bingos/{private.public_id}/").status_code == 204
+    deleted_at = Bingo.objects.get(pk=private.pk).deleted_at
+    assert deleted_at is not None
+    assert owner_client.delete(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert Bingo.objects.get(pk=private.pk).deleted_at == deleted_at
 
     moderation = client.get(
         "/api/v1/moderation/reports/?role=moderator",
@@ -450,6 +456,10 @@ def test_registered_progress_and_guest_share_routes_keep_immutable_revision_snap
     assert reset_progress.status_code == 200
     assert reset_progress.data["selected_cells"] == []
     assert reset_progress.data["reset_at"] is not None
+    assert player_client.delete(progress_url).status_code == 204
+    repeated_reset = player_client.get(progress_url)
+    assert repeated_reset.data["version"] == reset_progress.data["version"]
+    assert repeated_reset.data["reset_at"] == reset_progress.data["reset_at"]
 
     guest = _api_client()
     assert guest.get(progress_url).status_code == 403

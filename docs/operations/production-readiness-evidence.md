@@ -1756,6 +1756,100 @@ observed results and their limits. Do not include credentials or session data.
   funnel, signup/login/primary-CTA event series, production property, or
   operator report yet. Payment success is N/A because payments do not exist.
 
+### 2026-09-30 — Reset and deletion safeguards (sections 5, 9, partial)
+
+- The existing account deletion browser flow covers cancellation, scheduling,
+  sign-out, grace-period display, and cancellation; the backend test processes
+  a due request and checks session revocation and anonymization. There are no
+  team members or external integrations to remove in this release. Repeated
+  scheduling now returns the existing scheduled request without moving its
+  deadline or creating another security event/email. The settings UI also
+  guards synchronous duplicate schedule/cancel clicks. Focused backend
+  schedule/cancel tests passed **2/2**.
+- Found that play-progress Reset immediately cleared all marks without
+  confirmation and could enqueue a second reset before the first completed.
+  It now confirms the irreversible action, disables the empty/pending button,
+  and uses an in-flight guard. The server treats repeated DELETE requests on
+  already reset progress as a no-op without incrementing its version or
+  changing `reset_at`. Focused player component tests passed **6/6** and the
+  backend progress API test passed **1/1**. The live guest and signed-in reset
+  journeys passed **2/2**, including cancellation, offline failure recovery,
+  accepted reset, and reload.
+- A browser created and published a fresh bingo, cancelled its Delete dialog,
+  then confirmed deletion. The board disappeared from Created, Back did not
+  show its old title, and the direct deleted URL returned HTTP 404 (**1/1 live
+  Chromium**). The confirmation now explains lost profile/link access and
+  irreversibility. An owner API test passed: unauthorized deletion remained
+  forbidden, the first owner DELETE returned 204, and a repeated DELETE
+  returned 404 without changing the deletion timestamp. The UI adds a
+  synchronous in-flight guard to prevent duplicate board management requests.
+- The product has no user-facing recovery for deleted creator-owned bingos;
+  that conditional Undo/recovery item remains open. The loading section is
+  partial: route/form status, editor save/upload stages, export polling and
+  completion were exercised earlier; not every control has a complete
+  duplicate-submit or layout-stability observation, and large uploads have
+  stages without a measured byte percentage. No skeleton UI is used.
+
+### 2026-09-30 — Interface states and editor controls (sections 4, 8, partial)
+
+- Prior live and static browser flows exercised first load, populated and
+  empty feeds, missing search/comments/notifications, API errors, offline
+  editor recovery with Retry, protected routes, and session expiry. These
+  establish representative states but not every component's partial-data
+  behavior, so the UI-state section stays partial.
+- Source inventory found native buttons for actions and links for navigation;
+  no clickable `<div>` or role-button stand-ins appeared in the reviewed app
+  components. Common buttons have a visible focus ring, disabled styling, and
+  pointer feedback; destructive controls use the danger treatment and the
+  Reset/Delete confirmations were exercised above.
+- Found the editor's history (36px), size (42px), formatting (37×35px), colour
+  (34px), and conflict-resolution (38px) controls below a 44px touch target.
+  Raised those targets to at least 44px. A live Chromium author opened the
+  cell inspector, left inline typing with Escape, then measured all 11
+  history/size/format/colour controls at both 320px and 1710px widths. Every
+  measured target was at least 44×44px, with no document horizontal overflow
+  (**1/1**). The first attempt measured zero-width hidden inspector controls
+  while inline typing on mobile; the final scenario explicitly enters the
+  visible inspector before measuring.
+
+### 2026-09-30 — Error tracking, monitoring, and alerts (sections 63, 65, 66, partial)
+
+- Django initializes `sentry-sdk` only when `SENTRY_DSN` is set, with
+  `APP_ENVIRONMENT`, `APP_RELEASE`, and `send_default_pii=False`. Those values
+  are available to the backend, worker, and Beat through Compose. No
+  production DSN or real captured event was supplied. The frontend has no
+  error-monitoring integration, so client exceptions and unhandled promises
+  are not yet confirmed in an external tracker. Browser source maps stay
+  private and are blocked from public image directories; there is no private
+  provider upload. Structured server logs include request ID, route, status,
+  duration, environment, and release, but logs alone do not prove alerting.
+- QA probes returned HTTP 200 for the proxy/frontend health route, API
+  readiness (database, migrations, cache), and recent Beat heartbeat. Compose
+  also defines frontend/backend/worker/proxy/dependency healthchecks. This is
+  local endpoint evidence, not external uptime monitoring. No production
+  infrastructure exists to inspect DB/Redis storage capacity, queue depth,
+  error rate, or latency from an operator dashboard.
+- The runbook specifies actionable pages for availability, sustained 5xx,
+  database capacity, delayed critical work, backup failure, and security
+  anomalies. No monitor destination, escalation recipient, thresholds, or
+  delivered alert can be verified without a target platform. The product has
+  no payments or payment webhooks; email delivery and object storage do exist
+  and require dependency failure alerts before launch.
+
+### 2026-09-30 — GitGuardian PR finding (section 41)
+
+- GitGuardian incident **37737208** on PR #18 points to commit `36cf4f2`,
+  `backend/tests/test_accounts.py`, in
+  `test_registration_rejects_weak_or_username_similar_passwords`. The three
+  string inputs are deliberately weak password examples passed to the
+  registration endpoint; the test asserts rejection and does not create a
+  user. Its email uses a `.test` domain. The two distinctive
+  examples occur only in that tracked test file, not runtime configuration or
+  provider credentials. No secret value is copied into this evidence log.
+  The external GitGuardian incident still displays `Triggered`; its owner
+  should classify this test fixture as a false positive in GitGuardian so
+  the PR warning is not mistaken for an active credential leak.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

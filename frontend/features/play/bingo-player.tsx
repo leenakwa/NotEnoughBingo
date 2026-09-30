@@ -63,6 +63,8 @@ export function BingoPlayer({
   const progressVersion = useRef(0);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
   const skipNextSync = useRef(false);
+  const resetInFlight = useRef(false);
+  const manageInFlight = useRef(false);
   const completedRevision = useRef<string | null>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const initialBingoConsumed = useRef(false);
@@ -276,6 +278,9 @@ export function BingoPlayer({
   }
 
   async function reset() {
+    if (resetInFlight.current || saving || selected.size === 0) return;
+    if (!window.confirm("Clear all marks on this bingo? This cannot be undone.")) return;
+    resetInFlight.current = true;
     const previousCells = [...selected];
     const resetVersion = ++requestVersion.current;
     if (saving) setSaving(false);
@@ -301,6 +306,7 @@ export function BingoPlayer({
           revisionId: bingo.current_revision.id,
         });
       }
+      resetInFlight.current = false;
       return;
     }
     setSaving(true);
@@ -331,6 +337,7 @@ export function BingoPlayer({
         setProgressError(errorMessage(caught));
       })
       .finally(() => {
+        resetInFlight.current = false;
         if (resetVersion === requestVersion.current) setSaving(false);
       });
   }
@@ -399,15 +406,16 @@ export function BingoPlayer({
   }
 
   async function manageBingo(action: "archive" | "restore" | "delete") {
-    if (!bingo || socialPending) return;
+    if (!bingo || socialPending || manageInFlight.current) return;
     if (
       action === "delete" &&
       !window.confirm(
-        "Delete this bingo? Existing immutable shared results keep their revision snapshot.",
+        "Delete this bingo? It will disappear from your profile and its link will stop working. Existing shared results keep their revision snapshot. This cannot be undone.",
       )
     ) {
       return;
     }
+    manageInFlight.current = true;
     setSocialPending(action);
     setProgressError("");
     try {
@@ -424,6 +432,7 @@ export function BingoPlayer({
     } catch (caught) {
       setProgressError(errorMessage(caught));
     } finally {
+      manageInFlight.current = false;
       setSocialPending("");
     }
   }
@@ -583,6 +592,7 @@ export function BingoPlayer({
               <button
                 type="button"
                 className="button button--secondary"
+                disabled={saving || selected.size === 0}
                 onClick={() => void reset()}
               >
                 Reset

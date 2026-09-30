@@ -141,7 +141,7 @@ def replace_progress(
 @transaction.atomic
 def reset_progress(*, user, bingo: Bingo) -> bool:
     progress = PlayProgress.objects.select_for_update().filter(user=user, bingo=bingo).first()
-    if not progress:
+    if not progress or (not progress.selected_cells and progress.reset_at is not None):
         return False
     progress.selected_cells = []
     progress.version += 1

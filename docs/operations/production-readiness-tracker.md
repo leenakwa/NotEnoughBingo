@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **34 verified**, **57 partial**, **7 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **34 verified**, **64 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -51,12 +51,12 @@ unresolved failures or missing evidence.
 - [ ] 1. BASIC LAUNCH DETAILS — Partial: guest Create path, status codes, assets, and session behavior recorded; review remaining bullets.
 - [ ] 2. FIRST-SCREEN / PRODUCT CLARITY — Partial: Discover mobile/desktop first screen and its two primary actions walked; continue copy and content review.
 - [ ] 3. NAVIGATION — Partial: Discover → Explore and Discover → Create plus Back verified; continue Forward, deep links, and menus.
-- [ ] 4. UI STATES — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 5. LOADING UX — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 4. UI STATES — Partial: first load, loaded/empty/error, offline/retry, authorization, and expired-session journeys were observed in representative routes; partial-data behavior and a component-by-component sweep remain.
+- [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, and completion feedback were exercised; duplicate submission coverage, layout stability, and byte-level large-upload progress still need an itemized sweep. Skeletons are not used in this release.
 - [ ] 6. ERROR HANDLING — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 7. FORMS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 8. BUTTONS AND CONTROLS — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 9. DESTRUCTIVE ACTIONS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 8. BUTTONS AND CONTROLS — Partial: semantic button/link markup, focus and disabled states, destructive styling/confirmation, and 44px editor touch targets at 320/1710px were checked; hover/active/loading states and form ownership need the remaining per-control sweep.
+- [ ] 9. DESTRUCTIVE ACTIONS — Partial: account deletion schedule/cancel/worker, bingo deletion and old-link 404, guest/server progress reset, confirmations, authorization, repeat safety, and Back behavior were exercised. Member/integration removal is N/A; decide whether creator-owned deleted bingos need user-facing recovery before closing the Undo item.
 - [x] 10. SIGNUP — Verified before deployment: browser validation, password visibility and Enter, Mailpit verification and resend, duplicate and weak-password API behavior, expired and reused links.
 - [x] 11. LOGIN — Verified before deployment: valid/invalid credentials, rate limit, safe return navigation, signed-in redirect, and session-error fallback.
 - [x] 12. PASSWORD RESET — Verified before deployment: Mailpit delivery, configured HTTPS link, TTL, one-time use, credential change, and session revocation.
@@ -110,10 +110,10 @@ unresolved failures or missing evidence.
 - [ ] 60. SERVICE WORKER / PWA — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 61. ANALYTICS — Partial: play completion and other core interactions are recorded without free-text search/filter values after a client/server privacy fix and backfill; landing/signup/login/CTA events, an operator funnel, and target-environment isolation remain.
 - [ ] 62. PRODUCT METRICS — Partial: registration counts and core board/play actions are queryable from first-party records; unique visitor arrivals, activation/return cohort definitions, and drop-off measurement need an explicit funnel implementation.
-- [ ] 63. ERROR TRACKING — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 63. ERROR TRACKING — Partial: Django can send errors to Sentry with environment/release metadata and default PII disabled; no production DSN, capture proof, frontend/unhandled-promise integration, or private source-map upload exists yet. API failures have structured server logs but no verified alerting pipeline.
 - [ ] 64. LOGGING — Partial: structured request/task logs expose timestamp, severity, route, request ID, failure fields, and bounded context; review third-party/exception text for sensitive values before closing.
-- [ ] 65. MONITORING — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 66. ALERTS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 65. MONITORING — Partial: QA proves proxy/frontend, API/DB/cache readiness, and Beat heartbeat endpoints; Docker healthchecks cover processes. External uptime, queue/worker, capacity, error-rate, and latency monitors need a production host and provider.
+- [ ] 66. ALERTS — Partial: the runbook defines pages for availability, errors, database, worker, backup, and capacity, but no destination or delivered alert is configured. Payment webhook failure is N/A; email and object-storage dependency alerts still need a real provider.
 - [ ] 67. HEALTH ENDPOINT — Partial: live, readiness, database, migration, cache, and Beat checks respond on QA without secrets; target storage/email and external monitor coverage remain.
 - [ ] 68. CRON / SCHEDULED JOBS — Partial: UTC schedule and QA Beat heartbeat observed; structured task retry/failure logging is configured. Production singleton, overlap, and alerts still need a target platform.
 - [ ] 69. QUEUES / WORKERS — Partial: QA worker/Redis healthy on a durable default queue; media/export retries and duplicate guards exist, and trending work is bounded; production queue durability, dead-letter policy, and outage behavior remain.
