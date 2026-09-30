@@ -46,7 +46,12 @@ from apps.accounts.services import (
     token_digest,
     verify_email,
 )
-from apps.accounts.tasks import send_password_reset_email
+from apps.accounts.tasks import (
+    send_critical_security_email,
+    send_email_change_notice,
+    send_password_reset_email,
+    send_verification_email,
+)
 from apps.accounts.views import (
     EmailChangeConfirmView,
     EmailChangeRequestView,
@@ -687,6 +692,43 @@ def test_password_reset_email_uses_the_configured_public_origin(user_factory) ->
     assert "https://bingo.example.test/reset-password?uid=example-uid&token=example-token" in (
         mail.outbox[0].body
     )
+    assert "https://bingo.example.test/support" in mail.outbox[0].body
+
+
+@pytest.mark.parametrize(
+    ("purpose", "route"),
+    [
+        (EmailVerification.Purpose.VERIFY_EMAIL, "verify-email"),
+        (EmailVerification.Purpose.CHANGE_EMAIL, "confirm-email-change"),
+    ],
+)
+@override_settings(FRONTEND_URL="https://bingo.example.test")
+def test_verification_emails_include_the_public_support_destination(
+    user_factory, purpose: str, route: str
+) -> None:
+    user = user_factory()
+    verification = EmailVerification.objects.create(
+        user=user,
+        email=user.email,
+        purpose=purpose,
+        token_hash=token_digest("example-token"),
+        expires_at=timezone.now() + timedelta(hours=1),
+    )
+    send_verification_email(verification.pk, "example-token")
+
+    assert len(mail.outbox) == 1
+    assert f"https://bingo.example.test/{route}?token=example-token" in mail.outbox[0].body
+    assert "https://bingo.example.test/support" in mail.outbox[0].body
+
+
+@override_settings(FRONTEND_URL="https://bingo.example.test")
+def test_security_emails_include_the_public_support_destination(user_factory) -> None:
+    user = user_factory()
+    send_email_change_notice("former@example.test")
+    send_critical_security_email(user.pk, "Security notice", "Check your account.")
+
+    assert len(mail.outbox) == 2
+    assert all("https://bingo.example.test/support" in message.body for message in mail.outbox)
 
 
 @override_settings(PASSWORD_RESET_TIMEOUT=60)

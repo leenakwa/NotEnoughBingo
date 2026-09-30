@@ -57,7 +57,9 @@ def send_verification_email(verification_id: int, raw_token: str) -> None:
     )
     send_mail(
         subject,
-        body + f"The link expires in 24 hours:\n\n{url}",
+        body
+        + f"The link expires in 24 hours:\n\n{url}\n\n"
+        + f"Support: {settings.FRONTEND_URL}/support",
         settings.DEFAULT_FROM_EMAIL,
         [verification.email],
         fail_silently=False,
@@ -75,7 +77,8 @@ def send_email_change_notice(old_email: str) -> None:
     send_mail(
         "Your Not Enough Bingo email address changed",
         "The email address on your Not Enough Bingo account changed. "
-        "Contact support immediately if this was not you.",
+        "Contact support immediately if this was not you.\n\n"
+        f"Support: {settings.FRONTEND_URL}/support",
         settings.DEFAULT_FROM_EMAIL,
         [old_email],
         fail_silently=False,
@@ -98,7 +101,8 @@ def send_password_reset_email(user_id: int, uid: str, token: str) -> None:
         "Reset your Not Enough Bingo password",
         (
             f"Open this link to choose a new password:\n\n{url}\n\n"
-            "If you did not request this, ignore this email."
+            "If you did not request this, ignore this email.\n\n"
+            f"Support: {settings.FRONTEND_URL}/support"
         ),
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
@@ -116,7 +120,13 @@ def send_password_reset_email(user_id: int, uid: str, token: str) -> None:
 def send_critical_security_email(user_id: int, subject: str, body: str) -> None:
     email = User.objects.filter(pk=user_id).values_list("email", flat=True).first()
     if email:
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
+        send_mail(
+            subject,
+            f"{body}\n\nSupport: {settings.FRONTEND_URL}/support",
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
 
 
 def _process_account_deletion_request(request_id: int) -> bool:

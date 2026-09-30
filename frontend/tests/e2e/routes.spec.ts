@@ -404,10 +404,10 @@ test("Explore keeps search visibly busy until a slow result arrives", async ({ p
   await page.getByRole("searchbox", { name: "Search by title" }).fill("slow");
   await page.getByRole("searchbox", { name: "Search by title" }).press("Enter");
   await slowRequest;
-  await expect(page.locator("main#main-content")).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator("main#main-content[aria-busy]")).toHaveAttribute("aria-busy", "true");
   await expect(page.locator(".results-count")).toContainText("Updating results");
   releaseSlowResponse();
-  await expect(page.locator("main#main-content")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator("main#main-content[aria-busy]")).toHaveAttribute("aria-busy", "false");
 });
 
 test("Explore waits for the last author-suggestion query", async ({ page }) => {
@@ -429,7 +429,7 @@ test("Explore waits for the last author-suggestion query", async ({ page }) => {
   });
 
   await page.goto("/explore");
-  await expect(page.locator("main#main-content")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator("main#main-content[aria-busy]")).toHaveAttribute("aria-busy", "false");
   const author = page.getByRole("combobox", { name: "Author" });
   await author.fill("a");
   await author.fill("ad");

@@ -2534,4 +2534,26 @@ observed results and their limits. Do not include credentials or session data.
   concurrent unsafe requests. Ruff, format and mypy passed on the touched
   backend files; schema generation passed; the frontend gate passed ESLint,
   TypeScript, Prettier and 150 tests. The live WebKit compatibility flow passed
-  three repeated local runs. Exact-source CI remains outstanding.
+  three repeated local runs. CI run `36762027128` on exact source `cb812e2`
+  then passed all nine jobs: 191 backend tests, 150 frontend tests, 54 live
+  product flows, browser smoke, both production images and the release gate.
+  Browser smoke recorded one static WebKit assertion that passed on retry;
+  the original selector matched both the transient Explore loading screen and
+  final Explore page. The test selector has been narrowed to the page element
+  that exposes `aria-busy`; five repeated local WebKit runs passed. That
+  adjustment requires its own CI run.
+
+### 2026-09-30 — Security email support destination (section 45)
+
+- The old-address email-change notice and critical security messages told
+  recipients to contact support immediately without giving a destination.
+  Verification, password-reset, email-change and critical security messages
+  now include the configured public `/support` URL in their plain-text bodies.
+  Production frontend configuration requires a support email on that page.
+- Four PostgreSQL cases confirmed the configured HTTPS origin is used for the
+  password-reset and both verification-link variants, and that verification,
+  old-address email-change and critical security notices include the support
+  URL. All four targeted cases passed; Ruff, format and mypy passed on the
+  touched backend code. Delivery,
+  sender authentication and inbox rendering remain unverified without a
+  domain and transactional email provider.

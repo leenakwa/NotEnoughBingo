@@ -52,9 +52,11 @@ while its runner downloaded Playwright system packages; the release gate failed.
 The pinned Playwright image then passed in CI on source `2981986`, together with
 the other implementation jobs except the full-stack suite. One of 54 live
 scenarios failed: WebKit sent a first login request with the CSRF cookie but
-without the CSRF header. The CSRF bootstrap now returns a masked token directly
-to the client; its targeted backend, frontend and three repeated WebKit checks
-pass locally. Exact-source CI for this correction is still required.
+without the CSRF header. Source `cb812e2` corrected the bootstrap and passed
+all nine CI jobs: 191 backend tests, 150 frontend tests, 54 live product flows,
+browser smoke and both production images. One static WebKit smoke assertion
+passed on retry because its selector briefly matched both the loading screen
+and the Explore page; the selector has been narrowed for the next source.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
 and a domain have not been selected.
@@ -63,12 +65,10 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Commit and verify the current pagination and CSRF corrections on their
-   exact source. The catalog/notification API contract, editor/account form
-   recovery and Playwright CI image have passed their relevant CI jobs on
-   source `2981986`; the full-stack WebKit login failure keeps the release
-   gate open. Keep the draft PR open while remaining local checklist items
-   are audited.
+1. Verify the current support-email copy and static WebKit test selector on
+   their exact source. The pagination and CSRF corrections passed all nine CI
+   jobs on `cb812e2`; keep the draft PR open while remaining local checklist
+   items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager
