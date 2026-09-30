@@ -38,10 +38,17 @@ export function ReportDialog({
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
+    const root = document.documentElement;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
     if (typeof dialog.showModal === "function") dialog.showModal();
     else dialog.setAttribute("open", "");
+    root.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
     return () => {
       if (dialog.open && typeof dialog.close === "function") dialog.close();
+      root.style.overflow = previousRootOverflow;
+      document.body.style.overflow = previousBodyOverflow;
     };
   }, []);
 

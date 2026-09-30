@@ -1141,13 +1141,13 @@ Verify:
 
 Verify:
 
-- [ ] HTML is not accidentally cached forever;
-- [ ] hashed assets may be cached aggressively;
+- [x] HTML is not accidentally cached forever;
+- [x] hashed assets may be cached aggressively;
 - [ ] old JS/new HTML incompatibility is prevented;
-- [ ] service worker does not pin obsolete builds;
+- [x] service worker does not pin obsolete builds;
 - [ ] CDN invalidation/update strategy works;
-- [ ] private API responses are not publicly cached;
-- [ ] logout does not leave unsafe cached private pages/data.
+- [x] private API responses are not publicly cached;
+- [x] logout does not leave unsafe cached private pages/data.
 
 # 60. SERVICE WORKER / PWA
 
@@ -1278,11 +1278,11 @@ Health output must not leak secrets/configuration.
 If scheduled jobs exist, verify:
 
 - [ ] the scheduler is actually configured in production;
-- [ ] timezone;
+- [x] timezone;
 - [ ] retry behavior;
 - [ ] duplicate execution;
 - [ ] overlapping execution;
-- [ ] logging;
+- [x] logging;
 - [ ] failure alerting;
 - [ ] idempotency.
 
@@ -1456,11 +1456,11 @@ Verify:
 - [ ] www ↔ non-www;
 - [ ] old URLs;
 - [ ] renamed routes;
-- [ ] login redirect;
-- [ ] logout redirect;
-- [ ] no redirect loops;
-- [ ] relevant query parameters survive;
-- [ ] permanent redirects use appropriate permanent status.
+- [x] login redirect;
+- [x] logout redirect;
+- [x] no redirect loops;
+- [x] relevant query parameters survive;
+- [x] permanent redirects use appropriate permanent status.
 
 # 79. STATIC ASSETS
 
@@ -1638,48 +1638,48 @@ Check:
 
 Inspect rendered production source/head for expected tags such as:
 
-- [ ] `<title>`;
-- [ ] meta description;
-- [ ] Open Graph title;
-- [ ] Open Graph description;
-- [ ] Open Graph image;
-- [ ] Open Graph URL;
-- [ ] canonical;
-- [ ] favicon.
+- [x] `<title>`;
+- [x] meta description;
+- [x] Open Graph title;
+- [x] Open Graph description;
+- [x] Open Graph image;
+- [x] Open Graph URL;
+- [x] canonical;
+- [x] favicon.
 
 # 92. FAVICON SET
 
 Verify relevant assets such as:
 
-- [ ] favicon.ico;
-- [ ] browser favicon;
-- [ ] Apple touch icon;
-- [ ] PWA icons if applicable;
+- [x] favicon.ico;
+- [x] browser favicon;
+- [x] Apple touch icon;
+- [x] PWA icons if applicable;
 - [ ] visibility on both light/dark browser chrome.
 
 # 93. SCROLL BEHAVIOR
 
 Verify:
 
-- [ ] route changes scroll sensibly;
-- [ ] Back restores scroll where expected;
-- [ ] closing modal restores `body` scrolling;
-- [ ] no accidental horizontal scroll;
-- [ ] sticky UI does not hide important content.
+- [x] route changes scroll sensibly;
+- [x] Back restores scroll where expected;
+- [x] closing modal restores `body` scrolling;
+- [x] no accidental horizontal scroll;
+- [x] sticky UI does not hide important content.
 
 # 94. MODALS
 
 Test:
 
-- [ ] close X;
-- [ ] Cancel;
-- [ ] Escape;
-- [ ] backdrop click if intentionally supported;
-- [ ] focus trap;
-- [ ] body scroll lock;
-- [ ] mobile;
-- [ ] long modal content;
-- [ ] destructive-action clarity.
+- [x] close X;
+- [x] Cancel;
+- [x] Escape;
+- [x] backdrop click if intentionally supported;
+- [x] focus trap;
+- [x] body scroll lock;
+- [x] mobile;
+- [x] long modal content;
+- [x] destructive-action clarity.
 
 # 95. DROPDOWNS / POPOVERS
 

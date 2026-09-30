@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **23 verified**, **51 partial**, **25 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **26 verified**, **55 partial**, **18 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -106,7 +106,7 @@ unresolved failures or missing evidence.
 - [ ] 56. ACCOUNT SETTINGS — Partial: local evidence recorded; review remaining original bullets.
 - — 57. TEAMS / ORGANIZATIONS — N/A for current release: capability absent in source inventory.
 - [ ] 58. BROWSER STORAGE — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 59. CACHE — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 59. CACHE — Partial: dynamic HTML/API no-store policy, immutable hashed assets, no service worker, and logout isolation checked; version-swap and CDN invalidation require a target release path.
 - [ ] 60. SERVICE WORKER / PWA — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 61. ANALYTICS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 62. PRODUCT METRICS — Review pending: map original bullets to repository and runtime evidence.
@@ -115,8 +115,8 @@ unresolved failures or missing evidence.
 - [ ] 65. MONITORING — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 66. ALERTS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 67. HEALTH ENDPOINT — Partial: live, readiness, database, migration, cache, and Beat checks respond on QA without secrets; target storage/email and external monitor coverage remain.
-- [ ] 68. CRON / SCHEDULED JOBS — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 69. QUEUES / WORKERS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 68. CRON / SCHEDULED JOBS — Partial: UTC schedule and QA Beat heartbeat observed; structured task retry/failure logging is configured. Production singleton, overlap, and alerts still need a target platform.
+- [ ] 69. QUEUES / WORKERS — Partial: QA worker/Redis healthy on a durable default queue; media/export retries and duplicate guards exist, and trending work is bounded; production queue durability, dead-letter policy, and outage behavior remain.
 - [ ] 70. PRODUCTION BUILD — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 71. DEPENDENCIES — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
@@ -125,7 +125,7 @@ unresolved failures or missing evidence.
 - [ ] 75. BROWSER CONSOLE — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 76. NETWORK PANEL — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 77. HTTP STATUS CODES — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 78. REDIRECTS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 78. REDIRECTS — Partial: login/logout, root, and trailing-slash redirects work with preserved query and no loop; public HTTP→HTTPS, host alias, and legacy URL policy need a domain.
 - [ ] 79. STATIC ASSETS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 80. PUBLIC FILE EXPOSURE — Partial: local evidence recorded; review remaining original bullets.
 - [x] 81. SOURCE MAPS — Verified before deployment: private map policy, production-image file inspection, HTTP probes, and CI guard.
@@ -138,10 +138,10 @@ unresolved failures or missing evidence.
 - [ ] 88. SUPPORT — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 89. LEGAL / BUSINESS FOOTER — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 90. FOOTER — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 91. PAGE METADATA — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 92. FAVICON SET — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 93. SCROLL BEHAVIOR — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 94. MODALS — Review pending: map original bullets to repository and runtime evidence.
+- [x] 91. PAGE METADATA — Verified before deployment: production-mode public route heads expose title, description, canonical, Open Graph/Twitter URLs and images, and favicon links at the configured origin.
+- [ ] 92. FAVICON SET — Partial: ICO, SVG browser icon, and 180px Apple touch icon return 200 and appear in page head; light/dark browser chrome still needs a visual check. PWA is absent.
+- [x] 93. SCROLL BEHAVIOR — Verified before deployment: route top, browser Back, modal close, horizontal overflow, and sticky-header anchor behavior checked at mobile and desktop widths.
+- [x] 94. MODALS — Verified before deployment: report dialog X, Cancel, Escape, backdrop, focus containment, background scroll lock, and 320px-high viewport; there is no destructive modal action.
 - [ ] 95. DROPDOWNS / POPOVERS — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
 - [ ] 96. Z-INDEX / OVERLAY STACK — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 97. TOASTS / TRANSIENT FEEDBACK — Review pending: map original bullets to repository and runtime evidence.

@@ -961,6 +961,33 @@ test.describe("live full-stack product flows", () => {
     await expectNoAccessibilityViolations(page);
   });
 
+  test("report dialog locks background scrolling and restores it after Escape", async ({
+    page,
+  }) => {
+    const bingo = readLiveFixture().bingos.public;
+    await page.setViewportSize({ width: 390, height: 640 });
+    await authenticateAs(page, "player");
+    await page.goto(`/bingo/${bingo.id}`);
+    await expect(page.getByRole("heading", { name: bingo.title })).toBeVisible();
+
+    await page.getByRole("button", { name: "Report", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Report bingo" });
+    await expect(dialog).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.style.overflow))
+      .toBe("hidden");
+    const lockedScrollY = await page.evaluate(() => window.scrollY);
+    await page.mouse.move(380, 600);
+    await page.mouse.wheel(0, 500);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(lockedScrollY);
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("");
+    await page.mouse.wheel(0, 500);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(lockedScrollY);
+  });
+
   test("guest progress resets, replays, shares, and stays read-only", async ({ page }) => {
     const fixture = readLiveFixture();
     const bingo = fixture.bingos.public;

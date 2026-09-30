@@ -1416,6 +1416,94 @@ observed results and their limits. Do not include credentials or session data.
   commit only; the subsequent local CORS/configuration and tracker edits
   require their own exact-head CI run after push.
 
+### 2026-09-30 — Scheduler and worker scale (sections 68–69, partial)
+
+- The isolated Compose backend, Redis, worker, and Beat were running and
+  healthy. Celery inspection showed one online worker consuming the durable
+  default `celery` queue with acknowledgements enabled. The Beat heartbeat
+  route returned a recent timestamp; code and tests cover a stale heartbeat.
+  Django uses UTC and the configured schedules run every minute, quarter
+  hour, hour, or day according to the task. Celery retry/failure signals emit
+  structured task names, IDs, attempt counts, and exception types.
+- The trending recomputation previously kept all event aggregates in memory
+  and issued one board update per published board. It now aggregates events
+  and bulk-updates boards in at most 500-board batches. A regression case
+  exercised a full and final partial batch, recent authenticated/guest
+  events, an expired event, and boards without events. Existing repeatability
+  and public-visibility cases also passed. The full backend suite passed 147
+  tests with one skip, and mypy found no issues in 71 source files. This is a
+  bounded-query design check, not a load test on millions of events.
+- The production platform still needs a single scheduler instance, queue
+  persistence/visibility policy, failure alerts, and an operator procedure
+  for stuck or exhausted jobs. The local run does not establish those
+  external guarantees.
+
+### 2026-09-30 — Cache policy mapped to release checks (section 59, partial)
+
+- The QA Discover HTML returned `no-cache, must-revalidate`, and the
+  authenticated session API returned `private, no-store`. Earlier
+  production-mode checks observed a dynamic bingo page with
+  `private, no-cache, no-store` and a hashed Next asset with a one-year
+  immutable cache header. Browser Back and second-tab logout checks removed
+  private views after revocation. Source inventory found no service worker or
+  PWA manifest to pin an obsolete build.
+- A real old-JavaScript/new-HTML transition and CDN purge/invalidation cannot
+  be exercised until a deployment strategy and public cache layer exist.
+
+### 2026-09-30 — Redirect behavior (section 78, partial)
+
+- QA `/` reached Discover in one redirect and returned HTTP 200. A trailing
+  slash on `/discover/?languages=en&page=2` returned HTTP 308 with the same
+  query on the canonical path; following it took one redirect to HTTP 200.
+  Existing browser flows cover safe login return navigation and logout to a
+  guest state. No redirect loop appeared in these sampled paths.
+- There is no deployed old hostname or prior public URL inventory. The
+  actual edge must define HTTP→HTTPS and chosen `www`/non-`www` canonical
+  behavior before launch; those cannot be asserted on localhost.
+
+### 2026-09-30 — Browser and Apple icons (sections 91–92)
+
+- The existing grid/check SVG was rasterized into a three-size ICO
+  (32/48/256 px) and a padded 180×180 PNG Apple touch icon. The PNG was
+  visually inspected and matches the source mark. QA now returns HTTP 200
+  with `image/x-icon` for `/favicon.ico` and `image/png` for
+  `/apple-icon.png`; before this change `/favicon.ico` returned 404. The
+  rendered Discover head links both new assets and the SVG icon.
+- Earlier production-mode HTML checks covered title, description, canonical,
+  Open Graph title/description/image/URL, and Twitter card metadata on
+  Discover, a public bingo, profile, and shared result. The icon links close
+  the remaining page-metadata item. A PWA is not part of this release; visual
+  contrast of the favicon in light and dark browser chrome remains open.
+
+### 2026-09-30 — Scroll and report modal repair (sections 93–94)
+
+- In live Chromium at 390×640, navigating from a scrolled Discover page to
+  Explore started the new route at the top; returning from a footer link to
+  Privacy restored Discover to its previous 1625px scroll position. At
+  1710×989, the `#comments` anchor left the heading below the sticky header,
+  and the skip link left Discover's H1 visible below it. The sampled pages
+  had no horizontal document overflow at either width.
+- A report dialog on a long board previously allowed the mouse wheel to move
+  the page behind it by 610px. The dialog now locks root/body overflow while
+  open and restores both prior inline values on close. A focused live browser
+  regression passed: at 390×640 the wheel left background scroll unchanged,
+  Escape closed the dialog, and wheel scrolling worked again. TypeScript and
+  ESLint passed after the change.
+- Manual mobile checks at 390×320 showed the dialog constrained to 276px of
+  the 320px viewport with its 543px content independently scrollable. Close
+  X, Cancel, Escape, and intentional backdrop click each closed it and
+  restored scrolling. The earlier cross-browser focus-trap/return check also
+  passed. The report dialog is the only native modal in this release and does
+  not perform a destructive action; account deletion has a separate
+  confirmation flow.
+
+### 2026-09-30 — Exact-commit CI release gate (`0d7f2ad`)
+
+- All nine CI jobs passed for `0d7f2ad`, including backend/frontend quality,
+  browser smoke, full-stack product flows, production image builds, secret
+  scan, foundation checks, and the aggregate Release gate. The later
+  trending, icon, modal, and tracker edits need a new exact-head run.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

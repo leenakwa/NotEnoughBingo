@@ -261,6 +261,46 @@ def test_recompute_trending_scores_is_repeatable_and_scoped_to_public_bingos(
 
 
 @freeze_time("2026-08-01 12:00:00+00:00")
+def test_trending_recomputation_preserves_scores_across_full_and_partial_batches(
+    user_factory,
+    bingo_factory,
+) -> None:
+    now = timezone.now()
+    actor = user_factory()
+    boards = [
+        bingo_factory(published_at=now - timedelta(hours=24), trending_score=99) for _ in range(3)
+    ]
+    InteractionEvent.objects.create(
+        actor=actor,
+        event_type=InteractionEvent.Type.LIKE,
+        bingo=boards[0],
+        occurred_at=now,
+    )
+    InteractionEvent.objects.create(
+        anonymous_id_hash="guest-one",
+        event_type=InteractionEvent.Type.LIKE,
+        bingo=boards[0],
+        occurred_at=now,
+    )
+    InteractionEvent.objects.create(
+        actor=actor,
+        event_type=InteractionEvent.Type.LIKE,
+        bingo=boards[2],
+        occurred_at=now - timedelta(days=8),
+    )
+
+    assert recompute_trending_scores(batch_size=2) == 3
+    for board in boards:
+        board.refresh_from_db()
+
+    assert boards[0].trending_score == float(
+        calculate_trending_score({InteractionEvent.Type.LIKE: 2}, age_hours=24)
+    )
+    assert boards[1].trending_score == boards[2].trending_score == 0
+    assert all(board.trending_score_updated_at == now for board in boards)
+
+
+@freeze_time("2026-08-01 12:00:00+00:00")
 def test_trending_decay_uses_first_publish_not_latest_republish_timestamp(
     user_factory,
     bingo_factory,
