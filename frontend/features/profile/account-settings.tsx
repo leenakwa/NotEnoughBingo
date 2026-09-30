@@ -11,7 +11,7 @@ import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
 import { clearAllProgressRecovery } from "@/lib/progress-recovery";
 import { clearProfileEdits } from "@/features/profile/profile-edit-cache";
 import { notifyAuthChanged } from "@/lib/auth-events";
-import { api, errorMessage } from "@/lib/api/client";
+import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type {
   AuthenticatedUser,
   ExportJob,
@@ -47,9 +47,13 @@ export function AccountSettings({
   const [emailChangePassword, setEmailChangePassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [emailFeedback, setEmailFeedback] = useState<{ error: boolean; text: string } | null>(null);
+  const [newEmailError, setNewEmailError] = useState("");
+  const [emailChangePasswordError, setEmailChangePasswordError] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
   const [deletionPassword, setDeletionPassword] = useState("");
   const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
   const [exportJob, setExportJob] = useState<ExportJob | null>(null);
@@ -170,17 +174,18 @@ export function AccountSettings({
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     if (pending || actionInFlight.current) return;
     if (newPassword !== confirmPassword) {
       setError("");
       setMessage("");
       setConfirmPasswordError("The new passwords do not match.");
-      event.currentTarget
-        .querySelector<HTMLInputElement>('input[name="confirm-new-password"]')
-        ?.focus();
+      form.querySelector<HTMLInputElement>('input[name="confirm-new-password"]')?.focus();
       return;
     }
     setConfirmPasswordError("");
+    setCurrentPasswordError("");
+    setNewPasswordError("");
     if (!beginAction("password")) return;
     try {
       await api.auth.changePassword({
@@ -193,7 +198,17 @@ export function AccountSettings({
       setMessage("Password changed. Other sessions were signed out.");
       setSessions(await api.auth.sessions());
     } catch (caught) {
-      setError(errorMessage(caught));
+      const currentFieldError = fieldValidationMessage(caught, "current_password");
+      const newFieldError = fieldValidationMessage(caught, "new_password");
+      setCurrentPasswordError(currentFieldError ?? "");
+      setNewPasswordError(newFieldError ?? "");
+      if (currentFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="current_password"]')?.focus();
+      } else if (newFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="new_password"]')?.focus();
+      } else {
+        setError(errorMessage(caught));
+      }
     } finally {
       finishAction();
     }
@@ -201,7 +216,10 @@ export function AccountSettings({
 
   async function requestEmailChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     if (pending || !beginAction("email")) return;
+    setNewEmailError("");
+    setEmailChangePasswordError("");
     try {
       await api.auth.requestEmailChange({
         current_password: emailChangePassword,
@@ -213,7 +231,17 @@ export function AccountSettings({
         text: "Check the new email address for a confirmation link. Your current address remains active until you confirm it.",
       });
     } catch (caught) {
-      setEmailFeedback({ error: true, text: errorMessage(caught) });
+      const emailFieldError = fieldValidationMessage(caught, "new_email");
+      const passwordFieldError = fieldValidationMessage(caught, "current_password");
+      setNewEmailError(emailFieldError ?? "");
+      setEmailChangePasswordError(passwordFieldError ?? "");
+      if (emailFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="new_email"]')?.focus();
+      } else if (passwordFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="email-change-password"]')?.focus();
+      } else {
+        setEmailFeedback({ error: true, text: errorMessage(caught) });
+      }
     } finally {
       finishAction();
     }
@@ -443,20 +471,31 @@ export function AccountSettings({
               spellCheck={false}
               required
               value={newEmail}
+              aria-invalid={Boolean(newEmailError)}
+              aria-describedby={newEmailError ? "new-email-error" : undefined}
               onChange={(event) => {
                 setNewEmail(event.target.value);
+                setNewEmailError("");
                 setEmailFeedback(null);
               }}
             />
+            {newEmailError ? (
+              <small id="new-email-error" className="form-message--error" role="alert">
+                {newEmailError}
+              </small>
+            ) : null}
           </label>
           <PasswordField
             label="Current password for email change"
+            name="email-change-password"
             autoComplete="current-password"
             value={emailChangePassword}
             onChange={(event) => {
               setEmailChangePassword(event.target.value);
+              setEmailChangePasswordError("");
               setEmailFeedback(null);
             }}
+            error={emailChangePasswordError}
           />
           <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
             {pending === "email" ? "Sending…" : "Send confirmation email"}
@@ -475,16 +514,26 @@ export function AccountSettings({
           <h3>Change password</h3>
           <PasswordField
             label="Current password"
+            name="current_password"
             autoComplete="current-password"
             value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
+            onChange={(event) => {
+              setCurrentPassword(event.target.value);
+              setCurrentPasswordError("");
+            }}
+            error={currentPasswordError}
           />
           <PasswordField
             label="New password"
+            name="new_password"
             autoComplete="new-password"
             minLength={12}
             value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
+            onChange={(event) => {
+              setNewPassword(event.target.value);
+              setNewPasswordError("");
+            }}
+            error={newPasswordError}
           />
           <PasswordField
             label="Confirm new password"

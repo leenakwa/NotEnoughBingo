@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, ReactNode } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
 import { bingoLanguages } from "@/lib/languages";
@@ -41,11 +41,22 @@ export function BingoDetails({
 }) {
   const [tagInput, setTagInput] = useState("");
   const [failedCoverUrl, setFailedCoverUrl] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const languageSelectRef = useRef<HTMLSelectElement>(null);
   const coverUrl = state.cover.previewUrl ?? state.cover.asset?.url;
+  const titleValidation = error === "Add a title before publishing.";
+  const languageValidation = error === "Choose a bingo language before publishing.";
+  const actionError = titleValidation || languageValidation ? "" : error;
 
   function addTag() {
     dispatch({ type: "add-tag", value: tagInput });
     setTagInput("");
+  }
+
+  function publishWithFieldFocus() {
+    if (!state.title.trim()) titleInputRef.current?.focus();
+    else if (!state.language) languageSelectRef.current?.focus();
+    onPublish();
   }
 
   return (
@@ -58,23 +69,40 @@ export function BingoDetails({
       <p>Give your bingo a clear identity and decide who can open it.</p>
 
       <label className="field">
-        <span>Title</span>
+        <span id="bingo-title-label">Title</span>
         <input
+          ref={titleInputRef}
           type="text"
+          aria-labelledby="bingo-title-label"
+          aria-describedby={
+            titleValidation && !state.title.trim()
+              ? "bingo-title-help bingo-title-error"
+              : "bingo-title-help"
+          }
           maxLength={70}
           required
           value={state.title}
           onChange={(event) => dispatch({ type: "set-title", value: event.target.value })}
-          aria-invalid={Boolean(error && !state.title.trim())}
+          aria-invalid={titleValidation && !state.title.trim()}
         />
-        <small>Up to 70 characters.</small>
+        <small id="bingo-title-help">Up to 70 characters.</small>
+        {titleValidation && !state.title.trim() ? (
+          <small id="bingo-title-error" className="form-message--error" role="alert">
+            Add a title before publishing.
+          </small>
+        ) : null}
       </label>
       <label className="field">
-        <span>Bingo language</span>
+        <span id="bingo-language-label">Bingo language</span>
         <select
+          ref={languageSelectRef}
+          aria-labelledby="bingo-language-label"
+          aria-describedby={
+            languageValidation && !state.language ? "bingo-language-error" : undefined
+          }
           required
           value={state.language}
-          aria-invalid={Boolean(error && !state.language)}
+          aria-invalid={languageValidation && !state.language}
           onChange={(event) => dispatch({ type: "set-language", value: event.target.value })}
         >
           <option value="">Choose a language</option>
@@ -84,6 +112,11 @@ export function BingoDetails({
             </option>
           ))}
         </select>
+        {languageValidation && !state.language ? (
+          <small id="bingo-language-error" className="form-message--error" role="alert">
+            Choose a bingo language before publishing.
+          </small>
+        ) : null}
       </label>
       <label className="field">
         <span>
@@ -236,7 +269,7 @@ export function BingoDetails({
           type="button"
           className="button button--primary"
           disabled={Boolean(pendingAction) || uploadPending}
-          onClick={onPublish}
+          onClick={publishWithFieldFocus}
         >
           {pendingAction === "publish" ? "Publishing…" : "Publish bingo"}
         </button>
@@ -287,11 +320,11 @@ export function BingoDetails({
       ) : null}
       {saveStatus}
       <p
-        className={error ? "form-message form-message--error" : "form-message"}
+        className={actionError ? "form-message form-message--error" : "form-message"}
         role={error ? "alert" : "status"}
         aria-live="polite"
       >
-        {error || message}
+        {actionError || message}
       </p>
     </section>
   );

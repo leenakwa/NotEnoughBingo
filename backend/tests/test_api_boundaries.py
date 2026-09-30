@@ -95,8 +95,17 @@ def test_bingo_api_enforces_catalog_and_direct_link_visibility(verified_user_fac
     assert guest.get(f"/api/v1/bingos/{public.public_id}/").status_code == 200
     assert guest.get(f"/api/v1/bingos/{unlisted.public_id}/").status_code == 200
     assert guest.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert guest.get("/api/v1/bingos/", {"mine": "true"}).status_code == 401
+    assert guest.get("/api/v1/bingos/", {"mine": "maybe"}).status_code == 400
 
     owner = _api_client(author)
+    owned = owner.get("/api/v1/bingos/", {"mine": "true"})
+    assert owned.status_code == 200
+    assert {item["id"] for item in owned.data["results"]} == {
+        str(public.public_id),
+        str(unlisted.public_id),
+        str(private.public_id),
+    }
     private_response = owner.get(f"/api/v1/bingos/{private.public_id}/")
     assert private_response.status_code == 200
     assert private_response.data["permissions"]["can_edit"] is True
@@ -153,6 +162,7 @@ def test_catalog_search_handles_unicode_literals_limits_and_pagination(
     assert guest.get("/api/v1/bingos/", {"author": "nobody"}).data["count"] == 0
     assert guest.get("/api/v1/bingos/", {"search": "x" * 81}).status_code == 400
     assert guest.get("/api/v1/bingos/", {"author": "x" * 81}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"ordering": "random"}).status_code == 400
     assert guest.get("/api/v1/bingos/", {"tags": ["public"] * 16}).status_code == 400
     assert guest.get("/api/v1/bingos/", {"tags": ["x" * 51]}).status_code == 400
 

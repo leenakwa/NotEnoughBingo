@@ -621,6 +621,18 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByRole("heading", { name: "Create bingo" })).toBeVisible();
 
     await page.getByRole("gridcell").first().click();
+    await expect(page.getByRole("slider", { name: "Background opacity" })).toHaveAttribute(
+      "aria-valuetext",
+      "100 percent",
+    );
+    await expect(page.getByRole("slider", { name: "Image opacity" })).toHaveAttribute(
+      "aria-valuetext",
+      "100 percent",
+    );
+    await expect(page.getByRole("slider", { name: "Border width" })).toHaveAttribute(
+      "aria-valuetext",
+      "1 pixel",
+    );
     await waitForResponse(page, "/api/v1/drafts/", "POST", async () => {
       await page.getByRole("textbox", { name: "Text for row 1, column 1" }).fill("Made something");
       await page.getByRole("button", { name: "Bold" }).click();
@@ -689,13 +701,19 @@ test.describe("live full-stack product flows", () => {
     await authenticateAs(page, "author");
     await page.goto("/create");
     await page.getByRole("button", { name: "Finish creating →" }).click();
-    const publicationError = page.locator(".details-panel .form-message--error");
+    const publicationError = page.locator(".details-panel > .form-message--error");
     await page.getByRole("button", { name: "Publish bingo" }).click();
-    await expect(publicationError).toContainText("Add a title before publishing.");
+    await expect(page.locator("#bingo-title-error")).toHaveText("Add a title before publishing.");
+    await expect(page.getByLabel("Title")).toBeFocused();
+    await expect(page.getByLabel("Title")).toHaveAttribute("aria-invalid", "true");
 
     await page.getByLabel("Title").fill("A required fields test");
     await page.getByRole("button", { name: "Publish bingo" }).click();
-    await expect(publicationError).toContainText("Choose a bingo language before publishing.");
+    await expect(page.locator("#bingo-language-error")).toHaveText(
+      "Choose a bingo language before publishing.",
+    );
+    await expect(page.getByLabel("Bingo language")).toBeFocused();
+    await expect(page.getByLabel("Bingo language")).toHaveAttribute("aria-invalid", "true");
 
     await page.getByLabel("Bingo language").selectOption("en");
     await page.getByRole("button", { name: "Publish bingo" }).click();
@@ -1906,6 +1924,43 @@ test.describe("live full-stack product flows", () => {
     expect(bytes.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
   });
 
+  test("account password validation identifies the field and keeps entered values", async ({
+    page,
+  }) => {
+    await authenticateAs(page, "author");
+    await page.goto("/profile");
+    const form = page
+      .locator("form.settings-card")
+      .filter({ has: page.getByRole("heading", { name: "Change password", exact: true }) });
+    const current = form.getByLabel("Current password", { exact: true });
+    const next = form.getByLabel("New password", { exact: true });
+    await current.fill("incorrect-password");
+    await next.fill("password123456");
+    await form.getByLabel("Confirm new password", { exact: true }).fill("password123456");
+    const submit = async () => {
+      const response = page.waitForResponse(
+        (result) =>
+          result.url().includes("/api/v1/auth/password-change/") &&
+          result.request().method() === "POST",
+      );
+      await form.getByRole("button", { name: "Change password", exact: true }).click();
+      return response;
+    };
+
+    expect((await submit()).status()).toBe(400);
+    await expect(current).toBeFocused();
+    await expect(current).toHaveAttribute("aria-invalid", "true");
+    await expect(form.getByText("The current password is incorrect.")).toBeVisible();
+    await expect(next).toHaveValue("password123456");
+
+    await current.fill(E2E_FIXTURE_PASSWORD);
+    await expect(form.getByText("The current password is incorrect.")).toHaveCount(0);
+    expect((await submit()).status()).toBe(400);
+    await expect(next).toBeFocused();
+    await expect(next).toHaveAttribute("aria-invalid", "true");
+    await expect(form.getByText("This password is too common.")).toBeVisible();
+  });
+
   test("avatar upload and removal persist after reload", async ({ page }) => {
     await authenticateAs(page, "author");
     await page.goto("/profile");
@@ -2044,9 +2099,12 @@ test.describe("live full-stack product flows", () => {
     );
     await page.getByRole("button", { name: "Send confirmation email" }).click();
     expect((await rejected).status()).toBe(400);
-    await expect(page.locator(".form-message--error")).toContainText(
-      "The current password is incorrect",
+    await expect(page.getByLabel("Current password for email change")).toBeFocused();
+    await expect(page.getByLabel("Current password for email change")).toHaveAttribute(
+      "aria-invalid",
+      "true",
     );
+    await expect(page.getByText("The current password is incorrect.")).toBeVisible();
 
     await page.getByLabel("Current password for email change").fill(password);
     await waitForResponse(page, "/api/v1/auth/email-change/", "POST", () =>

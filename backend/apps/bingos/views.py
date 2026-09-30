@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, mixins, permissions, status, viewsets
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -273,8 +273,12 @@ class BingoViewSet(
         if getattr(self, "swagger_fake_view", False):
             return Bingo.objects.none()
         if self.action == "list":
-            mine = self.request.query_params.get("mine") == "true"
-            if mine and self.request.user.is_authenticated:
+            mine = self.request.query_params.get("mine")
+            if mine not in (None, "true", "false"):
+                raise ValidationError({"mine": "Choose true or false."})
+            if mine == "true" and not self.request.user.is_authenticated:
+                raise NotAuthenticated()
+            if mine == "true":
                 queryset = Bingo.objects.live().filter(author=self.request.user)
             else:
                 queryset = Bingo.objects.public_catalog()
@@ -327,6 +331,8 @@ class BingoViewSet(
         if languages:
             queryset = queryset.filter(language__in=languages)
         ordering = params.get("ordering", "")
+        if ordering not in ("", "newest", "popular"):
+            raise ValidationError({"ordering": "Choose newest or popular."})
         if ordering == "newest":
             queryset = queryset.order_by("-published_at", "-pk")
         elif ordering == "popular":

@@ -3581,14 +3581,12 @@ export interface operations {
     notifications_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
-                /** @description A search term. */
-                search?: string;
+                /** @description Set true to return only unread notifications. */
+                unread?: boolean;
             };
             header?: never;
             path?: never;

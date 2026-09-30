@@ -49,6 +49,7 @@ vi.mock("@/lib/api/client", () => ({
     },
   },
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
+  fieldValidationMessage: () => null,
 }));
 
 const currentUser: AuthenticatedUser = {

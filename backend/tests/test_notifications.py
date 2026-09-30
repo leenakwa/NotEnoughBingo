@@ -194,6 +194,7 @@ def test_notification_cannot_reveal_an_unavailable_target(
     listing = client.get("/api/v1/notifications/?unread=true")
     assert listing.status_code == 200
     assert listing.data["count"] == 1
+    assert client.get("/api/v1/notifications/?unread=maybe").status_code == 400
     notification = listing.data["results"][0]
     assert notification["target_url"] == f"/bingo/{bingo.public_id}#comment-{reply.public_id}"
     assert "Sensitive" not in str(listing.data)

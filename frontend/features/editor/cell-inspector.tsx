@@ -157,6 +157,8 @@ export function CellInspector({
         </span>
         <input
           type="range"
+          aria-label="Background opacity"
+          aria-valuetext={`${Math.round(cell.backgroundOpacity * 100)} percent`}
           min="0"
           max="100"
           value={Math.round(cell.backgroundOpacity * 100)}
@@ -234,6 +236,8 @@ export function CellInspector({
         </span>
         <input
           type="range"
+          aria-label="Image opacity"
+          aria-valuetext={`${Math.round(cell.imageOpacity * 100)} percent`}
           min="0"
           max="100"
           value={Math.round(cell.imageOpacity * 100)}
@@ -268,6 +272,8 @@ export function CellInspector({
         </span>
         <input
           type="range"
+          aria-label="Border width"
+          aria-valuetext={`${cell.borderWidth} ${cell.borderWidth === 1 ? "pixel" : "pixels"}`}
           min="0"
           max="12"
           value={cell.borderWidth}

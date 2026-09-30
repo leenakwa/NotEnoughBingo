@@ -234,6 +234,9 @@ jobs:
   e2e:
     name: Browser smoke tests
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --user 1001
     needs:
       - frontend
     timeout-minutes: 20
@@ -259,9 +262,6 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci --no-audit --no-fund
-
-      - name: Install Playwright browser matrix
-        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run Playwright smoke tests
         run: npm run test:e2e

@@ -2439,3 +2439,61 @@ observed results and their limits. Do not include credentials or session data.
 - The final frontend quality gate passed ESLint, TypeScript, Prettier and 148
   tests. Ruff and mypy passed for the touched backend files; the exact-source
   CI gate remains pending.
+
+### 2026-09-30 — Catalog ownership and sort contract (section 82)
+
+- The catalog previously treated guest `mine=true` as an ordinary public list
+  and ignored invalid `mine` or `ordering` values. It now returns 401 for a
+  guest requesting their own boards and 400 for malformed filters. An author
+  receives their own public, unlisted and private boards under `mine=true`.
+- Two isolated PostgreSQL API cases passed, as did Ruff and mypy on the touched
+  backend files. Live QA HTTP probes observed 401 for guest `mine=true` and
+  400 for an unknown ordering. The full API endpoint matrix is still open.
+- Notifications accepted an arbitrary `unread` value by silently returning
+  every notification. The list now returns 400 for invalid values, and its
+  OpenAPI/TypeScript contract documents the real unread filter instead of
+  inherited search/sort options that the list did not deliberately support.
+  Two privacy-preserving notification API variants passed on PostgreSQL; Ruff,
+  mypy, schema validation and frontend typecheck passed for this adjustment.
+
+### 2026-09-30 — Editor field recovery and slider names (sections 7, 24)
+
+- A signed-in browser accessibility-tree walk of `/create` found that the cell
+  inspector's Background opacity, Image opacity and Border width range inputs
+  were announced as unnamed sliders. Each now has an explicit accessible name
+  and a percentage or pixel value. Browser role/name/value probes passed 3/3;
+  the live author create/edit/publish scenario passed with those assertions.
+- Publishing with no title or language now places the corresponding error next
+  to the field, sets `aria-invalid`, and focuses that field. Correcting it
+  removes the stale inline error. A live Chromium validation journey passed.
+  A 390 px iPhone 13 WebKit probe confirmed both focus states, nearby error
+  text and no horizontal overflow. The remaining form and native zoom/device
+  sweep stays open.
+
+### 2026-09-30 — Account settings validation recovery (section 7)
+
+- Password and email-change forms previously collapsed field-specific API
+  validation into a form-bottom message. Current/new password and new-email/
+  current-password errors now appear beside their fields, expose `aria-invalid`
+  and focus the first invalid control. Non-field failures still use the form
+  message, and editing a field clears its stale error without discarding values.
+- A live Chromium password journey returned 400 for both incorrect current and
+  weak new passwords, then confirmed field focus, inline text, retained entries
+  and error clearing on edit. The existing full email-change journey returned
+  400 for an incorrect password, confirmed field focus and inline text, then
+  completed confirmation and rejected token reuse. Both targeted browser cases
+  passed. ESLint, TypeScript, Prettier and 148 frontend unit tests passed.
+
+### 2026-09-30 — Browser smoke CI installation failure (section 105)
+
+- CI run `36756020431` for source `fb096a4` completed with seven successful
+  implementation jobs, including 53 live full-stack flows and both production
+  image builds, but its release gate failed. The standalone browser smoke job
+  reached its 20-minute limit before tests started. Its log shows that
+  `playwright install --with-deps` was still downloading Ubuntu packages from
+  the runner mirror (81 of 181 new packages by cancellation). This is missing
+  smoke evidence, not a passing check or a product test failure.
+- The smoke job is changed to use the official version-matched Playwright
+  `v1.61.1-noble` image with browser binaries and system dependencies already
+  installed. The pinned tag was checked with `docker manifest inspect`; the
+  full replacement job and release gate still require an exact-source CI run.

@@ -45,9 +45,12 @@ production images, browser smoke and 53 full-stack flows. It includes the
 Python dependency locks, abuse/error/privacy work, API destination guard, and
 mobile WebKit scroll correction. Source `3d3c7cc` then passed all nine jobs
 with the unauthenticated-API 401 correction. The registration/reset
-field-error and form-affordance commit `dd621d7` passed all nine CI jobs. A
-subsequent local Explore direct-tag/invalid-filter correction needs a new
-exact-source CI gate.
+field-error and form-affordance commit `dd621d7` passed all nine CI jobs. The
+Explore correction source `fb096a4` passed seven implementation jobs, including
+the full-stack flows and production images, but the browser smoke job timed out
+while its runner downloaded Playwright system packages; the release gate failed.
+The smoke job now uses a pinned Playwright browser image and needs an
+exact-source CI run with the subsequent form/API fixes.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
 and a domain have not been selected.
@@ -56,9 +59,10 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Commit and verify the Explore direct-tag/invalid-filter correction on its
-   own exact source. Source `dd621d7` passed all nine CI jobs; the new local
-   correction passed its PostgreSQL and live Chromium regressions. Keep the
+1. Commit and verify the current catalog/notification API contract,
+   editor/account form recovery, and Playwright CI fix on their exact source.
+   The Explore correction passed local PostgreSQL and Chromium regressions,
+   then its CI smoke job hit the 20-minute package-download limit. Keep the
    draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
