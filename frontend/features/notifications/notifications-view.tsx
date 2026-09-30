@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import type { Notification, Page } from "@/lib/api/types";
+import { formatLocalDateTime } from "@/lib/date-time";
 
 export function NotificationsView() {
   const [result, setResult] = useState<Page<Notification> | null>(null);
@@ -124,7 +125,7 @@ export function NotificationsView() {
               <Link href={notification.target_url} onClick={() => void markRead(notification)}>
                 <span>{notification.message}</span>
                 <time dateTime={notification.created_at}>
-                  {new Date(notification.created_at).toLocaleString()}
+                  {formatLocalDateTime(notification.created_at)}
                 </time>
               </Link>
             </li>

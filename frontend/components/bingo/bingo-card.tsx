@@ -9,11 +9,8 @@ import { CommentIcon, HeartIcon } from "@/components/ui/icons";
 import { trackInteraction } from "@/lib/analytics";
 import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
 import type { BingoSummary } from "@/lib/api/types";
+import { formatCount } from "@/lib/format-count";
 import { languageLabel } from "@/lib/languages";
-
-function formatCount(value: number): string {
-  return new Intl.NumberFormat("en", { notation: "compact" }).format(value);
-}
 
 export function BingoCard({ bingo }: { bingo: BingoSummary }) {
   const router = useRouter();

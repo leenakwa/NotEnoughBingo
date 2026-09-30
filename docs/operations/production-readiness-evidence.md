@@ -951,6 +951,54 @@ observed results and their limits. Do not include credentials or session data.
   These controls use their product-specific length limits; 100- or
   200-character names are intentionally capped rather than stored.
 
+### 2026-09-30 — UTC storage and local date display (section 27)
+
+- Django runs with `TIME_ZONE="UTC"` and `USE_TZ=True`; model timestamps use
+  aware datetimes, and publication, profile, and notification querysets sort by
+  database datetime fields. A PostgreSQL API regression published four boards
+  at leap-day end, March start, year end, and new-year start. The newest feed
+  returned them in exact instant order, and every serialized `published_at`
+  round-tripped to its original UTC instant (1/1 targeted test passed).
+- Visible notification, comment, play/share history, session, and deletion
+  dates now use one browser-local formatter with a short timezone label. This
+  removes ambiguity when the 1:30 AM hour repeats on the New York autumn DST
+  transition. Unit checks covered both DST transitions, February 29, March 1,
+  December 31, January 1, and malformed input (3/3 passed). A Chromium browser
+  with `America/New_York` timezone showed the two notifications as `1:30 AM
+  EDT` and `1:30 AM EST`, preserved their original ISO `dateTime` attributes,
+  and had no page errors. The same browser scenario passed in Chromium,
+  Firefox, and WebKit (3/3). The product does not use relative
+  today/yesterday labels, so no day-boundary label logic applies.
+
+### 2026-09-30 — Numeric boundaries and formatting (section 28)
+
+- Visible bingo-card counts now use one formatter for nonnegative whole numbers.
+  Unit tests exercised zero, one, 999, 1,500 (`1.5K`), one million, one
+  billion, negative and fractional values, `null`, `undefined`, `NaN`, and
+  both infinities. Invalid counts display an em dash rather than a misleading
+  number; count and decimal separator formatting is deliberately English
+  while the site's UI remains English (2/2 formatter tests passed).
+- The editor opacity sliders present 0–100% and submit values divided by 100;
+  border width is limited to 0–12. Backend draft validation now checks the
+  original opacity against 0–1 before rounding to three decimals, so
+  `-0.0004` and `1.0004` cannot round into a valid value. Its seven focused
+  cases covered zero, one, 0.4567 → 0.457, negative/fractional out-of-range,
+  `NaN`, infinity, and a thousand-digit integer (7/7 passed). Corrupted local
+  draft recovery with out-of-range opacities or invalid border widths is
+  rejected before its values reach the editor (recovery tests 4/4 passed).
+  The backend fields use positive integer counters and bounded board sizes.
+  The product has no price, payment, or currency display in this release, so
+  currency formatting is not applicable.
+- The complete local backend suite passed 140 tests with one existing skip;
+  the frontend suite passed 90 tests in 23 files, with Prettier, ESLint,
+  TypeScript, Ruff, and mypy checks passing after these changes. CI for the
+  preceding `91884a2` commit passed both quality jobs, full-stack flows, and
+  both production images, but its browser smoke job failed on a WebKit Explore
+  suggestion test. The test typed before client hydration and saw the input
+  reset; it now waits for the results view to finish loading before typing.
+  The focused WebKit case passed 5/5 repeated local runs. The corrected
+  exact-commit CI is still required.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

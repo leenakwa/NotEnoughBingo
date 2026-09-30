@@ -564,33 +564,33 @@ Check:
 
 Verify:
 
-- [ ] timezone strategy is defined;
-- [ ] backend timestamps are consistent;
-- [ ] users see appropriate local times;
-- [ ] DST behavior;
-- [ ] end of month;
-- [ ] end of year;
-- [ ] leap year;
-- [ ] today/yesterday logic;
-- [ ] timestamps around midnight;
-- [ ] sorting is based on actual date/time, not formatted strings;
-- [ ] serialization does not shift dates unexpectedly.
+- [x] timezone strategy is defined;
+- [x] backend timestamps are consistent;
+- [x] users see appropriate local times;
+- [x] DST behavior;
+- [x] end of month;
+- [x] end of year;
+- [x] leap year;
+- [x] today/yesterday logic;
+- [x] timestamps around midnight;
+- [x] sorting is based on actual date/time, not formatted strings;
+- [x] serialization does not shift dates unexpectedly.
 
 # 28. NUMBERS
 
 Test:
 
-- [ ] zero;
-- [ ] negative values;
-- [ ] very large values;
-- [ ] very small values;
-- [ ] decimal rounding;
-- [ ] percentages;
-- [ ] currencies;
-- [ ] thousands/decimal separators;
-- [ ] null;
-- [ ] NaN;
-- [ ] Infinity.
+- [x] zero;
+- [x] negative values;
+- [x] very large values;
+- [x] very small values;
+- [x] decimal rounding;
+- [x] percentages;
+- [x] currencies;
+- [x] thousands/decimal separators;
+- [x] null;
+- [x] NaN;
+- [x] Infinity.
 
 Never display things such as:
 

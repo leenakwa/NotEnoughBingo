@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **15 verified**, **46 partial**, **38 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **17 verified**, **46 partial**, **36 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -74,8 +74,8 @@ unresolved failures or missing evidence.
 - [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy, discretionary ARIA, actual 200% zoom, and UI contrast remain.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: placeholder inventory and product/auth names checked; legal operator copy and broader error-message exposure remain.
 - [x] 26. LONG-CONTENT TORTURE TEST — Verified before deployment: account/title limits, 254-character email, long URL/multilingual comment, profile/card/cell wrapping, and 320/1710 px layout.
-- [ ] 27. DATES AND TIME — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 28. NUMBERS — Review pending: map original bullets to repository and runtime evidence.
+- [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.
+- [x] 28. NUMBERS — Verified before deployment: bounded integer counts and percentages, invalid-number recovery guards, compact notation and decimal rounding; no currency capability in this release.
 - [ ] 29. LOCALIZATION / INTERNATIONALIZATION — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 30. 404 HANDLING — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 31. GLOBAL / 500 ERROR HANDLING — Partial: local evidence recorded; review remaining original bullets.

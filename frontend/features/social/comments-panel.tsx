@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state
 import { ReportDialog } from "@/features/social/report-dialog";
 import { api, errorMessage } from "@/lib/api/client";
 import type { AuthenticatedUser, Comment, Page, PublicId } from "@/lib/api/types";
+import { formatLocalDateTime } from "@/lib/date-time";
 
 type Viewer = AuthenticatedUser | "guest";
 
@@ -237,7 +238,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
           <Link href={`/profile/${comment.author.username}`}>
             {comment.author.display_name || `@${comment.author.username}`}
           </Link>
-          <time dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString()}</time>
+          <time dateTime={comment.created_at}>{formatLocalDateTime(comment.created_at)}</time>
         </header>
         {isEditing ? (
           <form className="comment-form" onSubmit={(event) => void saveEdit(event, comment.id)}>

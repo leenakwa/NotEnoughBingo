@@ -60,4 +60,25 @@ describe("editor emergency recovery", () => {
     clearAllEditorRecovery();
     expect(readEditorRecovery(authorId)).toBeNull();
   });
+
+  it("rejects corrupted numeric cell settings before showing them in the editor", () => {
+    for (const [field, value] of [
+      ["backgroundOpacity", -0.001],
+      ["imageOpacity", 1.001],
+      ["borderWidth", -1],
+      ["borderWidth", 1.5],
+    ] as const) {
+      writeEditorRecovery(authorId, createEditorState(3));
+      const key = window.localStorage.key(0);
+      expect(key).not.toBeNull();
+      const saved = JSON.parse(window.localStorage.getItem(key!)!) as {
+        document: { cells: Record<string, Record<string, unknown>> };
+      };
+      saved.document.cells["0:0"]![field] = value;
+      window.localStorage.setItem(key!, JSON.stringify(saved));
+
+      expect(readEditorRecovery(authorId)).toBeNull();
+      expect(window.localStorage.getItem(key!)).toBeNull();
+    }
+  });
 });

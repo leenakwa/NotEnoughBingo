@@ -47,6 +47,30 @@ def _asset(*, owner: User, kind: str, name: str) -> MediaAsset:
     )
 
 
+@pytest.mark.parametrize("value", [-0.0004, 1.0004, -1, float("nan"), float("inf"), 10**1000])
+def test_opacity_rejects_out_of_range_and_nonfinite_numbers(value) -> None:
+    document = empty_draft_document(title="Opacity", size=3, language="en")
+    document["cells"][0]["background_opacity"] = value
+
+    with pytest.raises(ValidationError, match="between 0 and 1"):
+        normalize_draft_document(document)
+
+
+def test_opacity_accepts_endpoints_and_rounds_decimal_precision() -> None:
+    document = empty_draft_document(title="Opacity", size=3, language="en")
+    document["cells"][0]["background_opacity"] = 0
+    document["cells"][1]["background_opacity"] = 1
+    document["cells"][2]["background_opacity"] = 0.4567
+
+    normalized = normalize_draft_document(document)
+
+    assert [normalized["cells"][index]["background_opacity"] for index in range(3)] == [
+        0,
+        1,
+        0.457,
+    ]
+
+
 def test_image_only_cell_requires_description_and_publishes_accessible_name() -> None:
     user = _user()
     image = _asset(owner=user, kind=MediaAsset.Kind.CELL_IMAGE, name="image-only")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import io
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from django.conf import settings
@@ -152,6 +153,35 @@ def test_catalog_search_handles_unicode_literals_limits_and_pagination(
     assert guest.get("/api/v1/bingos/", {"author": "nobody"}).data["count"] == 0
     assert guest.get("/api/v1/bingos/", {"search": "x" * 81}).status_code == 400
     assert guest.get("/api/v1/bingos/", {"author": "x" * 81}).status_code == 400
+
+
+def test_catalog_orders_real_instants_and_serializes_calendar_boundaries(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory(username="dateboundaryowner")
+    boundaries = (
+        ("Leap day", datetime(2024, 2, 29, 23, 59, tzinfo=UTC)),
+        ("March start", datetime(2024, 3, 1, 0, 1, tzinfo=UTC)),
+        ("Year end", datetime(2024, 12, 31, 23, 59, tzinfo=UTC)),
+        ("New year", datetime(2025, 1, 1, 0, 1, tzinfo=UTC)),
+    )
+    expected = {}
+    for title, instant in boundaries:
+        bingo, _ = _published_bingo(author=author, title=f"Boundary {title}")
+        Bingo.objects.filter(pk=bingo.pk).update(published_at=instant)
+        expected[title] = (str(bingo.public_id), instant)
+
+    response = _api_client().get("/api/v1/bingos/", {"search": "Boundary", "ordering": "newest"})
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["results"]] == [
+        expected[title][0] for title in ("New year", "Year end", "March start", "Leap day")
+    ]
+    for item in response.data["results"]:
+        expected_instant = next(
+            instant for public_id, instant in expected.values() if public_id == item["id"]
+        )
+        assert datetime.fromisoformat(item["published_at"]).astimezone(UTC) == expected_instant
 
 
 def test_direct_urls_and_spoofed_role_cannot_change_another_users_bingo(

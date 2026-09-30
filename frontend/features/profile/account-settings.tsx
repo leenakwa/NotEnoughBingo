@@ -20,6 +20,7 @@ import type {
   UserProfile,
 } from "@/lib/api/types";
 import { uploadImage, type UploadPhase } from "@/lib/uploads";
+import { formatLocalDateTime } from "@/lib/date-time";
 
 const preferenceLabels: Record<keyof NotificationPreferences, string> = {
   new_comment: "New comments on my bingos",
@@ -476,7 +477,7 @@ export function AccountSettings({
                     <b>{session.current ? "This device" : "Signed-in device"}</b>
                     <small>{session.user_agent || "Unknown browser"}</small>
                     <time dateTime={session.last_seen_at}>
-                      Last active {new Date(session.last_seen_at).toLocaleString()}
+                      Last active {formatLocalDateTime(session.last_seen_at)}
                     </time>
                   </div>
                   <button
@@ -544,7 +545,7 @@ export function AccountSettings({
               <p>
                 Scheduled for{" "}
                 <time dateTime={deletionScheduledFor}>
-                  {new Date(deletionScheduledFor).toLocaleString()}
+                  {formatLocalDateTime(deletionScheduledFor)}
                 </time>
               </p>
               <button

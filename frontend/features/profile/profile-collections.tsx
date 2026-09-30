@@ -15,6 +15,7 @@ import type {
   ProfileSharedResultItem,
   PublicUser,
 } from "@/lib/api/types";
+import { formatLocalDateTime } from "@/lib/date-time";
 
 type ProfileTab = "bingos" | "drafts" | "plays" | "shares" | "followers" | "following";
 type Collection =
@@ -201,9 +202,7 @@ export function ProfileCollections({
                   <span>
                     Revision {item.revision_number} · {item.selected_count} selected
                   </span>
-                  <time dateTime={item.updated_at}>
-                    {new Date(item.updated_at).toLocaleString()}
-                  </time>
+                  <time dateTime={item.updated_at}>{formatLocalDateTime(item.updated_at)}</time>
                 </Link>
               </li>
             ))}
@@ -218,9 +217,7 @@ export function ProfileCollections({
                   <span>
                     Revision {item.revision_number} · {item.selected_count} selected
                   </span>
-                  <time dateTime={item.created_at}>
-                    {new Date(item.created_at).toLocaleString()}
-                  </time>
+                  <time dateTime={item.created_at}>{formatLocalDateTime(item.created_at)}</time>
                 </Link>
               </li>
             ))}

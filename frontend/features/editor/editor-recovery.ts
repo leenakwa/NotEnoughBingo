@@ -52,12 +52,20 @@ function safeCell(value: unknown, row: number, column: number): EditorCell | nul
     typeof raw.strikethrough !== "boolean" ||
     typeof raw.backgroundColor !== "string" ||
     typeof raw.backgroundOpacity !== "number" ||
+    !Number.isFinite(raw.backgroundOpacity) ||
+    raw.backgroundOpacity < 0 ||
+    raw.backgroundOpacity > 1 ||
     !image ||
     (raw.imageAlt !== undefined &&
       (typeof raw.imageAlt !== "string" || raw.imageAlt.length > 160)) ||
     typeof raw.imageOpacity !== "number" ||
+    !Number.isFinite(raw.imageOpacity) ||
+    raw.imageOpacity < 0 ||
+    raw.imageOpacity > 1 ||
     typeof raw.borderColor !== "string" ||
-    typeof raw.borderWidth !== "number" ||
+    !Number.isInteger(raw.borderWidth) ||
+    (raw.borderWidth ?? -1) < 0 ||
+    (raw.borderWidth ?? 13) > 12 ||
     !["solid", "dashed", "dotted", "double"].includes(raw.borderStyle ?? "")
   ) {
     return null;

@@ -368,6 +368,7 @@ test("Explore waits for the last author-suggestion query", async ({ page }) => {
   });
 
   await page.goto("/explore");
+  await expect(page.locator("main#main-content")).toHaveAttribute("aria-busy", "false");
   const author = page.getByRole("combobox", { name: "Author" });
   await author.fill("a");
   await author.fill("ad");

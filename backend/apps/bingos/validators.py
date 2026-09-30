@@ -34,10 +34,9 @@ def _opacity(value: Any, field: str, default: float = 1.0) -> float:
         return default
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise _invalid(field, "Opacity must be a number between 0 and 1.")
-    normalized = round(float(value), 3)
-    if not 0 <= normalized <= 1:
+    if not 0 <= value <= 1:
         raise _invalid(field, "Opacity must be a number between 0 and 1.")
-    return normalized
+    return round(float(value), 3)
 
 
 def _boolean(value: Any, field: str, default: bool = False) -> bool:
