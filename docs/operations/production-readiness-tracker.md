@@ -120,7 +120,7 @@ unresolved failures or missing evidence.
 - [x] 70. PRODUCTION BUILD — Verified before deployment: current optimized Next build/start, SSR/static routes, dynamic route assets and browser console passed on the production candidate; actual domain/provider values remain rollout inputs.
 - [x] 71. DEPENDENCIES — Verified before deployment: committed npm and Python 3.13 production/development locks, clean installs and builds, runtime version alignment, local ARM64 native imports, x86_64 CI production image and real worker PNG/PDF export pass. The full CI gate for that source failed in an unrelated mobile WebKit interaction, which is tracked separately.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [x] 73. TESTS — Verified before deployment: 189 PostgreSQL tests plus 148 frontend tests and 53 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
+- [x] 73. TESTS — Verified before deployment: 189 PostgreSQL tests plus 150 frontend tests and 53 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial: local evidence recorded; review remaining original bullets.
@@ -152,7 +152,7 @@ unresolved failures or missing evidence.
 - [x] 102. SESSION EXPIRATION — Verified before deployment: concurrent authentication failures trigger one session recheck; editor and play flows explain expiry, preserve unsaved progress, and restore the intended route after login.
 - [ ] 103. VERSION / DEPLOYMENT COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 104. ROLLBACK — Partial: additive migrations and an existing-data downgrade/upgrade rehearsal support backward compatibility; no remote feature flags exist. Previous image/config retention and an executable rollback command depend on the chosen production platform and have not been proven.
-- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: local user and release evidence recorded; the latest exact-source CI run passed seven implementation jobs but its browser smoke job was cancelled while downloading system packages, so the release gate is red. A pinned Playwright-image repair awaits CI. The full final sequence and target deployment checks remain open.
+- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: local user and release evidence recorded; CI on `2981986` passed browser smoke and six other implementation jobs, but one of 54 full-stack WebKit flows failed at login because the CSRF header was absent. A locally verified bootstrap fix awaits exact-source CI. The full final sequence and target deployment checks remain open.
 
 ## Deployment handoff, separate from predeployment completion
 

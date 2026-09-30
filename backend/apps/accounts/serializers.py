@@ -43,7 +43,10 @@ class CurrentUserSerializer(PublicUserSerializer):
 
 
 class CsrfResponseSerializer(serializers.Serializer):
-    csrf = serializers.CharField(read_only=True)
+    csrf = serializers.CharField(
+        read_only=True,
+        help_text="Masked token for the X-CSRFToken header on unsafe requests.",
+    )
 
 
 class RegistrationStatusSerializer(serializers.Serializer):

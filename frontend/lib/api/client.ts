@@ -56,6 +56,7 @@ const requestTimeoutMs = 20_000;
 const uploadRequestTimeoutMs = 120_000;
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+let csrfBootstrapInFlight: Promise<string | null> | null = null;
 
 export class ApiClientError extends Error {
   readonly status: number;
@@ -112,13 +113,28 @@ function buildUrl(path: string, query?: Query): string {
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
   const prefix = `${encodeURIComponent(name)}=`;
-  const item = document.cookie.split("; ").find((cookie) => cookie.startsWith(prefix));
+  const item = document.cookie
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(prefix));
   return item ? decodeURIComponent(item.slice(prefix.length)) : null;
 }
 
-async function bootstrapCsrf(): Promise<void> {
-  if (typeof window === "undefined" || getCookie(csrfCookieName)) return;
-  await apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true, keepalive: true });
+function bootstrapCsrf(): Promise<string | null> {
+  const existing = getCookie(csrfCookieName);
+  if (typeof window === "undefined" || existing) return Promise.resolve(existing);
+  if (!csrfBootstrapInFlight) {
+    const request = apiRequest<{ csrf?: string }>("auth/csrf/", {
+      skipCsrfBootstrap: true,
+      keepalive: true,
+    })
+      .then((response) => response?.csrf || getCookie(csrfCookieName))
+      .finally(() => {
+        if (csrfBootstrapInFlight === request) csrfBootstrapInFlight = null;
+      });
+    csrfBootstrapInFlight = request;
+  }
+  return csrfBootstrapInFlight;
 }
 
 async function withRequestDeadline<T>(
@@ -199,8 +215,9 @@ function normalizeError(status: number, data: unknown): ApiErrorPayload {
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = (options.method ?? "GET").toUpperCase();
+  let csrf = getCookie(csrfCookieName);
   if (unsafeMethods.has(method) && typeof window !== "undefined" && !options.skipCsrfBootstrap) {
-    await bootstrapCsrf();
+    csrf = await bootstrapCsrf();
   }
 
   const headers = new Headers(options.headers);
@@ -208,7 +225,6 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (options.idempotencyKey) {
     headers.set("Idempotency-Key", options.idempotencyKey);
   }
-  const csrf = getCookie(csrfCookieName);
   if (unsafeMethods.has(method) && csrf) {
     headers.set("X-CSRFToken", csrf);
   }

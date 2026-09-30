@@ -31,6 +31,29 @@ describe("API error presentation", () => {
     expect(fetchMock.mock.calls[1]?.[0]).toContain("interactions/");
   });
 
+  it("uses the bootstrap response token before a WebKit cookie read catches up", async () => {
+    document.cookie = "neb_csrf=; Max-Age=0; path=/";
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ csrf: "masked-csrf-token" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await Promise.all([api.auth.logout(), api.auth.logout()]);
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("auth/csrf/");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const headers = (fetchMock.mock.calls[1]?.[1] as RequestInit).headers as Headers;
+    expect(headers.get("X-CSRFToken")).toBe("masked-csrf-token");
+    const secondHeaders = (fetchMock.mock.calls[2]?.[1] as RequestInit).headers as Headers;
+    expect(secondHeaders.get("X-CSRFToken")).toBe("masked-csrf-token");
+  });
+
   it("surfaces the first field-level validation message", () => {
     const error = new ApiClientError(400, {
       code: "validation_error",

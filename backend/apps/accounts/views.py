@@ -4,6 +4,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Prefetch
+from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -79,7 +80,7 @@ class CsrfCookieView(APIView):
 
     @extend_schema(responses=CsrfResponseSerializer)
     def get(self, request):
-        return Response({"csrf": "cookie_set"})
+        return Response({"csrf": get_token(request)})
 
 
 class RegisterView(APIView):

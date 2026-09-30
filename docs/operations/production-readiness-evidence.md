@@ -2514,3 +2514,24 @@ observed results and their limits. Do not include credentials or session data.
   matrix passed 108 scenarios across Chromium, Firefox, WebKit and mobile
   emulation, with 12 intentional platform skips. The remaining
   component-by-component UI-state audit stays open.
+
+### 2026-09-30 — WebKit first-login CSRF bootstrap (sections 10–11, 73, 105)
+
+- CI run `36759454885` on source `2981986` passed foundation, secret scan,
+  frontend and backend quality, browser smoke using the pinned Playwright
+  image, and both production images. The full-stack job passed 53 of 54
+  scenarios but failed the live WebKit compatibility journey at its first
+  login, leaving the release gate red. The trace showed the bootstrap GET
+  returned 200 and set the CSRF cookie; the subsequent login POST carried
+  that cookie but omitted the `X-CSRFToken` header and received 403. No
+  credential or token value was copied into this log.
+- The CSRF endpoint now returns Django's masked token in the JSON response as
+  well as setting the cookie. The client uses that response token on the first
+  unsafe request and shares one bootstrap request across concurrent callers.
+  This avoids relying on immediate browser cookie visibility; later requests
+  still use the cookie. An isolated PostgreSQL API test passed with enforced
+  CSRF checks, and a frontend test passed with an unreadable cookie and two
+  concurrent unsafe requests. Ruff, format and mypy passed on the touched
+  backend files; schema generation passed; the frontend gate passed ESLint,
+  TypeScript, Prettier and 150 tests. The live WebKit compatibility flow passed
+  three repeated local runs. Exact-source CI remains outstanding.

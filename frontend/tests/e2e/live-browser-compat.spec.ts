@@ -45,7 +45,14 @@ test("browse, filter, play, share, and start a draft across browser engines", as
   await page.goto("/login?next=%2Fcreate");
   await page.getByLabel("Email").fill(author.email);
   await page.getByLabel("Password").fill(E2E_FIXTURE_PASSWORD);
+  const loginResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/auth/login/") && response.request().method() === "POST",
+  );
   await page.getByRole("button", { name: "Log in" }).click();
+  const loggedIn = await loginResponse;
+  expect(loggedIn.status()).toBe(200);
+  expect(loggedIn.request().headers()["x-csrftoken"]).toBeTruthy();
   await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByRole("heading", { name: "Create bingo" })).toBeVisible();
   await page.getByRole("gridcell").first().locator("button").focus();

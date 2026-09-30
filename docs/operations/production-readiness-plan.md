@@ -38,7 +38,7 @@ of work; it does not reduce the checklist.
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
 open for itemized review: the 2026-09-30 tracker has 56 verified sections,
 42 partial, six N/A and one deployment-only. The current local full live
-regression is 53/53 and the frontend gate has 148 tests; these counts do not
+regression is 53/53 and the frontend gate has 150 tests; these counts do not
 close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -49,8 +49,12 @@ field-error and form-affordance commit `dd621d7` passed all nine CI jobs. The
 Explore correction source `fb096a4` passed seven implementation jobs, including
 the full-stack flows and production images, but the browser smoke job timed out
 while its runner downloaded Playwright system packages; the release gate failed.
-The smoke job now uses a pinned Playwright browser image and needs an
-exact-source CI run with the subsequent form/API fixes.
+The pinned Playwright image then passed in CI on source `2981986`, together with
+the other implementation jobs except the full-stack suite. One of 54 live
+scenarios failed: WebKit sent a first login request with the CSRF cookie but
+without the CSRF header. The CSRF bootstrap now returns a masked token directly
+to the client; its targeted backend, frontend and three repeated WebKit checks
+pass locally. Exact-source CI for this correction is still required.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
 and a domain have not been selected.
@@ -59,11 +63,12 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Commit and verify the current catalog/notification API contract,
-   editor/account form recovery, and Playwright CI fix on their exact source.
-   The Explore correction passed local PostgreSQL and Chromium regressions,
-   then its CI smoke job hit the 20-minute package-download limit. Keep the
-   draft PR open while remaining local checklist items are audited.
+1. Commit and verify the current pagination and CSRF corrections on their
+   exact source. The catalog/notification API contract, editor/account form
+   recovery and Playwright CI image have passed their relevant CI jobs on
+   source `2981986`; the full-stack WebKit login failure keeps the release
+   gate open. Keep the draft PR open while remaining local checklist items
+   are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager

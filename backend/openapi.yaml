@@ -3187,6 +3187,7 @@ components:
         csrf:
           type: string
           readOnly: true
+          description: Masked token for the X-CSRFToken header on unsafe requests.
       required:
       - csrf
     CurrentUser:

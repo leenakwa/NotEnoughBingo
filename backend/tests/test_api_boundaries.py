@@ -26,6 +26,20 @@ from apps.social.models import Comment
 pytestmark = [pytest.mark.django_db, pytest.mark.integration]
 
 
+def test_csrf_bootstrap_returns_a_token_for_the_first_unsafe_request() -> None:
+    client = APIClient(enforce_csrf_checks=True)
+    bootstrap = client.get("/api/v1/auth/csrf/")
+    assert bootstrap.status_code == 200
+    assert client.cookies[settings.CSRF_COOKIE_NAME].value
+    token = bootstrap.data["csrf"]
+    assert isinstance(token, str)
+    assert len(token) >= 32
+
+    rejected_fields = client.post("/api/v1/auth/login/", {}, format="json", HTTP_X_CSRFTOKEN=token)
+    assert rejected_fields.status_code == 400
+    assert "email" in rejected_fields.data["error"]["details"]
+
+
 def _api_client(user=None) -> APIClient:
     client = APIClient(enforce_csrf_checks=True)
     if user is not None:

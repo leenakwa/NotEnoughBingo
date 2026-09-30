@@ -1397,6 +1397,7 @@ export interface components {
             liked: boolean;
         };
         CsrfResponse: {
+            /** @description Masked token for the X-CSRFToken header on unsafe requests. */
             readonly csrf: string;
         };
         CurrentUser: {
