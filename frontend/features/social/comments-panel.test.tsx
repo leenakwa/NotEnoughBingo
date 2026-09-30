@@ -87,4 +87,19 @@ describe("CommentsPanel", () => {
     expect(mocks.create).toHaveBeenCalledWith("33333333-3333-4333-8333-333333333333", created.body);
     expect(await screen.findByText(created.body)).toBeVisible();
   });
+
+  it.each([
+    [1, "View 1 reply"],
+    [2, "View all 2 replies"],
+  ])("uses the right reply label for %i replies", async (count, label) => {
+    mocks.list.mockResolvedValue({
+      ...emptyPage,
+      count: 1,
+      results: [{ ...comment("A parent comment"), reply_count: count }],
+    });
+
+    render(<CommentsPanel bingoId="33333333-3333-4333-8333-333333333333" viewer="guest" />);
+
+    expect(await screen.findByRole("button", { name: label })).toBeVisible();
+  });
 });

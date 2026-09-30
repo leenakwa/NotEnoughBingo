@@ -126,6 +126,12 @@ describe("BingoCard", () => {
     expect(card.lastElementChild?.previousElementSibling).toHaveClass("bingo-card__tags");
   });
 
+  it("identifies the language of creator-written titles", () => {
+    render(<BingoCard bingo={{ ...bingo, title: "Русское бинго", language: "ru" }} />);
+
+    expect(screen.getByRole("heading", { name: "Русское бинго" })).toHaveAttribute("lang", "ru");
+  });
+
   it("loads small preview images lazily and hides decorative images from screen readers", () => {
     render(
       <BingoCard

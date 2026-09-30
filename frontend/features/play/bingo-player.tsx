@@ -458,8 +458,14 @@ export function BingoPlayer({
           <p className="eyebrow">
             by <Link href={`/profile/${bingo.author.username}`}>@{bingo.author.username}</Link>
           </p>
-          <h1>{revision.title}</h1>
-          {revision.description ? <p>{revision.description}</p> : null}
+          <h1 lang={revision.language || undefined} dir="auto">
+            {revision.title}
+          </h1>
+          {revision.description ? (
+            <p lang={revision.language || undefined} dir="auto">
+              {revision.description}
+            </p>
+          ) : null}
         </div>
         <div className="play-actions">
           {viewer && viewer !== "guest" && bingo.permissions.can_like ? (

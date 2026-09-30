@@ -48,6 +48,26 @@ const image: MediaAsset = {
 };
 
 describe("BingoBoardView", () => {
+  it("identifies the language of cell content while keeping controls usable", () => {
+    render(
+      <BingoBoardView
+        revision={{ ...revision, language: "ru", cells: [{ ...cell, text: "Новый опыт" }] }}
+        selected={new Set()}
+        completionStyle="checkmark"
+        readOnly={false}
+      />,
+    );
+
+    const cellButton = screen.getByRole("button", { name: "Новый опыт" });
+    expect(cellButton).toHaveAttribute("lang", "ru");
+    expect(cellButton.querySelector(".play-cell__text")).toHaveAttribute("lang", "ru");
+    fireEvent.focus(cellButton);
+    expect(screen.getByText("Новый опыт", { selector: ".play-cell-detail p" })).toHaveAttribute(
+      "lang",
+      "ru",
+    );
+  });
+
   it("announces the description of an image-only cell", () => {
     render(
       <BingoBoardView

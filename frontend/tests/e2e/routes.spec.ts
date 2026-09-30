@@ -447,6 +447,56 @@ test("board lists keep long titles, author names, and tags readable", async ({ p
   }
 });
 
+test("Arabic bingo content keeps its language and reading direction on mobile", async ({
+  page,
+}) => {
+  const title = "تجارب جديدة في هذا العام";
+  await page.route("**/api/v1/feeds/discover/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            title,
+            description: "",
+            language: "ar",
+            author: {
+              id: "22222222-2222-4222-8222-222222222222",
+              username: "author",
+              display_name: "Author",
+              avatar: null,
+            },
+            cover: null,
+            preview: null,
+            tags: [],
+            size: 3,
+            status: "published",
+            visibility: "public",
+            completion_style: "checkmark",
+            stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+            liked_by_me: false,
+            published_at: "2026-08-07T00:00:00Z",
+            updated_at: "2026-08-07T00:00:00Z",
+          },
+        ],
+      }),
+    }),
+  );
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/discover");
+  const heading = page.getByRole("heading", { name: title });
+  await expect(heading).toHaveAttribute("lang", "ar");
+  await expect(heading).toHaveAttribute("dir", "auto");
+  expect(await heading.evaluate((element) => getComputedStyle(element).direction)).toBe("rtl");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
 test("Explore pagination keeps its page in the URL and restores the selected board", async ({
   page,
 }) => {

@@ -81,7 +81,9 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
         }}
       >
         <div className="bingo-card__heading">
-          <h2>{title}</h2>
+          <h2 lang={bingo.language || undefined} dir="auto">
+            {title}
+          </h2>
           <span>
             by {bingo.author.display_name || `@${bingo.author.username}`} ·{" "}
             {languageLabel(bingo.language)}

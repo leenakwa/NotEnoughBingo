@@ -326,6 +326,7 @@ def test_author_suggestions_are_public_catalog_scoped_and_privacy_minimal(
     inactive.save(update_fields=["is_active"])
 
     client = _api_client()
+    assert client.get(f"/api/v1/bingos/{deleted_bingo.public_id}/").status_code == 404
     response = client.get("/api/v1/authors/?search=catalog")
 
     assert response.status_code == 200

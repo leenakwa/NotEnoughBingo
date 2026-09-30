@@ -1276,8 +1276,10 @@ test.describe("live full-stack product flows", () => {
   test("missing public resources return a real 404 with a route home", async ({ page }) => {
     const paths = [
       "/bingo/11111111-1111-4111-8111-111111111111",
+      "/bingo/not-a-uuid",
       "/share/11111111-1111-4111-8111-111111111111/missing",
       "/profile/notarealuserxy",
+      "/foryoupage.html",
       "/this-route-does-not-exist",
     ];
     for (const path of paths) {

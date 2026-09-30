@@ -386,7 +386,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
           >
             {pendingAction === `load-${comment.id}`
               ? "Loading replies…"
-              : `View all ${comment.reply_count} replies`}
+              : `View ${comment.reply_count === 1 ? "1 reply" : `all ${comment.reply_count} replies`}`}
           </button>
         ) : null}
       </article>

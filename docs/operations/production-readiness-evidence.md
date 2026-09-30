@@ -999,6 +999,66 @@ observed results and their limits. Do not include credentials or session data.
   The focused WebKit case passed 5/5 repeated local runs. The corrected
   exact-commit CI is still required.
 
+### 2026-09-30 — Content language and English interface (section 29)
+
+- The site's UI and transactional email copy are English, and root HTML has
+  `lang="en"`. The multi-select preference and catalog/discover/explore
+  filters select **bingo content language**, not a translated interface.
+  Backend language tests cover required publication language, invalid codes,
+  saved preferences, filtering, and all-language fallback; live browser flows
+  cover onboarding, keyboard selection, account settings, and query-string
+  URLs such as `languages=en&languages=ru`. Unknown/legacy language codes have
+  a visible “Unspecified” label. There are no alternate translated site pages
+  to connect with `hreflang`, and no UI translation keys to leak. Currency is
+  not a capability in this release. English dates and compact counts have the
+  deliberate formatting described in sections 27–28.
+- Creator-written card titles, play titles/descriptions, and board cells now
+  carry the selected content language; creator text uses automatic text
+  direction. A 320 px Arabic card rendered its heading right-to-left with no
+  horizontal overflow in Chromium and WebKit (2/2), while component checks
+  verified Russian title/cell language markup. Previous long-content checks
+  covered Cyrillic, Chinese, emoji, and long unbroken content at 320/1710 px.
+  A count-copy review found the singular reply button said “replies”; it now
+  says “View 1 reply,” while two or more say “View all N replies” (2/2 cases).
+  Date/time and numeric tests are recorded above. The interface language
+  remains English by design for this release; translated UI routes, localized
+  emails, and language variants of the same page would be separate features.
+
+### 2026-09-30 — Missing and legacy routes (section 30)
+
+- The live stack's public resource test passed after adding a malformed bingo
+  identifier and the former `foryoupage.html` path: each returned HTTP 404 and
+  showed the “Nothing on this square” explanation plus a Discover link (1/1
+  browser scenario). Existing cases in the same scenario cover unknown bingo,
+  share, profile, and arbitrary routes. A separate live case proves unlisted
+  direct links work while private boards return 404 to guests. The prior SSR
+  fix routes actual API 404 responses through Next's `notFound()` rather than
+  returning a visual error with HTTP 200. A targeted PostgreSQL API test now
+  confirms a soft-deleted published bingo's detail URL returns 404 (1/1).
+  No live old site is configured for migration; the legacy HTML path resolves
+  cleanly to 404 in the current stack.
+
+### 2026-09-30 — Unhandled 500 and root-layout fallback (section 31)
+
+- Next's route-level `app/error.tsx` already gave a generic, retryable error
+  state. A new `app/global-error.tsx` now handles a root layout failure with a
+  self-contained HTML document, accessible heading, retry, and Discover link.
+  A focused render check passed: the fallback included the required document
+  tags and actions while omitting an internal exception message (1/1). Both
+  boundaries log only error type and safe digest to the browser console, not
+  raw exception text. This follows the Next 16 App Router global-error file
+  convention checked against Context7's versioned Next documentation and the
+  installed Next error-boundary implementation.
+- A production-like Django test deliberately raised an unhandled DRF view
+  exception with `DEBUG=False`. The result was HTTP 500 with a generic body,
+  no internal detail or traceback, and an `X-Request-ID` header matching the
+  supplied safe identifier; `django.request` logged the technical failure
+  (1/1). The configured DRF exception handler already wraps expected API
+  errors with a request ID, and request completion logs carry that ID without
+  query strings or bodies. Frontend API errors translate non-JSON 5xx replies
+  into a friendly service-unavailable message. External error tracking setup
+  and alert delivery are assessed separately in sections 63–66.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

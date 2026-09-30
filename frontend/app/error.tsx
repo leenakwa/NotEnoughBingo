@@ -13,7 +13,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // This is the integration point for the configured error-tracking provider.
-    console.error(error);
+    console.error("Page error", { type: error.name, digest: error.digest });
   }, [error]);
 
   return (

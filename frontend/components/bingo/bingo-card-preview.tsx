@@ -112,6 +112,7 @@ export function BingoCardPreview({
               ) : null}
               <span
                 className="bingo-card-preview__text"
+                dir="auto"
                 style={{
                   fontWeight: cell.bold ? 700 : 400,
                   fontStyle: cell.italic ? "italic" : "normal",

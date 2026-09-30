@@ -88,7 +88,9 @@ export function SharedResultView({
       <header className="bingo-heading">
         <div>
           <p className="eyebrow">Shared by {result.owner_display_name}</p>
-          <h1>{result.revision.title}</h1>
+          <h1 lang={result.revision.language || undefined} dir="auto">
+            {result.revision.title}
+          </h1>
           <p>This is a read-only snapshot from revision {result.revision.number}.</p>
         </div>
         <div className="share-result-actions">

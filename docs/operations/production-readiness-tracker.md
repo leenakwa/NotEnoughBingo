@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **17 verified**, **46 partial**, **36 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **20 verified**, **43 partial**, **36 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -76,9 +76,9 @@ unresolved failures or missing evidence.
 - [x] 26. LONG-CONTENT TORTURE TEST — Verified before deployment: account/title limits, 254-character email, long URL/multilingual comment, profile/card/cell wrapping, and 320/1710 px layout.
 - [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.
 - [x] 28. NUMBERS — Verified before deployment: bounded integer counts and percentages, invalid-number recovery guards, compact notation and decimal rounding; no currency capability in this release.
-- [ ] 29. LOCALIZATION / INTERNATIONALIZATION — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 30. 404 HANDLING — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 31. GLOBAL / 500 ERROR HANDLING — Partial: local evidence recorded; review remaining original bullets.
+- [x] 29. LOCALIZATION / INTERNATIONALIZATION — Verified before deployment: English UI and email, explicit content languages, language filters/preferences and URLs, local date/number formats, plural labels, and RTL text direction; no translated UI routes or currency feature.
+- [x] 30. 404 HANDLING — Verified before deployment: unknown/legacy routes, malformed and deleted bingo IDs, private/missing resources, real SSR 404 status, explanation and Discover return path.
+- [x] 31. GLOBAL / 500 ERROR HANDLING — Verified before deployment: route and root error boundaries, safe retry/navigation, logged 500, generic public response, and X-Request-ID correlation; external error tracking remains in section 63.
 - [ ] 32. OFFLINE / BAD NETWORK — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 33. BROWSER COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 34. PERFORMANCE — Review pending: map original bullets to repository and runtime evidence.

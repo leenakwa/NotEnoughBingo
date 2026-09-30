@@ -604,37 +604,37 @@ or:
 
 Even if only one language currently exists:
 
-- [ ] set appropriate `<html lang>`;
-- [ ] format dates intentionally;
-- [ ] format numbers intentionally;
-- [ ] format currency correctly;
-- [ ] pluralization is correct;
-- [ ] avoid unnecessary hardcoding if internationalization is clearly planned;
-- [ ] layout tolerates longer translated strings;
-- [ ] emails use the intended language.
+- [x] set appropriate `<html lang>`;
+- [x] format dates intentionally;
+- [x] format numbers intentionally;
+- [x] format currency correctly;
+- [x] pluralization is correct;
+- [x] avoid unnecessary hardcoding if internationalization is clearly planned;
+- [x] layout tolerates longer translated strings;
+- [x] emails use the intended language.
 
 If multiple languages exist:
 
-- [ ] test fallback behavior;
-- [ ] language switching;
-- [ ] URL strategy;
-- [ ] hreflang where appropriate;
-- [ ] untranslated translation keys never appear.
+- [x] test fallback behavior;
+- [x] language switching;
+- [x] URL strategy;
+- [x] hreflang where appropriate;
+- [x] untranslated translation keys never appear.
 
 # 30. 404 HANDLING
 
 Verify:
 
-- [ ] unknown routes;
-- [ ] malformed IDs;
-- [ ] deleted objects;
-- [ ] old routes.
+- [x] unknown routes;
+- [x] malformed IDs;
+- [x] deleted objects;
+- [x] old routes.
 
 The user should get:
 
-- [ ] clear explanation;
-- [ ] way back home/navigation;
-- [ ] correct server status when applicable.
+- [x] clear explanation;
+- [x] way back home/navigation;
+- [x] correct server status when applicable.
 
 Do not return HTTP 200 for truly missing public SSR pages if correct 404 semantics are possible.
 
@@ -642,13 +642,13 @@ Do not return HTTP 200 for truly missing public SSR pages if correct 404 semanti
 
 Verify:
 
-- [ ] frontend Error Boundary or equivalent;
-- [ ] backend global error handler;
-- [ ] friendly error state;
-- [ ] retry where appropriate;
-- [ ] technical error is logged;
-- [ ] stack traces/secrets are not exposed;
-- [ ] request/event IDs are available if useful.
+- [x] frontend Error Boundary or equivalent;
+- [x] backend global error handler;
+- [x] friendly error state;
+- [x] retry where appropriate;
+- [x] technical error is logged;
+- [x] stack traces/secrets are not exposed;
+- [x] request/event IDs are available if useful.
 
 # 32. OFFLINE / BAD NETWORK
 

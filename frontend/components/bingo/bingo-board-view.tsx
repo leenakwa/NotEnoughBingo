@@ -126,6 +126,9 @@ export function BingoBoardView({
                   >
                     <button
                       type="button"
+                      lang={
+                        cell.text || imageDescription ? revision.language || undefined : undefined
+                      }
                       className={`play-cell${isSelected ? " is-complete" : ""}`}
                       title={cell.text || imageDescription || undefined}
                       data-cell-key={key}
@@ -169,6 +172,8 @@ export function BingoBoardView({
                       ) : null}
                       <span
                         className="play-cell__text"
+                        lang={revision.language || undefined}
+                        dir="auto"
                         style={{
                           fontWeight: cell.bold ? 700 : 400,
                           fontStyle: cell.italic ? "italic" : "normal",
@@ -202,7 +207,12 @@ export function BingoBoardView({
         data-empty={!detailCell}
       >
         <span>Cell content</span>
-        <p>
+        <p
+          lang={
+            detailCell?.text || detailCell?.image_alt ? revision.language || undefined : undefined
+          }
+          dir="auto"
+        >
           {detailCell
             ? detailCell.text ||
               detailCell.image_alt ||
