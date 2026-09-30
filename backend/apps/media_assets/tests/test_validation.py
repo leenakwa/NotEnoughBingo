@@ -6,6 +6,8 @@ import pytest
 from django.test import override_settings
 from PIL import Image
 
+from apps.media_assets.models import MediaAsset
+from apps.media_assets.services import create_upload_intent
 from apps.media_assets.validators import (
     AssetValidationError,
     asset_error_message,
@@ -51,6 +53,28 @@ def test_upload_declaration_rejects_extension_mime_mismatch() -> None:
 
 
 @override_settings(MAX_UPLOAD_BYTES=1024 * 1024)
+def test_upload_declaration_rejects_empty_file() -> None:
+    with pytest.raises(AssetValidationError, match="file_size_out_of_range"):
+        validate_upload_declaration(
+            filename="empty.png",
+            content_type="image/png",
+            size_bytes=0,
+        )
+
+
+@override_settings(MAX_UPLOAD_BYTES=1024 * 1024)
+def test_inspect_image_rejects_content_mime_mismatch() -> None:
+    source = io.BytesIO()
+    Image.new("RGB", (48, 32), "#ffffff").save(source, format="JPEG")
+    with pytest.raises(AssetValidationError, match="detected_mime_mismatch"):
+        inspect_image(
+            source.getvalue(),
+            declared_mime="image/png",
+            expected_size=len(source.getvalue()),
+        )
+
+
+@override_settings(MAX_UPLOAD_BYTES=1024 * 1024)
 def test_inspect_image_rejects_declared_size_mismatch() -> None:
     data = _png_bytes()
     with pytest.raises(AssetValidationError, match="size_mismatch"):
@@ -82,3 +106,35 @@ def test_asset_rejection_message_does_not_expose_internal_code() -> None:
     assert error.code == "invalid_image"
     assert error.user_message == "This file could not be read as an image. Choose another image."
     assert "unknown_internal_code" not in asset_error_message("unknown_internal_code")
+
+
+@pytest.mark.django_db
+def test_upload_intents_keep_only_safe_basename_and_use_distinct_storage_keys(
+    django_user_model,
+) -> None:
+    owner = django_user_model.objects.create_user(
+        username="filename_owner",
+        email="filename-owner@example.test",
+        password="Long-test-password-42",
+    )
+    names = (
+        ("файл пример.png", "файл пример.png"),
+        ("folder/../../cover.png", "cover.png"),
+        (r"C:\fakepath\..\cover.png", "cover.png"),
+        ("same.png", "same.png"),
+        ("same.png", "same.png"),
+    )
+    assets = [
+        create_upload_intent(
+            owner=owner,
+            kind=MediaAsset.Kind.COVER,
+            filename=filename,
+            content_type="image/png",
+            size_bytes=32,
+        )
+        for filename, _ in names
+    ]
+
+    assert [asset.original_filename for asset in assets] == [expected for _, expected in names]
+    assert len({asset.storage_key for asset in assets}) == len(names)
+    assert all(asset.storage_key.startswith("staging/uploads/") for asset in assets)

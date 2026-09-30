@@ -370,6 +370,7 @@ test("Explore waits for the last author-suggestion query", async ({ page }) => {
   const author = page.getByRole("combobox", { name: "Author" });
   await author.fill("a");
   await author.fill("ad");
+  await expect(author).toHaveValue("ad");
   await expect.poll(() => queries).toEqual(["ad"]);
 });
 

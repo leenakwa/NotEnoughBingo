@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AccountSettings } from "@/features/profile/account-settings";
 import type { AuthenticatedUser, NotificationPreferences, UserProfile } from "@/lib/api/types";
+import { uploadImage } from "@/lib/uploads";
 
 const mocks = vi.hoisted(() => ({
   cancelAccountDeletion: vi.fn(),
@@ -105,6 +106,31 @@ describe("AccountSettings deletion grace period", () => {
     await waitFor(() => expect(mocks.cancelAccountDeletion).toHaveBeenCalledOnce());
     expect(screen.getByRole("button", { name: "Schedule account deletion" })).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent("Account deletion cancelled.");
+  });
+
+  it("lets the user cancel an avatar upload without changing the profile", async () => {
+    const user = userEvent.setup();
+    const onProfileChange = vi.fn();
+    vi.mocked(uploadImage).mockImplementation(
+      (_file, _kind, options) =>
+        new Promise((_resolve, reject) => {
+          options?.onPhase?.("uploading");
+          options?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Upload cancelled.", "AbortError")),
+          );
+        }),
+    );
+    render(<AccountSettings profile={profile} onProfileChange={onProfileChange} />);
+    await screen.findByText("Upload avatar");
+    fireEvent.change(screen.getByLabelText("Upload avatar"), {
+      target: { files: [new File(["image"], "avatar.png", { type: "image/png" })] },
+    });
+    await screen.findByText("Uploading image…");
+
+    await user.click(screen.getByRole("button", { name: "Cancel upload" }));
+
+    expect(await screen.findByText("Upload cancelled.")).toBeVisible();
+    expect(onProfileChange).not.toHaveBeenCalled();
   });
 
   it("routes through an explanatory login screen after scheduling revokes sessions", async () => {

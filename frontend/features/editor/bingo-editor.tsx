@@ -5,6 +5,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
+import { UploadStatus } from "@/components/ui/upload-status";
 import { BingoDetails } from "@/features/editor/bingo-details";
 import { CellInspector } from "@/features/editor/cell-inspector";
 import { EditorBoard } from "@/features/editor/editor-board";
@@ -34,7 +35,7 @@ import {
 import { api, ApiClientError, errorMessage } from "@/lib/api/client";
 import { makeIdempotencyKey } from "@/lib/guest-progress";
 import type { BingoDraft, BingoExportFormat, ExportJob, MediaAsset } from "@/lib/api/types";
-import { uploadImage } from "@/lib/uploads";
+import { uploadImage, type UploadPhase } from "@/lib/uploads";
 
 type UploadTarget = "board" | "cell" | "cover";
 type EditorPayload = ReturnType<typeof editorPayload>;
@@ -62,6 +63,12 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const [state, dispatch] = useReducer(editorReducer, undefined, () => createEditorState(5));
   const [step, setStep] = useState<EditorStep>("board");
   const [uploading, setUploading] = useState<UploadTarget | null>(null);
+  const [uploadPhase, setUploadPhase] = useState<UploadPhase>("preparing");
+  const [cellUploadFeedback, setCellUploadFeedback] = useState<{
+    text: string;
+    error: boolean;
+  } | null>(null);
+  const uploadController = useRef<AbortController | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -226,17 +233,39 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     kind: Exclude<MediaAsset["kind"], "export" | "avatar">,
   ) {
     if (uploading) return;
+    const controller = new AbortController();
+    uploadController.current = controller;
     setError("");
+    setMessage("");
+    setCellUploadFeedback(null);
+    setUploadPhase("preparing");
     setUploading(target);
     const cellKeys = target === "cell" ? [...state.selectedKeys] : undefined;
     try {
-      const asset = await uploadImage(file, kind);
+      const asset = await uploadImage(file, kind, {
+        signal: controller.signal,
+        onPhase: setUploadPhase,
+      });
       replaceMedia(target, { asset, previewUrl: null }, cellKeys);
     } catch (caught) {
-      setError(errorMessage(caught));
+      const cancelled = controller.signal.aborted;
+      const feedback = cancelled ? "Upload cancelled." : errorMessage(caught);
+      if (target === "cell") setCellUploadFeedback({ text: feedback, error: !cancelled });
+      else if (cancelled) setMessage(feedback);
+      else setError(feedback);
     } finally {
+      if (uploadController.current === controller) uploadController.current = null;
       setUploading(null);
     }
+  }
+
+  useEffect(() => () => uploadController.current?.abort(), []);
+
+  function cancelUpload() {
+    uploadController.current?.abort();
+    setError("");
+    if (uploading === "cell") setCellUploadFeedback({ text: "Upload cancelled.", error: false });
+    else setMessage("Upload cancelled.");
   }
 
   const flushDraft = useCallback((): Promise<BingoDraft | null> => {
@@ -672,6 +701,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           exportAvailable={exportAvailable}
           saveStatus={saveStatusView}
         />
+        {uploading ? <UploadStatus phase={uploadPhase} onCancel={cancelUpload} /> : null}
       </main>
     );
   }
@@ -696,6 +726,9 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         state={state}
         dispatch={dispatch}
         uploadPending={uploading !== null}
+        uploadPhase={uploading === "cell" ? uploadPhase : undefined}
+        onCancelUpload={cancelUpload}
+        uploadFeedback={cellUploadFeedback}
         onImageSelected={(file) => void handleUpload("cell", file, "cell_image")}
       />
       <section className="editor-workspace" aria-labelledby="create-title">
@@ -778,6 +811,9 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
             </button>
           ) : null}
         </div>
+        {uploading === "board" ? (
+          <UploadStatus phase={uploadPhase} onCancel={cancelUpload} />
+        ) : null}
 
         <EditorBoard state={state} dispatch={dispatch} />
 

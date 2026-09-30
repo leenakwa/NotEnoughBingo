@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **10 verified**, **50 partial**, **39 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **11 verified**, **49 partial**, **39 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -66,7 +66,7 @@ unresolved failures or missing evidence.
 - [x] 16. EMPTY STATES — Verified before deployment: zero-data feed/search, profile, notifications, comments, and editor states; teams, commerce, charts, and analytics-period screens are absent.
 - [x] 17. SEARCH — Verified before deployment: input normalization, Unicode/literal matching, result counts and pagination, visible loading, debounced suggestions, Enter, combined filters, URL restore, and clear.
 - [x] 18. TABLES AND LISTS — Verified before deployment: card-list zero/one/many, pagination, filtered sorting, long/null content, mobile layout, and selected sort/tab states; tabular headers and list horizontal scrolling are N/A.
-- [ ] 19. FILE UPLOADS — Partial: local evidence recorded; review remaining original bullets.
+- [x] 19. FILE UPLOADS — Verified before deployment: successful/invalid/duplicate uploads, cancellation and retry, stage progress, owner access, normalization, and private local object storage; provider policy remains a rollout input.
 - [ ] 20. IMAGES — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 21. RESPONSIVE DESIGN — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
 - [ ] 22. TOUCH UX — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.

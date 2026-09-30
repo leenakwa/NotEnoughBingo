@@ -6,6 +6,7 @@ import { writeEditorRecovery } from "@/features/editor/editor-recovery";
 import { createEditorState, editorReducer } from "@/features/editor/editor-state";
 import { ApiClientError } from "@/lib/api/client";
 import type { BingoDetail, BingoDraft, ExportJob, RevisionCell } from "@/lib/api/types";
+import { uploadImage } from "@/lib/uploads";
 
 const mocks = vi.hoisted(() => ({
   session: vi.fn(),
@@ -226,6 +227,30 @@ describe("BingoEditor autosave and safety", () => {
     expect(screen.getByRole("heading", { name: "Verify your email", level: 1 })).toBeVisible();
     expect(screen.getByRole("link", { name: "Verification options" })).toBeVisible();
     expect(mocks.getDraft).not.toHaveBeenCalled();
+  });
+
+  it("lets the author cancel a pending image transfer without changing the board", async () => {
+    vi.mocked(uploadImage).mockImplementation(
+      (_file, _kind, options) =>
+        new Promise((_resolve, reject) => {
+          options?.onPhase?.("uploading");
+          options?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Upload cancelled.", "AbortError")),
+          );
+        }),
+    );
+    await openEditor();
+    fireEvent.change(screen.getByLabelText("Upload background"), {
+      target: { files: [new File(["image"], "background.png", { type: "image/png" })] },
+    });
+    await settle();
+    expect(screen.getByText("Uploading image…")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel upload" }));
+    await settle();
+
+    expect(screen.getByText("Upload cancelled.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Remove background" })).not.toBeInTheDocument();
   });
 
   it("explains a session connection error and can retry into the editor", async () => {

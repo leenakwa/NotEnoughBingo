@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { PasswordField } from "@/components/auth/password-field";
 import { ErrorState, LoadingState } from "@/components/ui/page-state";
+import { UploadStatus } from "@/components/ui/upload-status";
 import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
 import { clearAllProgressRecovery } from "@/lib/progress-recovery";
 import { notifyAuthChanged } from "@/lib/auth-events";
@@ -18,7 +19,7 @@ import type {
   SessionMetadata,
   UserProfile,
 } from "@/lib/api/types";
-import { uploadImage } from "@/lib/uploads";
+import { uploadImage, type UploadPhase } from "@/lib/uploads";
 
 const preferenceLabels: Record<keyof NotificationPreferences, string> = {
   new_comment: "New comments on my bingos",
@@ -50,6 +51,9 @@ export function AccountSettings({
   const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
   const [exportJob, setExportJob] = useState<ExportJob | null>(null);
   const [pending, setPending] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUploadPhase, setAvatarUploadPhase] = useState<UploadPhase>("preparing");
+  const avatarUploadController = useRef<AbortController | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -79,6 +83,14 @@ export function AccountSettings({
     };
   }, [loadVersion]);
 
+  useEffect(() => () => avatarUploadController.current?.abort(), []);
+
+  function cancelAvatarUpload() {
+    avatarUploadController.current?.abort();
+    setError("");
+    setMessage("Upload cancelled.");
+  }
+
   function beginAction(action: string) {
     setPending(action);
     setMessage("");
@@ -88,17 +100,29 @@ export function AccountSettings({
 
   async function updateAvatar(file: File) {
     if (pending) return;
+    const controller = new AbortController();
+    avatarUploadController.current = controller;
+    setAvatarUploading(true);
     beginAction("avatar");
+    setAvatarUploadPhase("preparing");
     try {
-      const asset = await uploadImage(file, "avatar");
+      const asset = await uploadImage(file, "avatar", {
+        signal: controller.signal,
+        onPhase: setAvatarUploadPhase,
+      });
+      avatarUploadController.current = null;
+      setAvatarUploading(false);
       const updated = await api.profiles.update({ avatar_id: asset.id });
       onProfileChange(updated);
       setUser((current) => (current ? { ...current, avatar: asset } : current));
       notifyAuthChanged();
       setMessage("Avatar updated.");
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (controller.signal.aborted) setMessage("Upload cancelled.");
+      else setError(errorMessage(caught));
     } finally {
+      if (avatarUploadController.current === controller) avatarUploadController.current = null;
+      setAvatarUploading(false);
       setPending("");
     }
   }
@@ -355,6 +379,9 @@ export function AccountSettings({
               </button>
             ) : null}
           </div>
+          {avatarUploading ? (
+            <UploadStatus phase={avatarUploadPhase} onCancel={cancelAvatarUpload} />
+          ) : null}
         </div>
 
         <div className="settings-card">

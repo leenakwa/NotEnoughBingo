@@ -19,7 +19,11 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   const appliedSearch = searchParams.get("search") ?? "";
   const appliedAuthor = searchParams.get("author") ?? "";
   const appliedTags = searchParams.get("tags") ?? "";
-  const appliedLanguages = useMemo(() => searchParams.getAll("languages"), [searchParams]);
+  const appliedLanguagesKey = searchParams.getAll("languages").join(",");
+  const appliedLanguages = useMemo(
+    () => appliedLanguagesKey.split(",").filter(Boolean),
+    [appliedLanguagesKey],
+  );
   const appliedOrdering =
     searchParams.get("ordering") === "newest" ? ("newest" as const) : ("popular" as const);
   const rawPage = Number(searchParams.get("page"));

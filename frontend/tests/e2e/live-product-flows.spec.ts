@@ -664,6 +664,15 @@ test.describe("live full-stack product flows", () => {
     );
 
     await input.setInputFiles({
+      name: "empty.png",
+      mimeType: "image/png",
+      buffer: Buffer.alloc(0),
+    });
+    await expect(page.locator(".form-message--error")).toContainText(
+      "The image is empty. Choose another image.",
+    );
+
+    await input.setInputFiles({
       name: "too-large.png",
       mimeType: "image/png",
       buffer: Buffer.alloc(5 * 1024 * 1024 + 1),
@@ -729,6 +738,84 @@ test.describe("live full-stack product flows", () => {
     await input.setInputFiles({ name: "cell.png", mimeType: "image/png", buffer: cellImagePng });
     await expect(page.getByRole("button", { name: "Remove cell image" })).toBeVisible();
     await expect(page.locator(".form-message--error")).toHaveCount(0);
+  });
+
+  test("Unicode filenames with spaces can be uploaded again without collisions", async ({
+    page,
+  }) => {
+    await authenticateAs(page, "author");
+    await page.goto("/create");
+    await page.getByRole("gridcell").first().click();
+    const input = page.getByLabel("Add image to cell");
+    const assetIds: string[] = [];
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const intent = page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/v1/uploads/intents/") &&
+          response.request().method() === "POST",
+      );
+      await input.setInputFiles({
+        name: "файл пример.png",
+        mimeType: "image/png",
+        buffer: cellImagePng,
+      });
+      const response = await intent;
+      expect(response.status()).toBe(201);
+      assetIds.push((await response.json()).asset_id);
+      await expect(page.getByRole("button", { name: "Remove cell image" })).toBeVisible();
+      await page.getByRole("button", { name: "Remove cell image" }).click();
+    }
+    expect(assetIds[0]).not.toBe(assetIds[1]);
+  });
+
+  test("image upload shows its stage and can be cancelled before retry", async ({ page }) => {
+    await authenticateAs(page, "author");
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto("/create");
+    await page.getByRole("gridcell").first().click();
+    await page.getByRole("textbox", { name: "Text for row 1, column 1" }).press("Escape");
+    await expect(page.getByRole("heading", { name: "Cell editor" })).toBeVisible();
+    const input = page.getByLabel("Add image to cell");
+    const applicationOrigin = new URL(page.url()).origin;
+    let releaseStorage = () => {};
+    let reportStorageRequest = () => {};
+    const storageHeld = new Promise<void>((resolve) => {
+      releaseStorage = resolve;
+    });
+    const storageRequested = new Promise<void>((resolve) => {
+      reportStorageRequest = resolve;
+    });
+    await page.route("**/*", async (route) => {
+      if (
+        route.request().method() === "POST" &&
+        new URL(route.request().url()).origin !== applicationOrigin
+      ) {
+        reportStorageRequest();
+        await storageHeld;
+        try {
+          await route.fulfill({ status: 503, body: "Cancelled transfer" });
+        } catch {
+          // The browser may close the paused request when the user cancels it.
+        }
+        return;
+      }
+      await route.continue();
+    });
+
+    await input.setInputFiles({ name: "cell.png", mimeType: "image/png", buffer: cellImagePng });
+    await storageRequested;
+    await expect(page.getByText("Uploading image…")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    await page.getByRole("button", { name: "Cancel upload" }).click();
+    releaseStorage();
+    await expect(page.getByText("Upload cancelled.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Remove cell image" })).toHaveCount(0);
+
+    await page.unroute("**/*");
+    await input.setInputFiles({ name: "cell.png", mimeType: "image/png", buffer: cellImagePng });
+    await expect(page.getByRole("button", { name: "Remove cell image" })).toBeVisible();
   });
 
   test("discover scales fixture text with the board and keeps it inside cells", async ({

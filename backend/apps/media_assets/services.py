@@ -5,7 +5,6 @@ import os
 import secrets
 import uuid
 from datetime import timedelta
-from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
@@ -45,7 +44,7 @@ def _storage_key(*, owner_public_id: uuid.UUID, kind: str, extension: str) -> st
 
 
 def _safe_filename(value: str) -> str:
-    return Path(value).name[:255]
+    return value.replace("\\", "/").rsplit("/", 1)[-1][:255]
 
 
 @transaction.atomic

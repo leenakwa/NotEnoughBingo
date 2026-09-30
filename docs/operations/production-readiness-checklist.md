@@ -397,22 +397,22 @@ Test:
 
 Test:
 
-- [ ] correct file;
-- [ ] unsupported extension;
-- [ ] incorrect MIME type;
-- [ ] oversized file;
-- [ ] empty file;
-- [ ] Unicode filename;
-- [ ] filename with spaces;
-- [ ] malicious/path-traversal-like filename;
-- [ ] duplicate filenames;
-- [ ] cancelled upload;
-- [ ] failed network;
-- [ ] upload progress;
-- [ ] retry;
-- [ ] access control;
-- [ ] malicious content handling;
-- [ ] correct storage permissions.
+- [x] correct file;
+- [x] unsupported extension;
+- [x] incorrect MIME type;
+- [x] oversized file;
+- [x] empty file;
+- [x] Unicode filename;
+- [x] filename with spaces;
+- [x] malicious/path-traversal-like filename;
+- [x] duplicate filenames;
+- [x] cancelled upload;
+- [x] failed network;
+- [x] upload progress;
+- [x] retry;
+- [x] access control;
+- [x] malicious content handling;
+- [x] correct storage permissions.
 
 # 20. IMAGES
 

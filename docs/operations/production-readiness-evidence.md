@@ -726,8 +726,43 @@ observed results and their limits. Do not include credentials or session data.
   horizontal scroll; the large 10×10 board has its own separately tested
   scroll region.
 
+### 2026-09-30 — File upload and storage contract (section 19)
+
+- Correct PNG upload and attachment, unsupported SVG, oversized cell image,
+  empty PNG, extension/type mismatch, corrupt PNG content, a forced object
+  storage 503, and successful retry were exercised in live Chromium. The
+  invalid-file, outage/retry, and cancellation scenarios passed 3/3 after the
+  local upload changes. A separate live browser scenario uploaded the same
+  Unicode filename with spaces twice and received distinct asset IDs, passing
+  1/1. Backend declaration and image-inspection tests reject zero bytes and
+  real JPEG content declared as PNG; the media validation module passed 8/8.
+- Upload intents strip both Unix and Windows path-like prefixes from display
+  filenames. A PostgreSQL test exercised Unicode, spaces, traversal-like
+  names, and duplicate names, then checked distinct random staging keys.
+  The full media and revision modules passed 13/13 before the two added
+  declaration/content tests; the focused media module passed 8/8 afterward.
+- Editor cell, background, cover, and profile avatar uploads now expose
+  preparation, transfer, and processing stages with an indeterminate progress
+  element and a Cancel upload control. The browser-native transfer reports no
+  reliable byte count across the presigned S3 POST, so progress communicates
+  the current stage. The 320 px live editor test paused the storage request,
+  saw the upload stage without page overflow, cancelled it without attaching
+  an image, and retried successfully. Cell upload errors and cancellation now
+  appear in the cell inspector, where mobile users can see them. Frontend
+  upload/editor/profile unit tests passed 21/21, with lint and typecheck green.
+- The owner-scoped upload intent, completion, direct-content, detail, and
+  deletion API paths were exercised in the section 14 authorization tests.
+  Raw corrupt bytes were rejected in the live browser; SVG is excluded; image
+  validation checks the decoded format/signature/dimensions and normalization
+  emits WebP without source EXIF, ICC, or XMP metadata. The local MinIO bucket
+  initialization sets anonymous access to none, applies a service policy
+  limited to application prefixes, and uses versioning. A direct unsigned GET
+  for an existing ready object returned HTTP 403. Production storage must be
+  provisioned with the runbook's private/versioned/IAM contract; its actual
+  provider permissions cannot be measured until that external service exists.
+
 ### Remaining local evidence to gather
 
-- Broader invalid input/media-upload cases, keyboard and responsive flows for
-  newly added controls, and real service-outage behavior remain in the work
-  queue. None of the external launch gates has been closed by these local tests.
+- Broader invalid input cases, keyboard and responsive flows for newly added
+  controls, and real service-outage behavior remain in the work queue. None of
+  the external launch gates has been closed by these local tests.

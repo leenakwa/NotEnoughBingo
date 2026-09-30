@@ -371,15 +371,21 @@ export const api = {
     remove: (id: PublicId) => apiRequest<void>(`bingos/${id}/`, { method: "DELETE" }),
   },
   uploads: {
-    createIntent: (intent: UploadIntent) =>
-      apiRequest<UploadTicket>("uploads/intents/", { method: "POST", body: intent }),
-    complete: (assetId: PublicId) =>
-      apiRequest<MediaAsset>(`uploads/${assetId}/complete/`, { method: "POST" }),
-    uploadContent: (assetId: PublicId, file: Blob, headers: Record<string, string>) =>
+    createIntent: (intent: UploadIntent, signal?: AbortSignal) =>
+      apiRequest<UploadTicket>("uploads/intents/", { method: "POST", body: intent, signal }),
+    complete: (assetId: PublicId, signal?: AbortSignal) =>
+      apiRequest<MediaAsset>(`uploads/${assetId}/complete/`, { method: "POST", signal }),
+    uploadContent: (
+      assetId: PublicId,
+      file: Blob,
+      headers: Record<string, string>,
+      signal?: AbortSignal,
+    ) =>
       apiRequest<MediaAsset>(`uploads/${assetId}/content/`, {
         method: "PUT",
         headers,
         body: file,
+        signal,
       }),
     get: (assetId: PublicId, signal?: AbortSignal) =>
       apiRequest<MediaAsset>(`uploads/${assetId}/`, { signal }),

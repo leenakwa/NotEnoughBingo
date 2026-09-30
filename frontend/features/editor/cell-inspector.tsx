@@ -4,12 +4,14 @@ import type { Dispatch } from "react";
 import { useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
+import { UploadStatus } from "@/components/ui/upload-status";
 import {
   selectedPrimaryCell,
   type EditorAction,
   type EditorState,
   type TextFormat,
 } from "@/features/editor/editor-state";
+import type { UploadPhase } from "@/lib/uploads";
 
 const formats: { value: TextFormat; label: string; glyph: string }[] = [
   { value: "bold", label: "Bold", glyph: "B" },
@@ -23,11 +25,17 @@ export function CellInspector({
   dispatch,
   onImageSelected,
   uploadPending,
+  uploadPhase,
+  onCancelUpload,
+  uploadFeedback,
 }: {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
   onImageSelected: (file: File) => void;
   uploadPending: boolean;
+  uploadPhase?: UploadPhase;
+  onCancelUpload: () => void;
+  uploadFeedback: { text: string; error: boolean } | null;
 }) {
   const [bulkTextSelection, setBulkTextSelection] = useState<string | null>(null);
   const cell = selectedPrimaryCell(state);
@@ -176,6 +184,15 @@ export function CellInspector({
           }}
         />
       </label>
+      {uploadPhase ? <UploadStatus phase={uploadPhase} onCancel={onCancelUpload} /> : null}
+      {uploadFeedback ? (
+        <p
+          className={uploadFeedback.error ? "form-message form-message--error" : "form-message"}
+          role={uploadFeedback.error ? "alert" : "status"}
+        >
+          {uploadFeedback.text}
+        </p>
+      ) : null}
       {cell.image.asset || cell.image.previewUrl ? (
         <button
           type="button"

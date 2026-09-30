@@ -20,6 +20,8 @@ function InspectorHarness({ multiple = true }: { multiple?: boolean }) {
         state={state}
         dispatch={dispatch}
         uploadPending={false}
+        onCancelUpload={() => undefined}
+        uploadFeedback={null}
         onImageSelected={() => undefined}
       />
       <output data-testid="texts">
