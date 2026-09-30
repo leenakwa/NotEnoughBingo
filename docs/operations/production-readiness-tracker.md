@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **53 verified**, **45 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **55 verified**, **43 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -48,7 +48,7 @@ unresolved failures or missing evidence.
 
 ## Section verdicts
 
-- [ ] 1. BASIC LAUNCH DETAILS — Partial: guest Create path, status codes, assets, and session behavior recorded; review remaining bullets.
+- [x] 1. BASIC LAUNCH DETAILS — Verified before deployment: real metadata/icons/404/error and first-screen routes, loading/empty/success states, session/reset/account-switch flows, mobile/Safari and production browser probes passed. The production image requires a same-origin browser API path and explicit non-local backend address, while its public HTTPS origin and staging index policy are validated. Actual domain/provider checks remain part of rollout.
 - [x] 2. FIRST-SCREEN / PRODUCT CLARITY — Verified before deployment: a guest can see what to do, the primary Find a bingo action and secondary Create action, free guest play and signup requirement; at 320×667 both actions fit entirely in the first viewport after moving the intro ahead of the language filter. This is a manual browser/heuristic check, not an external user-comprehension study.
 - [x] 3. NAVIGATION — Verified before deployment: branded home and header/footer links, active-route labels, Back/Forward with profile recovery, direct/new-tab/reloaded routes and URL-restored Explore/share state passed. Dialog/disclosure Escape/outside and sticky-anchor behavior have live evidence. Navigation is always visible; no mobile menu is present.
 - [ ] 4. UI STATES — Partial: first load, loaded/empty/error, offline/retry, authorization, and expired-session journeys were observed in representative routes; partial-data behavior and a component-by-component sweep remain.
@@ -118,9 +118,9 @@ unresolved failures or missing evidence.
 - [ ] 68. CRON / SCHEDULED JOBS — Partial: UTC schedule and QA Beat heartbeat observed; structured task retry/failure logging is configured. PostgreSQL advisory locks and bounded retries now prove local overlap/duplicate safety; the actual singleton deployment and alerts need a target platform.
 - [ ] 69. QUEUES / WORKERS — Partial: QA worker/Redis healthy on a durable default queue; media/export retries and duplicate guards exist, and trending work is bounded; local Redis/worker restart replay, stalled-claim recovery and terminal storage failures passed; the actual production queue/platform and delivered alerts remain.
 - [x] 70. PRODUCTION BUILD — Verified before deployment: current optimized Next build/start, SSR/static routes, dynamic route assets and browser console passed on the production candidate; actual domain/provider values remain rollout inputs.
-- [ ] 71. DEPENDENCIES — Partial: committed npm and new Python 3.13 production/development locks, clean image installs, runtime version alignment and local ARM64 native imports pass. The new Python graph still needs exact-source x86_64 CI image and test confirmation before the architecture bullet closes.
+- [x] 71. DEPENDENCIES — Verified before deployment: committed npm and Python 3.13 production/development locks, clean installs and builds, runtime version alignment, local ARM64 native imports, x86_64 CI production image and real worker PNG/PDF export pass. The full CI gate for that source failed in an unrelated mobile WebKit interaction, which is tracked separately.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [x] 73. TESTS — Verified before deployment: 189 PostgreSQL tests plus 134 frontend tests and 53 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
+- [x] 73. TESTS — Verified before deployment: 189 PostgreSQL tests plus 144 frontend tests and 53 live scenarios cover auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial: local evidence recorded; review remaining original bullets.
@@ -140,7 +140,7 @@ unresolved failures or missing evidence.
 - [x] 90. FOOTER — Verified before deployment: current-year branded footer, five working internal links, contact destination page, intentional cookies anchor, responsive layout, and no broken placeholders; official social accounts are not configured for this release.
 - [x] 91. PAGE METADATA — Verified before deployment: production-mode public route heads expose title, description, canonical, Open Graph/Twitter URLs and images, and favicon links at the configured origin.
 - [ ] 92. FAVICON SET — Partial: ICO, SVG browser icon, and 180px Apple touch icon return 200 and appear in page head; light/dark browser chrome still needs a visual check. PWA is absent.
-- [x] 93. SCROLL BEHAVIOR — Verified before deployment: route top, browser Back, modal close, horizontal overflow, and sticky-header anchor behavior checked at mobile and desktop widths.
+- [x] 93. SCROLL BEHAVIOR — Verified before deployment: route top, browser Back, modal close, horizontal overflow, and sticky-header anchor behavior checked at mobile and desktop widths. Removed global smooth scrolling after a mobile WebKit tap missed a moving checkbox; the corrected language flow passed 20 repeated touch runs and the full live regression.
 - [x] 94. MODALS — Verified before deployment: report dialog X, Cancel, Escape, backdrop, focus containment, background scroll lock, and 320px-high viewport; there is no destructive modal action.
 - [x] 95. DROPDOWNS / POPOVERS — Verified before deployment: language disclosures and download options open/close with touch and keyboard, remain unclipped at 320–1710px, and stay anchored on scroll; popup targets meet 44px.
 - [x] 96. Z-INDEX / OVERLAY STACK — Verified before deployment: modal top layer blocks the sticky header and restores it on close; download popup remains bounded below the header, mobile inspector layers deliberately; no custom toast, tooltip, or date picker layers exist.

@@ -68,7 +68,7 @@ Verify all of the following:
 - [x] assets do not reference localhost;
 - [x] no mock/demo/test content remains unintentionally;
 - [x] no unnecessary console logs/debug UI remain;
-- [ ] production does not use staging APIs accidentally;
+- [x] production does not use staging APIs accidentally;
 - [x] staging `noindex` has not leaked into production;
 - [x] emails use production URLs;
 - [x] password reset works;
@@ -1335,7 +1335,7 @@ Verify:
 - [x] application does not rely on globally installed developer packages;
 - [x] runtime version is pinned/documented;
 - [x] Node/Python/etc. versions match production;
-- [ ] native packages work on production architecture.
+- [x] native packages work on production architecture.
 
 # 72. CI/CD
 

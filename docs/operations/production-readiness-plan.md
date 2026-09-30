@@ -36,17 +36,21 @@ of work; it does not reduce the checklist.
 | 5. Deployment handoff | Domain, TLS, email, object storage, monitoring, alerts, external recovery, and scripted live smoke/rollback checks. | Predeployment checklist is complete; external configuration is supplied; deployment-only checks are automated and pass on the target environment. |
 
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
-open for itemized review: the 2026-09-30 tracker has 53 verified sections,
-45 partial, six N/A and one deployment-only. The latest full live regression is
-53/53 and the frontend gate has 134 tests; these counts do not close unreviewed
+open for itemized review: the 2026-09-30 tracker has 55 verified sections,
+43 partial, six N/A and one deployment-only. The current local full live
+regression is 53/53 and the frontend gate has 144 tests; these counts do not close unreviewed
 requirements. Stage 4 is in progress: source b464331 passed all nine CI jobs,
-including the repaired live language-filter scenario. The current abuse-limit,
-API-error, adversarial-input, and profile-feedback batch still needs its
-committed source release gate. CI for 37832bd passed all product/build jobs but
+including the repaired live language-filter scenario. The subsequent abuse-limit,
+API-error, adversarial-input, and profile-feedback work still needs an aggregate
+release gate on a source containing those changes. CI for 37832bd passed all
+product/build jobs but
 failed the secret scan on a documented checklist false positive. Source
 a448963 fixed that finding and passed every completed job, but its browser
-smoke job was cancelled, leaving the aggregate gate red. The next source
-must pass all nine jobs.
+smoke job was cancelled, leaving the aggregate gate red. Source 4557c6a
+passed backend/frontend quality, secret scan, smoke and both x86_64 production
+images, but one of 53 full-stack scenarios failed when smooth page scrolling
+moved a mobile WebKit checkbox during a click. That interaction has been fixed
+locally and awaits an exact-source CI gate. The next source must pass all nine jobs.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
 and a domain have not been selected.
@@ -55,14 +59,14 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Finish the new backend dependency-lock batch and verify the entire draft
-   PR on its next exact source in CI. The local backend/frontend/full-live
-   gates passed (189/134/53); the first-screen improvement passed its focused
-   live route scenario. Production and development images built with the new
-   Python locks on local ARM64, and locked production packages passed a
-   vulnerability audit. Exact-source x86_64 and full browser gates remain.
-2. Complete remaining repository-specific work in sections 1–8, 21, 24–25,
-   34/36, 42/45, 61–63, 67, 71–72, 76–77, 82 and 105. Prioritize
+1. Finish the current API destination and mobile scroll correction, then verify
+   the entire draft PR on its next exact source in CI. The backend dependency
+   graph already passed local ARM64 and x86_64 CI image builds, a production
+   vulnerability audit and real worker export. The focused mobile WebKit
+   scenario passed 20 repetitions after the scroll correction, and all 53
+   local full-stack scenarios passed. The exact-source CI gate remains.
+2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
+   24–25, 34/36, 42/45, 61–63, 67, 72, 76–77, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager
    behavior, native zoom/ARIA/UI contrast, endpoint-by-endpoint contracts,
    database indexes/migration scale and notification/email failure paths.

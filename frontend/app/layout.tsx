@@ -48,7 +48,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // every framework script and inline style element.
   await connection();
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en">
       <body>
         <a className="skip-link" href="#main-content">
           Skip to content

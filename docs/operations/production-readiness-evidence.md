@@ -2325,3 +2325,40 @@ observed results and their limits. Do not include credentials or session data.
   duplication. A local audit of the locked production graph found no known
   vulnerabilities. The new lock/image combination still needs exact-source
   x86_64 CI and full tests before section 71 closes.
+
+### 2026-09-30 — Same-origin API build contract (section 1)
+
+- The client already defaults to `/api/v1`, and the production frontend image
+  routes it to its backend service. Its build/runtime validation now requires
+  exactly that same-origin public path and an explicit absolute, non-local
+  server `/api/v1` URL. Production mode also rejects test, preview and staging
+  hostnames for both the public origin and backend address. This prevents a
+  production image from embedding an external staging API URL in the browser or
+  silently falling back to localhost when
+  the server URL is omitted. A valid internal backend and nine invalid/missing
+  destinations, including IPv6 loopback and staging hosts, passed ten focused
+  validator subprocess checks. The real target service routing still requires
+  rollout smoke on the selected platform. The complete frontend gate after this change
+  passed ESLint, TypeScript, Prettier and **144 tests across 28 files**. The
+  exact-source container build and CI gate have not yet run for the validator.
+
+### 2026-09-30 — x86_64 dependency proof and mobile WebKit click correction (sections 71, 93)
+
+- CI run 36740984070 at source `4557c6a` built both production images on
+  Ubuntu x86_64. The full-stack job then completed a multilingual PNG/PDF
+  download through the real worker, proving the locked native rendering packages
+  load and function on that architecture. Backend/frontend quality, secret scan,
+  browser smoke and both image builds passed; the full-stack job failed one of
+  53 scenarios, so the aggregate release gate remained red. This closes only
+  the architecture-specific dependency item, not the release gate.
+- The failed scenario was the mobile WebKit Discover language checkbox. Its
+  Playwright trace shows document scroll position changing from 388 to 412
+  during the click while global `scroll-behavior: smooth` was active. This is
+  consistent with the click missing the moving input after the stability check.
+  Removed
+  global smooth scrolling and the matching Next HTML declaration. The live QA
+  browser now computes `scroll-behavior: auto`; the language/mark touch scenario
+  passed 20 consecutive mobile WebKit runs. The complete live QA run then
+  passed all 53 scenarios across Chromium, mobile WebKit, Firefox, desktop
+  WebKit and Android Chromium in 3.5 minutes. Exact-source CI confirmation
+  remains pending.

@@ -2,6 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 
 const rawOrigin = process.env.NEXT_PUBLIC_APP_URL;
 let origin;
+const isNonProductionHost = (hostname) =>
+  /\.(?:invalid|test)$/.test(hostname) ||
+  /(?:^|[.-])(?:staging|stage|preview|qa|test|dev)(?:[.-]|$)/.test(hostname);
 
 try {
   origin = new URL(rawOrigin);
@@ -17,7 +20,7 @@ if (
   origin.pathname !== "/" ||
   origin.search ||
   origin.hash ||
-  ["localhost", "127.0.0.1", "::1"].includes(origin.hostname)
+  ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname)
 ) {
   console.error(
     "NEXT_PUBLIC_APP_URL must be an explicit public HTTPS origin for a production image.",
@@ -25,8 +28,35 @@ if (
   process.exit(1);
 }
 
-if (process.env.APP_ENVIRONMENT === "production" && /\.(?:invalid|test)$/.test(origin.hostname)) {
-  console.error("Production cannot use a test or CI-only public origin.");
+if (process.env.APP_ENVIRONMENT === "production" && isNonProductionHost(origin.hostname)) {
+  console.error("Production cannot use a non-production public origin.");
+  process.exit(1);
+}
+
+const publicApiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
+if (publicApiBase.replace(/\/$/, "") !== "/api/v1") {
+  console.error("NEXT_PUBLIC_API_BASE_URL must use the same-origin /api/v1 path.");
+  process.exit(1);
+}
+
+let serverApiBase;
+try {
+  serverApiBase = new URL(process.env.API_BASE_URL);
+} catch {
+  // The error below also covers a missing or malformed backend API address.
+}
+if (
+  !serverApiBase ||
+  !["http:", "https:"].includes(serverApiBase.protocol) ||
+  serverApiBase.username ||
+  serverApiBase.password ||
+  serverApiBase.pathname.replace(/\/$/, "") !== "/api/v1" ||
+  serverApiBase.search ||
+  serverApiBase.hash ||
+  ["localhost", "127.0.0.1", "[::1]"].includes(serverApiBase.hostname) ||
+  (process.env.APP_ENVIRONMENT === "production" && isNonProductionHost(serverApiBase.hostname))
+) {
+  console.error("API_BASE_URL must be an explicit non-local backend /api/v1 address.");
   process.exit(1);
 }
 
