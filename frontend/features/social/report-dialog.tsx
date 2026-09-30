@@ -79,6 +79,27 @@ export function ReportDialog({
       className="report-dialog"
       aria-labelledby="report-dialog-title"
       aria-describedby="report-dialog-description"
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const focusable = Array.from(
+          event.currentTarget.querySelectorAll<HTMLElement>(
+            "button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]",
+          ),
+        );
+        const first = focusable[0];
+        if (!first) return;
+        const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+        const nextIndex =
+          currentIndex < 0
+            ? event.shiftKey
+              ? focusable.length - 1
+              : 0
+            : event.shiftKey
+              ? (currentIndex - 1 + focusable.length) % focusable.length
+              : (currentIndex + 1) % focusable.length;
+        event.preventDefault();
+        (focusable[nextIndex] ?? first).focus();
+      }}
       onCancel={(event) => {
         event.preventDefault();
         close();

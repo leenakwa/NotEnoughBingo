@@ -428,3 +428,41 @@ test("report dialog scrolls within a short mobile viewport while the keyboard is
   await dialog.getByRole("button", { name: "Cancel" }).tap();
   await expect(dialog).toBeHidden();
 });
+
+test("keyboard navigation stays inside a report dialog and returns to its trigger", async ({
+  page,
+}, testInfo) => {
+  await mockLargeBingo(page, true);
+  await page.goto(`/bingo/${bingoId}`);
+  if (testInfo.project.name === "chromium") {
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("link", { name: "Not Enough Bingo home" })).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
+  }
+
+  const trigger = page.getByRole("button", { name: "Report", exact: true });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: "Report bingo" });
+  await expect(dialog).toBeVisible();
+  await expect.poll(() => dialog.evaluate((element) => element.matches(":modal"))).toBe(true);
+  for (const key of ["Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Shift+Tab", "Shift+Tab"]) {
+    await page.keyboard.press(key);
+    const focus = await dialog.evaluate((element) => ({
+      inside: element === document.activeElement || element.contains(document.activeElement),
+      active: document.activeElement?.outerHTML.slice(0, 160),
+    }));
+    expect(focus.inside, `${key} focused ${focus.active}`).toBe(true);
+  }
+  const outline = await page.evaluate(() => {
+    const focused = document.activeElement;
+    return focused ? getComputedStyle(focused).outlineWidth : "0px";
+  });
+  expect(parseFloat(outline)).toBeGreaterThanOrEqual(3);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});

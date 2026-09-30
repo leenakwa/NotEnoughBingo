@@ -473,16 +473,16 @@ Navigate important flows without a mouse.
 
 Verify:
 
-- [ ] Tab order;
-- [ ] Shift+Tab;
-- [ ] visible focus;
-- [ ] Enter;
-- [ ] Space;
-- [ ] Escape;
-- [ ] modal focus trapping;
-- [ ] focus does not escape behind modals;
-- [ ] focus returns sensibly after closing dialogs;
-- [ ] no keyboard traps.
+- [x] Tab order;
+- [x] Shift+Tab;
+- [x] visible focus;
+- [x] Enter;
+- [x] Space;
+- [x] Escape;
+- [x] modal focus trapping;
+- [x] focus does not escape behind modals;
+- [x] focus returns sensibly after closing dialogs;
+- [x] no keyboard traps.
 
 # 24. ACCESSIBILITY
 

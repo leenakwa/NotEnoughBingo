@@ -855,6 +855,24 @@ observed results and their limits. Do not include credentials or session data.
   full frontend format, lint, and typecheck commands passed locally. The
   corrected exact-commit CI run remains pending.
 
+### 2026-09-30 — Keyboard navigation and modal focus (section 23)
+
+- A browser-only keyboard walk on a public bingo checked the initial skip
+  link, header link, reverse Shift+Tab order, Enter opening the report dialog,
+  repeated forward and reverse Tab, a visible 3 px focus outline, Escape
+  closing the dialog, and focus returning to the Report trigger. The initial
+  modal test caught a focus gap at the Tab wrap: Chromium and WebKit could
+  leave `document.activeElement` on the page body while the dialog remained
+  open. The report dialog now cycles through its enabled fields and buttons
+  explicitly. The focused test passed in Chromium, Firefox, and WebKit 1/1
+  each; no element behind the modal received focus.
+- Existing browser flows separately use Enter to submit signup and toggle
+  language filters, Space to select languages and switch mark controls,
+  Escape to leave inline cell editing, arrow keys to navigate the board,
+  and Shift+Arrow to select a range. The report dialog is the only native
+  `<dialog>` component in the current UI; its escape path returns to the
+  trigger rather than trapping the keyboard after closure.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added
