@@ -1228,6 +1228,7 @@ h3 {
   top: calc(var(--header-height) + 18px);
   align-self: start;
   max-height: calc(100vh - var(--header-height) - 36px);
+  max-height: calc(100dvh - var(--header-height) - 36px);
   overflow: auto;
   padding: 18px;
   border: var(--line-heavy);
@@ -1776,6 +1777,7 @@ input[type="range"] {
   left: 50%;
   width: min(calc(100% - 32px), 620px);
   max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
   margin: 0;
   overflow: auto;
   padding: clamp(20px, 4vw, 34px);
@@ -2122,6 +2124,10 @@ input[type="range"] {
     padding-inline: 16px;
   }
 
+  .site-header--classic .brand-link {
+    font-size: clamp(20px, 2.3vw, 24px);
+  }
+
   .classic-header__right,
   .classic-header__nav {
     gap: 6px;
@@ -2231,6 +2237,7 @@ input[type="range"] {
     z-index: 40;
     width: auto;
     max-height: 62vh;
+    max-height: 62dvh;
     overscroll-behavior: contain;
   }
 

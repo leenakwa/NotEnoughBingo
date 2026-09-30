@@ -801,6 +801,34 @@ observed results and their limits. Do not include credentials or session data.
   frontend types include the field; the database migration was applied to
   the QA stack.
 
+### 2026-09-30 — Responsive board and short-height layouts (section 21)
+
+- Chromium exercised the 10×10 play board, editor inspector, and finishing
+  step at widths 320, 375, 390, 412, 430, 768, 1024, 1280, 1440, 1710,
+  and 2560 px. The page had no horizontal overflow at each width; the large
+  board deliberately scrolls inside its own region and keeps cell targets at
+  least 43 px. The full responsive spec passed 6/6 in Chromium; the two
+  320 px play/editor interactions passed 2/2 in WebKit. Prior live mobile
+  WebKit play, share, language, and mark-selection flows also passed.
+- A new 844×390 and 844×320 landscape/short-height browser test found that
+  the classic brand wrapped at 844 px, growing the sticky header beyond its
+  declared height and pushing the editor inspector off-screen. The responsive
+  brand size now keeps the header on one line. The sticky inspector and report
+  dialog use dynamic viewport units with older `vh` fallbacks. Chromium then
+  kept the inspector and its close control within the 844×390, 844×320, and
+  320×300 viewports. A report dialog at 320×300 scrolled its submit action
+  into view and closed through Cancel. The isolated report test passed 1/1.
+- The 320×300 checks simulate a reduced visual viewport after a virtual
+  keyboard opens; they do not exercise a physical phone keyboard or changing
+  address bar. iPhone notch/safe-area behavior and a real mobile modal with
+  keyboard remain unchecked. The current release has no bottom fixed
+  navigation, data tables, charts, or tooltip component in the source
+  inventory, so those section-specific bullets are marked not applicable.
+- CI on `c9fc40c` found one mypy failure in the thumbnail size lookup. The
+  lookup now has a string-keyed annotation matching the model field; local
+  backend mypy passed with no issues in 71 source files. This fix is awaiting
+  the next commit's exact CI run.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

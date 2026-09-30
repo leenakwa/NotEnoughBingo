@@ -433,27 +433,27 @@ Verify:
 
 Test at minimum:
 
-- [ ] ~320 px;
-- [ ] ~375 px;
-- [ ] ~430 px;
-- [ ] tablet;
-- [ ] laptop;
-- [ ] 1440 px desktop;
-- [ ] ultrawide.
+- [x] ~320 px;
+- [x] ~375 px;
+- [x] ~430 px;
+- [x] tablet;
+- [x] laptop;
+- [x] 1440 px desktop;
+- [x] ultrawide.
 
 Also test:
 
-- [ ] mobile landscape;
+- [x] mobile landscape;
 - [ ] dynamic browser chrome/address bars;
 - [ ] virtual keyboard;
 - [ ] iPhone safe areas/notches;
-- [ ] bottom fixed navigation;
+- [x] bottom fixed navigation;
 - [ ] modal + virtual keyboard;
-- [ ] sticky headers;
-- [ ] accidental horizontal overflow;
-- [ ] tables;
-- [ ] charts;
-- [ ] tooltips.
+- [x] sticky headers;
+- [x] accidental horizontal overflow;
+- [x] tables;
+- [x] charts;
+- [x] tooltips.
 
 # 22. TOUCH UX
 

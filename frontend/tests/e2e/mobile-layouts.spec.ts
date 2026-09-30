@@ -10,7 +10,7 @@ const author = {
   avatar: null,
 };
 const longCellText = "A deliberately long cell label that must stay clipped inside";
-const responsiveWidths = [320, 375, 390, 412, 768, 1024, 1440];
+const responsiveWidths = [320, 375, 390, 412, 430, 768, 1024, 1280, 1440, 1710, 2560];
 const cells = Array.from({ length: 100 }, (_, index) => ({
   id: `33333333-3333-4333-8333-${String(index).padStart(12, "0")}`,
   row: Math.floor(index / 10),
@@ -43,10 +43,40 @@ const revision = {
   published_at: "2026-08-07T00:00:00Z",
 };
 
-async function mockLargeBingo(page: Page) {
-  await page.route("**/api/v1/auth/session/", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
+async function mockLargeBingo(page: Page, reportable = false) {
+  await page.route("**/api/v1/interactions/", (route) =>
+    route.fulfill({ status: 204, body: "" }),
   );
+  await page.route("**/api/v1/notifications/unread-count/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"unread_count":0}' }),
+  );
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: reportable
+          ? {
+              id: "66666666-6666-4666-8666-666666666666",
+              username: "viewer",
+              display_name: "Viewer",
+              email: "viewer@example.test",
+              email_verified: true,
+              avatar: null,
+              deletion_scheduled_for: null,
+            }
+          : null,
+      }),
+    }),
+  );
+  if (reportable) {
+    await page.route(`**/api/v1/progress/${bingoId}/`, (route) =>
+      route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
+    );
+    await page.route("**/api/v1/auth/csrf/", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: '{"csrf_token":"test"}' }),
+    );
+  }
   await page.route("**/api/v1/auth/me/", (route) =>
     route.fulfill({
       status: 401,
@@ -75,7 +105,12 @@ async function mockLargeBingo(page: Page) {
         published_at: revision.published_at,
         updated_at: revision.published_at,
         current_revision: revision,
-        permissions: { can_edit: false, can_comment: false, can_like: false, can_report: false },
+        permissions: {
+          can_edit: false,
+          can_comment: false,
+          can_like: false,
+          can_report: reportable,
+        },
       }),
     }),
   );
@@ -92,6 +127,9 @@ async function mockLargeBingo(page: Page) {
 }
 
 async function mockLargeEditor(page: Page) {
+  await page.route("**/api/v1/notifications/unread-count/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"unread_count":0}' }),
+  );
   await page.route("**/api/v1/auth/session/", (route) =>
     route.fulfill({
       status: 200,
@@ -316,4 +354,72 @@ test("editor, inspector, and details stay bounded across responsive widths", asy
       `details overflow at ${width}px`,
     ).toBeLessThanOrEqual(await page.evaluate(() => document.documentElement.clientWidth + 1));
   }
+});
+
+test("landscape and short viewports keep the editor inspector and sticky header usable", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "One deterministic engine covers geometry.");
+  await mockLargeEditor(page);
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto(`/create?bingo=${bingoId}`);
+  await page.getByRole("gridcell").first().tap();
+  const inspector = page.getByRole("complementary", { name: "Cell editor" });
+  await expect(inspector).toBeVisible();
+
+  for (const height of [390, 320]) {
+    await page.setViewportSize({ width: 844, height });
+    await inspector.getByRole("textbox", { name: "Text", exact: true }).focus();
+    const bounds = await inspector.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      844,
+    );
+  }
+
+  await page.getByRole("button", { name: "Close cell editor" }).tap();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const headerTop = await page
+    .locator(".site-header")
+    .evaluate((element) => element.getBoundingClientRect().top);
+  expect(headerTop).toBe(0);
+
+  await page.setViewportSize({ width: 320, height: 500 });
+  await page.goto(`/create?bingo=${bingoId}`);
+  await page.getByRole("gridcell").first().tap();
+  await expect(inspector).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 300 });
+  await inspector.getByRole("textbox", { name: "Text", exact: true }).focus();
+  const mobileBounds = await inspector.boundingBox();
+  expect(mobileBounds).not.toBeNull();
+  expect(mobileBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(mobileBounds!.x + mobileBounds!.width).toBeLessThanOrEqual(320);
+  expect(mobileBounds!.y + mobileBounds!.height).toBeLessThanOrEqual(300);
+  await expect(page.getByRole("button", { name: "Close cell editor" })).toBeVisible();
+});
+
+test("report dialog scrolls within a short mobile viewport while the keyboard is simulated", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "One deterministic engine covers geometry.");
+  await mockLargeBingo(page, true);
+  await page.setViewportSize({ width: 320, height: 500 });
+  await page.goto(`/bingo/${bingoId}`);
+  await page.getByRole("button", { name: "Report", exact: true }).tap();
+  const dialog = page.getByRole("dialog", { name: "Report bingo" });
+  await expect(dialog).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 300 });
+  await dialog.getByRole("textbox", { name: "Additional context (optional)" }).focus();
+  const bounds = await dialog.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(320);
+  expect(bounds!.y).toBeGreaterThanOrEqual(0);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(300);
+  await dialog.getByRole("button", { name: "Send report" }).scrollIntoViewIfNeeded();
+  await expect(dialog.getByRole("button", { name: "Send report" })).toBeInViewport();
+  await dialog.getByRole("button", { name: "Cancel" }).tap();
+  await expect(dialog).toBeHidden();
 });

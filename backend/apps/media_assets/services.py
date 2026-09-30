@@ -267,12 +267,13 @@ def create_thumbnail(*, original: MediaAsset, data: bytes) -> MediaAsset | None:
     ).first()
     if existing:
         return existing
-    maximum = {
+    sizes: dict[str, tuple[int, int]] = {
         MediaAsset.Kind.COVER: (720, 450),
         MediaAsset.Kind.AVATAR: (512, 512),
         MediaAsset.Kind.BOARD_BACKGROUND: (1536, 1536),
         MediaAsset.Kind.CELL_IMAGE: (512, 512),
-    }[original.kind]
+    }
+    maximum = sizes[original.kind]
     thumbnail_data = _thumbnail_bytes(data, max_size=maximum)
     key = f"media/derived/{original.public_id}/thumbnail.webp"
     if default_storage.exists(key):

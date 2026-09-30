@@ -68,7 +68,7 @@ unresolved failures or missing evidence.
 - [x] 18. TABLES AND LISTS — Verified before deployment: card-list zero/one/many, pagination, filtered sorting, long/null content, mobile layout, and selected sort/tab states; tabular headers and list horizontal scrolling are N/A.
 - [x] 19. FILE UPLOADS — Verified before deployment: successful/invalid/duplicate uploads, cancellation and retry, stage progress, owner access, normalization, and private local object storage; provider policy remains a rollout input.
 - [x] 20. IMAGES — Verified before deployment: image descriptions for image-only cells, thumbnails, lazy loading, broken-image fallback, aspect ratio, and safe serving exercised in backend and browser.
-- [ ] 21. RESPONSIVE DESIGN — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
+- [ ] 21. RESPONSIVE DESIGN — Partial: 320–2560 px board/editor gate, mobile WebKit, landscape/short-height inspector, and simulated keyboard-sized modal passed; real address-bar, keyboard, and iPhone safe-area behavior still need device evidence.
 - [ ] 22. TOUCH UX — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
 - [ ] 23. KEYBOARD UX — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
 - [ ] 24. ACCESSIBILITY — Partial: local evidence recorded; review remaining original bullets.
