@@ -118,7 +118,7 @@ function getCookie(name: string): string | null {
 
 async function bootstrapCsrf(): Promise<void> {
   if (typeof window === "undefined" || getCookie(csrfCookieName)) return;
-  await apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true });
+  await apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true, keepalive: true });
 }
 
 async function withRequestDeadline<T>(

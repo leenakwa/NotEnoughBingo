@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: SharePageProps): Promise<Meta
   const title = `${result.owner_display_name}'s result — ${result.revision.title}`;
   const description = `${result.selected_cells.length} of ${result.revision.cells.length} cells selected. Open the result or play this bingo yourself.`;
   const canonical = absoluteSiteUrl(`/share/${result.bingo_id}/${result.id}`);
-  const image = result.revision.cover?.thumbnail_url ?? result.revision.cover?.url ?? undefined;
+  const image = absoluteSiteUrl(`/share/${result.bingo_id}/${result.id}/opengraph-image`);
 
   return {
     title,
@@ -39,13 +39,15 @@ export async function generateMetadata({ params }: SharePageProps): Promise<Meta
       title,
       description,
       url: canonical,
-      images: image ? [{ url: image, alt: `Cover for ${result.revision.title}` }] : undefined,
+      images: [
+        { url: image, width: 1200, height: 630, alt: `Result for ${result.revision.title}` },
+      ],
     },
     twitter: {
-      card: image ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      images: image ? [image] : undefined,
+      images: [image],
     },
   };
 }

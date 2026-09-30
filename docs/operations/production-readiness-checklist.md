@@ -753,13 +753,13 @@ Test a production URL preview in services such as:
 
 Verify:
 
-- [ ] Open Graph title;
-- [ ] description;
-- [ ] image;
-- [ ] absolute image URL;
-- [ ] correct favicon/site branding;
+- [x] Open Graph title;
+- [x] description;
+- [x] image;
+- [x] absolute image URL;
+- [x] correct favicon/site branding;
 - [ ] no stale staging metadata;
-- [ ] sensible image aspect ratio.
+- [x] sensible image aspect ratio.
 
 # 38. DOMAIN AND DNS
 

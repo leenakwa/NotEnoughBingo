@@ -133,7 +133,14 @@ describe("public route metadata", () => {
     expect(metadata.robots).toEqual({ index: true, follow: true });
     expect(metadata.openGraph).toMatchObject({
       title: revision.title,
-      images: [{ url: cover.thumbnail_url, alt: `Cover for ${revision.title}` }],
+      images: [
+        {
+          url: absoluteSiteUrl("/bingo/11111111-1111-4111-8111-111111111111/opengraph-image"),
+          width: 1200,
+          height: 630,
+          alt: `Preview of ${revision.title}`,
+        },
+      ],
     });
 
     mocks.getBingo.mockResolvedValue(bingo("unlisted"));
@@ -165,6 +172,17 @@ describe("public route metadata", () => {
     expect(metadata.title).toBe(`Alex's result — ${revision.title}`);
     expect(metadata.description).toContain("2 of 2 cells selected");
     expect(metadata.robots).toEqual({ index: false, follow: true });
+    expect(metadata.openGraph).toMatchObject({
+      images: [
+        {
+          url: absoluteSiteUrl(
+            "/share/11111111-1111-4111-8111-111111111111/share-token/opengraph-image",
+          ),
+          width: 1200,
+          height: 630,
+        },
+      ],
+    });
     expect(metadata.alternates).toMatchObject({
       canonical: absoluteSiteUrl("/share/11111111-1111-4111-8111-111111111111/share-token"),
     });

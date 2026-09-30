@@ -28,8 +28,8 @@ export async function generateMetadata({ params }: BingoPageProps): Promise<Meta
     revision.description,
     `Play ${revision.title}, a ${revision.size}×${revision.size} bingo by ${author}.`,
   );
-  const image = revision.cover?.thumbnail_url ?? revision.cover?.url ?? undefined;
   const canonical = absoluteSiteUrl(`/bingo/${bingo.id}`);
+  const image = absoluteSiteUrl(`/bingo/${bingo.id}/opengraph-image`);
   const indexable =
     isPublicProduction() && bingo.visibility === "public" && bingo.status === "published";
 
@@ -43,13 +43,13 @@ export async function generateMetadata({ params }: BingoPageProps): Promise<Meta
       title: revision.title,
       description,
       url: canonical,
-      images: image ? [{ url: image, alt: `Cover for ${revision.title}` }] : undefined,
+      images: [{ url: image, width: 1200, height: 630, alt: `Preview of ${revision.title}` }],
     },
     twitter: {
-      card: image ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: revision.title,
       description,
-      images: image ? [image] : undefined,
+      images: [image],
     },
   };
 }

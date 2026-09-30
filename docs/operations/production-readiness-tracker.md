@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **22 verified**, **43 partial**, **34 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **22 verified**, **44 partial**, **33 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -84,7 +84,7 @@ unresolved failures or missing evidence.
 - [ ] 34. PERFORMANCE — Partial: production bundles, request counts, N+1, gzip, cache policy, image/font assets, and layout shifts reviewed; target CDN choice and real-network/load budgets remain open.
 - [x] 35. FONTS — Verified before deployment: no external font files or loading/404 path by design; system stacks include fallbacks and standard weights, and multilingual content remains visible at narrow/wide widths.
 - [ ] 36. SEO FOR PUBLIC PAGES — Partial: production-mode metadata, sitemap, robots, staging noindex, and slash redirects verified; heading hierarchy, URL policy, sitemap scale, and real HTTPS host remain.
-- [ ] 37. SOCIAL SHARING — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 37. SOCIAL SHARING — Partial: real HTML now emits absolute branded 1200×630 OG/Twitter images for catalog, bingo, profile, and shared result; external service previews and the final domain remain.
 - [ ] 38. DOMAIN AND DNS — Partial: public smoke script is prepared; the actual domain, records, and propagation need target-environment evidence.
 - [ ] 39. HTTPS / TLS — Partial: smoke script enforces HTTPS; certificate and edge configuration need target-environment evidence.
 - [ ] 40. ENVIRONMENT VARIABLES — Partial: local evidence recorded; review remaining original bullets.

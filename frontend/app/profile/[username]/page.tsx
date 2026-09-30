@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     `See public bingo boards and activity from ${displayName}.`,
   );
   const canonical = absoluteSiteUrl(`/profile/${profile.username}`);
-  const image = profile.avatar?.thumbnail_url ?? profile.avatar?.url ?? undefined;
+  const image = absoluteSiteUrl("/opengraph-image");
 
   return {
     title,
@@ -40,13 +40,13 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       title,
       description,
       url: canonical,
-      images: image ? [{ url: image, alt: `${displayName}'s avatar` }] : undefined,
+      images: [{ url: image, width: 1200, height: 630, alt: "Not Enough Bingo" }],
     },
     twitter: {
-      card: image ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      images: image ? [image] : undefined,
+      images: [image],
     },
   };
 }

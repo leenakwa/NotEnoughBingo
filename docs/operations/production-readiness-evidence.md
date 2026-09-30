@@ -1225,6 +1225,47 @@ observed results and their limits. Do not include credentials or session data.
   No structured-data type directly describes a user-created bingo board;
   schema markup was intentionally omitted rather than inventing a type.
 
+### 2026-09-30 — CI browser regression follow-up (sections 4, 33, 46)
+
+- The `f9617d6` full-stack CI run failed two of forty live scenarios while
+  its other seven jobs passed. The saved Chromium trace showed the comment
+  form visible before client hydration; a fast textarea fill was then lost
+  when React took over, leaving Post comment disabled. The form now appears
+  only after its initial comments request has settled, so users cannot type
+  into an unhydrated control. The focused notification/comment browser path
+  passed against the isolated stack (1/1).
+- The saved WebKit trace showed a successful CSRF GET followed by a browser
+  page error from a second CSRF fetch started by the background interaction
+  batch during navigation. The bootstrap GET now uses fetch `keepalive`, as
+  its analytics POST already did. A unit check verifies that option; the
+  cross-browser WebKit journey then passed five consecutive local repeats.
+  These repairs still require the exact new-commit CI release gate.
+
+### 2026-09-30 — Social-link preview metadata (section 37, partial)
+
+- Parsed the actual HTML for Discover, a public bingo, a public profile, and
+  an immutable shared result. Before the fix, the board and result had no
+  `og:image`, and Discover's automatic image URL pointed at
+  `localhost:3000` while the QA site ran on `localhost:18080`. Explicit
+  image metadata now uses the configured absolute site origin for the global
+  card, each board's generated preview, and each shared result's selected
+  cell snapshot. All four pages returned matching Open Graph title,
+  description, 1200×630 image URL, and Twitter large-image metadata. The
+  profile uses the branded global card with its own title and description.
+- Rebuilt production Next with a controlled HTTPS `.invalid` origin, then
+  started that build in production mode. Its Discover, bingo, profile, and
+  shared-result HTML all used that exact HTTPS origin for both `og:image`
+  and `twitter:image`; titles/descriptions and 1200×630 dimensions were
+  present. The `.invalid` value is a CI fixture, never a deployable domain.
+- HTTP GET of the global, board, and shared-result image routes returned PNG
+  200 at exactly 1200×630. Visual inspection showed readable titles, a
+  branded footer, the bingo grid, and the two selected cells on the result.
+  The site's 64×64 bingo-grid favicon was present in the rendered page. Unit
+  metadata tests for board and share image URLs passed. Real Telegram,
+  Discord, Slack, iMessage/WhatsApp, and LinkedIn unfurls need a public HTTPS
+  domain; localhost cannot produce evidence for those services. The final
+  host must also be checked for cached/stale preview metadata.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

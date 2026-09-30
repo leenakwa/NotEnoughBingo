@@ -403,7 +403,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
         {result ? <span>{result.count} total</span> : null}
       </header>
 
-      {signedIn ? (
+      {signedIn && (!loading || result !== null) ? (
         <form className="comment-form comment-form--root" onSubmit={createRoot}>
           <label className="field">
             <span>Add a comment</span>
@@ -423,14 +423,14 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
             {pendingAction === "create" ? "Posting…" : "Post comment"}
           </button>
         </form>
-      ) : (
+      ) : !signedIn ? (
         <p className="comments-sign-in">
           <Link href={`/login?next=${encodeURIComponent(`/bingo/${bingoId}#comments`)}`}>
             Log in
           </Link>{" "}
           to join the conversation. Reading comments is public.
         </p>
-      )}
+      ) : null}
 
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading && !result ? <LoadingState label="Loading comments…" /> : null}

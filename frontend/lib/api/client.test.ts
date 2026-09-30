@@ -9,6 +9,22 @@ afterEach(() => {
 });
 
 describe("API error presentation", () => {
+  it("keeps CSRF bootstrap alive when analytics flushes during navigation", async () => {
+    document.cookie = "neb_csrf=; Max-Age=0; path=/";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await api.analytics.record([]);
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("auth/csrf/");
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).keepalive).toBe(true);
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("interactions/");
+  });
+
   it("surfaces the first field-level validation message", () => {
     const error = new ApiClientError(400, {
       code: "validation_error",

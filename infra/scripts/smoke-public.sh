@@ -60,6 +60,7 @@ probe /robots.txt 200
 probe /sitemap.xml 200
 probe /icon.svg 200
 probe /opengraph-image 200
+probe "/bingo/$bingo_id/opengraph-image" 200
 probe /definitely-not-a-route-smoke-check 404
 probe /.env '403|404'
 probe /.git/config '403|404'
@@ -71,6 +72,13 @@ discover_headers="$(curl --silent --show-error --connect-timeout 5 --max-time 20
   --dump-header - --output /dev/null "$base_url/discover")"
 discover_html="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \
   "$base_url/discover")"
+bingo_html="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \
+  "$base_url/bingo/$bingo_id")"
+if [[ "$discover_html" != *"content=\"$base_url/opengraph-image\""* ]] ||
+  [[ "$bingo_html" != *"content=\"$base_url/bingo/$bingo_id/opengraph-image\""* ]]; then
+  echo 'Social preview images must use the canonical public origin.' >&2
+  exit 1
+fi
 if [[ "${ALLOW_LOCAL_HTTP:-0}" == 1 ]]; then
   if [[ "$robots" != *"Disallow: /"* ]]; then
     echo 'Local preview must block crawler indexing.' >&2
