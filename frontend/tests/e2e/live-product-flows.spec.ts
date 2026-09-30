@@ -1461,6 +1461,110 @@ test.describe("live full-stack product flows", () => {
     await secondTab.close();
   });
 
+  test("edits in two tabs require an explicit conflict resolution", async ({ page }) => {
+    const bingoId = readLiveFixture().bingos.private.id;
+    await authenticateAs(page, "author");
+    const secondTab = await page.context().newPage();
+    try {
+      for (const tab of [page, secondTab]) {
+        await tab.goto(`/create?bingo=${bingoId}`);
+        await expect(tab.getByRole("heading", { name: "Edit bingo" })).toBeVisible();
+        await tab.getByRole("button", { name: "Finish creating →" }).click();
+        await expect(tab.getByLabel("Title")).toBeVisible();
+      }
+
+      const firstTitle = "E2E First Tab Draft";
+      await waitForResponse(page, `/api/v1/bingos/${bingoId}/draft/`, "PUT", () =>
+        page.getByLabel("Title").fill(firstTitle),
+      );
+      await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+
+      const secondTitle = "E2E Second Tab Draft";
+      const conflict = secondTab.waitForResponse(
+        (response) =>
+          response.url().includes(`/api/v1/bingos/${bingoId}/draft/`) &&
+          response.request().method() === "PUT",
+      );
+      await secondTab.getByLabel("Title").fill(secondTitle);
+      expect((await conflict).status()).toBe(412);
+      await expect(secondTab.getByText("This draft was changed in another session.")).toBeVisible();
+      await expect(secondTab.getByLabel("Title")).toHaveValue(secondTitle);
+
+      await waitForResponse(secondTab, `/api/v1/bingos/${bingoId}/draft/`, "PUT", () =>
+        secondTab.getByRole("button", { name: "Keep and save mine" }).click(),
+      );
+      await expect(secondTab.getByText("Saved", { exact: true })).toBeVisible();
+      const draftResponse = await page.request.get(`/api/v1/bingos/${bingoId}/draft/`);
+      expect(draftResponse.status()).toBe(200);
+      await expect(draftResponse.json()).resolves.toMatchObject({ title: secondTitle });
+
+      await page.reload();
+      await page.getByRole("button", { name: "Finish creating →" }).click();
+      await expect(page.getByLabel("Title")).toHaveValue(secondTitle);
+    } finally {
+      await secondTab.close();
+    }
+  });
+
+  test("the same like from two tabs is counted once", async ({ page }) => {
+    const bingo = readLiveFixture().bingos.public;
+    await authenticateAs(page, "player");
+    const likePath = `/api/v1/bingos/${bingo.id}/likes/`;
+    await page.goto(`/bingo/${bingo.id}`);
+    const likedButton = page.getByRole("button", { name: /^Liked ·/ });
+    const likeButton = (tab: Page) => tab.getByRole("button", { name: /^Like ·/ });
+    await expect(likedButton.or(likeButton(page))).toBeVisible();
+    if (await likedButton.isVisible()) {
+      await waitForResponse(page, likePath, "DELETE", () => likedButton.click());
+    }
+    await expect(likeButton(page)).toBeVisible();
+    const beforeResponse = await page.request.get(`/api/v1/bingos/${bingo.id}/`);
+    expect(beforeResponse.status()).toBe(200);
+    const before = (await beforeResponse.json()) as { stats: { likes: number } };
+
+    const secondTab = await page.context().newPage();
+    try {
+      await secondTab.goto(`/bingo/${bingo.id}`);
+      await expect(likeButton(secondTab)).toBeVisible();
+      const firstResponse = page.waitForResponse(
+        (response) => response.url().includes(likePath) && response.request().method() === "POST",
+      );
+      const secondResponse = secondTab.waitForResponse(
+        (response) => response.url().includes(likePath) && response.request().method() === "POST",
+      );
+      await Promise.all([likeButton(page).click(), likeButton(secondTab).click()]);
+      expect([(await firstResponse).status(), (await secondResponse).status()].sort()).toEqual([
+        200, 201,
+      ]);
+
+      const afterResponse = await page.request.get(`/api/v1/bingos/${bingo.id}/`);
+      expect(afterResponse.status()).toBe(200);
+      const after = (await afterResponse.json()) as { stats: { likes: number } };
+      expect(after.stats.likes).toBe(before.stats.likes + 1);
+      await page.reload();
+      await expect(page.getByRole("button", { name: /^Liked ·/ })).toBeVisible();
+    } finally {
+      await secondTab.close();
+    }
+  });
+
+  test("account export is prepared and downloads as a ZIP", async ({ page }) => {
+    await authenticateAs(page, "author");
+    await page.goto("/profile");
+    await expect(page.getByRole("heading", { name: "Account settings" })).toBeVisible();
+    await page.getByRole("button", { name: "Request data export" }).click();
+    const downloadLink = page.getByRole("link", { name: "Download data export" });
+    await expect(downloadLink).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByText("Your data export is ready to download.")).toBeVisible();
+
+    const downloadPromise = page.waitForEvent("download");
+    await downloadLink.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/^not-enough-bingo-account_export-.*\.zip$/);
+    const bytes = readFileSync((await download.path())!);
+    expect(bytes.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+  });
+
   test("password reset handles an outage, email link, expired session, and token reuse", async ({
     page,
     request,

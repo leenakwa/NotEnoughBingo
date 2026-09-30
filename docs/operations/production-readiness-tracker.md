@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **33 verified**, **53 partial**, **12 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **34 verified**, **57 partial**, **7 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -102,14 +102,14 @@ unresolved failures or missing evidence.
 - [ ] 52. BASIC SECURITY ABUSE TESTS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 53. RATE LIMITING — Partial: local evidence recorded; review remaining original bullets.
 - — 54. AI/LLM FEATURES — N/A for current release: capability absent in source inventory.
-- [ ] 55. PRIVACY — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 55. PRIVACY — Partial: collection/analytics disclosures, account export and scheduled deletion, and query-free application logging were reviewed and exercised. Final policy/terms, consent obligations, recovery-link URL handling, password/token behavior across target telemetry, and actual third-party processor inventory still require review against the chosen operator, jurisdiction, and production providers.
 - [ ] 56. ACCOUNT SETTINGS — Partial: local evidence recorded; review remaining original bullets.
 - — 57. TEAMS / ORGANIZATIONS — N/A for current release: capability absent in source inventory.
 - [ ] 58. BROWSER STORAGE — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 59. CACHE — Partial: dynamic HTML/API no-store policy, immutable hashed assets, no service worker, and logout isolation checked; version-swap and CDN invalidation require a target release path.
 - [ ] 60. SERVICE WORKER / PWA — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 61. ANALYTICS — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 62. PRODUCT METRICS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 61. ANALYTICS — Partial: play completion and other core interactions are recorded without free-text search/filter values after a client/server privacy fix and backfill; landing/signup/login/CTA events, an operator funnel, and target-environment isolation remain.
+- [ ] 62. PRODUCT METRICS — Partial: registration counts and core board/play actions are queryable from first-party records; unique visitor arrivals, activation/return cohort definitions, and drop-off measurement need an explicit funnel implementation.
 - [ ] 63. ERROR TRACKING — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 64. LOGGING — Partial: structured request/task logs expose timestamp, severity, route, request ID, failure fields, and bounded context; review third-party/exception text for sensitive values before closing.
 - [ ] 65. MONITORING — Review pending: map original bullets to repository and runtime evidence.
@@ -131,7 +131,7 @@ unresolved failures or missing evidence.
 - [x] 81. SOURCE MAPS — Verified before deployment: private map policy, production-image file inspection, HTTP probes, and CI guard.
 - [ ] 82. API READINESS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 83. CORS — Partial: QA preflight allows its configured origin with credentials and denies an outside origin; production rejects wildcard, HTTP, and local CSRF/CORS origins; staging target remains unspecified.
-- [ ] 84. FEATURE FLAGS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 84. FEATURE FLAGS — Partial: production builds suppress the development Agentation UI, production Django rejects debug mode, and no remote-flag service or client-query debug switch exists. Complete the broader unfinished-feature inventory before this section passes; remote-flag fallback is N/A for this release.
 - [ ] 85. DEBUG ARTIFACTS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 86. TEST / DEMO ACCOUNTS — Partial: deterministic `.test` fixtures and elevated E2E moderator cannot be created by the seed command under production settings; verify the target database has none and is isolated from staging. Payments are absent.
 - [ ] 87. ADMIN PANEL — Partial: Django staff permissions, moderation audit, search/pagination, hard-delete guards, and confirmation for bounded moderation actions verified; external staff gateway remains.
@@ -148,10 +148,10 @@ unresolved failures or missing evidence.
 - [x] 98. ACTION FEEDBACK — Verified before deployment: editor save and upload stages/failures, publication/report submission, and account deletion schedule/cancel expose pending, success, and error states; invite and payment actions are absent.
 - [x] 99. REFRESH TEST — Verified before deployment: editor state, recovery/password-reset routes, nested bingo/profile routes, and shared-result links recover after reload; dashboard, checkout, and OAuth callback do not exist.
 - [x] 100. OPEN-IN-NEW-TAB TEST — Verified before deployment: independent tabs loaded public board, shared result, profile, Explore, recovery, and Create routes with server data and no prerequisite route memory.
-- [ ] 101. MULTIPLE TABS — Partial: local evidence recorded; review remaining original bullets.
+- [x] 101. MULTIPLE TABS — Verified before deployment: two-tab logout/login propagation, draft version conflict and explicit resolution, fresh server state after reload, and concurrent duplicate likes were exercised against the QA stack; token refresh is N/A because authentication uses Django sessions.
 - [x] 102. SESSION EXPIRATION — Verified before deployment: concurrent authentication failures trigger one session recheck; editor and play flows explain expiry, preserve unsaved progress, and restore the intended route after login.
 - [ ] 103. VERSION / DEPLOYMENT COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 104. ROLLBACK — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 104. ROLLBACK — Partial: additive migrations and an existing-data downgrade/upgrade rehearsal support backward compatibility; no remote feature flags exist. Previous image/config retention and an executable rollback command depend on the chosen production platform and have not been proven.
 - [ ] 105. FINAL EXECUTION SEQUENCE — Partial: local evidence recorded; review remaining original bullets.
 
 ## Deployment handoff, separate from predeployment completion

@@ -256,7 +256,17 @@ def test_scheduled_deletion_revokes_sessions_blocks_writes_and_scrubs_identity(
     )
     user.profile.display_name = "Original Display Name"
     user.profile.bio = "Original private biography"
-    user.profile.save(update_fields=("display_name", "bio", "updated_at"))
+    user.profile.preferred_languages = ["en", "ru"]
+    user.profile.language_preferences_confirmed = True
+    user.profile.save(
+        update_fields=(
+            "display_name",
+            "bio",
+            "preferred_languages",
+            "language_preferences_confirmed",
+            "updated_at",
+        )
+    )
     EmailVerification.objects.create(
         user=user,
         email=user.email,
@@ -322,6 +332,8 @@ def test_scheduled_deletion_revokes_sessions_blocks_writes_and_scrubs_identity(
     assert not user.has_usable_password()
     assert user.profile.display_name == "Deleted user"
     assert user.profile.bio == ""
+    assert user.profile.preferred_languages == []
+    assert user.profile.language_preferences_confirmed is False
     assert not SessionMetadata.objects.filter(user=user).exists()
     assert not EmailVerification.objects.filter(user=user).exists()
     assert not SecurityEvent.objects.filter(user=user).exists()

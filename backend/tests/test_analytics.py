@@ -7,6 +7,7 @@ from decimal import Decimal
 import pytest
 from django.conf import settings
 from django.db import IntegrityError, connection, transaction
+from django.db.migrations.executor import MigrationExecutor
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
@@ -27,6 +28,30 @@ from apps.plays.models import SharedResult
 from apps.social.models import BingoLike, Comment, CommentLike
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.mark.django_db(transaction=True)
+def test_existing_search_events_drop_free_text_on_migration() -> None:
+    event = InteractionEvent.objects.create(
+        event_type=InteractionEvent.Type.SEARCH,
+        query="someone@example.test private phrase",
+        metadata={
+            "surface": "explore",
+            "author": "someone@example.test",
+            "tags": "private phrase",
+            "ordering": "newest",
+        },
+        occurred_at=timezone.now(),
+    )
+    current_target = [("analytics", "0002_redact_search_event_text")]
+    try:
+        MigrationExecutor(connection).migrate([("analytics", "0001_initial")])
+        MigrationExecutor(connection).migrate(current_target)
+        event.refresh_from_db()
+        assert event.query == ""
+        assert event.metadata == {"surface": "explore", "ordering": "newest"}
+    finally:
+        MigrationExecutor(connection).migrate(current_target)
 
 
 def test_discover_feed_queries_do_not_grow_with_published_cards(verified_user_factory) -> None:

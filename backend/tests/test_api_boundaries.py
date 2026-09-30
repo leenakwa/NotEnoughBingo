@@ -856,6 +856,33 @@ def test_interaction_and_feed_api_validate_guest_events_and_public_content(
     )
     assert forbidden.status_code == 400
 
+    search_event_id = uuid.uuid4()
+    sensitive_search = guest.post(
+        "/api/v1/interactions/",
+        {
+            "events": [
+                {
+                    "client_event_id": str(search_event_id),
+                    "event_type": "search",
+                    "query": "someone@example.test private phrase",
+                    "occurred_at": timezone.now().isoformat(),
+                    "anonymous_id": "browser-session-123",
+                    "metadata": {
+                        "surface": "explore",
+                        "author": "someone@example.test",
+                        "tags": "private phrase",
+                        "ordering": "newest",
+                    },
+                }
+            ]
+        },
+        format="json",
+    )
+    assert sensitive_search.status_code == 202
+    stored_search = InteractionEvent.objects.get(client_event_id=search_event_id)
+    assert stored_search.query == ""
+    assert stored_search.metadata == {"surface": "explore", "ordering": "newest"}
+
     trending = guest.get("/api/v1/feeds/trending/")
     discover = guest.get("/api/v1/feeds/discover/")
     assert trending.status_code == discover.status_code == 200

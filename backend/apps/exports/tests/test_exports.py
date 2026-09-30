@@ -41,6 +41,9 @@ def test_png_and_pdf_render_real_files() -> None:
 
 def test_account_export_excludes_authentication_secrets() -> None:
     user, _ = _published()
+    user.profile.preferred_languages = ["en", "ru"]
+    user.profile.language_preferences_confirmed = True
+    user.profile.save(update_fields=("preferred_languages", "language_preferences_confirmed"))
     archive_data = build_account_export(user)
     with zipfile.ZipFile(BytesIO(archive_data)) as archive:
         payload = json.loads(archive.read("not-enough-bingo-account-data.json"))
@@ -49,3 +52,7 @@ def test_account_export_excludes_authentication_secrets() -> None:
     assert user.password not in serialized
     assert "token_hash" not in serialized
     assert "session_key" not in serialized
+    assert payload["profile"]["preferred_languages"] == ["en", "ru"]
+    assert payload["profile"]["language_preferences_confirmed"] is True
+    assert payload["bingos"][0]["language"] == "en"
+    assert payload["bingos"][0]["revisions"][0]["language"] == "en"

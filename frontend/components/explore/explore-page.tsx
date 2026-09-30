@@ -148,10 +148,8 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
     event.preventDefault();
     if (search.trim()) {
       trackInteraction("search", {
-        query: search.trim(),
         metadata: {
-          author: author.trim(),
-          tags: tags.trim(),
+          surface: "explore",
           ordering,
         },
       });

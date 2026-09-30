@@ -1664,6 +1664,98 @@ observed results and their limits. Do not include credentials or session data.
   The later dropdown-size, overlay/deep-link audit, and concurrent-session
   changes require a new exact-head run.
 
+### 2026-09-30 — Multiple browser tabs (section 101)
+
+- The existing live two-tab flow logged out in one tab, confirmed the other
+  tab redirected from private profile data with an expiry explanation, cleared
+  local editor recovery, and observed a subsequent login as another account.
+- Added two live Chromium scenarios and ran them against the isolated `nebqa`
+  stack with Mailpit (`E2E_LIVE=1`, Playwright `live-chromium`, focused two-test
+  selection): **2 passed**. Both tabs opened the same server draft before
+  editing. The second save received HTTP 412, displayed the conflict action,
+  retained its unsaved title, and saved it only after the user chose “Keep and
+  save mine.” The first tab then reloaded and displayed that current server
+  title. Both tabs also submitted a like for one board at the same time; one
+  response was 201, the other 200, and the persisted count rose by exactly one.
+- Authentication uses a Django `cached_db` session cookie with no refresh-token
+  endpoint or client token rotation (`SESSION_ENGINE` and auth routes reviewed).
+  The source checklist's token-refresh case is N/A for this release; session
+  invalidation and expiry are covered by the two-tab flow and section 102.
+
+### 2026-09-30 — Privacy data flow and account export (section 55, partial)
+
+- The Privacy page describes account, content, media, interaction, guest-ID,
+  cookie/storage, retention, export, and deletion data. The target operator and
+  processors are still generic because no public deployment provider or legal
+  identity has been supplied; the policy and Terms need review for the actual
+  jurisdiction and any consent requirements before release.
+- Reviewed the raw interaction retention task and account deletion worker.
+  Found that the saved language preferences survived account anonymization and
+  were absent from the downloadable account archive. Deletion now clears both
+  the language list and its confirmation flag; the archive now includes those
+  preferences plus bingo/revision language and marking configuration. Focused
+  backend export/deletion tests passed **2/2**; Ruff lint and format passed.
+- An authenticated QA browser requested an account export from Profile,
+  observed the ready message, downloaded the protected attachment, and
+  confirmed ZIP bytes (**1/1 live Chromium scenario**). The existing worker
+  test covers completion of scheduled deletion and revoked sessions.
+- Nginx access logs record `$uri` without query strings; Django's structured
+  request logger records path, route, status, and duration without bodies or
+  headers. Export archives exclude password hashes, session keys, and token
+  hashes. These are local safeguards; the full password/token logging bullets
+  remain open until target CDN and error-provider telemetry are inspected.
+- Recovery and verification links necessarily use short-lived tokens in URL
+  parameters. Their browser history/referrer handling and the actual CDN edge
+  need a focused review before the sensitive-query item can be checked.
+
+### 2026-09-30 — Feature controls and rollback mapping (sections 84, 104, partial)
+
+- Source inventory found no remote feature-flag provider or client query
+  parameter that grants debug/staff behavior. `frontend/app/layout.tsx` renders
+  Agentation only when `NODE_ENV=development`, whereas the production Docker
+  image builds and runs with `NODE_ENV=production`. Production Django settings
+  reject `DEBUG=true`, and the E2E seed command refuses production settings.
+  A wider unfinished-feature inventory is still needed; this is not a claim
+  that every release feature is complete. The remote-flag fallback item is
+  N/A while no such service exists.
+- Post-baseline schema migrations add fields or alter one field; the
+  publication metadata repair is an additive data migration with a no-op
+  reverse operation. Its existing-data test downgraded `bingos` to `0002` and
+  reapplied `0003`–`0005` without losing an author or published board content.
+  That supports application-image rollback with the forward schema, not a
+  destructive database rollback. No public deployment, prior image digest,
+  platform command, or retained production config exists to verify the other
+  rollback bullets. There is no remote flag to turn off during an incident.
+
+### 2026-09-30 — Exact-commit CI release gate (`37e6fbb`)
+
+- All nine CI jobs passed for `37e6fbb`: backend/frontend quality, browser
+  smoke, full-stack product flows, both production images, foundation
+  configuration, secret scan, and Release gate. The later multiple-tab,
+  export, deletion, and checklist changes require their own exact-head run.
+
+### 2026-09-30 — Search analytics minimization (sections 55, 61–62, partial)
+
+- Found that Explore sent free-text search, author, and tag filter values to
+  first-party interaction analytics even though counting searches does not
+  require them. The client now sends only categorical surface/ordering. The
+  server accepts old-client event shapes during rollout but strips `query`,
+  `author`, and `tags` before storage. This also prevents arbitrary passwords,
+  tokens, or private phrases typed into those form values from entering new
+  analytics rows. The metadata serializer continues to constrain accepted
+  categorical values and reject sensitive metadata key names. There is no
+  private-messaging feature to generate message analytics in this release.
+- Added a bounded keyset migration that removes already-stored search query
+  text and free-text filter metadata, with no reverse restoration of sensitive
+  values. Focused API and migration tests passed **2/2**; the migration applied
+  successfully to the isolated QA database. Explore's real search/filter,
+  reload, and clear browser flow passed **1/1 live Chromium** after the change.
+- First-party interaction records include board views/opens, starts, and
+  completions, while `User.date_joined` and published-board records support
+  basic registered/core-action counts. There is no complete visitor-to-return
+  funnel, signup/login/primary-CTA event series, production property, or
+  operator report yet. Payment success is N/A because payments do not exist.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

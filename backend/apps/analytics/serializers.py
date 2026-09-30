@@ -81,6 +81,14 @@ class InteractionEventSerializer(serializers.ModelSerializer[InteractionEvent]):
             raise serializers.ValidationError(
                 {"metadata": "Client metadata is only accepted for search events."}
             )
+        # Older clients may still send free-text search and filter values.
+        # Keep accepting their event shape during rollout but retain only
+        # categorical fields needed to count search use.
+        attrs["query"] = ""
+        if attrs["event_type"] == InteractionEvent.Type.SEARCH:
+            attrs["metadata"] = {
+                key: metadata[key] for key in ("surface", "ordering") if key in metadata
+            }
         return attrs
 
     def validate_occurred_at(self, value):

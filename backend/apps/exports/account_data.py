@@ -31,9 +31,11 @@ def build_account_export(user) -> bytes:
                     "number": revision.revision_number,
                     "title": revision.title,
                     "description": revision.description,
+                    "language": revision.language,
                     "size": revision.size,
                     "visibility": revision.visibility,
                     "completion_style": revision.marking_style,
+                    "marking_config": revision.marking_config,
                     "published_at": _iso(revision.published_at),
                     "tags": [tag.name for tag in revision.revision_tags.all()],
                     "cells": [
@@ -72,8 +74,11 @@ def build_account_export(user) -> bytes:
                 "id": str(bingo.public_id),
                 "title": bingo.title,
                 "description": bingo.description,
+                "language": bingo.language,
                 "status": bingo.status,
                 "visibility": bingo.visibility,
+                "completion_style": bingo.marking_style,
+                "marking_config": bingo.marking_config,
                 "created_at": _iso(bingo.created_at),
                 "updated_at": _iso(bingo.updated_at),
                 "deleted_at": _iso(bingo.deleted_at),
@@ -119,6 +124,8 @@ def build_account_export(user) -> bytes:
         "profile": {
             "display_name": profile.display_name,
             "bio": profile.bio,
+            "preferred_languages": profile.preferred_languages,
+            "language_preferences_confirmed": profile.language_preferences_confirmed,
             "privacy": {
                 "show_bio": privacy.show_bio,
                 "show_created_bingos": privacy.show_created_bingos,

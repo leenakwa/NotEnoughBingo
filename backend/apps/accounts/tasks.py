@@ -201,6 +201,8 @@ def _process_account_deletion_request(request_id: int) -> bool:
         user.save()
         user.profile.display_name = "Deleted user"
         user.profile.bio = ""
+        user.profile.preferred_languages = []
+        user.profile.language_preferences_confirmed = False
         user.profile.avatar = None
         user.profile.save()
         SecurityEvent.objects.create(user=user, event_type=SecurityEvent.EventType.ACCOUNT_DELETED)

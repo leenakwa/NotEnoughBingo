@@ -1080,10 +1080,10 @@ Review:
 - [ ] Privacy Policy if required;
 - [ ] Terms if required;
 - [ ] cookie/consent mechanisms if required;
-- [ ] data collection;
-- [ ] account deletion;
-- [ ] data export if supported/required;
-- [ ] analytics data;
+- [x] data collection;
+- [x] account deletion;
+- [x] data export if supported/required;
+- [x] analytics data;
 - [ ] passwords are never logged;
 - [ ] tokens are never logged;
 - [ ] sensitive information is not unnecessarily put into query params;
@@ -1174,17 +1174,17 @@ If analytics is used, verify:
 - [ ] signup;
 - [ ] login;
 - [ ] primary CTA;
-- [ ] main success event;
+- [x] main success event;
 - [ ] conversions;
 - [ ] payment success if applicable;
 - [ ] useful funnel events.
 
 Never send sensitive content such as:
 
-- [ ] passwords;
-- [ ] tokens;
-- [ ] private messages;
-- [ ] sensitive form values.
+- [x] passwords;
+- [x] tokens;
+- [x] private messages;
+- [x] sensitive form values.
 
 # 62. PRODUCT METRICS
 
@@ -1195,8 +1195,8 @@ visitor → signup → activation → core action → return
 The data should allow the team to understand:
 
 - [ ] how many users arrived;
-- [ ] how many registered;
-- [ ] how many actually used the core feature;
+- [x] how many registered;
+- [x] how many actually used the core feature;
 - [ ] where users drop off.
 
 # 63. ERROR TRACKING
@@ -1543,10 +1543,10 @@ Verify:
 Verify:
 
 - [ ] unfinished features are disabled;
-- [ ] experimental UI does not accidentally appear;
-- [ ] production defaults are correct;
-- [ ] missing remote flags have safe fallback;
-- [ ] admin/debug behavior cannot be enabled by arbitrary users through query params/client state.
+- [x] experimental UI does not accidentally appear;
+- [x] production defaults are correct;
+- [x] missing remote flags have safe fallback;
+- [x] admin/debug behavior cannot be enabled by arbitrary users through query params/client state.
 
 # 85. DEBUG ARTIFACTS
 
@@ -1757,11 +1757,11 @@ Verify:
 
 Test:
 
-- [ ] login/logout behavior across tabs;
-- [ ] stale data;
-- [ ] token refresh;
-- [ ] concurrent edits;
-- [ ] same action submitted from multiple tabs.
+- [x] login/logout behavior across tabs;
+- [x] stale data;
+- [x] token refresh;
+- [x] concurrent edits;
+- [x] same action submitted from multiple tabs.
 
 # 102. SESSION EXPIRATION
 
@@ -1790,9 +1790,9 @@ Before declaring production ready, determine:
 
 - [ ] previous deployment can be restored;
 - [ ] rollback process/command is known;
-- [ ] database migration is reversible or backward compatible;
+- [x] database migration is reversible or backward compatible;
 - [ ] previous config remains available;
-- [ ] risky features can be disabled quickly where feature flags exist.
+- [x] risky features can be disabled quickly where feature flags exist.
 
 # 105. FINAL EXECUTION SEQUENCE
 
