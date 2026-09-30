@@ -835,8 +835,8 @@ Never expose secrets in the final report.
 Before launch verify:
 
 - [ ] backups;
-- [ ] migrations;
-- [ ] migrations tested against realistic existing data;
+- [x] migrations;
+- [x] migrations tested against realistic existing data;
 - [ ] deployment compatibility;
 - [ ] indexes;
 - [ ] constraints;
@@ -849,8 +849,8 @@ Before launch verify:
 
 Test:
 
-- [ ] existing users survive schema changes;
-- [ ] old rows missing new fields;
+- [x] existing users survive schema changes;
+- [x] old rows missing new fields;
 - [ ] large-table migrations;
 - [ ] deployment/migration order.
 

@@ -1311,6 +1311,33 @@ observed results and their limits. Do not include credentials or session data.
   passed 4/4. Exact-commit full CI remains required; this observation does
   not establish physical device support.
 
+### 2026-09-30 — Existing-data migration and isolated database restore (section 42, partial)
+
+- A fresh PostgreSQL schema still has no model changes pending under
+  `makemigrations --check --dry-run`. The `0003` publication repair migration
+  previously loaded first-publication timestamps for every revision into one
+  dictionary; it now reads and updates published boards in bounded batches
+  of 500. A transactional migration test downgraded an existing database to
+  `0002`, changed a published board's old metadata, and reapplied `0003`–`0005`.
+  The author, three boards, original publication time, latest publication
+  time, current title, and cell survived. The test uses a two-record batch
+  setting to exercise both a full and a final partial batch. The full backend
+  suite passed 144 tests with one skip after this change. This exercises
+  migration mechanics, not actual high-volume database performance.
+- The repository's PostgreSQL backup script produced a custom-format dump of
+  the isolated QA database and a SHA-256 checksum that verified. The dump was
+  restored to a separate temporary database, leaving the QA source database
+  intact. Source and restored counts matched for users, bingo boards, and
+  migration records: `3|7|59`. The temporary database and dump were removed.
+  This is a local recovery drill; no managed snapshot, WAL recovery, off-site
+  retention, provider permissions, or production restore time was tested.
+- The existing language migration adds `und` for old boards because their
+  historical published language cannot always be reconstructed from a mutable
+  draft. This is acceptable for local pre-language fixtures, but any real
+  legacy import must supply an explicit language mapping before public
+  migration. Remaining database bullets require index/constraint inspection,
+  high-volume testing, and a target-platform backup and rollback drill.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added
