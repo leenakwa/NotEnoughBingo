@@ -62,6 +62,13 @@ body {
   gap: 10px 18px;
 }
 
+.site-footer nav a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 5px;
+}
+
 button,
 input,
 textarea,
@@ -161,6 +168,9 @@ h3 {
 }
 
 .brand-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   width: max-content;
   color: var(--ink);
   font-size: clamp(1.1rem, 2vw, 1.7rem);
@@ -445,7 +455,7 @@ h3 {
 }
 
 .text-button {
-  min-height: 32px;
+  min-height: 44px;
   padding: 3px 0;
   border: 0;
   border-bottom: var(--line);
@@ -475,8 +485,8 @@ h3 {
 }
 
 .icon-button {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border: var(--line);
   background: var(--paper);
   font-size: 1.35rem;
@@ -659,6 +669,11 @@ h3 {
 }
 
 .bingo-card__tags a {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 6px;
   text-underline-offset: 3px;
   overflow-wrap: anywhere;
 }
@@ -678,7 +693,7 @@ h3 {
 
 .card-action {
   min-width: 48px;
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -771,6 +786,9 @@ h3 {
 
 .language-filter > summary {
   width: fit-content;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
   font-weight: 700;
 }
 
@@ -2200,8 +2218,8 @@ input[type="range"] {
 
   .site-header--classic .nav-link {
     min-width: 0;
-    min-height: 40px;
-    height: 40px;
+    min-height: 44px;
+    height: 44px;
     padding: 7px 4px;
     font-size: 0.78rem;
   }
@@ -2215,7 +2233,7 @@ input[type="range"] {
 
   .nav-link {
     min-width: 0;
-    min-height: 40px;
+    min-height: 44px;
     padding: 7px 4px;
     font-size: 0.78rem;
   }
@@ -2282,9 +2300,9 @@ input[type="range"] {
 
   .site-header--classic .icon-link,
   .classic-header__create {
-    width: 42px;
-    height: 42px;
-    min-height: 42px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
     padding: 7px;
   }
 

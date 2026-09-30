@@ -44,9 +44,7 @@ const revision = {
 };
 
 async function mockLargeBingo(page: Page, reportable = false) {
-  await page.route("**/api/v1/interactions/", (route) =>
-    route.fulfill({ status: 204, body: "" }),
-  );
+  await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204, body: "" }));
   await page.route("**/api/v1/notifications/unread-count/", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: '{"unread_count":0}' }),
   );
@@ -74,7 +72,11 @@ async function mockLargeBingo(page: Page, reportable = false) {
       route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
     );
     await page.route("**/api/v1/auth/csrf/", (route) =>
-      route.fulfill({ status: 200, contentType: "application/json", body: '{"csrf_token":"test"}' }),
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: '{"csrf_token":"test"}',
+      }),
     );
   }
   await page.route("**/api/v1/auth/me/", (route) =>
@@ -127,6 +129,9 @@ async function mockLargeBingo(page: Page, reportable = false) {
 }
 
 async function mockLargeEditor(page: Page) {
+  await page.route("**/api/v1/auth/csrf/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"csrf_token":"test"}' }),
+  );
   await page.route("**/api/v1/notifications/unread-count/", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: '{"unread_count":0}' }),
   );

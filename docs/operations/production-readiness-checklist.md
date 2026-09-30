@@ -459,13 +459,13 @@ Also test:
 
 Verify:
 
-- [ ] important actions do not require hover;
-- [ ] tap targets are sufficiently usable;
-- [ ] controls are not packed too tightly;
-- [ ] dropdowns work by tap;
-- [ ] essential drag interactions have reasonable alternatives when necessary;
-- [ ] tooltips do not contain the only access to essential information;
-- [ ] swipe is not the sole method for critical interaction unless intentionally appropriate.
+- [x] important actions do not require hover;
+- [x] tap targets are sufficiently usable;
+- [x] controls are not packed too tightly;
+- [x] dropdowns work by tap;
+- [x] essential drag interactions have reasonable alternatives when necessary;
+- [x] tooltips do not contain the only access to essential information;
+- [x] swipe is not the sole method for critical interaction unless intentionally appropriate.
 
 # 23. KEYBOARD UX
 

@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **12 verified**, **49 partial**, **38 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **13 verified**, **48 partial**, **38 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -69,7 +69,7 @@ unresolved failures or missing evidence.
 - [x] 19. FILE UPLOADS — Verified before deployment: successful/invalid/duplicate uploads, cancellation and retry, stage progress, owner access, normalization, and private local object storage; provider policy remains a rollout input.
 - [x] 20. IMAGES — Verified before deployment: image descriptions for image-only cells, thumbnails, lazy loading, broken-image fallback, aspect ratio, and safe serving exercised in backend and browser.
 - [ ] 21. RESPONSIVE DESIGN — Partial: 320–2560 px board/editor gate, mobile WebKit, landscape/short-height inspector, and simulated keyboard-sized modal passed; real address-bar, keyboard, and iPhone safe-area behavior still need device evidence.
-- [ ] 22. TOUCH UX — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
+- [x] 22. TOUCH UX — Verified before deployment: 44 px mobile touch targets, tap navigation/language/play/editor actions, optional drag alternatives, and no hover/tooltip-only critical controls.
 - [ ] 23. KEYBOARD UX — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
 - [ ] 24. ACCESSIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: local evidence recorded; review remaining original bullets.

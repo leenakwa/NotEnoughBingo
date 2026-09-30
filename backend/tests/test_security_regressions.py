@@ -577,6 +577,7 @@ def test_hidden_bingo_makes_shared_revision_media_unavailable(
     document = empty_draft_document(title="Hidden share media", language="en")
     document["visibility"] = Bingo.Visibility.PUBLIC
     document["cells"][0]["image_asset_id"] = str(asset.public_id)
+    document["cells"][0]["image_alt"] = "Hidden share image"
     bingo = create_bingo(author=author, document=document)
     revision = publish_bingo(
         bingo=bingo,

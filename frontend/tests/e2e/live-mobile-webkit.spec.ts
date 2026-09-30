@@ -96,3 +96,40 @@ test("mobile WebKit language and play-mark controls work without overflow", asyn
   expect(layout.pageWidth).toBe(layout.viewport);
   expect(layout.minimumMarkTarget).toBeGreaterThanOrEqual(44);
 });
+
+test("mobile navigation, language, card, and footer actions have usable touch targets", async ({
+  page,
+}) => {
+  await page.goto("/discover");
+  await expect(page.locator(".bingo-card").first()).toBeVisible();
+  const targets = await page
+    .locator(
+      ".site-header a, .language-filter summary, .bingo-card__tags a, .bingo-card__actions a, .bingo-card__actions button, .site-footer a",
+    )
+    .evaluateAll((elements) =>
+      elements.map((element) => {
+        const bounds = element.getBoundingClientRect();
+        return {
+          name: element.getAttribute("aria-label") ?? element.textContent?.trim() ?? "",
+          width: bounds.width,
+          height: bounds.height,
+        };
+      }),
+    );
+  expect(targets.length).toBeGreaterThan(10);
+  for (const target of targets) {
+    expect(target.width, `${target.name} touch width`).toBeGreaterThanOrEqual(44);
+    expect(target.height, `${target.name} touch height`).toBeGreaterThanOrEqual(44);
+  }
+  const viewport = await page.evaluate(() => ({
+    width: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(viewport.scrollWidth).toBe(viewport.width);
+  await page.getByRole("link", { name: "Explore", exact: true }).tap();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.getByRole("link", { name: "Discover", exact: true }).tap();
+  await expect(page).toHaveURL(/\/discover$/);
+  await page.locator(".language-filter summary").tap();
+  await expect(page.getByRole("group", { name: "Show bingos in" })).toBeVisible();
+});

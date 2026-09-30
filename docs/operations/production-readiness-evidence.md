@@ -829,6 +829,32 @@ observed results and their limits. Do not include credentials or session data.
   backend mypy passed with no issues in 71 source files. This fix is awaiting
   the next commit's exact CI run.
 
+### 2026-09-30 — Touch controls and CI regression repair (section 22)
+
+- A 320 px live browser inventory found 40–42 px header actions, a 23 px
+  language summary, 22 px tag links, 40 px card actions, and 18 px footer
+  links. The interactive boxes now measure at least 44×44 CSS pixels in the
+  mobile WebKit regression across the header, language chooser, cards, and
+  footer, including the shortest tag. Adjacent navigation, tag, card-action,
+  and footer controls retain gaps or separate card regions. The browser
+  tapped Explore, Discover, and the language chooser and found no horizontal
+  overflow. The full live mobile WebKit file passed 3/3, covering guest play,
+  sharing, language selection, and mark choices as well. The responsive
+  Chromium file passed 6/6 after the touch-size changes.
+- The editor's drag rectangle is optional: tapping a cell opens its editor,
+  and keyboard Shift+Arrow selects a range. Mobile play uses tap for marks;
+  native board panning is the intentional way to reach cells of an oversized
+  board. Source inventory found no mouse-only action handlers or swipe-only
+  command. The few native `title` hints repeat text or supplement visible
+  controls; a disabled export button visibly says “Download after
+  publishing.” Thus no essential action relies on hover or tooltip text.
+- CI on `5fa8fc6` passed typecheck but found a stale security-test fixture:
+  its image-only cell lacked the newly required description. The fixture now
+  supplies one and its targeted PostgreSQL test passed 1/1. CI also found a
+  Prettier mismatch in the responsive test; it has been formatted, and the
+  full frontend format, lint, and typecheck commands passed locally. The
+  corrected exact-commit CI run remains pending.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added
