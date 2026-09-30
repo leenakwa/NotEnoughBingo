@@ -772,7 +772,7 @@ Verify:
 - [ ] one canonical host;
 - [ ] redirect from alternate host;
 - [ ] old domains redirect or are intentionally disabled;
-- [ ] preview deployments are not unintentionally indexed;
+- [x] preview deployments are not unintentionally indexed;
 - [ ] cookie domain is correct.
 
 # 39. HTTPS / TLS
@@ -792,39 +792,39 @@ Verify:
 
 Audit all relevant production variables, including:
 
-- [ ] frontend API URL;
-- [ ] backend URL;
+- [x] frontend API URL;
+- [x] backend URL;
 - [ ] DB URL;
 - [ ] storage configuration;
 - [ ] email provider;
-- [ ] OAuth credentials;
-- [ ] OAuth redirects;
-- [ ] payment keys;
+- [x] OAuth credentials;
+- [x] OAuth redirects;
+- [x] payment keys;
 - [ ] analytics;
 - [ ] error monitoring;
-- [ ] webhook secrets;
-- [ ] cron secrets;
-- [ ] feature flags;
+- [x] webhook secrets;
+- [x] cron secrets;
+- [x] feature flags;
 - [ ] app origin/base URL;
-- [ ] cookie config.
+- [x] cookie config.
 
 Verify:
 
-- [ ] production does not silently assume a developer's local `.env`;
-- [ ] secrets do not enter client bundles;
-- [ ] build-time and runtime variables are understood;
-- [ ] fallback values never accidentally point to localhost/staging.
+- [x] production does not silently assume a developer's local `.env`;
+- [x] secrets do not enter client bundles;
+- [x] build-time and runtime variables are understood;
+- [x] fallback values never accidentally point to localhost/staging.
 
 # 41. SECRETS
 
 Search repository/current configuration/history where possible for:
 
-- [ ] API keys;
-- [ ] DB passwords;
-- [ ] tokens;
-- [ ] private keys;
-- [ ] `.env`;
-- [ ] OAuth secrets.
+- [x] API keys;
+- [x] DB passwords;
+- [x] tokens;
+- [x] private keys;
+- [x] `.env`;
+- [x] OAuth secrets.
 
 If a real secret has been committed, removing the visible line is not enough: flag that the secret should be rotated.
 

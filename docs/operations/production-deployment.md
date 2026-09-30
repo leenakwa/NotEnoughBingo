@@ -49,7 +49,9 @@ Provide secrets from a secret manager and configure at least:
 - the exact public HTTPS origin as `NEXT_PUBLIC_APP_URL` when building the
   frontend image. The production Dockerfile rejects a missing or non-HTTPS
   value. Rebuild the image if the public origin changes; the CI image uses a
-  non-deployable `.invalid` origin only to check build integrity.
+  non-deployable `.invalid` origin only to check build integrity. At startup,
+  the image compares its embedded build origin with the runtime value and
+  rejects CI/test origins when `APP_ENVIRONMENT=production`.
 - `APP_ENVIRONMENT=production` on the public frontend at runtime. The
   production image defaults to `staging`: preview pages then emit
   `noindex, nofollow`, `robots.txt` disallows crawling, and the sitemap is

@@ -40,6 +40,7 @@ ENV NODE_ENV=production \
 COPY . .
 RUN node scripts/validate-production-env.mjs \
     && mkdir -p public \
+    && printf '%s\n' "$NEXT_PUBLIC_APP_URL" > .built-origin \
     && npm run build
 
 FROM dependencies AS production-dependencies
@@ -70,11 +71,13 @@ RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack 
 
 COPY --from=production-dependencies --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/.built-origin ./.built-origin
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/validate-production-env.mjs ./scripts/validate-production-env.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 USER nextjs
 
 EXPOSE 3000
-CMD ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["sh", "-c", "node scripts/validate-production-env.mjs && exec node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port 3000"]

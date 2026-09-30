@@ -1266,6 +1266,38 @@ observed results and their limits. Do not include credentials or session data.
   domain; localhost cannot produce evidence for those services. The final
   host must also be checked for cached/stale preview metadata.
 
+### 2026-09-30 — Production configuration and secret boundaries (sections 38, 40–41)
+
+- Django production settings now skip the root developer `.env`, require
+  `APP_ENVIRONMENT=production`, and reject a frontend HTTPS origin that is
+  local, has a path, or disagrees with `ALLOWED_HOSTS` and
+  `CSRF_TRUSTED_ORIGINS`. Four focused production-configuration tests passed
+  with one infrastructure-template skip; the full PostgreSQL-backed backend
+  suite passed 143 with one skip, and Ruff/mypy passed on changed settings.
+  The release guide already lists the production database, Redis, private S3,
+  transactional SMTP, trusted proxy, monitoring, cookie, and analytics
+  inputs. OAuth, payment, and webhooks are absent; Celery Beat does not use a
+  separate cron secret. Actual provider values and error-monitoring DSN have
+  not been supplied, so section 40 remains partial.
+- The frontend production image records the exact `NEXT_PUBLIC_APP_URL` used
+  at build time and validates it again before Next starts. A staged CI-origin
+  image booted as the unprivileged `nextjs` user, returned health 200, and
+  blocked indexing. The same image refused both `APP_ENVIRONMENT=production`
+  with its `.invalid` origin and a changed runtime origin. A second image
+  built with a syntactically public HTTPS origin started in production mode;
+  its robots sitemap, Discover canonical link, and Open Graph image all used
+  that origin. These are local hostnames for a deployment rehearsal, not a
+  claim that the real domain exists. A frontend unit check also rejects
+  loopback, `.invalid`, and malformed public origins. Full frontend tests
+  passed 110/110; ESLint, TypeScript, and Prettier passed.
+- The repository has no tracked `.env` or private key file in the searched
+  paths or history; `.gitignore` and both Docker build contexts exclude
+  environment files and key material. The exact `af2910a` CI complete-history
+  Gitleaks job passed. A production static-bundle marker search found none
+  of the known development credentials or backend secret variable names.
+  No real production secret was present to rotate. Real provider credentials
+  must come from the chosen secret manager during deployment.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

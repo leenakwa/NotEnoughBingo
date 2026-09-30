@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -15,7 +16,7 @@ env = environ.Env(
 )
 
 env_file = BASE_DIR.parent / ".env"
-if env_file.exists():
+if env_file.exists() and os.environ.get("DJANGO_SETTINGS_MODULE") != "config.settings.production":
     environ.Env.read_env(env_file)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsafe-development-only-change-me")

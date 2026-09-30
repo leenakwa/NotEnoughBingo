@@ -6,7 +6,7 @@ import { generateMetadata as shareMetadata } from "@/app/share/[bingoId]/[shareI
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import type { BingoDetail, SharedResult, UserProfile } from "@/lib/api/types";
-import { absoluteSiteUrl } from "@/lib/site";
+import { absoluteSiteUrl, siteUrl } from "@/lib/site";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -110,15 +110,19 @@ function bingo(visibility: BingoDetail["visibility"]): BingoDetail {
 
 describe("public route metadata", () => {
   const previousEnvironment = process.env.APP_ENVIRONMENT;
+  const previousOrigin = process.env.NEXT_PUBLIC_APP_URL;
 
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.APP_ENVIRONMENT = "production";
+    process.env.NEXT_PUBLIC_APP_URL = "https://bingo.example.com";
   });
 
   afterEach(() => {
     if (previousEnvironment === undefined) delete process.env.APP_ENVIRONMENT;
     else process.env.APP_ENVIRONMENT = previousEnvironment;
+    if (previousOrigin === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
+    else process.env.NEXT_PUBLIC_APP_URL = previousOrigin;
   });
 
   it("uses the immutable published revision and indexes only public bingos", async () => {
@@ -252,5 +256,12 @@ describe("public route metadata", () => {
         params: Promise.resolve({ bingoId: "11111111-1111-4111-8111-111111111111" }),
       }),
     ).resolves.toMatchObject({ robots: { index: false, follow: false } });
+  });
+
+  it("rejects loopback and non-deployable origins in public production", () => {
+    for (const origin of ["http://localhost:3000", "https://ci.example.invalid", "not a URL"]) {
+      process.env.NEXT_PUBLIC_APP_URL = origin;
+      expect(() => siteUrl()).toThrow();
+    }
   });
 });

@@ -24,6 +24,8 @@ def _hostname(value: str | None) -> str:
 
 local_hostnames = {"localhost", "127.0.0.1", "::1", "minio", "mailpit"}
 errors: list[str] = []
+if APP_ENVIRONMENT != "production":
+    errors.append("APP_ENVIRONMENT must be production with production settings")
 if _configured_debug:
     errors.append("DEBUG must not be enabled with production settings")
 if (
@@ -75,8 +77,23 @@ if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
         errors.append("Production SMTP must use TLS")
 if "@localhost" in DEFAULT_FROM_EMAIL.lower() or "@example.test" in DEFAULT_FROM_EMAIL.lower():
     errors.append("DEFAULT_FROM_EMAIL must use the verified production sending domain")
-if not FRONTEND_URL.startswith("https://") or not urlsplit(FRONTEND_URL).netloc:
+frontend_origin = urlsplit(FRONTEND_URL)
+if (
+    frontend_origin.scheme != "https"
+    or not frontend_origin.netloc
+    or frontend_origin.username
+    or frontend_origin.password
+    or frontend_origin.path
+    or frontend_origin.query
+    or frontend_origin.fragment
+    or frontend_origin.hostname in local_hostnames
+):
     errors.append("FRONTEND_URL must be the absolute public HTTPS origin")
+else:
+    if frontend_origin.hostname not in ALLOWED_HOSTS:
+        errors.append("ALLOWED_HOSTS must include the FRONTEND_URL hostname")
+    if FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+        errors.append("CSRF_TRUSTED_ORIGINS must include FRONTEND_URL")
 if CACHES["default"]["BACKEND"] == "django.core.cache.backends.locmem.LocMemCache":
     errors.append("Production requires a shared cache for throttling and sessions")
 if not SESSION_COOKIE_SECURE or not CSRF_COOKIE_SECURE:

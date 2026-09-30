@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **22 verified**, **44 partial**, **33 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **23 verified**, **44 partial**, **32 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -87,8 +87,8 @@ unresolved failures or missing evidence.
 - [ ] 37. SOCIAL SHARING — Partial: real HTML now emits absolute branded 1200×630 OG/Twitter images for catalog, bingo, profile, and shared result; external service previews and the final domain remain.
 - [ ] 38. DOMAIN AND DNS — Partial: public smoke script is prepared; the actual domain, records, and propagation need target-environment evidence.
 - [ ] 39. HTTPS / TLS — Partial: smoke script enforces HTTPS; certificate and edge configuration need target-environment evidence.
-- [ ] 40. ENVIRONMENT VARIABLES — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 41. SECRETS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 40. ENVIRONMENT VARIABLES — Partial: frontend image build/runtime origin contract, Django production origin consistency, and local-env isolation verified; real DB, storage, email, monitoring, and public origin values remain.
+- [x] 41. SECRETS — Verified before deployment: complete-history Gitleaks, tracked-path and ignore rules, Docker build contexts, and client-bundle marker scan found no real secret; OAuth is absent.
 - [ ] 42. DATABASE — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 43. DATA INTEGRITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 44. BACKUPS — Partial: local evidence recorded; review remaining original bullets.

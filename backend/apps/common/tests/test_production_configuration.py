@@ -14,6 +14,7 @@ def _production_environment() -> dict[str, str]:
     environment.update(
         {
             "DJANGO_SETTINGS_MODULE": "config.settings.production",
+            "APP_ENVIRONMENT": "production",
             "DEBUG": "false",
             "DJANGO_SECRET_KEY": "production-test-secret-" + "x" * 64,
             "ALLOWED_HOSTS": "app.example.test",
@@ -99,6 +100,25 @@ def test_production_rejects_premature_hsts_preload() -> None:
 
     assert result.returncode != 0
     assert "HSTS preload requires includeSubDomains" in result.stderr
+
+
+def test_production_rejects_environment_and_public_origin_mismatch() -> None:
+    environment = _production_environment()
+    environment.update(
+        {
+            "APP_ENVIRONMENT": "staging",
+            "ALLOWED_HOSTS": "other.example.test",
+            "CSRF_TRUSTED_ORIGINS": "https://other.example.test",
+            "FRONTEND_URL": "https://app.example.test",
+        }
+    )
+
+    result = _load_production_settings(environment)
+
+    assert result.returncode != 0
+    assert "APP_ENVIRONMENT must be production" in result.stderr
+    assert "ALLOWED_HOSTS must include the FRONTEND_URL hostname" in result.stderr
+    assert "CSRF_TRUSTED_ORIGINS must include FRONTEND_URL" in result.stderr
 
 
 def test_nginx_normalizes_forwarded_identity_and_scheme() -> None:

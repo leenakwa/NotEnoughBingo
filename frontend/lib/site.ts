@@ -6,11 +6,28 @@ export function isPublicProduction(): boolean {
 
 export function siteUrl(): URL {
   const configured = process.env.NEXT_PUBLIC_APP_URL;
+  let url: URL;
   try {
-    return new URL(configured || fallbackSiteUrl);
+    url = new URL(configured || fallbackSiteUrl);
   } catch {
-    return new URL(fallbackSiteUrl);
+    if (isPublicProduction()) throw new Error("Production requires a valid NEXT_PUBLIC_APP_URL");
+    url = new URL(fallbackSiteUrl);
   }
+  if (
+    isPublicProduction() &&
+    (!configured ||
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash ||
+      ["localhost", "127.0.0.1", "::1"].includes(url.hostname) ||
+      /\.(?:invalid|test)$/.test(url.hostname))
+  ) {
+    throw new Error("Production requires a public HTTPS NEXT_PUBLIC_APP_URL origin");
+  }
+  return url;
 }
 
 export function absoluteSiteUrl(path: string): string {
