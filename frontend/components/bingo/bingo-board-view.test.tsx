@@ -123,6 +123,22 @@ describe("BingoBoardView", () => {
     expect(screen.getByText("✓")).toBeInTheDocument();
   });
 
+  it("marks legacy highlighted cells with a symbol as well as color", () => {
+    render(
+      <BingoBoardView
+        revision={revision}
+        selected={new Set([cell.id!])}
+        completionStyle="highlight"
+        readOnly={false}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /selected/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByText("✓", { selector: ".completion-check" })).toBeVisible();
+  });
+
   it("uses roving focus and arrow-key navigation for playable grids", () => {
     const secondCell: RevisionCell = {
       ...cell,

@@ -71,7 +71,7 @@ unresolved failures or missing evidence.
 - [ ] 21. RESPONSIVE DESIGN — Partial: 320–2560 px board/editor gate, mobile WebKit, landscape/short-height inspector, and simulated keyboard-sized modal passed; real address-bar, keyboard, and iPhone safe-area behavior still need device evidence.
 - [x] 22. TOUCH UX — Verified before deployment: 44 px mobile touch targets, tap navigation/language/play/editor actions, optional drag alternatives, and no hover/tooltip-only critical controls.
 - [x] 23. KEYBOARD UX — Verified before deployment: navigation, Enter/Space/Escape, visible focus, and cross-browser report-dialog focus trap/return.
-- [ ] 24. ACCESSIBILITY — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy, discretionary ARIA, actual 200% zoom, and UI contrast remain.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 26. LONG-CONTENT TORTURE TEST — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 27. DATES AND TIME — Review pending: map original bullets to repository and runtime evidence.

@@ -633,6 +633,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   if (authState === "checking" || hydrating) {
     return (
       <main id="main-content" className="create-shell">
+        <h1 className="sr-only">{bingoId ? "Edit bingo" : "Create bingo"}</h1>
         <LoadingState label="Loading your draft…" />
       </main>
     );
@@ -641,6 +642,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   if (authState === "error") {
     return (
       <main id="main-content" className="create-shell">
+        <h1 className="sr-only">{bingoId ? "Edit bingo" : "Create bingo"}</h1>
         <ErrorState
           message={authError}
           onRetry={() => setAuthCheckVersion((version) => version + 1)}
@@ -690,6 +692,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   if (bingoId && error && !state.bingoId) {
     return (
       <main id="main-content" className="create-shell">
+        <h1 className="sr-only">Edit bingo</h1>
         <ErrorState message={error} />
       </main>
     );

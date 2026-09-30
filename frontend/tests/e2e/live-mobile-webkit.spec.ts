@@ -102,12 +102,12 @@ test("mobile navigation, language, card, and footer actions have usable touch ta
 }) => {
   await page.goto("/discover");
   await expect(page.locator(".bingo-card").first()).toBeVisible();
-  const targets = await page
+  const geometry = await page
     .locator(
       ".site-header a, .language-filter summary, .bingo-card__tags a, .bingo-card__actions a, .bingo-card__actions button, .site-footer a",
     )
-    .evaluateAll((elements) =>
-      elements.map((element) => {
+    .evaluateAll((elements) => ({
+      targets: elements.map((element) => {
         const bounds = element.getBoundingClientRect();
         return {
           name: element.getAttribute("aria-label") ?? element.textContent?.trim() ?? "",
@@ -115,17 +115,15 @@ test("mobile navigation, language, card, and footer actions have usable touch ta
           height: bounds.height,
         };
       }),
-    );
-  expect(targets.length).toBeGreaterThan(10);
-  for (const target of targets) {
+      viewportWidth: document.documentElement.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    }));
+  expect(geometry.targets.length).toBeGreaterThan(10);
+  for (const target of geometry.targets) {
     expect(target.width, `${target.name} touch width`).toBeGreaterThanOrEqual(44);
     expect(target.height, `${target.name} touch height`).toBeGreaterThanOrEqual(44);
   }
-  const viewport = await page.evaluate(() => ({
-    width: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-  expect(viewport.scrollWidth).toBe(viewport.width);
+  expect(geometry.documentWidth).toBe(geometry.viewportWidth);
   await page.getByRole("link", { name: "Explore", exact: true }).tap();
   await expect(page).toHaveURL(/\/explore$/);
   await page.getByRole("link", { name: "Discover", exact: true }).tap();

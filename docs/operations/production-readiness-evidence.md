@@ -873,6 +873,46 @@ observed results and their limits. Do not include credentials or session data.
   `<dialog>` component in the current UI; its escape path returns to the
   trigger rather than trapping the keyboard after closure.
 
+### 2026-09-30 — Accessibility beyond the serious-error gate (section 24)
+
+- The static Axe gate was strengthened from serious/critical only to every
+  reported severity. Guest Discover, Trending, Explore, login,
+  registration, Create, notifications, public play, shared result, public
+  profile, and editor states passed 12/12 across Chromium, mobile Chromium,
+  Firefox, and WebKit. The live authenticated gate likewise
+  passed 1/1 across language onboarding, play, editor, account settings, and
+  the report dialog, with no Axe violations. This covers automated rules on
+  the observed states, including text contrast, labels, accessible names,
+  image alternatives, and modal semantics; it does not substitute for a
+  complete screen-reader or human contrast audit.
+- Running the full-severity scan exposed two source issues that the earlier
+  serious-only gate missed. Some streaming/loading and editor auth-error
+  states briefly lacked H1; the route loading views, Create states, and play
+  loading/error/unpublished states now have a page-level heading. Play and
+  editor grids used `role="grid"` on `<section>`, which Axe classified as an
+  inappropriate role/element pair; both now use `<div role="grid">`. The
+  existing accessible grid names and keyboard behavior remain intact.
+- Legacy highlight-style selected cells previously used a yellow overlay
+  alone. They now also show a checkmark, while the play control continues to
+  expose `aria-pressed` and a selected accessible name. The component
+  regression checks the visual mark and pressed state. Editor/status errors
+  use alert/status live regions; the report dialog now traps and restores
+  focus in three browser engines (section 23).
+- With reduced motion emulated in Chromium, the media query matched, document
+  scrolling computed to `auto`, and a 1 s CSS animation computed to 0.01 ms.
+  A 720 CSS-pixel viewport at device scale factor 2 (proxy for 200% zoom on
+  a 1440-pixel display) had no document overflow on Discover, Explore, login,
+  or guest Create. Actual browser zoom, complete heading-level ordering,
+  discretionary ARIA, and non-text/UI contrast remain unchecked for this
+  section.
+- CI on `c323f3b` passed backend/frontend quality, browser smoke, both
+  production images, foundation checks, and the secret scan. Its full-stack
+  job passed 34/35 cases; the remaining mobile touch test observed a Next
+  navigation between two independent DOM reads and lost its execution
+  context. Touch targets and document width now come from one browser
+  evaluation. The focused live mobile WebKit scenario passed 5/5 repeated
+  runs after this test stabilization; exact-commit CI remains pending.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

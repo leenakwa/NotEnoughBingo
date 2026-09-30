@@ -488,23 +488,23 @@ Verify:
 
 Check:
 
-- [ ] semantic HTML;
-- [ ] logical H1 usage;
+- [x] semantic HTML;
+- [x] logical H1 usage;
 - [ ] heading hierarchy;
-- [ ] buttons use button semantics;
-- [ ] links use link semantics;
-- [ ] labels;
-- [ ] alt text;
-- [ ] keyboard use;
-- [ ] visible focus;
-- [ ] accessible names;
+- [x] buttons use button semantics;
+- [x] links use link semantics;
+- [x] labels;
+- [x] alt text;
+- [x] keyboard use;
+- [x] visible focus;
+- [x] accessible names;
 - [ ] ARIA only where needed;
-- [ ] correct modal semantics;
-- [ ] form errors accessible to assistive technologies;
-- [ ] color is not the sole state indicator;
-- [ ] reduced-motion preference;
+- [x] correct modal semantics;
+- [x] form errors accessible to assistive technologies;
+- [x] color is not the sole state indicator;
+- [x] reduced-motion preference;
 - [ ] 200% zoom;
-- [ ] text contrast roughly satisfies WCAG AA expectations;
+- [x] text contrast roughly satisfies WCAG AA expectations;
 - [ ] large-text/UI contrast is reasonable.
 
 Do not degrade existing accessibility while making other fixes.

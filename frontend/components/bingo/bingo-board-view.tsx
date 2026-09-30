@@ -96,7 +96,7 @@ export function BingoBoardView({
         aria-label={revision.size >= 8 ? "Scrollable bingo board" : undefined}
         tabIndex={revision.size >= 8 ? 0 : undefined}
       >
-        <section
+        <div
           className="play-board"
           style={style}
           role="grid"
@@ -182,8 +182,7 @@ export function BingoBoardView({
                       >
                         {cell.text}
                       </span>
-                      {isSelected &&
-                      (completionStyle === "checkmark" || completionStyle === "cross") ? (
+                      {isSelected && completionStyle !== "crossout" ? (
                         <span className="completion-check" aria-hidden="true">
                           {completionStyle === "cross" ? "×" : "✓"}
                         </span>
@@ -194,7 +193,7 @@ export function BingoBoardView({
               })}
             </div>
           ))}
-        </section>
+        </div>
       </div>
       <div
         id={cellDetailId}

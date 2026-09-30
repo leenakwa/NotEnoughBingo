@@ -174,7 +174,7 @@ export function EditorBoard({
         aria-label={state.size >= 8 ? "Scrollable bingo editor" : undefined}
         tabIndex={state.size >= 8 ? 0 : undefined}
       >
-        <section
+        <div
           className="editor-board"
           style={style}
           role="grid"
@@ -299,7 +299,7 @@ export function EditorBoard({
               })}
             </div>
           ))}
-        </section>
+        </div>
       </div>
     </>
   );

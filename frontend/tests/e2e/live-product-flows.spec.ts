@@ -47,14 +47,11 @@ async function waitForResponse(
   return response;
 }
 
-async function expectNoSeriousAccessibilityViolations(page: Page) {
+async function expectNoAccessibilityViolations(page: Page) {
   const results = await new AxeBuilder({ page }).analyze();
-  const serious = results.violations.filter(
-    (violation) => violation.impact === "serious" || violation.impact === "critical",
-  );
   expect(
-    serious,
-    serious
+    results.violations,
+    results.violations
       .map(
         (violation) =>
           `${violation.id}: ${violation.help}\n${violation.nodes.map((node) => node.target.join(" ")).join("\n")}`,
@@ -940,20 +937,28 @@ test.describe("live full-stack product flows", () => {
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
     ).toBeVisible();
-    await expectNoSeriousAccessibilityViolations(page);
+    await expectNoAccessibilityViolations(page);
 
     await page.goto(`/bingo/${fixture.bingos.public.id}`);
+    await expect(page.getByRole("heading", { name: fixture.bingos.public.title })).toBeVisible();
     await expect(page.getByRole("group", { name: "Mark cells with" })).toBeVisible();
-    await expectNoSeriousAccessibilityViolations(page);
+    await expectNoAccessibilityViolations(page);
 
     await page.goto("/create");
     await page.getByRole("gridcell").first().click();
     await expect(page.getByRole("heading", { name: "Cell editor" })).toBeVisible();
-    await expectNoSeriousAccessibilityViolations(page);
+    await expectNoAccessibilityViolations(page);
 
     await page.goto("/profile");
     await expect(page.getByRole("heading", { name: "Account settings" })).toBeVisible();
-    await expectNoSeriousAccessibilityViolations(page);
+    await expectNoAccessibilityViolations(page);
+
+    await authenticateAs(page, "player");
+    await page.goto(`/bingo/${fixture.bingos.public.id}`);
+    await expect(page.getByRole("heading", { name: fixture.bingos.public.title })).toBeVisible();
+    await page.getByRole("button", { name: "Report", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Report bingo" })).toBeVisible();
+    await expectNoAccessibilityViolations(page);
   });
 
   test("guest progress resets, replays, shares, and stays read-only", async ({ page }) => {

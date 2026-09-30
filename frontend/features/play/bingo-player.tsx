@@ -419,6 +419,7 @@ export function BingoPlayer({
   if (loading) {
     return (
       <main id="main-content" className="page-shell">
+        <h1 className="sr-only">Opening bingo</h1>
         <LoadingState label="Opening bingo…" />
       </main>
     );
@@ -426,6 +427,7 @@ export function BingoPlayer({
   if (error) {
     return (
       <main id="main-content" className="page-shell">
+        <h1 className="sr-only">Bingo unavailable</h1>
         <ErrorState message={error} onRetry={() => setLoadVersion((current) => current + 1)} />
       </main>
     );
@@ -435,6 +437,7 @@ export function BingoPlayer({
       <main id="main-content" className="page-shell">
         <EmptyState
           title="This bingo is not published"
+          headingLevel={1}
           description="Only its author can continue editing the current draft."
           action={
             bingo?.permissions.can_edit

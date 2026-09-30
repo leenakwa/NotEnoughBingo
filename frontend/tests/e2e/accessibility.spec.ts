@@ -46,6 +46,10 @@ const revision = {
 };
 
 async function mockGuest(page: Page) {
+  await page.route("**/api/v1/auth/csrf/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"csrf_token":"test"}' }),
+  );
+  await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204, body: "" }));
   await page.route("**/api/v1/auth/session/", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
   );
@@ -58,14 +62,11 @@ async function mockGuest(page: Page) {
   );
 }
 
-async function expectNoSeriousViolations(page: Page) {
+async function expectNoViolations(page: Page) {
   const results = await new AxeBuilder({ page }).analyze();
-  const serious = results.violations.filter(
-    (violation) => violation.impact === "serious" || violation.impact === "critical",
-  );
   expect(
-    serious,
-    serious
+    results.violations,
+    results.violations
       .map(
         (violation) =>
           `${violation.id}: ${violation.help}\n${violation.nodes.map((node) => node.target.join(" ")).join("\n")}`,
@@ -78,7 +79,7 @@ test.beforeEach(async ({ page }) => {
   await mockGuest(page);
 });
 
-test("Discover, Trending, and Explore have no serious automated accessibility violations", async ({
+test("Discover, Trending, and Explore have no automated accessibility violations", async ({
   page,
 }) => {
   await page.route("**/api/v1/feeds/discover/**", (route) =>
@@ -107,34 +108,34 @@ test("Discover, Trending, and Explore have no serious automated accessibility vi
   await expect(page.getByRole("heading", { name: "Discover" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No boards here yet" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create a bingo" })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.goto("/trending");
   await expect(page.getByRole("heading", { name: "Trending" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No boards here yet" })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.goto("/explore");
   await expect(page.getByRole("heading", { name: "Explore" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No matching bingos" })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 });
 
-test("authentication and editor entry states pass the serious accessibility gate", async ({
+test("authentication and editor entry states pass the accessibility gate", async ({
   page,
 }, testInfo) => {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.goto("/register");
   await expect(page.getByRole("heading", { name: "Join Not Enough Bingo" })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.goto("/create");
   await expect(page.getByRole("heading", { name: "Create your own bingo" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create account" })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.route("**/api/v1/notifications/**", (route) =>
     route.fulfill({
@@ -145,7 +146,7 @@ test("authentication and editor entry states pass the serious accessibility gate
   );
   await page.goto("/notifications");
   await expect(page.getByText("Log in to view notifications")).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.unroute("**/api/v1/auth/session/");
   await page.route("**/api/v1/auth/session/", (route) =>
@@ -170,10 +171,10 @@ test("authentication and editor entry states pass the serious accessibility gate
   } else {
     await expect(page.getByLabel("Text", { exact: true })).toBeVisible();
   }
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 });
 
-test("public play, shared result, and profile states pass the serious accessibility gate", async ({
+test("public play, shared result, and profile states pass the accessibility gate", async ({
   page,
 }) => {
   const bingoId = "11111111-1111-4111-8111-111111111111";
@@ -256,13 +257,13 @@ test("public play, shared result, and profile states pass the serious accessibil
 
   await page.goto(`/bingo/${bingoId}`);
   await expect(page.getByRole("heading", { name: revision.title })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.goto(`/share/${bingoId}/${shareId}`);
   await expect(page.getByText("Shared by Guest Player")).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 
   await page.goto("/profile/author");
   await expect(page.getByRole("heading", { name: "Author" })).toBeVisible();
-  await expectNoSeriousViolations(page);
+  await expectNoViolations(page);
 });
