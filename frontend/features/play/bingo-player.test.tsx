@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
 import type { AuthenticatedUser, BingoDetail, PlayProgress } from "@/lib/api/types";
-import { writeGuestProgress } from "@/lib/guest-progress";
+import { readGuestProgress, writeGuestProgress } from "@/lib/guest-progress";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -163,6 +163,32 @@ describe("BingoPlayer", () => {
 
     expect(mocks.getProgress).toHaveBeenCalledWith(bingo.id);
     expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("uses a server-verified viewer immediately without a second session request", async () => {
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+
+    expect(screen.getByRole("button", { name: "Like · 0" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Reset" })).toBeVisible();
+    await act(() => Promise.resolve());
+    expect(mocks.getViewer).not.toHaveBeenCalled();
+  });
+
+  it("keeps saved guest cells while the server-rendered viewer hydrates", async () => {
+    const cellId = bingo.current_revision!.cells[0]!.id!;
+    writeGuestProgress(bingo.id, bingo.current_revision!.id, [cellId]);
+
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+
+    expect(await screen.findByRole("button", { name: "Open the board, selected" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(readGuestProgress(bingo.id, bingo.current_revision!.id)?.selected_cells).toEqual([
+      cellId,
+    ]);
+    expect(mocks.getViewer).not.toHaveBeenCalled();
+    window.localStorage.clear();
   });
 
   it("restores selected cells when a registered reset fails offline", async () => {

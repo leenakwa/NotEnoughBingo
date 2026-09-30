@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **21 verified**, **42 partial**, **36 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **22 verified**, **43 partial**, **34 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -81,8 +81,8 @@ unresolved failures or missing evidence.
 - [x] 31. GLOBAL / 500 ERROR HANDLING — Verified before deployment: route and root error boundaries, safe retry/navigation, logged 500, generic public response, and X-Request-ID correlation; external error tracking remains in section 63.
 - [x] 32. OFFLINE / BAD NETWORK — Verified before deployment: offline draft recovery, slow-search loading, finite API/upload deadlines, actionable failures, retry/cancel, and progress-reset rollback with recovery.
 - [ ] 33. BROWSER COMPATIBILITY — Partial: installed Chrome and Safari, Playwright Firefox, WebKit, and mobile emulation cover core flows; actual Edge and iOS/Android browser devices remain unverified.
-- [ ] 34. PERFORMANCE — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 35. FONTS — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 34. PERFORMANCE — Partial: production bundles, request counts, N+1, gzip, cache policy, image/font assets, and layout shifts reviewed; target CDN choice and real-network/load budgets remain open.
+- [x] 35. FONTS — Verified before deployment: no external font files or loading/404 path by design; system stacks include fallbacks and standard weights, and multilingual content remains visible at narrow/wide widths.
 - [ ] 36. SEO FOR PUBLIC PAGES — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 37. SOCIAL SHARING — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 38. DOMAIN AND DNS — Partial: public smoke script is prepared; the actual domain, records, and propagation need target-environment evidence.

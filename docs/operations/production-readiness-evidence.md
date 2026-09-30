@@ -1119,6 +1119,79 @@ observed results and their limits. Do not include credentials or session data.
   devices and their browser versions have not been tested. Those three
   checklist bullets remain open before a full section verdict.
 
+### 2026-09-30 — Production-build performance review (section 34, partial)
+
+- Built Next 16.3.7 in production mode against the isolated backend and ran
+  `next start` on localhost:18081. Unique initial JavaScript for Discover,
+  Explore, Create, and a bingo page measured approximately 144, 145, 155,
+  and 149 KiB gzip respectively from the route client-reference manifests and
+  shared runtime chunks. Route-specific chunks were separate. The production
+  `.next/static` tree contained no Agentation bundle; the dev-only annotation
+  package was moved from runtime to development dependencies without upgrading
+  its locked 3.0.2 version. `npm ls --omit=dev --depth=0` then showed only
+  Next, React, React DOM, and Zod as runtime dependencies.
+- In headless installed Chrome against that production server, fresh 390 and
+  1710 px visits to Discover, Explore, and guest Play returned HTTP 200 with
+  no page errors. Browser-origin API counts were 2, 1, and 4 before the
+  play-page server hydration optimization; the server supplies the public
+  board/feed data in the initial response. The repeated 390/1710 px guest
+  play check now has cumulative layout shift 0 in all six runs. Before the
+  fix, the board moved when viewer-only buttons arrived (mobile CLS about
+  0.06). Reserving the guest controls and sending the verified viewer and
+  author relationship in the first server response removed that shift. The
+  authenticated player measured CLS 0.0011 at 390 px and 0.0006 at 1710 px,
+  with the remaining movement confined to the account header. The change
+  exposed a guest-progress hydration race; a live regression and component
+  check now prove a selected cell survives reload. Five targeted live browser
+  scenarios covering guest/registered play, social actions, session expiry,
+  and cross-tab logout passed after the repair.
+- Published board assets use normalized image derivatives and thumbnails;
+  offscreen card images and avatars use native lazy loading with defined
+  board/avatar geometry. The site uses system Courier/Arial stacks rather
+  than downloaded web fonts, so it has no font requests or unused font files.
+  Backend feed/card querysets prefetch related media, tags, and author data.
+  A PostgreSQL regression grew the Discover feed from one to twelve real
+  published boards and required the SQL query count to stay within two of
+  the one-board count (1/1 passed). Feed pagination defaults to 24 and caps
+  public feed pages at 24; relevant bingo, social, account, and analytics
+  filter/sort indexes were reviewed in model definitions and migrations.
+- The local Nginx proxy now compresses text/JSON responses over 1 KiB. A live
+  `Accept-Encoding: gzip` Discover API response fell from 9,054 to 1,621
+  transmitted bytes; `nginx -t` passed after reload. The full-stack CI adds
+  a gzip response assertion. A production Next hashed JavaScript asset served
+  `Cache-Control: public, max-age=31536000, immutable`; dynamic bingo HTML
+  served `private, no-cache, no-store`. Public media uses versioned asset
+  identities and private downloads use `private, no-store`. The source scan
+  found no production third-party scripts, and Agentation is development-only.
+  A static-asset CDN decision and real external-network/load measurements
+  depend on the target hosting design, so the section remains partial.
+- A parallel local QA run exposed a development-stack limit: threaded Django
+  `runserver` had accumulated about 100 idle PostgreSQL connections and then
+  rejected both pytest setup and live fixture seeding. Development settings
+  now close each request's database connection (`CONN_MAX_AGE=0`); production
+  settings still use their configured pool lifetime. After recreating the
+  local backend, PostgreSQL had one idle connection rather than about 100.
+  Rerun sequentially, the full backend suite passed 142 tests with one skip,
+  and the four-engine live compatibility scenario passed 4/4. PostgreSQL still
+  showed only one idle connection afterward. Ruff and mypy also passed.
+
+### 2026-09-30 — System-font rendering (section 35)
+
+- CSS uses `Courier New, Courier, monospace` for the main interface and
+  `Arial, Helvetica, sans-serif` in specified controls. There is no
+  `@font-face`, `next/font`, or `.woff`, `.ttf`, `.otf`, or `.eot` asset in the
+  frontend source or production static build. Font-file presence and
+  case-sensitive asset paths are therefore not applicable, and no font request
+  can produce a font 404. Browser-provided regular and bold faces cover the
+  weights the interface uses, with generic family fallbacks; system text is
+  visible immediately without a remote font download or swap.
+- The live multilingual profile scenario displayed long Cyrillic, Chinese,
+  emoji, and unbroken Latin content without clipping at 320 and 1710 px
+  (1/1 targeted Chromium run). Earlier Arabic and Russian card/board checks
+  passed in Chromium and WebKit. These validate product text rendering on
+  actual content; glyph availability ultimately follows each user's system
+  fonts and the declared browser fallback stack.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

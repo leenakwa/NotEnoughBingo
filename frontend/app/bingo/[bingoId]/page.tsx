@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
-import { lookupServerBingo } from "@/lib/api/server";
+import { getServerProfile, getServerSession, lookupServerBingo } from "@/lib/api/server";
 import { absoluteSiteUrl, shortDescription } from "@/lib/site";
 
 type BingoPageProps = { params: Promise<{ bingoId: string }> };
@@ -56,7 +56,24 @@ export async function generateMetadata({ params }: BingoPageProps): Promise<Meta
 export default async function BingoPage({ params }: BingoPageProps) {
   const { bingoId } = await params;
   const cookieHeader = (await cookies()).toString();
-  const lookup = await lookupServerBingo(bingoId, cookieHeader);
+  const [lookup, initialViewer] = await Promise.all([
+    lookupServerBingo(bingoId, cookieHeader),
+    getServerSession(cookieHeader),
+  ]);
   if (lookup.notFound) notFound();
-  return <BingoPlayer bingoId={bingoId} initialBingo={lookup.data} />;
+  const initialAuthorProfile =
+    lookup.data &&
+    initialViewer &&
+    initialViewer !== "guest" &&
+    initialViewer.id !== lookup.data.author.id
+      ? await getServerProfile(lookup.data.author.username, cookieHeader)
+      : null;
+  return (
+    <BingoPlayer
+      bingoId={bingoId}
+      initialBingo={lookup.data}
+      initialViewer={initialViewer}
+      initialAuthorProfile={initialAuthorProfile}
+    />
+  );
 }

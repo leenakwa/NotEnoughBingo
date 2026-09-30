@@ -1528,6 +1528,10 @@ input[type="range"] {
   flex-shrink: 0;
 }
 
+.play-action-placeholder {
+  visibility: hidden;
+}
+
 .play-board {
   margin-inline: auto;
   touch-action: manipulation;

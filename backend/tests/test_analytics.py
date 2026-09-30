@@ -6,8 +6,9 @@ from decimal import Decimal
 
 import pytest
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from freezegun import freeze_time
 from rest_framework.test import APIClient
@@ -26,6 +27,38 @@ from apps.plays.models import SharedResult
 from apps.social.models import BingoLike, Comment, CommentLike
 
 pytestmark = pytest.mark.django_db
+
+
+def test_discover_feed_queries_do_not_grow_with_published_cards(verified_user_factory) -> None:
+    author = verified_user_factory()
+
+    def publish(number: int) -> None:
+        document = empty_draft_document(title=f"Query board {number}", size=3, language="en")
+        document["cells"][0]["text"] = f"Cell {number}"
+        document["visibility"] = Bingo.Visibility.PUBLIC
+        bingo = create_bingo(author=author, document=document)
+        publish_bingo(
+            bingo=bingo,
+            actor=author,
+            idempotency_key=f"query-board-{number}",
+        )
+
+    publish(1)
+    client = APIClient()
+    with CaptureQueriesContext(connection) as one_queries:
+        one = client.get("/api/v1/feeds/discover/?page_size=24")
+    assert one.status_code == 200
+    assert one.data["count"] == 1
+
+    for number in range(2, 13):
+        publish(number)
+    with CaptureQueriesContext(connection) as twelve_queries:
+        twelve = client.get("/api/v1/feeds/discover/?page_size=24")
+    assert twelve.status_code == 200
+    assert twelve.data["count"] == 12
+    assert len(twelve_queries) <= len(one_queries) + 2, (
+        f"Discover feed queries grew from {len(one_queries)} to {len(twelve_queries)}"
+    )
 
 
 def test_counter_reconciliation_repairs_relational_drift_without_rewriting_lifetime_totals(

@@ -32,13 +32,17 @@ type Viewer = AuthenticatedUser | "guest" | null;
 export function BingoPlayer({
   bingoId,
   initialBingo,
+  initialViewer,
+  initialAuthorProfile,
 }: {
   bingoId: string;
   initialBingo?: BingoDetail | null;
+  initialViewer?: Viewer;
+  initialAuthorProfile?: UserProfile | null;
 }) {
   const router = useRouter();
   const [bingo, setBingo] = useState<BingoDetail | null>(initialBingo ?? null);
-  const [viewer, setViewer] = useState<Viewer>(null);
+  const [viewer, setViewer] = useState<Viewer>(initialViewer ?? null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [markStyle, setMarkStyle] = useState<PlayMarkStyle>("checkmark");
   const [loading, setLoading] = useState(!initialBingo);
@@ -50,7 +54,9 @@ export function BingoPlayer({
   const [sharing, setSharing] = useState(false);
   const [socialPending, setSocialPending] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
-  const [authorProfile, setAuthorProfile] = useState<UserProfile | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<UserProfile | null>(
+    initialAuthorProfile ?? null,
+  );
   const [loadVersion, setLoadVersion] = useState(0);
   const hydrated = useRef(false);
   const requestVersion = useRef(0);
@@ -74,9 +80,9 @@ export function BingoPlayer({
       setError("");
       setProgressError("");
       if (!canUseInitial) setBingo(null);
-      setViewer(null);
+      setViewer(canUseInitial ? (initialViewer ?? null) : null);
       setSelected(new Set());
-      setAuthorProfile(null);
+      setAuthorProfile(canUseInitial ? (initialAuthorProfile ?? null) : null);
       setSaving(false);
       setShareOpen(false);
       setNickname("");
@@ -111,23 +117,31 @@ export function BingoPlayer({
           bingoId: detail.id,
           revisionId: detail.current_revision.id,
         });
-        void api.profiles
-          .get(detail.author.username)
-          .then((profile) => {
-            if (active) setAuthorProfile(profile);
-          })
-          .catch(() => undefined);
-
-        let user: Viewer = "guest";
-        try {
-          user = (await api.auth.session()) ?? "guest";
-        } catch (caught) {
-          if (!isAuthenticationRequiredError(caught)) {
-            setProgressError("Progress sync is unavailable; guest progress will be used.");
+        let user: Viewer = canUseInitial && initialViewer ? initialViewer : "guest";
+        if (!canUseInitial || !initialViewer) {
+          try {
+            user = (await api.auth.session()) ?? "guest";
+          } catch (caught) {
+            if (!isAuthenticationRequiredError(caught)) {
+              setProgressError("Progress sync is unavailable; guest progress will be used.");
+            }
           }
         }
         if (!active) return;
         setViewer(user);
+        if (
+          user !== "guest" &&
+          user &&
+          user.id !== detail.author.id &&
+          (!canUseInitial || !initialAuthorProfile)
+        ) {
+          void api.profiles
+            .get(detail.author.username)
+            .then((profile) => {
+              if (active) setAuthorProfile(profile);
+            })
+            .catch(() => undefined);
+        }
 
         if (detail.status !== "published") {
           hydrated.current = true;
@@ -139,6 +153,7 @@ export function BingoPlayer({
           setSelected(
             new Set((local?.selected_cells ?? []).filter((cellId) => cellIds.has(cellId))),
           );
+          skipNextSync.current = true;
         } else {
           try {
             const progress = await api.progress.get(bingoId);
@@ -176,7 +191,7 @@ export function BingoPlayer({
     return () => {
       active = false;
     };
-  }, [bingoId, initialBingo, loadVersion]);
+  }, [bingoId, initialBingo, initialViewer, initialAuthorProfile, loadVersion]);
 
   useEffect(() => {
     const revision = bingo?.current_revision;
@@ -184,16 +199,16 @@ export function BingoPlayer({
       return;
     }
     const cells = [...selected];
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
     if (viewer === "guest") {
       if (!writeGuestProgress(bingoId, revision.id, cells)) {
         setProgressError(
           "This browser blocked local storage, so guest progress cannot survive a reload.",
         );
       }
-      return;
-    }
-    if (skipNextSync.current) {
-      skipNextSync.current = false;
       return;
     }
 
@@ -513,6 +528,10 @@ export function BingoPlayer({
             >
               Log in to like
             </Link>
+          ) : viewer === null && playable ? (
+            <span className="button button--secondary play-action-placeholder" aria-hidden="true">
+              Log in to like
+            </span>
           ) : null}
           {viewer && viewer !== "guest" && viewer.id !== bingo.author.id && authorProfile ? (
             <button
@@ -578,6 +597,15 @@ export function BingoPlayer({
               >
                 Share result
               </button>
+            </>
+          ) : playable ? (
+            <>
+              <span className="button button--secondary play-action-placeholder" aria-hidden="true">
+                Reset
+              </span>
+              <span className="button button--primary play-action-placeholder" aria-hidden="true">
+                Share result
+              </span>
             </>
           ) : null}
         </div>

@@ -686,23 +686,23 @@ Pay particular attention to Safari-specific issues.
 
 Review:
 
-- [ ] initial JavaScript bundle size;
-- [ ] unnecessary dependencies;
-- [ ] code splitting;
-- [ ] lazy loading;
-- [ ] image optimization;
-- [ ] font loading;
-- [ ] unused fonts;
-- [ ] N+1 backend/database requests;
-- [ ] excessive requests on dashboards/pages;
-- [ ] DB indexes;
-- [ ] pagination;
-- [ ] compression;
+- [x] initial JavaScript bundle size;
+- [x] unnecessary dependencies;
+- [x] code splitting;
+- [x] lazy loading;
+- [x] image optimization;
+- [x] font loading;
+- [x] unused fonts;
+- [x] N+1 backend/database requests;
+- [x] excessive requests on dashboards/pages;
+- [x] DB indexes;
+- [x] pagination;
+- [x] compression;
 - [ ] static asset CDN if appropriate;
-- [ ] cache headers;
-- [ ] cache invalidation;
-- [ ] third-party scripts;
-- [ ] layout shifts.
+- [x] cache headers;
+- [x] cache invalidation;
+- [x] third-party scripts;
+- [x] layout shifts.
 
 Do not perform premature micro-optimization, but fix obvious production performance problems.
 
@@ -710,14 +710,14 @@ Do not perform premature micro-optimization, but fix obvious production performa
 
 Verify:
 
-- [ ] font files exist in production;
-- [ ] asset paths match case exactly;
-- [ ] no 404s;
-- [ ] sensible fallback;
-- [ ] required Cyrillic/Unicode coverage exists;
-- [ ] required font weights actually exist;
-- [ ] browser does not need to synthesize inappropriate weights;
-- [ ] text remains visible during loading.
+- [x] font files exist in production;
+- [x] asset paths match case exactly;
+- [x] no 404s;
+- [x] sensible fallback;
+- [x] required Cyrillic/Unicode coverage exists;
+- [x] required font weights actually exist;
+- [x] browser does not need to synthesize inappropriate weights;
+- [x] text remains visible during loading.
 
 # 36. SEO FOR PUBLIC PAGES
 

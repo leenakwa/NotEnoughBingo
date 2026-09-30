@@ -2,7 +2,14 @@ import "server-only";
 
 import { cache } from "react";
 
-import type { BingoDetail, BingoSummary, Page, SharedResult, UserProfile } from "@/lib/api/types";
+import type {
+  AuthenticatedUser,
+  BingoDetail,
+  BingoSummary,
+  Page,
+  SharedResult,
+  UserProfile,
+} from "@/lib/api/types";
 
 const serverApiBase =
   process.env.API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8000/api/v1";
@@ -73,6 +80,15 @@ export const getServerProfile = cache(
   async (username: string, cookieHeader = "") =>
     (await lookupServerProfile(username, cookieHeader)).data,
 );
+
+export const getServerSession = cache(async (cookieHeader = "") => {
+  const lookup = await serverLookup<{ user: AuthenticatedUser | null }>(
+    "auth/session/",
+    cookieHeader,
+  );
+  if (!lookup.data) return null;
+  return lookup.data.user ?? "guest";
+});
 
 export const getServerFeed = cache(
   (kind: "discover" | "trending", page: number, cookieHeader = "") => {
