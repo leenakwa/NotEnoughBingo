@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **26 verified**, **56 partial**, **17 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **28 verified**, **57 partial**, **13 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -136,16 +136,16 @@ unresolved failures or missing evidence.
 - [ ] 86. TEST / DEMO ACCOUNTS — Partial: deterministic `.test` fixtures and elevated E2E moderator cannot be created by the seed command under production settings; verify the target database has none and is isolated from staging. Payments are absent.
 - [ ] 87. ADMIN PANEL — Partial: Django staff permissions, moderation audit, search/pagination, hard-delete guards, and confirmation for bounded moderation actions verified; external staff gateway remains.
 - [ ] 88. SUPPORT — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 89. LEGAL / BUSINESS FOOTER — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 90. FOOTER — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 89. LEGAL / BUSINESS FOOTER — Partial: Privacy, Terms, Cookies, and current-year footer verified; a private contact and real operator/legal identity still need user-provided details and review.
+- [x] 90. FOOTER — Verified before deployment: current-year branded footer, five working internal links, contact destination page, intentional cookies anchor, responsive layout, and no broken placeholders; official social accounts are not configured for this release.
 - [x] 91. PAGE METADATA — Verified before deployment: production-mode public route heads expose title, description, canonical, Open Graph/Twitter URLs and images, and favicon links at the configured origin.
 - [ ] 92. FAVICON SET — Partial: ICO, SVG browser icon, and 180px Apple touch icon return 200 and appear in page head; light/dark browser chrome still needs a visual check. PWA is absent.
 - [x] 93. SCROLL BEHAVIOR — Verified before deployment: route top, browser Back, modal close, horizontal overflow, and sticky-header anchor behavior checked at mobile and desktop widths.
 - [x] 94. MODALS — Verified before deployment: report dialog X, Cancel, Escape, backdrop, focus containment, background scroll lock, and 320px-high viewport; there is no destructive modal action.
 - [ ] 95. DROPDOWNS / POPOVERS — Partial: Chromium and mobile WebKit interactions recorded; continue remaining original bullets.
 - [ ] 96. Z-INDEX / OVERLAY STACK — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 97. TOASTS / TRANSIENT FEEDBACK — Review pending: map original bullets to repository and runtime evidence.
-- [ ] 98. ACTION FEEDBACK — Review pending: map original bullets to repository and runtime evidence.
+- — 97. TOASTS / TRANSIENT FEEDBACK — N/A for current release: source inventory found no toast component; action messages are persistent inline status/alert regions, assessed in section 98.
+- [x] 98. ACTION FEEDBACK — Verified before deployment: editor save and upload stages/failures, publication/report submission, and account deletion schedule/cancel expose pending, success, and error states; invite and payment actions are absent.
 - [ ] 99. REFRESH TEST — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 100. OPEN-IN-NEW-TAB TEST — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 101. MULTIPLE TABS — Partial: local evidence recorded; review remaining original bullets.

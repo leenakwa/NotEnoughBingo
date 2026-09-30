@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage eyebrow="Trust" title="Privacy Policy" updated="August 7, 2026">
+    <LegalPage eyebrow="Trust" title="Privacy Policy" updated="September 30, 2026">
       <p>
         This policy describes the data handled by Not Enough Bingo. The operator of a public
         deployment must identify its responsible maintainer and private contact channel on the
@@ -49,6 +49,18 @@ export default function PrivacyPage() {
           content, operate social and moderation features, rank public feeds, prevent abuse,
           diagnose failures, deliver security email, and honour export or deletion requests. We do
           not use browser identifiers as authentication credentials and do not sell personal data.
+        </p>
+      </section>
+
+      <section id="cookies-and-browser-storage">
+        <h2>Cookies and browser storage</h2>
+        <p>
+          We use first-party session and CSRF cookies to keep accounts signed in and protect forms.
+          The session cookie is not readable by page scripts. Your browser also stores guest bingo
+          progress, play-mark preferences, temporary editor recovery data, and a random identifier
+          for product interaction counts. Temporary recovery data may use session storage. Clearing
+          browser data removes local progress and recovery data; signed-in progress saved on the
+          server is managed through your account.
         </p>
       </section>
 

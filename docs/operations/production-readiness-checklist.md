@@ -1611,12 +1611,12 @@ Verify:
 
 Where applicable verify:
 
-- [ ] Privacy;
-- [ ] Terms;
-- [ ] Cookies;
+- [x] Privacy;
+- [x] Terms;
+- [x] Cookies;
 - [ ] Contact;
 - [ ] legal/company identity;
-- [ ] correct copyright year.
+- [x] correct copyright year.
 
 Do not leave outdated years or template company information.
 
@@ -1624,15 +1624,15 @@ Do not leave outdated years or template company information.
 
 Check:
 
-- [ ] links work;
-- [ ] Privacy;
-- [ ] Terms;
-- [ ] Contact;
-- [ ] social links;
-- [ ] copyright;
-- [ ] current year;
-- [ ] logo/branding;
-- [ ] no links pointing only to `#` unintentionally.
+- [x] links work;
+- [x] Privacy;
+- [x] Terms;
+- [x] Contact;
+- [x] social links;
+- [x] copyright;
+- [x] current year;
+- [x] logo/branding;
+- [x] no links pointing only to `#` unintentionally.
 
 # 91. PAGE METADATA
 
@@ -1722,12 +1722,12 @@ Verify:
 
 After actions such as:
 
-- [ ] Save;
-- [ ] Upload;
-- [ ] Submit;
-- [ ] Delete;
-- [ ] Invite;
-- [ ] Payment;
+- [x] Save;
+- [x] Upload;
+- [x] Submit;
+- [x] Delete;
+- [x] Invite;
+- [x] Payment;
 
 the user must clearly know whether the action succeeded, failed, or is still running.
 

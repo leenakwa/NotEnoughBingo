@@ -1541,6 +1541,59 @@ observed results and their limits. Do not include credentials or session data.
   scenario passed locally in Firefox, WebKit, and Android emulation; TypeScript,
   ESLint, and Prettier passed. The next exact-commit CI run remains required.
 
+### 2026-09-30 — Footer and legal links (sections 89–90)
+
+- The footer now renders the current UTC year with the Not Enough Bingo name.
+  It exposes Privacy, Terms, Cookies, Community guidelines, and Contact &
+  support. The privacy page has a factual section describing the app's
+  first-party session/CSRF cookies and local/session storage. Its Cookies link
+  points to that section; the anchor heading appeared at the top of a 390px
+  viewport. The root layout already renders per request, so the year is not
+  frozen at build time.
+- A mobile browser clicked all five footer links; every destination had its
+  expected title, the cookies hash resolved, and none caused horizontal
+  overflow. At 1710px the footer also fit without overflow. No console errors
+  were observed. No official social accounts are configured, so adding social
+  links would invent a destination; this is N/A for the current release. The
+  footer has no accidental `#` placeholder links.
+- The legal/contact gate remains open: the support page currently falls back
+  to the public project issue tracker. A monitored private contact, real
+  operator identity, jurisdiction, and review of the published legal text
+  need confirmed deployment details. A working link alone does not establish
+  a production support channel.
+
+### 2026-09-30 — Action feedback and toast applicability (sections 97–98)
+
+- Source inventory found no toast component or toast dependency. The app uses
+  persistent inline `status`/`alert` regions, so toast duration, duplication,
+  overlap, and success/error toast checks are not applicable to this release.
+- The editor visibly transitions through Unsaved changes, Saving, Saved, and
+  Save failed with Retry; live product flows passed normal saving and an
+  offline failure/retry. Uploads expose preparing/uploading/processing stages,
+  cancel, and failure/retry; corresponding live browser tests passed.
+  Publication validation and successful publish, and report submission with
+  a received confirmation, passed the live product flows. Error text is
+  retained in the relevant form/status area.
+- In a live QA browser, cancelling the account-deletion confirmation left the
+  user on the profile. Accepting it redirected to login with a notice that
+  deletion was scheduled and sessions ended. A fresh login showed the scheduled
+  date; Cancel deletion restored the normal controls and displayed “Account
+  deletion cancelled.” The backend deletion/grace-period tests and frontend
+  settings tests also passed. Invite and payment actions do not exist in the
+  release, so those two source bullets are N/A.
+
+### 2026-09-30 — CI flow updates after admin confirmation (`8a2e559`)
+
+- The `8a2e559` run passed backend/frontend quality, smoke, images, foundation,
+  and secret scanning. Full-stack flows failed because the moderator scenario
+  still expected the old one-click action, and one mobile geometry read raced a
+  Next.js development-navigation context replacement. The moderator browser
+  scenario now verifies the intermediate confirmation page and submits it;
+  the mobile test retries the same full geometry assertions for up to 10
+  seconds if navigation replaces the document. The affected two-scenario
+  Chromium moderation sequence passed locally 2/2 and the mobile WebKit
+  scenario passed locally 1/1. The next exact-commit CI run is pending.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

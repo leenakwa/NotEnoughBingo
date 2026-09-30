@@ -1283,6 +1283,11 @@ test.describe("live full-stack product flows", () => {
     await row.locator('input[name="_selected_action"]').check();
     await page.locator('select[name="action"]').selectOption("resolve_without_action");
     await page.getByRole("button", { name: "Go" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Confirm: Resolve without action" }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: moderationReportId })).toBeVisible();
+    await page.getByRole("button", { name: "Confirm resolve without action" }).click();
     await expect(page.getByText("Processed 1 report(s).")).toBeVisible();
     await expect(
       page.locator("#result_list tbody tr").filter({ hasText: moderationReportId }),
