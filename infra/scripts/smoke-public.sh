@@ -67,9 +67,34 @@ probe /_next/server/app/page.js '403|404'
 
 robots="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \
   "$base_url/robots.txt")"
-if [[ "$robots" != *"Sitemap: $base_url/sitemap.xml"* ]]; then
-  echo 'robots.txt does not use the canonical public origin.' >&2
-  exit 1
+discover_headers="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \
+  --dump-header - --output /dev/null "$base_url/discover")"
+discover_html="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \
+  "$base_url/discover")"
+if [[ "${ALLOW_LOCAL_HTTP:-0}" == 1 ]]; then
+  if [[ "$robots" != *"Disallow: /"* ]]; then
+    echo 'Local preview must block crawler indexing.' >&2
+    exit 1
+  fi
+  if ! grep -Eiq '^x-robots-tag: noindex, nofollow' <<< "$discover_headers"; then
+    echo 'Local preview page must send a noindex response header.' >&2
+    exit 1
+  fi
+else
+  if [[ "$robots" != *"Sitemap: $base_url/sitemap.xml"* ]]; then
+    echo 'robots.txt does not use the canonical public origin.' >&2
+    exit 1
+  fi
+  if [[ "$robots" == *"Disallow: /"$'\n'* ]]; then
+    echo 'Production robots.txt unexpectedly blocks all public pages.' >&2
+    exit 1
+  fi
+  if [[ "$discover_html" != *"href=\"$base_url/discover\""* ]] ||
+    grep -Eiq 'noindex|nofollow' <<< "$discover_headers" ||
+    [[ "$discover_html" == *'name="robots" content="noindex'* ]]; then
+    echo 'Production Discover has a missing canonical URL or an unexpected noindex policy.' >&2
+    exit 1
+  fi
 fi
 
 session_headers="$(curl --silent --show-error --connect-timeout 5 --max-time 20 \

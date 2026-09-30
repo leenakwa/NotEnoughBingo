@@ -50,6 +50,11 @@ Provide secrets from a secret manager and configure at least:
   frontend image. The production Dockerfile rejects a missing or non-HTTPS
   value. Rebuild the image if the public origin changes; the CI image uses a
   non-deployable `.invalid` origin only to check build integrity.
+- `APP_ENVIRONMENT=production` on the public frontend at runtime. The
+  production image defaults to `staging`: preview pages then emit
+  `noindex, nofollow`, `robots.txt` disallows crawling, and the sitemap is
+  empty. Set the value only when the canonical public origin is ready; verify
+  the indexed response and sitemap during the deployment smoke check.
 
 The frontend CSP has no blanket `https:` source in production. Set the
 comma-separated `CSP_IMAGE_ORIGINS`, `CSP_CONNECT_ORIGINS`, and

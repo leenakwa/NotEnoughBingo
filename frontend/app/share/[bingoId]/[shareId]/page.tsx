@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { SharedResultView } from "@/features/play/shared-result-view";
 import { lookupServerShare } from "@/lib/api/server";
-import { absoluteSiteUrl } from "@/lib/site";
+import { absoluteSiteUrl, isPublicProduction } from "@/lib/site";
 
 type SharePageProps = {
   params: Promise<{ bingoId: string; shareId: string }>;
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: SharePageProps): Promise<Meta
     title,
     description,
     alternates: { canonical },
-    robots: { index: false, follow: true },
+    robots: { index: false, follow: isPublicProduction() },
     openGraph: {
       type: "website",
       title,

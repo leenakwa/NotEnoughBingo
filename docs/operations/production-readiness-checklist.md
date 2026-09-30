@@ -723,23 +723,23 @@ Verify:
 
 If pages should be indexed, verify:
 
-- [ ] unique title;
-- [ ] sensible meta description;
-- [ ] meaningful H1;
+- [x] unique title;
+- [x] sensible meta description;
+- [x] meaningful H1;
 - [ ] semantic headings;
-- [ ] canonical URL;
-- [ ] crawlable links;
+- [x] canonical URL;
+- [x] crawlable links;
 - [ ] clean meaningful URLs;
-- [ ] sitemap.xml;
-- [ ] robots.txt;
-- [ ] correct HTTP statuses;
+- [x] sitemap.xml;
+- [x] robots.txt;
+- [x] correct HTTP statuses;
 - [ ] www/non-www policy;
 - [ ] HTTP → HTTPS;
-- [ ] trailing slash strategy;
+- [x] trailing slash strategy;
 - [ ] duplicate URL handling;
-- [ ] no accidental `noindex`;
-- [ ] preview/staging deployments are not indexed;
-- [ ] structured data if the site actually benefits from it.
+- [x] no accidental `noindex`;
+- [x] preview/staging deployments are not indexed;
+- [x] structured data if the site actually benefits from it.
 
 # 37. SOCIAL SHARING
 

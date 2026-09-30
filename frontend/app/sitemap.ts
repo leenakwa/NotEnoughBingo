@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
 
 import { getServerSitemap } from "@/lib/api/server";
-import { absoluteSiteUrl } from "@/lib/site";
+import { absoluteSiteUrl, isPublicProduction } from "@/lib/site";
+
+export const dynamic = "force-dynamic";
 
 const staticEntries: MetadataRoute.Sitemap = [
   { url: absoluteSiteUrl("/discover"), changeFrequency: "daily", priority: 1 },
@@ -18,6 +20,7 @@ const staticEntries: MetadataRoute.Sitemap = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (!isPublicProduction()) return [];
   const entries = [...staticEntries];
   const profileEntries = new Map<string, MetadataRoute.Sitemap[number]>();
 

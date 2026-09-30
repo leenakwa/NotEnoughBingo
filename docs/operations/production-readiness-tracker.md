@@ -83,7 +83,7 @@ unresolved failures or missing evidence.
 - [ ] 33. BROWSER COMPATIBILITY — Partial: installed Chrome and Safari, Playwright Firefox, WebKit, and mobile emulation cover core flows; actual Edge and iOS/Android browser devices remain unverified.
 - [ ] 34. PERFORMANCE — Partial: production bundles, request counts, N+1, gzip, cache policy, image/font assets, and layout shifts reviewed; target CDN choice and real-network/load budgets remain open.
 - [x] 35. FONTS — Verified before deployment: no external font files or loading/404 path by design; system stacks include fallbacks and standard weights, and multilingual content remains visible at narrow/wide widths.
-- [ ] 36. SEO FOR PUBLIC PAGES — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 36. SEO FOR PUBLIC PAGES — Partial: production-mode metadata, sitemap, robots, staging noindex, and slash redirects verified; heading hierarchy, URL policy, sitemap scale, and real HTTPS host remain.
 - [ ] 37. SOCIAL SHARING — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 38. DOMAIN AND DNS — Partial: public smoke script is prepared; the actual domain, records, and propagation need target-environment evidence.
 - [ ] 39. HTTPS / TLS — Partial: smoke script enforces HTTPS; certificate and edge configuration need target-environment evidence.

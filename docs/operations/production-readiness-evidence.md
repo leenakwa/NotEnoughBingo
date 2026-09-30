@@ -1192,6 +1192,39 @@ observed results and their limits. Do not include credentials or session data.
   actual content; glyph availability ultimately follows each user's system
   fonts and the declared browser fallback stack.
 
+### 2026-09-30 — Public-page SEO and preview isolation (section 36, partial)
+
+- A fresh production-mode Next 16.3.7 build served on localhost:18081 was
+  started twice from the same build. With `APP_ENVIRONMENT=staging`,
+  `robots.txt` returned `Disallow: /`, `sitemap.xml` had no entries, Discover
+  sent `X-Robots-Tag: noindex, nofollow`, and its rendered HTML included a
+  noindex meta tag. With `APP_ENVIRONMENT=production`, robots advertised the
+  exact configured HTTPS sitemap origin, the sitemap listed public routes,
+  Discover had a canonical HTTPS URL without noindex, and the published
+  fixture bingo carried `index, follow` and its own canonical URL. The
+  frontend production image now defaults to staging until its runtime
+  environment is explicitly set to production; the deployment guide and
+  smoke script enforce the intended public policy.
+- The isolated Nginx frontend returned HTTP 308 from
+  `/discover/?languages=en&page=2` to `/discover?languages=en&page=2`.
+  Missing bingo and unknown pages returned real 404 statuses in the earlier
+  route checks. In a production Chromium session at 390 and 1710 px,
+  Discover, Trending, Explore, and a published bingo each returned 200,
+  had distinct page titles and descriptions, one visible H1 after streaming
+  settled, and a canonical HTTPS link. The public feed HTML exposed normal
+  `<a href>` links to boards and navigation; no route produced a page error
+  or horizontal overflow. The production build, full 108-test frontend suite,
+  lint, typecheck, Prettier, ShellCheck, and the local public smoke script
+  passed after this change.
+- The present sitemap endpoint limits its public bingo projection to 10,000
+  rows and exposes `truncated=true` beyond that. This is above the current
+  fixture scale but needs a paginated sitemap before that growth threshold.
+  Complete heading-level auditing, human-facing URL policy, host alias and
+  HTTP-to-HTTPS behavior, duplicate URLs across hosts, and a real search
+  crawler remain unchecked until the hosting target and domain are chosen.
+  No structured-data type directly describes a user-created bingo board;
+  schema markup was intentionally omitted rather than inventing a type.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

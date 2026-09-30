@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
 
-import { buildContentSecurityPolicy, parseContentSecurityPolicyOrigins } from "@/proxy";
+import { buildContentSecurityPolicy, parseContentSecurityPolicyOrigins, proxy } from "@/proxy";
 
 describe("Content Security Policy", () => {
   it("keeps production scripts nonce-protected and media HTTPS-only", () => {
@@ -38,5 +39,17 @@ describe("Content Security Policy", () => {
     expect(policy).toContain("ws://localhost:*");
     expect(policy).toContain("'unsafe-eval'");
     expect(policy).not.toContain("upgrade-insecure-requests");
+  });
+});
+
+describe("canonical page URLs", () => {
+  it("redirects trailing slashes while preserving search parameters", () => {
+    const response = proxy(
+      new NextRequest("https://bingo.example.test/discover/?languages=en&page=2"),
+    );
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe(
+      "https://bingo.example.test/discover?languages=en&page=2",
+    );
   });
 });

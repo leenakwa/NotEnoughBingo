@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { siteUrl } from "@/lib/site";
+import { isPublicProduction, siteUrl } from "@/lib/site";
 
 import "./globals.css";
 
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     template: "%s — Not Enough Bingo",
   },
   description: "Create, play, and share community bingo boards.",
+  robots: isPublicProduction() ? undefined : { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

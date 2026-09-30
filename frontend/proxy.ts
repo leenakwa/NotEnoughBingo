@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { isPublicProduction } from "@/lib/site";
+
 interface ContentSecurityPolicySources {
   imageOrigins?: readonly string[];
   connectOrigins?: readonly string[];
@@ -72,6 +74,13 @@ export function buildContentSecurityPolicy(
 }
 
 export function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    const canonical = new URL(request.url);
+    canonical.pathname = pathname.replace(/\/+$/, "");
+    return NextResponse.redirect(canonical, 308);
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDevelopment = process.env.NODE_ENV !== "production";
   const forwardedProtocol = request.headers.get("x-forwarded-proto")?.split(",", 1)[0]?.trim();
@@ -102,6 +111,7 @@ export function proxy(request: NextRequest) {
     },
   });
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+  if (!isPublicProduction()) response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }
 

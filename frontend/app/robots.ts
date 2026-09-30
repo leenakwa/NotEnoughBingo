@@ -1,8 +1,13 @@
 import type { MetadataRoute } from "next";
 
-import { absoluteSiteUrl, siteUrl } from "@/lib/site";
+import { absoluteSiteUrl, isPublicProduction, siteUrl } from "@/lib/site";
+
+export const dynamic = "force-dynamic";
 
 export default function robots(): MetadataRoute.Robots {
+  if (!isPublicProduction()) {
+    return { rules: { userAgent: "*", disallow: "/" } };
+  }
   return {
     rules: {
       userAgent: "*",

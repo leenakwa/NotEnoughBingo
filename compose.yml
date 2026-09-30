@@ -109,6 +109,7 @@ services:
       - "3000"
     environment:
       NODE_ENV: ${NODE_ENV:-development}
+      APP_ENVIRONMENT: ${APP_ENVIRONMENT:-development}
       AGENTATION_ENABLED: ${AGENTATION_ENABLED:-true}
       NEXT_TELEMETRY_DISABLED: ${NEXT_TELEMETRY_DISABLED:-1}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:8080}

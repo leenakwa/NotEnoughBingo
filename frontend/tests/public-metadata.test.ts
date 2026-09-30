@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generateMetadata as bingoMetadata } from "@/app/bingo/[bingoId]/page";
 import { generateMetadata as profileMetadata } from "@/app/profile/[username]/page";
 import { generateMetadata as shareMetadata } from "@/app/share/[bingoId]/[shareId]/page";
+import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import type { BingoDetail, SharedResult, UserProfile } from "@/lib/api/types";
 import { absoluteSiteUrl } from "@/lib/site";
@@ -108,8 +109,16 @@ function bingo(visibility: BingoDetail["visibility"]): BingoDetail {
 }
 
 describe("public route metadata", () => {
+  const previousEnvironment = process.env.APP_ENVIRONMENT;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.APP_ENVIRONMENT = "production";
+  });
+
+  afterEach(() => {
+    if (previousEnvironment === undefined) delete process.env.APP_ENVIRONMENT;
+    else process.env.APP_ENVIRONMENT = previousEnvironment;
   });
 
   it("uses the immutable published revision and indexes only public bingos", async () => {
@@ -211,5 +220,19 @@ describe("public route metadata", () => {
     expect(result.filter((entry) => entry.url.includes("/bingo/"))).toHaveLength(2);
     expect(result.filter((entry) => entry.url.endsWith("/profile/author"))).toHaveLength(1);
     expect(mocks.getSitemap).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps preview environments out of crawlers and public sitemaps", async () => {
+    process.env.APP_ENVIRONMENT = "staging";
+    mocks.getBingo.mockResolvedValue(bingo("public"));
+
+    expect(robots()).toEqual({ rules: { userAgent: "*", disallow: "/" } });
+    expect(await sitemap()).toEqual([]);
+    expect(mocks.getSitemap).not.toHaveBeenCalled();
+    await expect(
+      bingoMetadata({
+        params: Promise.resolve({ bingoId: "11111111-1111-4111-8111-111111111111" }),
+      }),
+    ).resolves.toMatchObject({ robots: { index: false, follow: false } });
   });
 });

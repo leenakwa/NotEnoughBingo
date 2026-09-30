@@ -57,6 +57,9 @@ ENV NODE_ENV=production \
     NEXT_PUBLIC_SUPPORT_EMAIL=${NEXT_PUBLIC_SUPPORT_EMAIL} \
     API_BASE_URL=http://backend:8000/api/v1
 
+# Preview images remain non-indexable until the deployment explicitly selects production.
+ENV APP_ENVIRONMENT=staging
+
 RUN addgroup --system --gid 10001 nodejs \
     && adduser --system --uid 10001 --ingroup nodejs nextjs
 

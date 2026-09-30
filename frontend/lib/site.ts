@@ -1,5 +1,9 @@
 const fallbackSiteUrl = "http://localhost:3000";
 
+export function isPublicProduction(): boolean {
+  return process.env.APP_ENVIRONMENT === "production";
+}
+
 export function siteUrl(): URL {
   const configured = process.env.NEXT_PUBLIC_APP_URL;
   try {

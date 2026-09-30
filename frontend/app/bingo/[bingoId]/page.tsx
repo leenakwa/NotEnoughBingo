@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
 import { getServerProfile, getServerSession, lookupServerBingo } from "@/lib/api/server";
-import { absoluteSiteUrl, shortDescription } from "@/lib/site";
+import { absoluteSiteUrl, isPublicProduction, shortDescription } from "@/lib/site";
 
 type BingoPageProps = { params: Promise<{ bingoId: string }> };
 
@@ -30,7 +30,8 @@ export async function generateMetadata({ params }: BingoPageProps): Promise<Meta
   );
   const image = revision.cover?.thumbnail_url ?? revision.cover?.url ?? undefined;
   const canonical = absoluteSiteUrl(`/bingo/${bingo.id}`);
-  const indexable = bingo.visibility === "public" && bingo.status === "published";
+  const indexable =
+    isPublicProduction() && bingo.visibility === "public" && bingo.status === "published";
 
   return {
     title: revision.title,
