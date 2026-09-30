@@ -1298,6 +1298,19 @@ observed results and their limits. Do not include credentials or session data.
   No real production secret was present to rotate. Real provider credentials
   must come from the chosen secret manager during deployment.
 
+### 2026-09-30 — Cross-browser session isolation in CI (section 33, partial)
+
+- The `af2910a` full-stack CI job passed 37 of 40 scenarios and failed in
+  Firefox, WebKit, and Android emulation after the two-tab logout scenario.
+  All three failure snapshots showed the legitimate guest Create screen:
+  the compatibility test had reloaded a saved author session cookie that
+  the earlier logout had deliberately revoked. The compatibility test now
+  signs in through the browser instead of reusing that stale cookie. On the
+  isolated QA stack with CI's `30/m` login allowance, the ordered sequence
+  of two-tab logout followed by Firefox, WebKit, and Android compatibility
+  passed 4/4. Exact-commit full CI remains required; this observation does
+  not establish physical device support.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

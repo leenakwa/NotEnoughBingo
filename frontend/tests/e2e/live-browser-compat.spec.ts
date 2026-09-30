@@ -1,9 +1,6 @@
-import { readFileSync } from "node:fs";
-
-import type { BrowserContext } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-import { authStatePath, readLiveFixture } from "./live-fixture";
+import { E2E_FIXTURE_PASSWORD, readLiveFixture } from "./live-fixture";
 
 test("browse, filter, play, share, and start a draft across browser engines", async ({ page }) => {
   const bingo = readLiveFixture().bingos.public;
@@ -34,12 +31,13 @@ test("browse, filter, play, share, and start a draft across browser engines", as
   await expect(page).toHaveURL(new RegExp(`/share/${bingo.id}/[^/]+$`));
   await expect(page.getByText("Shared by Browser check")).toBeVisible();
 
-  const state = JSON.parse(readFileSync(authStatePath("author"), "utf8")) as {
-    cookies: Parameters<BrowserContext["addCookies"]>[0];
-  };
+  const author = readLiveFixture().users.author;
   await page.context().clearCookies();
-  await page.context().addCookies(state.cookies);
-  await page.goto("/create");
+  await page.goto("/login?next=%2Fcreate");
+  await page.getByLabel("Email").fill(author.email);
+  await page.getByLabel("Password").fill(E2E_FIXTURE_PASSWORD);
+  await page.getByRole("button", { name: "Log in" }).click();
+  await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByRole("heading", { name: "Create bingo" })).toBeVisible();
   await page.getByRole("gridcell").first().locator("button").focus();
   await page.keyboard.press("C");
