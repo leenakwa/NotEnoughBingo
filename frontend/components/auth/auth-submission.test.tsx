@@ -25,6 +25,10 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/api/client", () => ({
   api: { auth: mocks },
   errorMessage: (error: Error) => error.message,
+  fieldValidationMessage: (
+    error: Error & { fieldErrors?: Record<string, string> },
+    field: string,
+  ) => error.fieldErrors?.[field] ?? null,
 }));
 
 describe("auth submission safety", () => {
@@ -113,5 +117,52 @@ describe("auth submission safety", () => {
     });
     expect(button).toBeEnabled();
     expect(screen.getByRole("status")).toHaveTextContent("check your inbox");
+  });
+
+  it("places registration errors beside their fields and focuses the first", async () => {
+    mocks.register.mockRejectedValueOnce(
+      Object.assign(new Error("Invalid registration"), {
+        fieldErrors: {
+          username: "This username is unavailable.",
+          password: "Choose a stronger password.",
+        },
+      }),
+    );
+    render(<RegisterForm />);
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "user@example.test" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /^Username/ }), {
+      target: { value: "taken_name" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "Valid-looking-password-42" },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("button", { name: "Create account" }).closest("form")!);
+    });
+
+    const username = screen.getByRole("textbox", { name: /^Username/ });
+    expect(username).toHaveFocus();
+    expect(username).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("This username is unavailable.")).toHaveAttribute("role", "alert");
+    expect(screen.getByText("Choose a stronger password.")).toHaveAttribute("role", "alert");
+    fireEvent.change(username, { target: { value: "available_name" } });
+    expect(username).toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("places a weak reset password error beside the input", async () => {
+    mocks.resetPassword.mockRejectedValueOnce(
+      Object.assign(new Error("Invalid password"), {
+        fieldErrors: { new_password: "This password is too common." },
+      }),
+    );
+    render(<ResetPasswordForm />);
+    const password = screen.getByLabelText("New password");
+    fireEvent.change(password, { target: { value: "common-password-42" } });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("button", { name: "Update password" }).closest("form")!);
+    });
+    expect(password).toHaveFocus();
+    expect(password).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("This password is too common.")).toHaveAttribute("role", "alert");
   });
 });

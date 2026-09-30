@@ -285,6 +285,18 @@ export function errorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
+export function fieldValidationMessage(error: unknown, field: string): string | null {
+  if (
+    !(error instanceof ApiClientError) ||
+    !error.details ||
+    typeof error.details !== "object" ||
+    Array.isArray(error.details)
+  ) {
+    return null;
+  }
+  return firstValidationDetail((error.details as Record<string, unknown>)[field]);
+}
+
 function firstValidationDetail(value: unknown, path: string[] = []): string | null {
   if (Array.isArray(value)) {
     for (const item of value) {

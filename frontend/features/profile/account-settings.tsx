@@ -387,6 +387,7 @@ export function AccountSettings({
               {pending === "avatar" ? "Processing…" : "Upload avatar"}
               <input
                 type="file"
+                name="avatar"
                 className="sr-only"
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 disabled={Boolean(pending)}
@@ -436,7 +437,10 @@ export function AccountSettings({
             <span>New email address</span>
             <input
               type="email"
+              name="new_email"
               autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
               required
               value={newEmail}
               onChange={(event) => {

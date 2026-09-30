@@ -38,13 +38,15 @@ of work; it does not reduce the checklist.
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
 open for itemized review: the 2026-09-30 tracker has 56 verified sections,
 42 partial, six N/A and one deployment-only. The current local full live
-regression is 53/53 and the frontend gate has 146 tests; these counts do not
+regression is 53/53 and the frontend gate has 148 tests; these counts do not
 close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
 Python dependency locks, abuse/error/privacy work, API destination guard, and
-mobile WebKit scroll correction. The subsequent unauthenticated-API status
-correction passed local checks and needs its own exact-source CI gate.
+mobile WebKit scroll correction. Source `3d3c7cc` then passed all nine jobs
+with the unauthenticated-API 401 correction. The newer registration/reset
+field-error and form-affordance changes passed local checks and need their own
+exact-source CI gate.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
 and a domain have not been selected.
@@ -53,9 +55,9 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Verify the unauthenticated-API 401 correction on its exact source in CI.
-   Source `f0588c4` passed all nine jobs; the newer local correction passed
-   189 backend tests, 146 frontend tests, and 53 live scenarios. Keep the draft
+1. Verify the form field-error and control-affordance batch on its exact source
+   in CI. Source `3d3c7cc` passed all nine jobs; the newer local changes passed
+   189 backend tests, 148 frontend tests, and 53 live scenarios. Keep the draft
    PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize

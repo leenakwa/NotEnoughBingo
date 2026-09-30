@@ -245,6 +245,8 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
             <label className="field">
               <span className="sr-only">Edit comment</span>
               <textarea
+                name="edited_comment"
+                autoComplete="off"
                 rows={3}
                 maxLength={2_000}
                 required
@@ -343,6 +345,8 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
             <label className="field">
               <span>Reply</span>
               <textarea
+                name="reply_body"
+                autoComplete="off"
                 rows={3}
                 maxLength={2_000}
                 required
@@ -408,6 +412,8 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
           <label className="field">
             <span>Add a comment</span>
             <textarea
+              name="comment_body"
+              autoComplete="off"
               rows={3}
               maxLength={2_000}
               required

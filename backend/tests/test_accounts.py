@@ -319,7 +319,7 @@ def test_registration_rejects_weak_or_username_similar_passwords(csrf_request) -
             )
         )
         assert response.status_code == 400
-        assert "password" in str(response.data).lower()
+        assert "password" in response.data["error"]["details"]
     assert not User.objects.filter(email=base["email"]).exists()
 
 

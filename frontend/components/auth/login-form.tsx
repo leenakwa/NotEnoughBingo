@@ -114,6 +114,8 @@ export function LoginForm() {
               type="email"
               name="email"
               autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}

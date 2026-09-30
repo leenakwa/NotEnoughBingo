@@ -6,7 +6,7 @@ import { FormEvent, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordField } from "@/components/auth/password-field";
-import { api, errorMessage } from "@/lib/api/client";
+import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -47,6 +47,8 @@ export function ForgotPasswordForm() {
             type="email"
             name="email"
             autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -77,8 +79,10 @@ export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const submissionInFlight = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,6 +94,7 @@ export function ResetPasswordForm() {
     submissionInFlight.current = true;
     setPending(true);
     setError("");
+    setPasswordError("");
     try {
       await api.auth.resetPassword({
         uid,
@@ -100,7 +105,13 @@ export function ResetPasswordForm() {
       setPassword("");
       window.history.replaceState(null, "", window.location.pathname);
     } catch (caught) {
-      setError(errorMessage(caught));
+      const fieldError = fieldValidationMessage(caught, "new_password");
+      if (fieldError) {
+        setPasswordError(fieldError);
+        formRef.current?.querySelector<HTMLInputElement>('[name="new_password"]')?.focus();
+      } else {
+        setError(errorMessage(caught));
+      }
     } finally {
       submissionInFlight.current = false;
       setPending(false);
@@ -113,13 +124,18 @@ export function ResetPasswordForm() {
       title="Choose a new password"
       description="Reset links are single-use and expire for your safety."
     >
-      <form className="stack-form" onSubmit={submit}>
+      <form ref={formRef} className="stack-form" onSubmit={submit}>
         <PasswordField
           label="New password"
+          name="new_password"
           autoComplete="new-password"
           minLength={12}
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            setPasswordError("");
+          }}
+          error={passwordError}
         />
         <button
           className="button button--primary"

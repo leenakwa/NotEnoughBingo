@@ -19,6 +19,8 @@ export function LanguagePicker({
           <label key={language.code}>
             <input
               type="checkbox"
+              name="languages"
+              value={language.code}
               checked={value.includes(language.code)}
               onChange={(event) =>
                 onChange(

@@ -453,6 +453,12 @@ h3 {
   color: var(--danger);
 }
 
+.button:active:not(:disabled),
+.text-button:active:not(:disabled),
+.icon-button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+}
+
 .text-button {
   min-height: 44px;
   padding: 3px 0;
@@ -464,6 +470,11 @@ h3 {
 
 .text-button:hover {
   background: var(--soft);
+}
+
+.text-button:active:not(:disabled),
+.icon-button:active:not(:disabled) {
+  background: var(--soft-2);
 }
 
 .upload-status {

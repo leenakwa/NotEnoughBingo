@@ -221,6 +221,8 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
               <SearchIcon />
               <input
                 type="search"
+                name="search"
+                autoComplete="off"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Enter a title"
@@ -232,6 +234,9 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
             <span>Author</span>
             <input
               type="search"
+              name="author"
+              autoComplete="off"
+              spellCheck={false}
               value={author}
               onChange={(event) => setAuthor(event.target.value)}
               placeholder="Username or display name"
@@ -256,6 +261,8 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
             <span>Tags</span>
             <input
               type="search"
+              name="tags"
+              autoComplete="off"
               value={tags}
               onChange={(event) => setTags(event.target.value)}
               placeholder="travel, friends"

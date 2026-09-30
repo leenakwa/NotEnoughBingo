@@ -145,6 +145,7 @@ export function ReportDialog({
           <label className="field">
             <span>Reason</span>
             <select
+              name="reason"
               value={reason}
               onChange={(event) => setReason(event.target.value as ReportReason)}
             >
@@ -158,6 +159,8 @@ export function ReportDialog({
           <label className="field">
             <span>Additional context (optional)</span>
             <textarea
+              name="description"
+              autoComplete="off"
               rows={4}
               maxLength={2_000}
               value={description}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib.auth import authenticate, password_validation
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.helpers import lazy_serializer
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -158,7 +159,10 @@ class RegistrationSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         candidate = User(username=attrs["username"], email=attrs["email"])
-        validate_password(attrs["password"], candidate)
+        try:
+            validate_password(attrs["password"], candidate)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": exc.messages}) from exc
         return attrs
 
 

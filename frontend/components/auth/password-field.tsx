@@ -35,6 +35,8 @@ export function PasswordField({
           name={name ?? (autoComplete === "current-password" ? "password" : "new-password")}
           type={visible ? "text" : "password"}
           autoComplete={autoComplete}
+          autoCapitalize="none"
+          spellCheck={false}
           required
           minLength={minLength}
           aria-invalid={error ? true : undefined}

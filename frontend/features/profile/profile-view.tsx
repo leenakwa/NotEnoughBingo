@@ -347,6 +347,8 @@ export function ProfileView({
                 maxLength={30}
                 pattern="\s*[A-Za-z0-9_]+\s*"
                 autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
                 required
                 value={usernameValue}
                 onChange={(event) => setUsernameValue(event.target.value)}
@@ -368,6 +370,7 @@ export function ProfileView({
               <span>Bio</span>
               <textarea
                 name="bio"
+                autoComplete="off"
                 disabled={pending}
                 rows={4}
                 maxLength={280}

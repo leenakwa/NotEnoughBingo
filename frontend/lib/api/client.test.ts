@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { api, ApiClientError, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
+import {
+  api,
+  ApiClientError,
+  errorMessage,
+  fieldValidationMessage,
+  isAuthenticationRequiredError,
+} from "@/lib/api/client";
 import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
 
 afterEach(() => {
@@ -35,6 +41,8 @@ describe("API error presentation", () => {
     });
 
     expect(errorMessage(error)).toBe("new password: This password is too common.");
+    expect(fieldValidationMessage(error, "new_password")).toBe("This password is too common.");
+    expect(fieldValidationMessage(error, "email")).toBeNull();
   });
 
   it("keeps the safe envelope message when no field detail exists", () => {

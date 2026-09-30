@@ -2385,3 +2385,36 @@ observed results and their limits. Do not include credentials or session data.
   updating exact status assertions, including protected-action session expiry,
   logout in another tab and password reset. This is local QA evidence; real
   domain/edge status responses still require rollout verification.
+
+- CI run 36749227481 at source `3d3c7cc` passed all nine jobs, including the
+  401/403 API regression, full-stack product flows and the release gate.
+
+### 2026-09-30 — Inline form recovery and control feedback (sections 7, 8)
+
+- The registration serializer now places weak-password validation under the
+  `password` field instead of a form-wide error. Registration and reset forms
+  display structured API field errors next to the matching input, expose them
+  with `aria-invalid`/`aria-describedby`, preserve entered values, and focus
+  the first affected field. The client still shows a general action error for
+  rate limits, outages and invalid links. Browser autocomplete, names and
+  spellcheck behavior were made explicit on auth, profile, search, language,
+  comment and report controls.
+- On live QA, a taken username returned 400 and focused the invalid username
+  with nearby text. A weak registration password and weak reset password each
+  returned 400 and focused their respective password input with a nearby
+  alert. The registration check ran at 390 px with no horizontal overflow.
+  Repeated manual probes triggered the configured five-per-hour registration
+  throttle and showed HTTP 429; only that throttle key was reset in the
+  isolated QA Redis before the final weak-password probe and full test run.
+- A DOM inventory of Login, Register, Forgot/Reset Password, Explore, Profile
+  and signed-in root Comment forms found labels for all visible controls. It
+  identified one profile-bio autocomplete omission, which was corrected.
+  Native password-manager/autofill behavior and the remaining form sweep are
+  still open. Shared primary/secondary/text/icon buttons gained a pressed
+  position, and a 390 px Chromium probe observed base/hover/active changes
+  with no horizontal overflow.
+- The complete backend gate passed 189 tests with one environment-dependent
+  skip, Ruff and mypy passed, and the frontend gate passed ESLint, TypeScript,
+  Prettier and 148 tests. The complete live QA suite passed 53/53 scenarios
+  across Chromium, mobile WebKit, Firefox, desktop WebKit and Android Chromium.
+  Exact-source CI confirmation for this batch remains pending.
