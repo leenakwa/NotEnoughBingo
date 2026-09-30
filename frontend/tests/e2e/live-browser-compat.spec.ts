@@ -5,7 +5,16 @@ import { E2E_FIXTURE_PASSWORD, readLiveFixture } from "./live-fixture";
 test("browse, filter, play, share, and start a draft across browser engines", async ({ page }) => {
   const bingo = readLiveFixture().bingos.public;
   const pageErrors: string[] = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("pageerror", (error) => {
+    // WebKit can abort Next's devtools stack-frame lookup when a reload cancels an RSC request.
+    if (
+      error.message.includes("/__nextjs_original-stack-frames") &&
+      error.stack?.includes("next-devtools")
+    ) {
+      return;
+    }
+    pageErrors.push(error.message);
+  });
 
   await page.goto("/discover");
   await expect(page.locator(".bingo-card").filter({ hasText: bingo.title })).toBeVisible();

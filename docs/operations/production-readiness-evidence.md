@@ -1504,6 +1504,43 @@ observed results and their limits. Do not include credentials or session data.
   scan, foundation checks, and the aggregate Release gate. The later
   trending, icon, modal, and tracker edits need a new exact-head run.
 
+### 2026-09-30 — Admin hard-delete safety (section 87, partial)
+
+- Django Admin already requires active staff authentication and model
+  permissions. Its registered models expose search/filter lists with
+  pagination; moderation actions call the service that writes an audit
+  record. The default site-wide `delete_selected` action is now disabled.
+  Direct GET and POST to the admin hard-delete views for a user and bingo
+  returned HTTP 403 even for a superuser, and both records remained. A
+  separate Tag admin action query confirmed the bulk-delete action is absent
+  from a model where deletion is otherwise allowed. The backend suite passed
+  150 tests with one skip; Ruff and mypy passed.
+- All seven custom moderation actions now open a confirmation page showing
+  the action, count, and each selected report's ID, target type, reason, and
+  status before applying it. A backend HTTP test proved
+  the first POST leaves content and the action log untouched, while the
+  confirmed POST hides the board and records the moderation action. Two more
+  probes confirmed that `select_across=1` and a 21-report submission are
+  rejected without creating an action; the per-action maximum is 20 reports.
+  The three focused admin tests passed. On the live QA stack, the page was
+  readable at 1710×989 and 390×844, and Cancel returned to the report list;
+  the report stayed open, the bingo stayed visible, and no action was logged.
+  The production runbook requires a
+  staff VPN/identity gateway and MFA in front of `/admin/`; no target gateway
+  exists to test.
+
+### 2026-09-30 — WebKit live-flow CI diagnosis (`fbd1742`)
+
+- The run passed 40 of 41 full-stack browser scenarios and all other jobs.
+  Its WebKit failure was the strict page-error assertion at the end of the
+  editor reload scenario. The CI trace shows the saved draft rendered after
+  reload; the sole page error originated in Next.js development tools while
+  fetching `/__nextjs_original-stack-frames` after reload aborted an earlier
+  RSC request. The test now excludes only that devtools-origin stack-frame
+  lookup error and continues to fail on application page errors. The same
+  scenario passed locally in Firefox, WebKit, and Android emulation; TypeScript,
+  ESLint, and Prettier passed. The next exact-commit CI run remains required.
+
 ### Remaining local evidence to gather
 
 - Broader invalid input cases, keyboard and responsive flows for newly added

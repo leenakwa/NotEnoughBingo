@@ -44,6 +44,9 @@ class AccountAdmin(UserAdmin):
         ),
     )
 
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
 
 admin.site.register(UserProfile)
 admin.site.register(UserPrivacySettings)

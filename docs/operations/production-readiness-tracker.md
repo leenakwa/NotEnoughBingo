@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-09-30: **26 verified**, **55 partial**, **18 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
+Snapshot for 2026-09-30: **26 verified**, **56 partial**, **17 awaiting itemized review**, **5 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -134,7 +134,7 @@ unresolved failures or missing evidence.
 - [ ] 84. FEATURE FLAGS — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 85. DEBUG ARTIFACTS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 86. TEST / DEMO ACCOUNTS — Partial: deterministic `.test` fixtures and elevated E2E moderator cannot be created by the seed command under production settings; verify the target database has none and is isolated from staging. Payments are absent.
-- [ ] 87. ADMIN PANEL — Review pending: map original bullets to repository and runtime evidence.
+- [ ] 87. ADMIN PANEL — Partial: Django staff permissions, moderation audit, search/pagination, hard-delete guards, and confirmation for bounded moderation actions verified; external staff gateway remains.
 - [ ] 88. SUPPORT — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 89. LEGAL / BUSINESS FOOTER — Review pending: map original bullets to repository and runtime evidence.
 - [ ] 90. FOOTER — Review pending: map original bullets to repository and runtime evidence.

@@ -1588,12 +1588,12 @@ Verify:
 If an admin interface exists:
 
 - [ ] do not rely on obscurity;
-- [ ] authenticate;
-- [ ] authorize;
-- [ ] log important admin actions where appropriate;
-- [ ] confirm destructive actions;
-- [ ] support safe pagination/search;
-- [ ] prevent accidental mass production-data destruction.
+- [x] authenticate;
+- [x] authorize;
+- [x] log important admin actions where appropriate;
+- [x] confirm destructive actions;
+- [x] support safe pagination/search;
+- [x] prevent accidental mass production-data destruction.
 
 # 88. SUPPORT
 

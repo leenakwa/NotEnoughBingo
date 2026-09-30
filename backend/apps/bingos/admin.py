@@ -49,6 +49,9 @@ class BingoAdmin(admin.ModelAdmin):
     )
     inlines = (BingoTagInline,)
 
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
 
 @admin.register(Draft)
 class DraftAdmin(admin.ModelAdmin):

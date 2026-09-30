@@ -5,6 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from apps.common import health
 
 API_V1 = "api/v1/"
+admin.site.disable_action("delete_selected")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
