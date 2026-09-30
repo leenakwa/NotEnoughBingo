@@ -52,7 +52,10 @@ export function FeedPage({
             : await api.feeds.trending(page, signal);
         setResult(data);
       } catch (caught) {
-        if (!signal.aborted) setError(errorMessage(caught));
+        if (!signal.aborted) {
+          setResult(null);
+          setError(errorMessage(caught));
+        }
       } finally {
         if (!signal.aborted) setLoading(false);
       }
@@ -237,7 +240,10 @@ export function FeedPage({
             type="button"
             className="button button--secondary"
             disabled={!result.previous || loading}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            onClick={() => {
+              setResult(null);
+              setPage((value) => Math.max(1, value - 1));
+            }}
           >
             Previous
           </button>
@@ -246,7 +252,10 @@ export function FeedPage({
             type="button"
             className="button button--secondary"
             disabled={!result.next || loading}
-            onClick={() => setPage((value) => value + 1)}
+            onClick={() => {
+              setResult(null);
+              setPage((value) => value + 1);
+            }}
           >
             Next
           </button>

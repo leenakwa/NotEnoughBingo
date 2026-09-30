@@ -24,13 +24,16 @@ export function NotificationsView() {
     setAuthRequired(false);
     api.notifications
       .list(page, controller.signal)
-      .then(setResult)
+      .then((data) => {
+        if (!controller.signal.aborted) setResult(data);
+      })
       .catch((caught) => {
         if (controller.signal.aborted) return;
         if (isAuthenticationRequiredError(caught)) {
           setResult(null);
           setAuthRequired(true);
         } else {
+          setResult(null);
           setError(errorMessage(caught));
         }
       })
@@ -138,7 +141,10 @@ export function NotificationsView() {
             type="button"
             className="button button--secondary"
             disabled={!result.previous || loading}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            onClick={() => {
+              setResult(null);
+              setPage((value) => Math.max(1, value - 1));
+            }}
           >
             Previous
           </button>
@@ -147,7 +153,10 @@ export function NotificationsView() {
             type="button"
             className="button button--secondary"
             disabled={!result.next || loading}
-            onClick={() => setPage((value) => value + 1)}
+            onClick={() => {
+              setResult(null);
+              setPage((value) => value + 1);
+            }}
           >
             Next
           </button>

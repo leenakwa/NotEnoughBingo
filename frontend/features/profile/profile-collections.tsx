@@ -108,9 +108,14 @@ export function ProfileCollections({
                   .following(username, pageNumber, controller.signal)
                   .then((page) => ({ kind: "following", page }));
     request
-      .then(setCollection)
+      .then((data) => {
+        if (!controller.signal.aborted) setCollection(data);
+      })
       .catch((caught) => {
-        if (!controller.signal.aborted) setError(errorMessage(caught));
+        if (!controller.signal.aborted) {
+          setCollection(null);
+          setError(errorMessage(caught));
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -260,7 +265,10 @@ export function ProfileCollections({
             type="button"
             className="button button--secondary"
             disabled={!page.previous || loading}
-            onClick={() => setPageNumber((value) => Math.max(1, value - 1))}
+            onClick={() => {
+              setCollection(null);
+              setPageNumber((value) => Math.max(1, value - 1));
+            }}
           >
             Previous
           </button>
@@ -269,7 +277,10 @@ export function ProfileCollections({
             type="button"
             className="button button--secondary"
             disabled={!page.next || loading}
-            onClick={() => setPageNumber((value) => value + 1)}
+            onClick={() => {
+              setCollection(null);
+              setPageNumber((value) => value + 1);
+            }}
           >
             Next
           </button>

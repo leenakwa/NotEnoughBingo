@@ -51,6 +51,67 @@ test("primary navigation uses the production route names", async ({ page }) => {
   await expect(page.getByText("For You")).toHaveCount(0);
 });
 
+test("a failed feed page change hides the previous page and can be retried", async ({ page }) => {
+  let failSecondPage = true;
+  const bingo = {
+    id: "11111111-1111-4111-8111-111111111111",
+    title: "First page board",
+    description: "",
+    language: "en",
+    author: {
+      id: "22222222-2222-4222-8222-222222222222",
+      username: "author",
+      display_name: "Author",
+      avatar: null,
+    },
+    cover: null,
+    preview: null,
+    tags: [],
+    size: 3,
+    status: "published",
+    visibility: "public",
+    completion_style: "checkmark",
+    stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+    liked_by_me: false,
+    published_at: "2026-08-07T00:00:00Z",
+    updated_at: "2026-08-07T00:00:00Z",
+  };
+  await page.route("**/api/v1/feeds/discover/**", (route) => {
+    const secondPage = new URL(route.request().url()).searchParams.get("page") === "2";
+    if (secondPage && failSecondPage) {
+      return route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "unavailable", message: "Feed is unavailable." } }),
+      });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 2,
+        next: secondPage ? null : "http://localhost/api/v1/feeds/discover/?page=2",
+        previous: secondPage ? "http://localhost/api/v1/feeds/discover/?page=1" : null,
+        results: [{ ...bingo, title: secondPage ? "Second page board" : bingo.title }],
+      }),
+    });
+  });
+
+  await page.goto("/discover");
+  await expect(page.getByRole("heading", { name: "First page board" })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Discover pages" })
+    .getByRole("button", { name: "Next" })
+    .click();
+  await expect(page.getByRole("heading", { name: "First page board" })).toHaveCount(0);
+  await expect(page.locator(".page-state--error")).toContainText("Feed is unavailable.");
+
+  failSecondPage = false;
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { name: "Second page board" })).toBeVisible();
+  await expect(page.locator(".page-state--error")).toHaveCount(0);
+});
+
 test("guest creation offers signup and recovers from a session outage", async ({ page }) => {
   await page.route("**/api/v1/auth/session/", (route) =>
     route.fulfill({

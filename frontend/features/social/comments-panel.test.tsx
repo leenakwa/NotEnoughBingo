@@ -88,6 +88,34 @@ describe("CommentsPanel", () => {
     expect(await screen.findByText(created.body)).toBeVisible();
   });
 
+  it("does not show the previous comment page after a failed page change", async () => {
+    mocks.list
+      .mockResolvedValueOnce({
+        ...emptyPage,
+        count: 2,
+        next: "?page=2",
+        results: [comment("First page")],
+      })
+      .mockRejectedValueOnce(new Error("Comments are unavailable."))
+      .mockResolvedValueOnce({
+        ...emptyPage,
+        count: 2,
+        previous: "?page=1",
+        results: [comment("Second page")],
+      });
+    const user = userEvent.setup();
+    render(<CommentsPanel bingoId="33333333-3333-4333-8333-333333333333" viewer="guest" />);
+
+    expect(await screen.findByText("First page")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Comments are unavailable.")).toBeVisible();
+    expect(screen.queryByText("First page")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Second page")).toBeVisible();
+    expect(screen.queryByText("Comments are unavailable.")).not.toBeInTheDocument();
+  });
+
   it.each([
     [1, "View 1 reply"],
     [2, "View all 2 replies"],

@@ -2497,3 +2497,20 @@ observed results and their limits. Do not include credentials or session data.
   `v1.61.1-noble` image with browser binaries and system dependencies already
   installed. The pinned tag was checked with `docker manifest inspect`; the
   full replacement job and release gate still require an exact-source CI run.
+
+### 2026-09-30 — Pagination failure and retry states (section 4)
+
+- The Discover/Trending feeds, profile activity, notifications and comments
+  could keep the previous page's rows visible after a failed page change while
+  the pagination label had already advanced. Page changes now clear the old
+  collection before loading; failed list requests clear stale rows while
+  preserving a visible error and retry. The profile/notification list promises
+  also ignore a response after its request was aborted.
+- A Chromium browser scenario served page one, returned HTTP 503 for page two,
+  observed the first board disappear and the error appear, then retried and
+  observed only page-two content. A focused CommentsPanel test covered the
+  same failed-page/retry path; it passed 5/5. The full frontend gate passed
+  ESLint, TypeScript, Prettier and 149 unit tests. The local Playwright smoke
+  matrix passed 108 scenarios across Chromium, Firefox, WebKit and mobile
+  emulation, with 12 intentional platform skips. The remaining
+  component-by-component UI-state audit stays open.
