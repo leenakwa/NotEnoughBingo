@@ -2299,3 +2299,29 @@ observed results and their limits. Do not include credentials or session data.
   fingerprint was added to `.gitleaksignore`, without widening the rule or
   suppressing future findings. The same Gitleaks v8.30.1 Docker history scan
   then passed locally over 59 commits. Exact-source CI still needs to pass.
+
+### 2026-09-30 — Locked Python dependency graph (sections 70–72)
+
+- Source `a448963` passed foundation, backend, frontend, secret scan, both
+  production images and full-stack flows in CI. Its Browser smoke job was
+  cancelled, so the aggregate Release gate failed; the source has no complete
+  nine-job pass. The next committed source must pass that gate.
+- The frontend already commits `package-lock.json` and installs with `npm ci`.
+  The backend previously pinned only direct versions in `pyproject.toml`; its
+  production image and CI could resolve newer transitive packages on each
+  build. Generated universal Python 3.13 production and development locks
+  with 58 and 78 pinned packages respectively; all 58 production pins agree
+  in the development lock. The Docker builder installs the production lock,
+  installs the local package without resolving dependencies again, runs
+  `pip check`, and removes wheel-build artifacts. CI installs the development
+  lock, runs `pip check`, and audits the production lock. README documents
+  regeneration.
+- The production and development backend images built from the new files on
+  local ARM64. Importing Django, Pillow, psycopg, boto3 and ReportLab in the
+  production image returned their expected pinned versions. The development
+  image passed `pip check`, Ruff lint and format for 163 files, and mypy for
+  74 sources. Its initial lint pass found a generated `build/lib` copy of the
+  source; removing the build directory from the builder fixed that image-only
+  duplication. A local audit of the locked production graph found no known
+  vulnerabilities. The new lock/image combination still needs exact-source
+  x86_64 CI and full tests before section 71 closes.

@@ -112,6 +112,16 @@ production container images. Release image jobs assert a non-root runtime,
 fail on fixable high/critical vulnerabilities, and publish SPDX SBOM artifacts;
 repository history is scanned for secrets.
 
+Backend production and development dependency graphs are locked for Python
+3.13 in `backend/requirements.lock` and `backend/requirements-dev.lock`. After
+changing `backend/pyproject.toml`, regenerate both with `uv` and commit the
+resulting files:
+
+```bash
+uv pip compile --universal --python-version 3.13 backend/pyproject.toml -o backend/requirements.lock
+uv pip compile --universal --python-version 3.13 --extra dev backend/pyproject.toml -o backend/requirements-dev.lock
+```
+
 ## Environment and data
 
 `.env.example` is the source of truth for supported variables and safe local

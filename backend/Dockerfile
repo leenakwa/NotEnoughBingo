@@ -19,15 +19,18 @@ RUN apt-get update \
 
 RUN python -m venv "${VIRTUAL_ENV}"
 
-COPY pyproject.toml ./
+COPY pyproject.toml requirements.lock requirements-dev.lock ./
 COPY apps ./apps
 COPY config ./config
 COPY manage.py ./
 
-# Versions are constrained centrally by pyproject.toml.
+# Production dependencies, including transitive packages, use the committed lock.
 # hadolint ignore=DL3013
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && python -m pip install --no-cache-dir .
+    && python -m pip install --no-cache-dir -r requirements.lock \
+    && python -m pip install --no-cache-dir --no-deps . \
+    && python -m pip check \
+    && rm -rf build
 
 FROM builder AS development
 
@@ -38,9 +41,9 @@ RUN apt-get update \
        pango1.0-tools fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-# Development tool versions are constrained centrally by pyproject.toml.
+# The development lock includes the production graph and test tools.
 # hadolint ignore=DL3013
-RUN python -m pip install --no-cache-dir ".[dev]"
+RUN python -m pip install --no-cache-dir -r requirements-dev.lock
 
 COPY . .
 RUN chmod +x /app/docker-entrypoint.sh

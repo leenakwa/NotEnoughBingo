@@ -43,8 +43,10 @@ requirements. Stage 4 is in progress: source b464331 passed all nine CI jobs,
 including the repaired live language-filter scenario. The current abuse-limit,
 API-error, adversarial-input, and profile-feedback batch still needs its
 committed source release gate. CI for 37832bd passed all product/build jobs but
-failed the secret scan on a documented checklist false positive; the exact
-historical finding is locally suppressed and awaits the next source gate.
+failed the secret scan on a documented checklist false positive. Source
+a448963 fixed that finding and passed every completed job, but its browser
+smoke job was cancelled, leaving the aggregate gate red. The next source
+must pass all nine jobs.
 Registry promotion and rollback on the target platform remain untested.
 Stage 5 has no real deployment evidence yet; the user confirmed that providers
 and a domain have not been selected.
@@ -53,13 +55,12 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Verify the current release batch in CI: readable scoped rate-limit and
-   malformed-request errors, bounded adversarial-input checks, and local
-   profile action feedback. Source 37832bd was pushed to the draft PR. The
-   local backend/frontend/full-live gates passed (189/134/53), with four
-   focused live profile scenarios after the final UI edit. A subsequent
-   first-screen order/copy improvement passed its focused live route scenario;
-   commit it and verify its exact-source CI gate separately.
+1. Finish the new backend dependency-lock batch and verify the entire draft
+   PR on its next exact source in CI. The local backend/frontend/full-live
+   gates passed (189/134/53); the first-screen improvement passed its focused
+   live route scenario. Production and development images built with the new
+   Python locks on local ARM64, and locked production packages passed a
+   vulnerability audit. Exact-source x86_64 and full browser gates remain.
 2. Complete remaining repository-specific work in sections 1–8, 21, 24–25,
    34/36, 42/45, 61–63, 67, 71–72, 76–77, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager

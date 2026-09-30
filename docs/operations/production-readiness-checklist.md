@@ -1329,12 +1329,12 @@ Verify:
 
 Verify:
 
-- [ ] lockfile is committed;
-- [ ] clean install succeeds;
-- [ ] clean build succeeds;
-- [ ] application does not rely on globally installed developer packages;
-- [ ] runtime version is pinned/documented;
-- [ ] Node/Python/etc. versions match production;
+- [x] lockfile is committed;
+- [x] clean install succeeds;
+- [x] clean build succeeds;
+- [x] application does not rely on globally installed developer packages;
+- [x] runtime version is pinned/documented;
+- [x] Node/Python/etc. versions match production;
 - [ ] native packages work on production architecture.
 
 # 72. CI/CD
