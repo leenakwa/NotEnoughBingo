@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { AuthLink } from "@/components/auth/auth-link";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { AvatarImage } from "@/components/ui/avatar-image";
 import { LanguagePicker } from "@/components/ui/language-picker";
@@ -10,9 +10,19 @@ import { AccountSettings } from "@/features/profile/account-settings";
 import { ProfileCollections } from "@/features/profile/profile-collections";
 import { readProfileEdits, rememberProfileEdits } from "@/features/profile/profile-edit-cache";
 import { ReportDialog } from "@/features/social/report-dialog";
-import { notifyAuthChanged } from "@/lib/auth-events";
+import {
+  AUTH_SIGNED_IN_EVENT,
+  AUTH_SESSION_ENDED_EVENT,
+  notifyAuthChanged,
+} from "@/lib/auth-events";
+import { LANGUAGE_PREFERENCES_CHANGED_EVENT } from "@/lib/registration-onboarding";
 import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
-import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
+import {
+  api,
+  errorMessage,
+  fieldValidationMessage,
+  isAuthenticationRequiredError,
+} from "@/lib/api/client";
 import type { AuthenticatedUser, UserPrivacySettings, UserProfile } from "@/lib/api/types";
 
 const privacyLabels: Record<keyof UserPrivacySettings, string> = {
@@ -23,6 +33,8 @@ const privacyLabels: Record<keyof UserPrivacySettings, string> = {
   show_followers: "Show followers",
   show_following: "Show following",
 };
+
+type ProfileField = "username" | "display_name" | "bio";
 
 export function ProfileView({
   username,
@@ -42,13 +54,37 @@ export function ProfileView({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<ProfileField, string>>>({});
   const [feedbackAction, setFeedbackAction] = useState("profile");
   const [viewer, setViewer] = useState<AuthenticatedUser | "guest" | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
   const [loadVersion, setLoadVersion] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setLoadVersion((version) => version + 1);
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    window.addEventListener(LANGUAGE_PREFERENCES_CHANGED_EVENT, refresh);
+    return () => {
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+      window.removeEventListener(LANGUAGE_PREFERENCES_CHANGED_EVENT, refresh);
+    };
+  }, []);
   const initialProfileConsumed = useRef(false);
   const actionInFlight = useRef(false);
+  const profileFormRef = useRef<HTMLFormElement>(null);
+  const invalidFieldToFocus = useRef<ProfileField | undefined>(undefined);
+
+  useEffect(() => {
+    const field = invalidFieldToFocus.current;
+    if (pending || !field || !fieldErrors[field]) return;
+    invalidFieldToFocus.current = undefined;
+    profileFormRef.current
+      ?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${field}"]`)
+      ?.focus();
+  }, [pending, fieldErrors]);
 
   useUnsavedChangesWarning(
     ownProfile &&
@@ -140,7 +176,7 @@ export function ProfileView({
     return () => {
       active = false;
     };
-  }, [ownProfile]);
+  }, [ownProfile, loadVersion]);
 
   async function saveProfile() {
     if (!profile || actionInFlight.current) return;
@@ -149,6 +185,7 @@ export function ProfileView({
     setPending(true);
     setError("");
     setMessage("");
+    setFieldErrors({});
     try {
       const updated = await api.profiles.update({
         username: usernameValue.trim(),
@@ -162,7 +199,20 @@ export function ProfileView({
       notifyAuthChanged();
       setMessage("Profile saved.");
     } catch (caught) {
-      setError(errorMessage(caught));
+      const errors: Partial<Record<ProfileField, string>> = {};
+      for (const field of ["username", "display_name", "bio"] as const) {
+        const message = fieldValidationMessage(caught, field);
+        if (message) errors[field] = message;
+      }
+      setFieldErrors(errors);
+      const firstField = (["username", "display_name", "bio"] as const).find(
+        (field) => errors[field],
+      );
+      if (firstField) {
+        invalidFieldToFocus.current = firstField;
+      } else {
+        setError(errorMessage(caught));
+      }
     } finally {
       actionInFlight.current = false;
       setPending(false);
@@ -311,12 +361,12 @@ export function ProfileView({
             {pending ? "Saving…" : profile.is_following ? "Following" : "Follow"}
           </button>
         ) : !ownProfile && viewer === "guest" ? (
-          <Link
+          <AuthLink
             className="button button--primary"
             href={`/login?next=${encodeURIComponent(`/profile/${profile.username}`)}`}
           >
             Log in to follow
-          </Link>
+          </AuthLink>
         ) : null}
       </header>
 
@@ -331,6 +381,7 @@ export function ProfileView({
       {ownProfile ? (
         <section className="settings-grid" aria-labelledby="profile-settings-title">
           <form
+            ref={profileFormRef}
             className="settings-card"
             onSubmit={(event) => {
               event.preventDefault();
@@ -339,8 +390,9 @@ export function ProfileView({
           >
             <h2 id="profile-settings-title">Profile details</h2>
             <label className="field">
-              <span>Username</span>
+              <span id="profile-username-label">Username</span>
               <input
+                aria-labelledby="profile-username-label"
                 name="username"
                 disabled={pending}
                 minLength={3}
@@ -350,33 +402,80 @@ export function ProfileView({
                 autoCapitalize="none"
                 spellCheck={false}
                 required
+                aria-invalid={Boolean(fieldErrors.username)}
+                aria-describedby={
+                  fieldErrors.username
+                    ? "profile-username-hint profile-username-error"
+                    : "profile-username-hint"
+                }
                 value={usernameValue}
-                onChange={(event) => setUsernameValue(event.target.value)}
+                onChange={(event) => {
+                  setUsernameValue(event.target.value);
+                  setFieldErrors((current) => ({ ...current, username: undefined }));
+                }}
                 onBlur={(event) => setUsernameValue(event.target.value.trim())}
               />
+              <small id="profile-username-hint">
+                3–30 characters. Letters, numbers, and underscores.
+              </small>
+              {fieldErrors.username ? (
+                <small id="profile-username-error" className="form-message--error" role="alert">
+                  {fieldErrors.username}
+                </small>
+              ) : null}
             </label>
             <label className="field">
-              <span>Display name</span>
+              <span id="profile-name-label">Display name</span>
               <input
-                name="name"
+                aria-labelledby="profile-name-label"
+                name="display_name"
                 autoComplete="name"
                 disabled={pending}
                 maxLength={80}
+                aria-invalid={Boolean(fieldErrors.display_name)}
+                aria-describedby={
+                  fieldErrors.display_name
+                    ? "profile-name-hint profile-name-error"
+                    : "profile-name-hint"
+                }
                 value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
+                onChange={(event) => {
+                  setDisplayName(event.target.value);
+                  setFieldErrors((current) => ({ ...current, display_name: undefined }));
+                }}
               />
+              <small id="profile-name-hint">Optional. Up to 80 characters.</small>
+              {fieldErrors.display_name ? (
+                <small id="profile-name-error" className="form-message--error" role="alert">
+                  {fieldErrors.display_name}
+                </small>
+              ) : null}
             </label>
             <label className="field">
-              <span>Bio</span>
+              <span id="profile-bio-label">Bio</span>
               <textarea
+                aria-labelledby="profile-bio-label"
                 name="bio"
                 autoComplete="off"
                 disabled={pending}
                 rows={4}
                 maxLength={280}
+                aria-invalid={Boolean(fieldErrors.bio)}
+                aria-describedby={
+                  fieldErrors.bio ? "profile-bio-hint profile-bio-error" : "profile-bio-hint"
+                }
                 value={bio}
-                onChange={(event) => setBio(event.target.value)}
+                onChange={(event) => {
+                  setBio(event.target.value);
+                  setFieldErrors((current) => ({ ...current, bio: undefined }));
+                }}
               />
+              <small id="profile-bio-hint">Optional. Up to 280 characters.</small>
+              {fieldErrors.bio ? (
+                <small id="profile-bio-error" className="form-message--error" role="alert">
+                  {fieldErrors.bio}
+                </small>
+              ) : null}
             </label>
             <button type="submit" className="button button--primary" disabled={pending}>
               {pending && feedbackAction === "profile" ? "Saving profile…" : "Save profile"}

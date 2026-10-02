@@ -121,6 +121,13 @@ Build each production image once, scan it, record its digest and SBOM, and
 promote that exact digest. Both production images declare non-root users. Do
 not inject `.env` files or build contexts containing secrets.
 
+Release builds must pull the current base image and refresh the production
+stage's OS-package installation instead of reusing an old package layer. CI
+uses `pull: true` and `no-cache-filters: production`; a manual Buildx release
+build must use `--pull --no-cache-filter production` before scanning. The
+backend updates installed base packages from the configured Debian repositories
+before adding its runtime libraries.
+
 Browser source maps are private for this release: they can expose original
 source and internal paths, so do not serve them or upload them to a public URL.
 No monitoring-provider map upload is configured or required for launch. The CI

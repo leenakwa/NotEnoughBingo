@@ -8,6 +8,13 @@ of work; it does not reduce the checklist.
 
 ## Working rules
 
+- On 2026-10-03 the user confirmed that all subsequent local interface changes
+  are intentional. Preserve the account dialogs, one-time registration language
+  dialog, fixed header, hover treatment and removal of catalog/search language
+  pickers. Language preferences remain in profile settings; the original
+  requirement for page-level language pickers is superseded. Keep the original
+  prompt intact and audit the current intended behavior.
+
 - Preserve the current uncommitted work. Record changes and verification before
   preparing a release commit.
 - For each applicable checklist item, inspect the implementation, exercise the
@@ -65,10 +72,16 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Verify the current support-email copy and static WebKit test selector on
-   their exact source. The pagination and CSRF corrections passed all nine CI
-   jobs on `cb812e2`; keep the draft PR open while remaining local checklist
-   items are audited.
+1. Finish verification of the current combined interface changes and profile
+   validation recovery. CI on `a847b76` passed product/backend/frontend and
+   browser jobs but failed the backend image scan on fixable OpenSSL packages.
+   The refreshed local arm64 runtime image passed the High/Critical scan on
+   2026-10-03; the corresponding x86_64 CI release gate is still required.
+   Keep the draft PR open while remaining local checklist items are audited.
+   Current local evidence: 161 frontend tests; the live sweep passed 54/56,
+   then both profile cases and three repeated WebKit compatibility journeys
+   passed after fixing their remaining label/navigation issues. The four
+   signup smoke expectations now pass against the intended dialog flow.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager

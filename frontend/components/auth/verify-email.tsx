@@ -1,17 +1,28 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthLink } from "@/components/auth/auth-link";
 import { api, errorMessage } from "@/lib/api/client";
 import { notifyAuthChanged } from "@/lib/auth-events";
+import { markRegistrationVerified } from "@/lib/registration-onboarding";
 
-export function VerifyEmail({ mode = "registration" }: { mode?: "registration" | "email-change" }) {
+export function VerifyEmail({
+  mode = "registration",
+  registrationEmail,
+  presentation = "page",
+  onPendingChange,
+}: {
+  mode?: "registration" | "email-change";
+  registrationEmail?: string;
+  presentation?: "page" | "dialog";
+  onPendingChange?: (pending: boolean) => void;
+}) {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const email = searchParams.get("email");
+  const token = registrationEmail === undefined ? searchParams.get("token") : null;
+  const email = registrationEmail ?? searchParams.get("email");
   const [state, setState] = useState<"waiting" | "verifying" | "verified" | "error">(
     token ? "verifying" : "waiting",
   );
@@ -24,8 +35,9 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
     if (!token || submittedToken.current === token) return;
     submittedToken.current = token;
     (mode === "email-change" ? api.auth.confirmEmailChange(token) : api.auth.verifyEmail(token))
-      .then(() => {
+      .then((user) => {
         if (mode === "email-change") notifyAuthChanged();
+        else if (user) markRegistrationVerified(user.id);
         setState("verified");
         window.history.replaceState(null, "", window.location.pathname);
         setMessage(
@@ -44,6 +56,7 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
     if (!email || resendInFlight.current || state === "verifying") return;
     resendInFlight.current = true;
     setResending(true);
+    onPendingChange?.(true);
     setMessage("");
     try {
       await api.auth.resendVerification(email);
@@ -57,11 +70,13 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
     } finally {
       resendInFlight.current = false;
       setResending(false);
+      onPendingChange?.(false);
     }
   }
 
   return (
     <AuthShell
+      presentation={presentation}
       eyebrow={mode === "email-change" ? "Change email" : "Email verification"}
       title={
         state === "verified"
@@ -85,12 +100,12 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
         {state === "verifying" ? "Verifying…" : message}
       </p>
       {state === "verified" ? (
-        <Link
+        <AuthLink
           className="button button--primary"
           href={mode === "email-change" ? "/profile" : "/login"}
         >
           {mode === "email-change" ? "Back to profile" : "Continue to log in"}
-        </Link>
+        </AuthLink>
       ) : null}
       {mode === "registration" && state !== "verified" && email ? (
         <>
@@ -103,8 +118,8 @@ export function VerifyEmail({ mode = "registration" }: { mode?: "registration" |
             {resending ? "Sending…" : "Resend verification email"}
           </button>
           <p>
-            Already have an account? <Link href="/login">Log in</Link> or{" "}
-            <Link href="/forgot-password">reset your password</Link>.
+            Already have an account? <AuthLink href="/login">Log in</AuthLink> or{" "}
+            <AuthLink href="/forgot-password">reset your password</AuthLink>.
           </p>
         </>
       ) : null}

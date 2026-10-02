@@ -72,7 +72,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
   }
 
   return (
-    <article ref={articleRef} className="bingo-card">
+    <article ref={articleRef} className="bingo-card hover-lift">
       <Link
         className="bingo-card__main"
         href={cardHref}

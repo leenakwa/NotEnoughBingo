@@ -18,14 +18,18 @@ test("browse, filter, play, share, and start a draft across browser engines", as
 
   await page.goto("/discover");
   await expect(page.locator(".bingo-card").filter({ hasText: bingo.title })).toBeVisible();
-  await page.locator(".language-filter summary").click();
-  const languages = page.getByRole("group", { name: "Show bingos in" });
-  await languages.getByLabel("Russian").check();
-  await expect(page.getByRole("heading", { name: "No bingos in these languages" })).toBeVisible();
-  await languages.getByLabel("English").check();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Search by title" }).fill(bingo.title);
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Bingo languages" })).toHaveCount(0);
   await expect(page.locator(".bingo-card").filter({ hasText: bingo.title })).toBeVisible();
 
-  await page.goto(`/bingo/${bingo.id}`);
+  await page
+    .locator(".bingo-card")
+    .filter({ hasText: bingo.title })
+    .locator(".bingo-card__main")
+    .click();
   await expect(page.getByRole("heading", { name: bingo.title })).toBeVisible();
   await page.getByRole("radio", { name: "Cross" }).check();
   await page.getByRole("button", { name: bingo.cell_texts[0], exact: true }).click();

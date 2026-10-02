@@ -2557,3 +2557,116 @@ observed results and their limits. Do not include credentials or session data.
   touched backend code. Delivery,
   sender authentication and inbox rendering remain unverified without a
   domain and transactional email provider.
+
+### 2026-10-03 — Runtime image security refresh (sections 48, 72, 105)
+
+- Exact-source CI run `36763640431` on `a847b76` completed with successful
+  backend/frontend quality, secret/foundation, browser smoke, full-stack and
+  frontend-image jobs. The backend-image job and release gate failed: the
+  Debian OpenSSL packages had fixable High findings CVE-2026-75804 and
+  CVE-2026-84782. This replaces the earlier pending status; that source is not
+  a passing release artifact.
+- The backend production layer now upgrades installed base packages before
+  installing runtime libraries. CI pulls the base and excludes the production
+  stage from its build cache, so an old successful runtime layer cannot hide
+  new security package fixes. The deployment runbook records the corresponding
+  manual Buildx flags. Python dependency locks are unchanged.
+- An initial OpenSSL-only repair exposed another fixable system-package
+  finding, CVE-2026-103111 in PCRE2. The final base-package upgrade installed
+  OpenSSL `3.5.7-1~deb13u3` and PCRE2 `10.46-1~deb13u3`. Native Python SSL,
+  PIL, psycopg and reportlab imports succeeded. `hadolint backend/Dockerfile`
+  passed. Trivy `0.70.0 image --scanners vuln --severity HIGH,CRITICAL
+  --ignore-unfixed --exit-code 1` passed for the final local arm64 backend image
+  with zero selected findings. This does not assert absence of all
+  vulnerabilities or prove the pending x86_64 CI build.
+- Debian's [OpenSSL first advisory](https://security-tracker.debian.org/tracker/CVE-2026-75804),
+  [second advisory](https://security-tracker.debian.org/tracker/CVE-2026-84782)
+  and [PCRE2 advisory](https://security-tracker.debian.org/tracker/CVE-2026-103111)
+  list the fixed trixie-security versions. The cache/pull inputs were checked
+  against [Docker's build action documentation](https://github.com/docker/build-push-action#inputs).
+
+### 2026-10-03 — Profile validation and intended interface changes (sections 7, 15, 24)
+
+- The user confirmed all subsequent local UI edits are intentional. Account
+  forms open over the current page, registration language choice is a one-time
+  dialog, settings retain language preferences, and catalog/search language
+  pickers are removed. Fixed-header and hover/shadow changes are retained. The
+  original prompt remains byte-for-byte intact; page-level language-picker
+  requirements are superseded by this later instruction.
+- Profile username/display-name/bio validation now exposes errors beside their
+  controls, links them with `aria-describedby`, sets `aria-invalid`, clears
+  stale field errors on edit and retains other entries. The initial timer-based
+  focus attempt failed in a real browser because inputs were still disabled.
+  Focus now follows the React commit that reenables inputs. A real PostgreSQL
+  duplicate-username response returned 400, focused the username, retained the
+  Unicode bio, and a corrected retry returned 200. The targeted Chromium test
+  passed; screenshots at 320 and 1710 px were inspected with no horizontal
+  overflow. Inline error text no longer inherits the muted hint color.
+- The frontend gate passed ESLint, TypeScript, 161 unit tests and Prettier.
+  Generated `.playwright-cli/` snapshots were already Git-ignored but caused
+  formatting failures; they are now also excluded from formatting checks.
+- The three new static UI suites completed 67/68 checks across Chromium,
+  Firefox, WebKit and mobile emulation. The single WebKit failure was a
+  development HMR chunk load error recorded by the page-error assertion; all
+  UI/focus/Axe assertions in that case passed. Three focused WebKit repeats
+  then passed without errors. A wider smoke sweep passed 172, skipped 12
+  platform-specific cases and failed four instances of an outdated test that
+  still expected signup navigation. That assertion now checks the signup
+  dialog and unchanged page. The combined-source regression remains in progress.
+- The frontend arm64 production image built with an explicitly synthetic HTTPS
+  preview origin and support identity; Trivy's High/Critical fixable-finding
+  gate passed. The later session-recovery correction still needs an updated
+  production artifact and exact-source CI. No public provider or domain was
+  configured or deployed.
+
+### 2026-10-03 — Session recovery with account dialogs (sections 4, 13, 14, 73)
+
+- Updating the expired-session tests to the intended dialog UI exposed a real
+  editor failure: unsaved cells survived login, but the failed-fingerprint guard
+  prevented autosave from resuming. Successful login now clears that guard;
+  normal conflicts still require explicit resolution.
+- A confirmed authenticated-to-guest transition now emits a session-ended
+  event. Profile, notifications, editor and play recheck their access/state
+  while the login dialog stays over the current route. This also hides private
+  profile controls after cross-tab logout. A different editor account triggers
+  a reload to recheck draft ownership and discard the previous account's
+  in-memory editor state.
+- Three targeted Chromium cases passed against the isolated `nebqa` stack:
+  expired-session editor recovery, a protected progress save returning 401
+  followed by successful login/recovered save, and cross-tab logout with
+  hidden private profile fields after closing the dialog. Added a reload
+  persistence assertion and a separate different-account editor regression;
+  both passed in the combined live run. The different account saw an ownership
+  error, no previous-account cell, and no Save draft control. The recovered
+  original-account cell survived reload after autosave.
+- The combined live run passed 54/56. A profile dirty-navigation test exposed
+  that hints nested in labels had changed the accessible field names; the
+  three profile controls now use explicit label references while hints/errors
+  remain descriptions. Both profile validation and dirty Back/Forward,
+  navigation-warning and save cases then passed in a targeted rerun.
+- The other failure was WebKit reporting two same-origin session fetches as
+  access-control errors when a test immediately unloaded the initial document.
+  The trace places them after the next hard navigation begins; subsequent
+  session responses were 200 and every user-flow assertion passed. The
+  compatibility scenario now clicks Explore, submits Search and opens the
+  result card through the interface. It keeps page-error assertions and its
+  reload-persistence checks. After correcting the new search locator to its
+  native searchbox role, three repeated WebKit runs passed with no page errors.
+- All four corrected guest-signup smoke cases passed across Chromium, mobile,
+  Firefox and WebKit. The 161-test frontend gate, formatting, Dockerfile lint,
+  diff whitespace check and 105-section/1,142-item checklist integrity check
+  passed. The draft release still needs CI on the final combined source;
+  the local results above must not be represented as a green release gate.
+
+### 2026-10-03 — Database structural inventory (section 42, partial)
+
+- Read-only Django/PostgreSQL introspection compared the application models
+  with the isolated running database: 31 managed application tables, 47 named
+  explicit indexes, 37 named explicit constraints, 62 unique/primary-key
+  fields, 67 foreign keys and 67 nullable columns. Every named index/constraint,
+  field uniqueness, foreign key and column-nullability check matched; no schema
+  mismatch was reported. No rows were changed during this inspection.
+- This establishes installed structure, not high-volume query performance.
+  Catalog/author and notification filter/sort queries still need representative
+  data and query-plan inspection; migration lock/runtime measurements and the
+  target database deployment/backup/rollback contract remain open.

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AuthLink } from "@/components/auth/auth-link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -14,6 +15,7 @@ import { CommentsPanel } from "@/features/social/comments-panel";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { trackInteraction } from "@/lib/analytics";
 import { api, ApiClientError, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
+import { AUTH_SIGNED_IN_EVENT, AUTH_SESSION_ENDED_EVENT } from "@/lib/auth-events";
 import {
   clearGuestProgress,
   makeIdempotencyKey,
@@ -69,6 +71,25 @@ export function BingoPlayer({
   const completedRevision = useRef<string | null>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const initialBingoConsumed = useRef(false);
+  const guestSelectionToSync = useRef<string[] | null>(null);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (viewer === "guest" && selected.size > 0) guestSelectionToSync.current = [...selected];
+      setLoadVersion((version) => version + 1);
+    };
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    const sessionEnded = () => {
+      guestSelectionToSync.current = null;
+      setSelected(new Set());
+      setLoadVersion((version) => version + 1);
+    };
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+    return () => {
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+    };
+  }, [viewer, selected]);
 
   useEffect(() => {
     let active = true;
@@ -183,6 +204,13 @@ export function BingoPlayer({
             skipNextSync.current = false;
           } else {
             skipNextSync.current = true;
+          }
+          if (guestSelectionToSync.current) {
+            const validIds = new Set(detail.current_revision.cells.map(revisionCellKey));
+            const guestCells = guestSelectionToSync.current.filter((id) => validIds.has(id));
+            setSelected((current) => new Set([...current, ...guestCells]));
+            guestSelectionToSync.current = null;
+            skipNextSync.current = false;
           }
         }
         if (!active) return;
@@ -537,12 +565,12 @@ export function BingoPlayer({
               {bingo.liked_by_me ? "Liked" : "Like"} · {bingo.stats.likes}
             </button>
           ) : viewer === "guest" ? (
-            <Link
+            <AuthLink
               className="button button--secondary"
               href={`/login?next=${encodeURIComponent(`/bingo/${bingoId}`)}`}
             >
               Log in to like
-            </Link>
+            </AuthLink>
           ) : viewer === null && playable ? (
             <span className="button button--secondary play-action-placeholder" aria-hidden="true">
               Log in to like

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
+import { AUTH_SIGNED_IN_EVENT, AUTH_SESSION_ENDED_EVENT } from "@/lib/auth-events";
 import type { Notification, Page } from "@/lib/api/types";
 import { formatLocalDateTime } from "@/lib/date-time";
 
@@ -16,6 +17,16 @@ export function NotificationsView() {
   const [error, setError] = useState("");
   const [authRequired, setAuthRequired] = useState(false);
   const [loadVersion, setLoadVersion] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setLoadVersion((version) => version + 1);
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    return () => {
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();

@@ -49,27 +49,12 @@ test("mobile WebKit guest can play, persist progress, and open an immutable shar
   await expect(page.getByRole("link", { name: "Play this bingo" })).toBeVisible();
 });
 
-test("mobile WebKit language and play-mark controls work without overflow", async ({ page }) => {
+test("mobile WebKit catalog and play-mark controls work without overflow", async ({ page }) => {
   const bingo = readLiveFixture().bingos.public;
 
   await page.goto("/discover");
-  await page.locator(".language-filter summary").tap();
-  const languages = page.getByRole("group", { name: "Show bingos in" });
-  await languages.getByLabel("Russian").check();
-  await expect(page.getByRole("heading", { name: "No bingos in these languages" })).toBeVisible();
-  await languages.getByLabel("English").check();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
   await expect(page.locator(".bingo-card").filter({ hasText: bingo.title })).toBeVisible();
-  await page.locator(".language-filter summary").focus();
-  await page.keyboard.press("Space");
-  await expect(page.locator(".language-filter")).not.toHaveAttribute("open", "");
-  await page.keyboard.press("Space");
-  await expect(languages.getByLabel("English")).toBeVisible();
-
-  const languageTargetHeight = await page
-    .locator(".language-options label")
-    .first()
-    .evaluate((element) => element.getBoundingClientRect().height);
-  expect(languageTargetHeight).toBeGreaterThanOrEqual(44);
 
   await page.goto(`/bingo/${bingo.id}`);
   await page.getByRole("radio", { name: "Cross" }).check();
@@ -97,15 +82,13 @@ test("mobile WebKit language and play-mark controls work without overflow", asyn
   expect(layout.minimumMarkTarget).toBeGreaterThanOrEqual(44);
 });
 
-test("mobile navigation, language, card, and footer actions have usable touch targets", async ({
-  page,
-}) => {
+test("mobile navigation, card, and footer actions have usable touch targets", async ({ page }) => {
   await page.goto("/discover");
   await expect(page.locator(".bingo-card").first()).toBeVisible();
   await expect(async () => {
     const geometry = await page
       .locator(
-        ".site-header a, .language-filter summary, .bingo-card__tags a, .bingo-card__actions a, .bingo-card__actions button, .site-footer a",
+        ".site-header a, .bingo-card__tags a, .bingo-card__actions a, .bingo-card__actions button, .site-footer a",
       )
       .evaluateAll((elements) => ({
         targets: elements.map((element) => {
@@ -130,6 +113,5 @@ test("mobile navigation, language, card, and footer actions have usable touch ta
   await expect(page).toHaveURL(/\/explore$/);
   await page.getByRole("link", { name: "Discover", exact: true }).tap();
   await expect(page).toHaveURL(/\/discover$/);
-  await page.locator(".language-filter summary").tap();
-  await expect(page.getByRole("group", { name: "Show bingos in" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Show bingos in" })).toHaveCount(0);
 });

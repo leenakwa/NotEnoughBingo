@@ -54,8 +54,10 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 FROM python-base AS production
 
 # Runtime libraries only; build tools never reach the production image.
-# hadolint ignore=DL3008
+# Refresh base packages for security fixes that have not reached the Python image.
+# hadolint ignore=DL3005,DL3008
 RUN apt-get update \
+    && apt-get upgrade --no-install-recommends -y \
     && apt-get install --no-install-recommends -y \
        libjpeg62-turbo libpq5 zlib1g \
        pango1.0-tools fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \

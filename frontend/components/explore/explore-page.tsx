@@ -4,7 +4,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BingoGrid } from "@/components/bingo/bingo-grid";
-import { LanguagePicker } from "@/components/ui/language-picker";
 import { SearchIcon } from "@/components/ui/icons";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage } from "@/lib/api/client";
@@ -31,7 +30,6 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   const [search, setSearch] = useState(appliedSearch);
   const [author, setAuthor] = useState(appliedAuthor);
   const [tags, setTags] = useState(appliedTags);
-  const [languages, setLanguages] = useState(appliedLanguages);
   const [ordering, setOrdering] = useState<"popular" | "newest">(appliedOrdering);
   const [result, setResult] = useState<Page<BingoSummary> | null>(initialResult ?? null);
   const [loading, setLoading] = useState(!initialResult);
@@ -96,7 +94,6 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
     setAuthor(appliedAuthor);
     setTags(appliedTags);
     setTagError("");
-    setLanguages(appliedLanguages);
     setOrdering(appliedOrdering);
   }, [appliedAuthor, appliedOrdering, appliedSearch, appliedTags, appliedLanguages]);
 
@@ -142,7 +139,10 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
     };
   }, [tags]);
 
-  function updateUrl(nextPage: number, filters = { search, author, tags, languages, ordering }) {
+  function updateUrl(
+    nextPage: number,
+    filters = { search, author, tags, languages: appliedLanguages, ordering },
+  ) {
     const next = new URLSearchParams();
     if (filters.search.trim()) next.set("search", filters.search.trim());
     if (filters.author.trim()) next.set("author", filters.author.trim());
@@ -213,7 +213,6 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
     setSearch(next.search);
     setAuthor(next.author);
     setTags(next.tags);
-    setLanguages(next.languages);
     setOrdering(next.ordering);
     updateUrl(1, next);
   }
@@ -233,7 +232,11 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
       </header>
 
       <form onSubmit={submit}>
-        <fieldset className="filter-panel" disabled={!interactive} aria-busy={!interactive}>
+        <fieldset
+          className="filter-panel hover-lift"
+          disabled={!interactive}
+          aria-busy={!interactive}
+        >
           <legend className="sr-only">Search filters</legend>
           <label className="field">
             <span>Search by title</span>
@@ -311,7 +314,6 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
               ))}
             </datalist>
           </label>
-          <LanguagePicker value={languages} onChange={setLanguages} label="Bingo languages" />
           <fieldset className="sort-options">
             <legend>Sort</legend>
             <label>
@@ -356,7 +358,6 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
                 setSearch("");
                 setAuthor("");
                 setTags("");
-                setLanguages([]);
                 setOrdering("popular");
                 router.replace(pathname, { scroll: false });
               }}

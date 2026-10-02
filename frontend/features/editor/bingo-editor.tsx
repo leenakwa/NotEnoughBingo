@@ -33,6 +33,7 @@ import {
   type EditorStep,
 } from "@/features/editor/editor-state";
 import { api, ApiClientError, errorMessage } from "@/lib/api/client";
+import { AUTH_SIGNED_IN_EVENT, AUTH_SESSION_ENDED_EVENT } from "@/lib/auth-events";
 import { makeIdempotencyKey } from "@/lib/guest-progress";
 import type { BingoDraft, BingoExportFormat, ExportJob, MediaAsset } from "@/lib/api/types";
 import { uploadImage, type UploadPhase } from "@/lib/uploads";
@@ -105,6 +106,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const recoveredConflictDocument = useRef<EditorDocumentSnapshot | null>(null);
   const preserveRecovery = useRef(false);
   const recoveryCheckedFor = useRef("");
+  const authenticatedOwner = useRef("");
 
   const currentFingerprint = editorDocumentFingerprint(state);
   const dirty = currentFingerprint !== savedFingerprint;
@@ -112,6 +114,20 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const updateSaveStatus = useCallback((status: EditorSaveStatusValue) => {
     saveStatusRef.current = status;
     setSaveStatus(status);
+  }, []);
+
+  useEffect(() => {
+    const refresh = () => {
+      failedFingerprint.current = null;
+      setAuthCheckVersion((version) => version + 1);
+    };
+    const sessionEnded = () => setAuthCheckVersion((version) => version + 1);
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+    return () => {
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+    };
   }, []);
 
   useEffect(() => {
@@ -135,6 +151,12 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           setHydrating(false);
           return;
         }
+        if (authenticatedOwner.current && authenticatedOwner.current !== user.id) {
+          // Reload rechecks draft ownership and discards the previous account's in-memory editor.
+          window.location.reload();
+          return;
+        }
+        authenticatedOwner.current = user.id;
         setAccountId(user.id);
         setAccountEmail(user.email);
         setAuthState(user.email_verified ? "allowed" : "unverified");

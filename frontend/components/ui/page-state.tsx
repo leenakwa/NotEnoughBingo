@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AuthLink } from "@/components/auth/auth-link";
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
@@ -42,13 +42,13 @@ export function EmptyState({
       <p>{description}</p>
       {action ? (
         <div className="page-state__actions">
-          <Link className="button button--primary" href={action.href}>
+          <AuthLink className="button button--primary" href={action.href}>
             {action.label}
-          </Link>
+          </AuthLink>
           {secondaryAction ? (
-            <Link className="button button--secondary" href={secondaryAction.href}>
+            <AuthLink className="button button--secondary" href={secondaryAction.href}>
               {secondaryAction.label}
-            </Link>
+            </AuthLink>
           ) : null}
         </div>
       ) : null}

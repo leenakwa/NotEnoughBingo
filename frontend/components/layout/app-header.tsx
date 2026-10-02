@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 import { BellIcon, PlusIcon, UserIcon } from "@/components/ui/icons";
 import { AvatarImage } from "@/components/ui/avatar-image";
+import { AuthLink } from "@/components/auth/auth-link";
 import { api, isAuthenticationRequiredError } from "@/lib/api/client";
-import { AUTH_CHANGED_EVENT, AUTH_REQUIRED_EVENT, AUTH_SYNC_KEY } from "@/lib/auth-events";
+import {
+  AUTH_CHANGED_EVENT,
+  AUTH_REQUIRED_EVENT,
+  AUTH_SYNC_KEY,
+  AUTH_SESSION_ENDED_EVENT,
+  openAuthDialog,
+} from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
 
 const navigation = [
@@ -18,6 +25,8 @@ const navigation = [
 
 interface HeaderViewProps {
   avatarUrl?: string;
+  headerRef?: RefObject<HTMLElement | null>;
+  hasScrolled?: boolean;
   pathname: string;
   user: AuthenticatedUser | null;
   unreadCount: number;
@@ -62,23 +71,33 @@ function AccountNavigation({ avatarUrl, pathname, unreadCount, user }: HeaderVie
           ) : null}
         </Link>
       ) : null}
-      <Link
+      <AuthLink
         className="icon-link"
         href={user ? "/profile" : "/login"}
         aria-label={user ? `Profile for ${user.display_name}` : "Log in"}
         aria-current={pathname.startsWith("/profile") ? "page" : undefined}
       >
         <AvatarImage src={avatarUrl} width={34} height={34} fallback={<UserIcon />} />
-      </Link>
+      </AuthLink>
     </div>
   );
 }
 
-export function ClassicAppHeader({ avatarUrl, pathname, unreadCount, user }: HeaderViewProps) {
+export function ClassicAppHeader({
+  avatarUrl,
+  headerRef,
+  hasScrolled = false,
+  pathname,
+  unreadCount,
+  user,
+}: HeaderViewProps) {
   const createIsActive = pathname.startsWith("/create");
 
   return (
-    <header className="site-header site-header--classic">
+    <header
+      ref={headerRef}
+      className={`site-header site-header--classic${hasScrolled ? " is-scrolled" : ""}`}
+    >
       <div className="classic-header__left">
         <Link className="brand-link" href="/discover" aria-label="Not Enough Bingo home">
           Not Enough Bingo
@@ -112,11 +131,21 @@ export function ClassicAppHeader({ avatarUrl, pathname, unreadCount, user }: Hea
   );
 }
 
-export function ModernAppHeader({ avatarUrl, pathname, unreadCount, user }: HeaderViewProps) {
+export function ModernAppHeader({
+  avatarUrl,
+  headerRef,
+  hasScrolled = false,
+  pathname,
+  unreadCount,
+  user,
+}: HeaderViewProps) {
   const createIsActive = pathname.startsWith("/create");
 
   return (
-    <header className="site-header site-header--modern">
+    <header
+      ref={headerRef}
+      className={`site-header site-header--modern${hasScrolled ? " is-scrolled" : ""}`}
+    >
       <Link className="brand-link" href="/discover" aria-label="Not Enough Bingo home">
         Not Enough Bingo
       </Link>
@@ -148,10 +177,43 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
   const currentUserId = useRef<string | null | undefined>(undefined);
   const refreshVersion = useRef(0);
   const authenticationCheckInFlight = useRef(false);
   const avatarUrl = user?.avatar?.thumbnail_url ?? user?.avatar?.url ?? undefined;
+
+  useEffect(() => {
+    const header = headerRef.current;
+    // Desktop WebKit shifts fixed layers during native rubber-banding.
+    const correctRubberBand =
+      /Macintosh/.test(navigator.userAgent) &&
+      /AppleWebKit/.test(navigator.userAgent) &&
+      !/Chrome|Chromium|Edg|OPR/.test(navigator.userAgent) &&
+      !navigator.maxTouchPoints;
+    let previous = false;
+    let previousOffset = 0;
+    const updateScroll = () => {
+      const offset = correctRubberBand ? Math.min(0, window.scrollY) : 0;
+      if (header && offset !== previousOffset) {
+        previousOffset = offset;
+        if (offset < 0) header.style.setProperty("--header-overscroll-top", `${offset}px`);
+        else header.style.removeProperty("--header-overscroll-top");
+      }
+      const next = window.scrollY > 0;
+      if (next !== previous) {
+        previous = next;
+        setHasScrolled(next);
+      }
+    };
+    updateScroll();
+    window.addEventListener("scroll", updateScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", updateScroll);
+      header?.style.removeProperty("--header-overscroll-top");
+    };
+  }, []);
 
   const refreshUser = useCallback(
     (redirectIfChanged = false) => {
@@ -163,12 +225,13 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
         currentUserId.current = nextId;
         setUser(next);
         if (redirectIfChanged && previousId !== undefined && previousId !== nextId) {
-          const destination =
-            nextId === null
-              ? `/login?reason=session-expired&next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`
-              : "/trending";
-          router.replace(destination);
-          router.refresh();
+          if (nextId === null) {
+            window.dispatchEvent(new Event(AUTH_SESSION_ENDED_EVENT));
+            openAuthDialog({ mode: "login", reason: "session-expired" });
+          } else {
+            router.replace("/trending");
+            router.refresh();
+          }
         }
       };
       return api.auth
@@ -224,6 +287,13 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   const HeaderView = variant === "modern" ? ModernAppHeader : ClassicAppHeader;
 
   return (
-    <HeaderView avatarUrl={avatarUrl} pathname={pathname} unreadCount={unreadCount} user={user} />
+    <HeaderView
+      avatarUrl={avatarUrl}
+      headerRef={headerRef}
+      hasScrolled={hasScrolled}
+      pathname={pathname}
+      unreadCount={unreadCount}
+      user={user}
+    />
   );
 }

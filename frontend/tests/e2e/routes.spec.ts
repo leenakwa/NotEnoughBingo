@@ -130,7 +130,8 @@ test("guest creation offers signup and recovers from a session outage", async ({
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("heading", { name: "Create your own bingo" })).toBeVisible();
   await page.getByRole("link", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/register$/);
+  await expect(page.getByRole("dialog", { name: "Join Not Enough Bingo" })).toBeVisible();
+  await expect(page).toHaveURL(/\/create$/);
 });
 
 test("bingo card keeps tags with actions and handles guest likes without an API error", async ({
@@ -352,7 +353,9 @@ test("explore suggests public authors and tags and lets active filters be remove
       }),
     }),
   );
-  await page.goto("/explore?search=summer&author=ada&tags=travel%2Cfriends&ordering=newest");
+  await page.goto("/explore?search=summer&author=ada&tags=travel%2Cfriends&ordering=newest", {
+    waitUntil: "domcontentloaded",
+  });
 
   await expect(page.getByRole("button", { name: "Remove title filter: summer" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Remove author filter: ada" })).toBeVisible();

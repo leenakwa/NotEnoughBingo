@@ -9,7 +9,15 @@ import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 
 type RegistrationField = "email" | "username" | "password";
 
-export function RegisterForm() {
+export function RegisterForm({
+  presentation = "page",
+  onRegistered,
+  onPendingChange,
+}: {
+  presentation?: "page" | "dialog";
+  onRegistered?: (email: string) => void;
+  onPendingChange?: (pending: boolean) => void;
+} = {}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -25,11 +33,13 @@ export function RegisterForm() {
     if (submissionInFlight.current) return;
     submissionInFlight.current = true;
     setPending(true);
+    onPendingChange?.(true);
     setError("");
     setFieldErrors({});
     try {
       await api.auth.register({ email: email.trim(), username: username.trim(), password });
-      router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+      if (onRegistered) onRegistered(email.trim());
+      else router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (caught) {
       submissionInFlight.current = false;
       const errors: Partial<Record<RegistrationField, string>> = {};
@@ -47,11 +57,14 @@ export function RegisterForm() {
         setError(errorMessage(caught));
       }
       setPending(false);
+    } finally {
+      onPendingChange?.(false);
     }
   }
 
   return (
     <AuthShell
+      presentation={presentation}
       eyebrow="Create your account"
       title="Join Not Enough Bingo"
       description="Publishing requires a verified email address. Playing public boards does not."

@@ -1,14 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthLink } from "@/components/auth/auth-link";
 import { PasswordField } from "@/components/auth/password-field";
 import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({
+  presentation = "page",
+  onPendingChange,
+}: {
+  presentation?: "page" | "dialog";
+  onPendingChange?: (pending: boolean) => void;
+} = {}) {
   const [email, setEmail] = useState("");
   const [pending, setPending] = useState(false);
   const submissionInFlight = useRef(false);
@@ -20,6 +26,7 @@ export function ForgotPasswordForm() {
     if (submissionInFlight.current) return;
     submissionInFlight.current = true;
     setPending(true);
+    onPendingChange?.(true);
     setMessage("");
     setError("");
     try {
@@ -30,11 +37,13 @@ export function ForgotPasswordForm() {
     } finally {
       submissionInFlight.current = false;
       setPending(false);
+      onPendingChange?.(false);
     }
   }
 
   return (
     <AuthShell
+      presentation={presentation}
       eyebrow="Account recovery"
       title="Reset your password"
       description="We will email a time-limited reset link."
@@ -150,7 +159,7 @@ export function ResetPasswordForm() {
         >
           {error || message}
         </p>
-        {message ? <Link href="/login">Continue to log in</Link> : null}
+        {message ? <AuthLink href="/login">Continue to log in</AuthLink> : null}
       </form>
     </AuthShell>
   );

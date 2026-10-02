@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BingoGrid } from "@/components/bingo/bingo-grid";
-import { LanguagePicker } from "@/components/ui/language-picker";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage } from "@/lib/api/client";
-import type { BingoSummary, OwnUserProfile, Page } from "@/lib/api/types";
-import { bingoLanguages } from "@/lib/languages";
+import type { BingoSummary, Page } from "@/lib/api/types";
+import { AUTH_SIGNED_IN_EVENT } from "@/lib/auth-events";
+import { LANGUAGE_PREFERENCES_CHANGED_EVENT } from "@/lib/registration-onboarding";
 
 type FeedKind = "discover" | "trending";
 
@@ -28,18 +28,7 @@ export function FeedPage({
   const [loading, setLoading] = useState(!initialResult);
   const [error, setError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
-  const [profile, setProfile] = useState<OwnUserProfile | null>(null);
-  const [languageFilter, setLanguageFilter] = useState<string[] | null>(null);
-  const [onboardingLanguages, setOnboardingLanguages] = useState<string[]>([]);
-  const [savingPreferences, setSavingPreferences] = useState(false);
-  const [preferenceError, setPreferenceError] = useState("");
-  const [interactive, setInteractive] = useState(false);
-  const preferenceSaveInFlight = useRef(false);
   const skipInitialRequest = useRef(Boolean(initialResult));
-
-  useEffect(() => {
-    setInteractive(true);
-  }, []);
 
   const load = useCallback(
     async (signal: AbortSignal) => {
@@ -48,7 +37,7 @@ export function FeedPage({
       try {
         const data =
           kind === "discover"
-            ? await api.feeds.discover(page, signal, languageFilter)
+            ? await api.feeds.discover(page, signal)
             : await api.feeds.trending(page, signal);
         setResult(data);
       } catch (caught) {
@@ -60,7 +49,7 @@ export function FeedPage({
         if (!signal.aborted) setLoading(false);
       }
     },
-    [kind, page, languageFilter],
+    [kind, page],
   );
 
   useEffect(() => {
@@ -75,46 +64,18 @@ export function FeedPage({
 
   useEffect(() => {
     if (kind !== "discover") return;
-    let active = true;
-    api.auth
-      .session()
-      .then((user) => (user ? api.profiles.me() : null))
-      .then((value) => {
-        if (!active || !value) return;
-        setProfile(value);
-        const browserCode = navigator.language.slice(0, 2).toLowerCase();
-        setOnboardingLanguages(
-          value.preferred_languages.length
-            ? value.preferred_languages
-            : [bingoLanguages.find((language) => language.code === browserCode)?.code ?? "en"],
-        );
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [kind]);
-
-  async function saveLanguagePreferences(languages: string[] = onboardingLanguages) {
-    if (preferenceSaveInFlight.current) return;
-    preferenceSaveInFlight.current = true;
-    setSavingPreferences(true);
-    setPreferenceError("");
-    try {
-      const updated = await api.profiles.update({ preferred_languages: languages });
-      setProfile(updated);
-      setLanguageFilter(updated.preferred_languages);
+    const refresh = () => {
       setPage(1);
       setResult(null);
-    } catch (caught) {
-      setPreferenceError(errorMessage(caught));
-    } finally {
-      preferenceSaveInFlight.current = false;
-      setSavingPreferences(false);
-    }
-  }
-
-  const selectedLanguages = languageFilter ?? profile?.preferred_languages ?? [];
+      setRequestVersion((value) => value + 1);
+    };
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    window.addEventListener(LANGUAGE_PREFERENCES_CHANGED_EVENT, refresh);
+    return () => {
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(LANGUAGE_PREFERENCES_CHANGED_EVENT, refresh);
+    };
+  }, [kind]);
 
   return (
     <main id="main-content" className="page-shell" aria-busy={loading}>
@@ -125,85 +86,21 @@ export function FeedPage({
       </header>
 
       {kind === "discover" ? (
-        <>
-          {profile && !profile.language_preferences_confirmed ? (
-            <section className="language-onboarding" aria-labelledby="language-onboarding-title">
-              <h2 id="language-onboarding-title">Which bingo languages do you prefer?</h2>
-              <p>Choose one or more. You can change this later in your profile.</p>
-              <LanguagePicker
-                value={onboardingLanguages}
-                onChange={setOnboardingLanguages}
-                label="Preferred languages"
-                disabled={savingPreferences}
-              />
-              <div className="inline-actions">
-                <button
-                  type="button"
-                  className="button button--primary"
-                  disabled={!onboardingLanguages.length || savingPreferences}
-                  onClick={() => void saveLanguagePreferences()}
-                >
-                  {savingPreferences ? "Saving…" : "Save preferences"}
-                </button>
-                <button
-                  type="button"
-                  className="button button--secondary"
-                  disabled={savingPreferences}
-                  onClick={() => void saveLanguagePreferences([])}
-                >
-                  Not now · show all languages
-                </button>
-              </div>
-              {preferenceError ? (
-                <p role="alert" className="form-message form-message--error">
-                  {preferenceError}
-                </p>
-              ) : null}
-            </section>
-          ) : null}
-          <aside className="product-intro" aria-label="How Not Enough Bingo works">
-            <div>
-              <p className="eyebrow">New here?</p>
-              <h2>Pick a board. Tap what applies. Share the result.</h2>
-              <p>Free to play as a guest. Sign up to make your own board.</p>
-            </div>
-            <div className="inline-actions">
-              <Link className="button button--primary" href="/explore">
-                Find a bingo
-              </Link>
-              <Link className="button button--secondary" href="/create">
-                Create your own
-              </Link>
-            </div>
-          </aside>
-          <details className="language-filter">
-            <summary>
-              Languages: {selectedLanguages.length ? `${selectedLanguages.length} selected` : "All"}
-            </summary>
-            <LanguagePicker
-              value={selectedLanguages}
-              label="Show bingos in"
-              disabled={!interactive}
-              onChange={(next) => {
-                setLanguageFilter(next);
-                setPage(1);
-                setResult(null);
-              }}
-            />
-            <button
-              type="button"
-              className="text-button"
-              disabled={!interactive}
-              onClick={() => {
-                setLanguageFilter([]);
-                setPage(1);
-                setResult(null);
-              }}
-            >
-              Show all languages
-            </button>
-          </details>
-        </>
+        <aside className="product-intro hover-lift" aria-label="How Not Enough Bingo works">
+          <div>
+            <p className="eyebrow">New here?</p>
+            <h2>Pick a board. Tap what applies. Share the result.</h2>
+            <p>Free to play as a guest. Sign up to make your own board.</p>
+          </div>
+          <div className="inline-actions">
+            <Link className="button button--primary" href="/explore">
+              Find a bingo
+            </Link>
+            <Link className="button button--secondary" href="/create">
+              Create your own
+            </Link>
+          </div>
+        </aside>
       ) : null}
 
       {loading && !result ? <LoadingState label={`Loading ${title.toLowerCase()}…`} /> : null}
@@ -212,19 +109,9 @@ export function FeedPage({
       ) : null}
       {!loading && !error && result?.results.length === 0 ? (
         <EmptyState
-          title={
-            kind === "discover" && selectedLanguages.length
-              ? "No bingos in these languages"
-              : "No boards here yet"
-          }
-          description={
-            kind === "discover" && selectedLanguages.length
-              ? "Choose more languages above, or select Show all languages."
-              : "Published community boards will appear here."
-          }
-          action={
-            selectedLanguages.length ? undefined : { href: "/create", label: "Create a bingo" }
-          }
+          title="No boards here yet"
+          description="Published community boards will appear here."
+          action={{ href: "/create", label: "Create a bingo" }}
         />
       ) : null}
       {result?.results.length ? <BingoGrid bingos={result.results} /> : null}

@@ -27,6 +27,7 @@ export function useUnsavedChangesWarning(dirty: boolean, message: string) {
         anchor.hasAttribute("download")
       )
         return;
+      if (anchor.dataset.authDialog === "true") return;
       const destination = new URL(anchor.href, window.location.href);
       if (destination.href === window.location.href) return;
       if (

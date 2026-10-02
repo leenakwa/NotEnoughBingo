@@ -87,7 +87,7 @@ describe("auth submission safety", () => {
       expect(submit).toBeEnabled();
       if (passwordLabel)
         expect(screen.getByLabelText(passwordLabel)).toHaveValue("example password value");
-      mocks[method].mockResolvedValueOnce({});
+      mocks[method].mockResolvedValueOnce(method === "login" ? { user: { id: "user-id" } } : {});
       await act(async () => {
         fireEvent.submit(form);
       });

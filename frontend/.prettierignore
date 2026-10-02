@@ -3,4 +3,5 @@ node_modules/
 coverage/
 playwright-report/
 test-results/
+.playwright-cli/
 lib/api/schema.d.ts

@@ -454,6 +454,8 @@ test.describe("live full-stack product flows", () => {
   });
 
   test("registration → Mailpit verification → login", async ({ page, request }, testInfo) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
     const nonce = `${Date.now().toString(36)}${testInfo.retry}`;
     const email = `e2e-signup-${nonce}@example.test`;
     const username = `e2e_signup_${nonce}`.slice(0, 30);
@@ -481,18 +483,40 @@ test.describe("live full-stack product flows", () => {
       timeout: 15_000,
     });
     await page.getByRole("link", { name: "Continue to log in" }).click();
-    await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
+    const login = page.getByRole("dialog", { name: "Log in", exact: true });
+    await expect(login).toBeVisible();
+    await login.getByLabel("Email").fill(email);
+    await login.getByLabel("Password").fill(password);
     await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
-      page.getByRole("button", { name: "Log in" }).click(),
+      login.getByRole("button", { name: "Log in" }).click(),
     );
-    await expect(page).toHaveURL(/\/discover$/);
     await expect(page.locator('a[href="/profile"]')).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
     ).toBeVisible();
+    for (const width of [1710, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      const languages = page.getByRole("dialog");
+      expect(
+        await languages.evaluate((element) => element.scrollWidth <= element.clientWidth),
+      ).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`registration-languages-${width}.png`) });
+    }
+    await page.getByRole("button", { name: "Maybe later" }).click();
+    const reminder = page.getByRole("dialog", { name: "Language settings" });
+    await expect(reminder).toContainText("Profile settings, under Bingo languages");
+    for (const width of [1710, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(reminder.getByRole("button", { name: "Got it" })).toBeInViewport();
+      expect(await reminder.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      );
+      await page.screenshot({ path: testInfo.outputPath(`language-reminder-${width}.png`) });
+    }
+    await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      reminder.getByRole("button", { name: "Got it" }).click(),
+    );
+    await expect(reminder).toBeHidden();
     await page.goto("/profile");
     await expect(page.getByRole("heading", { name: "No published bingos yet" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Create a bingo" })).toBeVisible();
@@ -501,33 +525,29 @@ test.describe("live full-stack product flows", () => {
     await page.getByRole("tab", { name: "Recent plays" }).click();
     await expect(page.getByRole("heading", { name: "No plays yet" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Find a bingo" })).toBeVisible();
-    await page.goto("/discover");
+    await page.goto("/profile");
     await page.getByRole("group", { name: "Preferred languages" }).getByLabel("Russian").check();
     await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
-      page.getByRole("button", { name: "Save preferences" }).click(),
+      page.getByRole("button", { name: "Save languages" }).click(),
     );
+    await page.goto("/discover");
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
     ).toHaveCount(0);
+    expect(pageErrors).toEqual([]);
   });
 
-  test("language onboarding can be skipped and stays dismissed", async ({ page }) => {
+  test("existing accounts see languages only in settings, not while browsing", async ({ page }) => {
     await authenticateAs(page, "player");
     await page.setViewportSize({ width: 320, height: 900 });
     await page.goto("/discover");
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       320,
     );
-    await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
-      page.getByRole("button", { name: "Not now · show all languages" }).click(),
-    );
-    await expect(
-      page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
-    ).toHaveCount(0);
-    await expect(page.locator(".language-filter summary")).toContainText("All");
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
     await page.reload();
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
@@ -583,9 +603,8 @@ test.describe("live full-stack product flows", () => {
     await expect(page).toHaveURL(/search=E2E\+PUBLIC.*ordering=newest/);
     await expect(page.getByRole("radio", { name: /New Recently published/ })).toBeChecked();
 
-    const languages = page.getByRole("group", { name: "Bingo languages" });
-    await languages.getByLabel("Russian").check();
-    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page.getByRole("group", { name: "Bingo languages" })).toHaveCount(0);
+    await page.goto("/explore?search=E2E+PUBLIC&languages=ru");
     await expect(page).toHaveURL(/search=E2E\+PUBLIC.*languages=ru/);
     await expect(page.getByRole("heading", { name: "No matching bingos" })).toBeVisible();
 
@@ -904,7 +923,8 @@ test.describe("live full-stack product flows", () => {
     await page.context().setOffline(false);
     await page.context().clearCookies();
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-    await expect(page).toHaveURL(/\/login\?reason=session-expired&next=/);
+    await expect(page.getByRole("dialog", { name: "Log in", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(draftPath.replace("?", "\\?")));
     await expect(
       page.getByText("Your session ended. Log in again to continue where you left off."),
     ).toBeVisible();
@@ -918,6 +938,31 @@ test.describe("live full-stack product flows", () => {
     await expect(page).toHaveURL(new RegExp(draftPath.replace("?", "\\?")));
     await expect(page.getByRole("gridcell", { name: /Unsaved after expiry/ })).toBeVisible();
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("gridcell", { name: /Unsaved after expiry/ })).toBeVisible();
+  });
+
+  test("a different account cannot inherit the editor after session expiry", async ({ page }) => {
+    const fixture = readLiveFixture();
+    const secretText = "Previous account private editor text";
+    await authenticateAs(page, "author");
+    await page.goto("/create");
+    await page.getByRole("gridcell").first().click();
+    await page.getByRole("textbox", { name: "Text for row 1, column 1" }).fill(secretText);
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    await page.context().clearCookies();
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    const login = page.getByRole("dialog", { name: "Log in", exact: true });
+    await expect(login).toBeVisible();
+    await login.getByLabel("Email").fill(fixture.users.player.email);
+    await login.getByLabel("Password").fill(E2E_FIXTURE_PASSWORD);
+    await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
+      login.getByRole("button", { name: "Log in", exact: true }).click(),
+    );
+    await expect(page.getByRole("link", { name: "Profile for E2E Player" })).toBeVisible();
+    await expect(page.getByRole("gridcell", { name: new RegExp(secretText) })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Save draft", exact: true })).toHaveCount(0);
+    await expect(page.locator("main [role='alert']")).toBeVisible();
   });
 
   test("a protected action detects session expiry without a focus change", async ({ page }) => {
@@ -944,9 +989,8 @@ test.describe("live full-stack product flows", () => {
     );
     await page.getByRole("button", { name: bingo.cell_texts[0], exact: true }).click();
     expect((await denied).status()).toBe(401);
-    await expect(page).toHaveURL(
-      new RegExp(`/login\\?reason=session-expired&next=%2Fbingo%2F${bingo.id}$`),
-    );
+    await expect(page.getByRole("dialog", { name: "Log in", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
     await expect(
       page.getByText("Your session ended. Log in again to continue where you left off."),
     ).toBeVisible();
@@ -1217,29 +1261,18 @@ test.describe("live full-stack product flows", () => {
     expect(metrics?.allTextFits).toBe(true);
   });
 
-  test("language filters work by keyboard and fit narrow and wide screens", async ({ page }) => {
+  test("catalog has no language picker and search fits narrow and wide screens", async ({
+    page,
+  }) => {
     const title = readLiveFixture().bingos.public.title;
     for (const width of [320, 1710]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/discover");
       await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
-      await page.locator(".language-filter summary").focus();
-      await page.keyboard.press("Enter");
-      const picker = page.getByRole("group", { name: "Show bingos in" });
-      await expect(picker.getByLabel("Russian")).toBeVisible();
-      await picker.getByLabel("Russian").focus();
-      await page.keyboard.press("Space");
-      await expect(
-        page.getByRole("heading", { name: "No bingos in these languages" }),
-      ).toBeVisible();
-      await picker.getByLabel("English").focus();
-      await page.keyboard.press("Space");
-      await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
+      await expect(page.getByRole("checkbox")).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         width + 1,
       );
-      await page.getByRole("button", { name: "Show all languages" }).click();
-      await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
     }
 
     let releaseScripts!: () => void;
@@ -1251,23 +1284,22 @@ test.describe("live full-stack product flows", () => {
       await route.continue();
     });
     await page.goto("/explore", { waitUntil: "commit" });
-    const picker = page.getByRole("group", { name: "Bingo languages" });
+    const search = page.getByRole("searchbox", { name: "Search by title" });
     try {
-      await expect(picker.getByLabel("English")).toBeVisible();
-      await expect(picker.getByLabel("English")).toBeDisabled();
+      await expect(search).toBeVisible();
+      await expect(search).toBeDisabled();
       await expect(page.getByRole("button", { name: "Search", exact: true })).toBeDisabled();
     } finally {
       releaseScripts();
     }
-    await expect(picker.getByLabel("English")).toBeEnabled();
-    await picker.getByLabel("English").check();
-    await picker.getByLabel("Russian").check();
+    await expect(search).toBeEnabled();
+    await search.fill(title);
     await page.getByRole("button", { name: "Search", exact: true }).click();
-    await expect(page).toHaveURL(/languages=en&languages=ru/);
+    await expect(page).toHaveURL(/search=/);
     await expect(page.locator(".bingo-card").filter({ hasText: title })).toBeVisible();
     await page.reload();
-    await expect(picker.getByLabel("English")).toBeChecked();
-    await expect(picker.getByLabel("Russian")).toBeChecked();
+    await expect(search).toHaveValue(title);
+    await expect(page.getByRole("group", { name: "Bingo languages" })).toHaveCount(0);
   });
 
   test("authenticated language, play, editor, and account settings pass the accessibility gate", async ({
@@ -1278,7 +1310,7 @@ test.describe("live full-stack product flows", () => {
     await page.goto("/discover");
     await expect(
       page.getByRole("heading", { name: "Which bingo languages do you prefer?" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expectNoAccessibilityViolations(page);
 
     await page.goto(`/bingo/${fixture.bingos.public.id}`);
@@ -1541,6 +1573,49 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByRole("heading", { name })).toBeVisible();
   });
 
+  test("profile validation focuses the invalid field and preserves other edits", async ({
+    page,
+  }, testInfo) => {
+    await authenticateAs(page, "author");
+    await page.goto("/profile");
+    const username = page.getByRole("textbox", { name: "Username" });
+    const bio = page.getByRole("textbox", { name: "Bio" });
+    const originalUsername = await username.inputValue();
+    const originalBio = await bio.inputValue();
+    await username.fill(readLiveFixture().users.player.username);
+    await bio.fill("Keep this unsaved profile text 🎲");
+    const rejectedPromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/profiles/me/") && response.request().method() === "PATCH",
+    );
+    await page.getByRole("button", { name: "Save profile" }).click();
+    const rejected = await rejectedPromise;
+    expect(rejected.status()).toBe(400);
+    await expect(username).toHaveAttribute("aria-invalid", "true");
+    await expect(username).toBeFocused();
+    await expect(page.locator("#profile-username-error")).toHaveText(
+      "This username is unavailable.",
+    );
+    await expect(bio).toHaveValue("Keep this unsaved profile text 🎲");
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 900 });
+      await username.scrollIntoViewIfNeeded();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width,
+      );
+      await page.screenshot({ path: testInfo.outputPath(`profile-validation-${width}.png`) });
+    }
+    await username.fill(originalUsername);
+    await expect(username).toHaveAttribute("aria-invalid", "false");
+    await expect(page.locator("#profile-username-error")).toHaveCount(0);
+    await bio.fill(originalBio);
+    const saved = await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      page.getByRole("button", { name: "Save profile" }).click(),
+    );
+    expect(saved.status()).toBe(200);
+    await expect(page.getByText("Profile saved.", { exact: true })).toBeVisible();
+  });
+
   test("long URL and multilingual comments remain readable on narrow and wide screens", async ({
     page,
   }) => {
@@ -1793,11 +1868,16 @@ test.describe("live full-stack product flows", () => {
     await expect(
       secondTab.getByRole("heading", { name: "Log in to view your profile" }),
     ).toBeVisible();
-    await expect(page).toHaveURL(/\/login\?reason=session-expired&next=%2Fprofile$/);
+    await expect(page.getByRole("dialog", { name: "Log in", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/profile$/);
     await expect(
       page.getByText("Your session ended. Log in again to continue where you left off."),
     ).toBeVisible();
     await expect(page.locator('a[href="/login"]')).toBeVisible();
+    await page.getByRole("button", { name: "Close account dialog" }).click();
+    await expect(page.getByRole("textbox", { name: "Bio", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Save profile" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Log in to view your profile" })).toBeVisible();
     expect(
       await page.evaluate(() =>
         window.localStorage.getItem("not-enough-bingo:editor-recovery:v1:new"),

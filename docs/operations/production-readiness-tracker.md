@@ -36,6 +36,17 @@ unresolved failures or missing evidence.
 
 ## Repository review map
 
+### Current requirements override — 2026-10-03
+
+The user confirmed that all new local UI changes are intentional: account forms
+open in dialogs, registration language choice is a one-time dialog, language
+preferences stay in profile settings, and catalog/search language pickers are
+removed. The fixed header and revised hover/shadow treatment are also retained.
+The original prompt is preserved unchanged. Earlier language-picker observations
+are historical evidence, not a requirement to restore removed controls. The
+56/42 snapshot above predates these changes; the combined current source still
+needs its release gate and changed-flow regression evidence.
+
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,
   `frontend/tests/e2e`, and browser checks on the isolated `nebqa` stack.
 - API/data/security: `backend/apps`, `backend/config`, backend tests, PostgreSQL,
@@ -62,7 +73,7 @@ unresolved failures or missing evidence.
 - [x] 12. PASSWORD RESET — Verified before deployment: Mailpit delivery, configured HTTPS link, TTL, one-time use, credential change, and session revocation.
 - [x] 13. LOGOUT — Verified before deployment: session/API revocation, browser Back and private deep link, and local recovery cleanup.
 - [x] 14. AUTHORIZATION — Verified before deployment: direct admin/API and cross-account ID/role/delete/download probes, including the fixed old-share media leak.
-- [x] 15. ONBOARDING — Verified before deployment: first-login language step and skip persist, helpful first actions and profile empty states, responsive browser journey; multi-step progress is N/A because setup has one step.
+- [x] 15. ONBOARDING — Verified before deployment: the current one-time post-verification/registration language dialog and confirmed skip persist; existing unconfigured accounts are not prompted while browsing. Live registration, settings persistence and responsive dialog journeys passed; multi-step progress is N/A because setup has one step.
 - [x] 16. EMPTY STATES — Verified before deployment: zero-data feed/search, profile, notifications, comments, and editor states; teams, commerce, charts, and analytics-period screens are absent.
 - [x] 17. SEARCH — Verified before deployment: input normalization, Unicode/literal matching, result counts and pagination, visible loading, debounced suggestions, Enter, combined filters, URL restore, and clear. Direct multi-tag URL loading and refresh now retain correct results.
 - [x] 18. TABLES AND LISTS — Verified before deployment: card-list zero/one/many, pagination, filtered sorting, long/null content, mobile layout, and selected sort/tab states; tabular headers and list horizontal scrolling are N/A.
@@ -76,7 +87,7 @@ unresolved failures or missing evidence.
 - [x] 26. LONG-CONTENT TORTURE TEST — Verified before deployment: account/title limits, 254-character email, long URL/multilingual comment, profile/card/cell wrapping, and 320/1710 px layout.
 - [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.
 - [x] 28. NUMBERS — Verified before deployment: bounded integer counts and percentages, invalid-number recovery guards, compact notation and decimal rounding; no currency capability in this release.
-- [x] 29. LOCALIZATION / INTERNATIONALIZATION — Verified before deployment: English UI and email, explicit content languages, language filters/preferences and URLs, local date/number formats, plural labels, and RTL text direction; no translated UI routes or currency feature.
+- [x] 29. LOCALIZATION / INTERNATIONALIZATION — Verified before deployment: English UI and email, explicit content languages, persisted language preferences and supported filter URLs, local date/number formats, plural labels, and RTL text direction. Catalog/search language pickers are intentionally removed by the 2026-10-03 instruction; no translated UI routes or currency feature.
 - [x] 30. 404 HANDLING — Verified before deployment: unknown/legacy routes, malformed and deleted bingo IDs, private/missing resources, real SSR 404 status, explanation and Discover return path.
 - [x] 31. GLOBAL / 500 ERROR HANDLING — Verified before deployment: route and root error boundaries, safe retry/navigation, logged 500, generic public response, and X-Request-ID correlation; external error tracking remains in section 63.
 - [x] 32. OFFLINE / BAD NETWORK — Verified before deployment: offline draft recovery, slow-search loading, finite API/upload deadlines, actionable failures, retry/cancel, and progress-reset rollback with recovery.

@@ -399,6 +399,8 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.context }}/Dockerfile
           target: production
+          pull: true
+          no-cache-filters: production
           push: false
           load: true
           tags: not-enough-bingo-${{ matrix.name }}:${{ github.sha }}

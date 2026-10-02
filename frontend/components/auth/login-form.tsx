@@ -1,14 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthLink } from "@/components/auth/auth-link";
 import { PasswordField } from "@/components/auth/password-field";
 import { LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage } from "@/lib/api/client";
-import { notifyAuthChanged } from "@/lib/auth-events";
+import { notifySignedIn } from "@/lib/auth-events";
+import { openRegistrationOnboarding } from "@/lib/registration-onboarding";
 
 export function safeNext(value: string | null): string {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
@@ -41,7 +42,17 @@ export function loginNotice(reason: string | null): string {
   return "";
 }
 
-export function LoginForm() {
+export function LoginForm({
+  presentation = "page",
+  reason,
+  onSuccess,
+  onPendingChange,
+}: {
+  presentation?: "page" | "dialog";
+  reason?: string | null;
+  onSuccess?: () => void;
+  onPendingChange?: (pending: boolean) => void;
+} = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -51,7 +62,7 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [sessionStatus, setSessionStatus] = useState<"checking" | "guest" | "error">("checking");
   const next = searchParams.get("next");
-  const notice = loginNotice(searchParams.get("reason"));
+  const notice = loginNotice(reason === undefined ? searchParams.get("reason") : reason);
 
   useEffect(() => {
     let active = true;
@@ -59,8 +70,13 @@ export function LoginForm() {
       .session()
       .then((user) => {
         if (!active) return;
-        if (user) router.replace(safeNext(next));
-        else setSessionStatus("guest");
+        if (user) {
+          if (onSuccess) {
+            onSuccess();
+            notifySignedIn();
+          } else router.replace(safeNext(next));
+          openRegistrationOnboarding(user.id);
+        } else setSessionStatus("guest");
       })
       .catch(() => {
         if (active) setSessionStatus("error");
@@ -68,28 +84,36 @@ export function LoginForm() {
     return () => {
       active = false;
     };
-  }, [next, router]);
+  }, [next, onSuccess, router]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submissionInFlight.current) return;
     submissionInFlight.current = true;
     setPending(true);
+    onPendingChange?.(true);
     setError("");
     try {
-      await api.auth.login({ email: email.trim(), password });
-      notifyAuthChanged();
-      router.replace(safeNext(next));
-      router.refresh();
+      const { user } = await api.auth.login({ email: email.trim(), password });
+      if (onSuccess) onSuccess();
+      else {
+        router.replace(safeNext(next));
+        router.refresh();
+      }
+      notifySignedIn();
+      openRegistrationOnboarding(user.id);
     } catch (caught) {
       submissionInFlight.current = false;
       setError(errorMessage(caught));
       setPending(false);
+    } finally {
+      onPendingChange?.(false);
     }
   }
 
   return (
     <AuthShell
+      presentation={presentation}
       eyebrow="Welcome back"
       title="Log in"
       description="Use the email address connected to your account."
@@ -128,7 +152,7 @@ export function LoginForm() {
             onChange={(event) => setPassword(event.target.value)}
           />
           <div className="form-row">
-            <Link href="/forgot-password">Forgot password?</Link>
+            <AuthLink href="/forgot-password">Forgot password?</AuthLink>
             <button className="button button--primary" type="submit" disabled={pending}>
               {pending ? "Logging in…" : "Log in"}
             </button>

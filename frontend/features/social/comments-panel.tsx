@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AuthLink } from "@/components/auth/auth-link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
@@ -434,9 +435,9 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
         </form>
       ) : !signedIn ? (
         <p className="comments-sign-in">
-          <Link href={`/login?next=${encodeURIComponent(`/bingo/${bingoId}#comments`)}`}>
+          <AuthLink href={`/login?next=${encodeURIComponent(`/bingo/${bingoId}#comments`)}`}>
             Log in
-          </Link>{" "}
+          </AuthLink>{" "}
           to join the conversation. Reading comments is public.
         </p>
       ) : null}

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BingoPlayer } from "@/features/play/bingo-player";
 import type { AuthenticatedUser, BingoDetail, PlayProgress } from "@/lib/api/types";
 import { readGuestProgress, writeGuestProgress } from "@/lib/guest-progress";
+import { AUTH_SIGNED_IN_EVENT } from "@/lib/auth-events";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -189,6 +190,31 @@ describe("BingoPlayer", () => {
       cellId,
     ]);
     expect(mocks.getViewer).not.toHaveBeenCalled();
+    window.localStorage.clear();
+  });
+
+  it("keeps guest marks and syncs them after signing in over the board", async () => {
+    const cellId = bingo.current_revision!.cells[0]!.id!;
+    writeGuestProgress(bingo.id, bingo.current_revision!.id, [cellId]);
+    mocks.saveProgress.mockResolvedValue({ ...progress, selected_cells: [cellId], version: 3 });
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+    await screen.findByRole("button", { name: "Open the board, selected" });
+
+    act(() => window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT)));
+
+    await screen.findByRole("button", { name: "Like · 0" });
+    expect(screen.getByRole("button", { name: "Open the board, selected" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await waitFor(() =>
+      expect(mocks.saveProgress).toHaveBeenCalledWith(
+        bingo.id,
+        bingo.current_revision!.id,
+        [cellId],
+        2,
+      ),
+    );
     window.localStorage.clear();
   });
 
