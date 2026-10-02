@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportBrowserError } from "@/lib/browser-errors";
 
 export default function GlobalError({
   error,
@@ -12,6 +13,7 @@ export default function GlobalError({
   retry?: () => void;
 }) {
   useEffect(() => {
+    reportBrowserError(error, "boundary");
     console.error("Root page error", { type: error.name, digest: error.digest });
   }, [error]);
 

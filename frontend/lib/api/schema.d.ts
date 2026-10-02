@@ -485,6 +485,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/client-errors/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Accept bounded diagnostics; never accept messages, URLs or user content. */
+        post: operations["client_errors_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/comments/{comment_id}/": {
         parameters: {
             query?: never;
@@ -1370,6 +1387,42 @@ export interface components {
          * @enum {string}
          */
         BorderStyleEnum: "solid" | "dashed" | "dotted" | "double";
+        /**
+         * @description * `boundary` - boundary
+         *     * `exception` - exception
+         *     * `rejection` - rejection
+         *     * `api` - api
+         * @enum {string}
+         */
+        BrowserErrorKindEnum: "boundary" | "exception" | "rejection" | "api";
+        BrowserErrorRequest: {
+            kind: components["schemas"]["BrowserErrorKindEnum"];
+            error_type: components["schemas"]["ErrorTypeEnum"];
+            surface: components["schemas"]["BrowserErrorSurfaceEnum"];
+            status_code?: number;
+            frames?: components["schemas"]["BrowserFrameRequest"][];
+        };
+        /**
+         * @description * `discover` - discover
+         *     * `trending` - trending
+         *     * `explore` - explore
+         *     * `create` - create
+         *     * `profile` - profile
+         *     * `bingo` - bingo
+         *     * `share` - share
+         *     * `auth` - auth
+         *     * `support` - support
+         *     * `legal` - legal
+         *     * `notifications` - notifications
+         *     * `unknown` - unknown
+         * @enum {string}
+         */
+        BrowserErrorSurfaceEnum: "discover" | "trending" | "explore" | "create" | "profile" | "bingo" | "share" | "auth" | "support" | "legal" | "notifications" | "unknown";
+        BrowserFrameRequest: {
+            filename: string;
+            lineno: number;
+            colno: number;
+        };
         Comment: {
             /** Format: uuid */
             readonly id: string;
@@ -1487,6 +1540,19 @@ export interface components {
             token: string;
         };
         /**
+         * @description * `Error` - Error
+         *     * `TypeError` - TypeError
+         *     * `RangeError` - RangeError
+         *     * `ReferenceError` - ReferenceError
+         *     * `SyntaxError` - SyntaxError
+         *     * `URIError` - URIError
+         *     * `EvalError` - EvalError
+         *     * `ApiClientError` - ApiClientError
+         *     * `UnhandledRejection` - UnhandledRejection
+         * @enum {string}
+         */
+        ErrorTypeEnum: "Error" | "TypeError" | "RangeError" | "ReferenceError" | "SyntaxError" | "URIError" | "EvalError" | "ApiClientError" | "UnhandledRejection";
+        /**
          * @description * `impression` - Impression
          *     * `view` - View
          *     * `open` - Open
@@ -1578,12 +1644,27 @@ export interface components {
             anonymous_id?: string;
         };
         InteractionMetadataRequest: {
-            surface?: components["schemas"]["SurfaceEnum"];
+            surface?: components["schemas"]["InteractionMetadataSurfaceEnum"];
             action?: components["schemas"]["AnalyticsActionEnum"];
             author?: string;
             tags?: string;
             ordering?: components["schemas"]["OrderingEnum"] | components["schemas"]["BlankEnum"];
         };
+        /**
+         * @description * `discover` - discover
+         *     * `trending` - trending
+         *     * `explore` - explore
+         *     * `profile` - profile
+         *     * `share` - share
+         *     * `direct` - direct
+         *     * `create` - create
+         *     * `register` - register
+         *     * `login` - login
+         *     * `settings` - settings
+         *     * `notifications` - notifications
+         * @enum {string}
+         */
+        InteractionMetadataSurfaceEnum: "discover" | "trending" | "explore" | "profile" | "share" | "direct" | "create" | "register" | "login" | "settings" | "notifications";
         /**
          * @description * `en` - English
          *     * `ru` - Russian
@@ -2144,21 +2225,6 @@ export interface components {
             /** Format: uuid */
             revision_id?: string | null;
         };
-        /**
-         * @description * `discover` - discover
-         *     * `trending` - trending
-         *     * `explore` - explore
-         *     * `profile` - profile
-         *     * `share` - share
-         *     * `direct` - direct
-         *     * `create` - create
-         *     * `register` - register
-         *     * `login` - login
-         *     * `settings` - settings
-         *     * `notifications` - notifications
-         * @enum {string}
-         */
-        SurfaceEnum: "discover" | "trending" | "explore" | "profile" | "share" | "direct" | "create" | "register" | "login" | "settings" | "notifications";
         Tag: {
             /** Format: uuid */
             readonly id: string;
@@ -3137,6 +3203,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SharedResult"];
                 };
+            };
+        };
+    };
+    client_errors_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrowserErrorRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

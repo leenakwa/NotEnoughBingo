@@ -1207,10 +1207,10 @@ Verify a production error-monitoring system if one is expected:
 - [ ] release/version tagging;
 - [ ] source maps configured appropriately;
 - [x] PII filtering;
-- [ ] frontend errors;
+- [x] frontend errors;
 - [x] backend errors;
-- [ ] unhandled promises;
-- [ ] API failures.
+- [x] unhandled promises;
+- [x] API failures.
 
 # 64. LOGGING
 

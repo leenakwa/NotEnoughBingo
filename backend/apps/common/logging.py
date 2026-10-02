@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 SAFE_EVENTS = {
+    "app.browser": {"browser.error"},
     "app.request": {"http.request.complete"},
     "app.celery": {
         "celery.task.started",

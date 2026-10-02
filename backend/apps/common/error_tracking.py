@@ -2,6 +2,33 @@ from __future__ import annotations
 
 from typing import Any
 
+BROWSER_ERROR_KINDS = ("boundary", "exception", "rejection", "api")
+BROWSER_ERROR_TYPES = (
+    "Error",
+    "TypeError",
+    "RangeError",
+    "ReferenceError",
+    "SyntaxError",
+    "URIError",
+    "EvalError",
+    "ApiClientError",
+    "UnhandledRejection",
+)
+BROWSER_SURFACES = (
+    "discover",
+    "trending",
+    "explore",
+    "create",
+    "profile",
+    "bingo",
+    "share",
+    "auth",
+    "support",
+    "legal",
+    "notifications",
+    "unknown",
+)
+
 
 def scrub_error_event(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]:
     """Keep diagnostic locations and timing, never arbitrary captured content.
@@ -30,6 +57,19 @@ def scrub_error_event(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str,
     safe["contexts"] = {
         "trace": _select(trace, ("trace_id", "span_id", "parent_span_id", "op", "status"))
     }
+    browser = event.get("contexts", {}).get("browser_error", {})
+    if (
+        event.get("platform") == "javascript"
+        and event.get("logger") == "app.browser"
+        and browser.get("kind") in BROWSER_ERROR_KINDS
+        and browser.get("surface") in BROWSER_SURFACES
+    ):
+        context = _select(browser, ("kind", "surface"))
+        status_code = browser.get("status_code")
+        if type(status_code) is int and 0 <= status_code <= 599:
+            context["status_code"] = status_code
+        safe["contexts"]["browser_error"] = context
+        safe["fingerprint"] = ["{{ default }}", context["kind"], context["surface"]]
     if "transaction" in event:
         safe["transaction"] = "application.operation"
     if "logentry" in event or "message" in event:
@@ -41,7 +81,7 @@ def scrub_error_event(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str,
         if "stacktrace" in exception:
             value["stacktrace"] = {
                 "frames": [
-                    _select(frame, ("filename", "function", "module", "lineno", "in_app"))
+                    _select(frame, ("filename", "function", "module", "lineno", "colno", "in_app"))
                     for frame in exception["stacktrace"].get("frames", [])[-32:]
                 ]
             }

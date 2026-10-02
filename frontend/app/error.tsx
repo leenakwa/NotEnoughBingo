@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { ErrorState } from "@/components/ui/page-state";
+import { reportBrowserError } from "@/lib/browser-errors";
 
 export default function GlobalError({
   error,
@@ -12,7 +13,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // This is the integration point for the configured error-tracking provider.
+    reportBrowserError(error, "boundary");
     console.error("Page error", { type: error.name, digest: error.digest });
   }, [error]);
 

@@ -2705,3 +2705,70 @@ observed results and their limits. Do not include credentials or session data.
   creation. A PostgreSQL catalog query then confirmed zero databases with
   the drill's temporary prefix. Both scripts passed Ruff and formatting;
   the full 105-section/1,142-item checklist integrity check passed.
+
+### 2026-10-03 — Combined interface source release gate (sections 48, 72, 73, 105)
+
+- GitHub Actions run [37066759036](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37066759036)
+  completed successfully for PR source `e6a54dc022bee21e06e57dc71aad4a8468c7b04a`.
+  All nine jobs passed: foundation, secret history scan, backend/frontend
+  quality, static browser smoke, full-stack flows, both production images,
+  and the release gate. Counts were 194 backend tests, 161 frontend tests,
+  176 browser smoke checks with 12 platform-specific skips, and 56 live flows.
+- The x86_64 backend/frontend image gates built the final combined application
+  source and passed fixable High/Critical vulnerability scans, non-root checks
+  and SBOM generation. No images were promoted to a registry or deployed.
+  This resolves the preceding OpenSSL package gate and combined UI regression
+  uncertainty; it does not close unreviewed original checklist items.
+- The subsequent database scripts (`4f740f8`) and browser-error collection
+  change are newer than this successful run and require a new source gate.
+
+### 2026-10-03 — Browser error diagnostics (section 63, partial)
+
+- Added browser observers for uncaught errors and unhandled promise rejections,
+  reporting from route/root error boundaries, and reporting of unexpected API
+  5xx, invalid-response, timeout and network failures. Expected validation/access
+  responses and intentional aborts do not trigger API diagnostics. Reports use
+  the same-origin `client-errors/` endpoint independently of the API client,
+  preventing recursive reports if collection or CSRF bootstrap fails.
+- Reports include enum-only kind/type/page category, optional HTTP status and
+  up to eight line/column positions in already-loaded same-origin Next chunks.
+  They omit error text, URL queries/fragments, usernames, form/content values,
+  third-party script locations and arbitrary rejection objects. The server
+  rejects unknown fields, unapproved names/paths, traversal and excess frames,
+  enforces CSRF for guests, a 4 KiB body limit and 20 reports/client/minute
+  alongside normal API throttles. The client deduplicates and bounds its queue
+  to five reports/minute, with an eight-second independent reporting deadline.
+- A regression exposed an unknown-field serializer exception returning 500;
+  it now produces a normal 400 before capture. Twelve collector API tests pass,
+  including installed-SDK transport, private-marker filtering, schema rejection,
+  anonymous CSRF, body bounds and throttling. Capture retains generic error type,
+  chunk positions, page category and synthetic environment/release, removing
+  request/user/extra metadata even when those exist on the SDK scope.
+- `npm run check` passed ESLint, TypeScript and all 166 frontend unit tests;
+  `npm run format` and `npm run build` passed. New unit cases cover omitted
+  sensitive content, response-token CSRF bootstrap, bounded deduplication and
+  timeout without retries. Generated OpenAPI and TypeScript contracts were
+  refreshed; schema validation and the checked-in/generated comparison passed.
+- `tests/e2e/browser-errors.spec.ts` passed in Chromium, mobile Chromium,
+  Firefox and WebKit. It triggers real uncaught errors and unhandled rejections,
+  submits login against a synthetic 503, inspects the sanitized report bodies,
+  then makes collection unavailable and confirms the account dialog closes
+  and the support page remains usable without horizontal overflow. Injected
+  private-marker exceptions are intentional; unrelated page errors fail the test.
+- A separate Chromium journey against `nebqa` at 320 px accepted a report with
+  a real CSRF header and backend 204, omitted the private marker and preserved
+  the usable support/dialog flow. No external Sentry DSN was configured or
+  contacted. The installed SDK event model was also checked against Sentry's
+  [JavaScript event example](https://docs.sentry.dev/api/events/retrieve-an-event-for-a-project/).
+- The full backend suite under `config.settings.test` passed 205 with one skip
+  (Nginx template outside the backend-only container; CI checks it). Mypy passed
+  all 74 source files; Ruff lint/format passed the repository backend. An initial
+  suite invocation inherited development/S3 settings and failed four storage
+  cases with 403; repeating with explicit test settings passed them. The skip
+  was confirmed with `pytest ...test_production_configuration.py -q -rs`.
+- Updated the privacy notice and operator runbook. Environment/release metadata
+  currently describes the receiving backend; an old browser tab may still run
+  an earlier chunk hash. Actual provider delivery/grouping, alert delivery,
+  accurate old-tab release correlation and private source-map upload remain
+  open. Public source maps remain disabled. Section 63 stays partial; only its
+  frontend/unhandled-promise/API-capture bullets are newly checked.

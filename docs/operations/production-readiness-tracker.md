@@ -44,8 +44,10 @@ preferences stay in profile settings, and catalog/search language pickers are
 removed. The fixed header and revised hover/shadow treatment are also retained.
 The original prompt is preserved unchanged. Earlier language-picker observations
 are historical evidence, not a requirement to restore removed controls. The
-56/42 snapshot above predates these changes; the combined current source still
-needs its release gate and changed-flow regression evidence.
+56/42 snapshot above predates these changes. Combined UI source `e6a54dc`
+passed all nine CI jobs, including 56 live flows and 176 smoke checks. The later
+database audit and browser-error collection additions require their own final
+source gate; remaining checklist bullets still need their individual evidence.
 
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,
   `frontend/tests/e2e`, and browser checks on the isolated `nebqa` stack.
@@ -121,7 +123,7 @@ needs its release gate and changed-flow regression evidence.
 - [x] 60. SERVICE WORKER / PWA — Verified before deployment: no PWA/manifest/worker/install capability in source; live browser had zero service workers and CacheStorage entries. Conditional PWA bullets are N/A; there is no previously deployed origin.
 - [ ] 61. ANALYTICS — Partial: play completion and other core interactions are recorded without free-text search/filter values after a client/server privacy fix and backfill; categorical page/CTA and server signup/login counts plus a mature activation/return report are now implemented; exact guest-to-signup conversion, target isolation and real observations remain.
 - [ ] 62. PRODUCT METRICS — Partial: registration counts and core board/play actions are queryable from first-party records; the read-only cohort report measures estimated arrivals, mature signup-to-activation/return and their drop-offs; exact guest conversion and real production data remain unavailable.
-- [ ] 63. ERROR TRACKING — Partial: Django can send errors to Sentry with environment/release metadata and default PII disabled; installed-SDK in-memory delivery proves local filtering, but no production DSN, frontend/unhandled-promise integration, or private source-map upload exists yet. API failures have structured server logs but no verified alerting pipeline.
+- [ ] 63. ERROR TRACKING — Partial: browser boundaries, uncaught errors, unhandled promises and unexpected API failures now send bounded same-origin diagnostics through the CSRF-protected, throttled backend collector. Chromium/mobile/Firefox/WebKit scenarios and a live 204 response passed; installed-SDK transport proves capture and filtering with configured synthetic environment/release. Real provider delivery/grouping, production environment/release values, accurate old-tab release correlation, private source maps and alert delivery remain open.
 - [x] 64. LOGGING — Verified before deployment: application/Celery/Gunicorn use projected safe JSON, normalized route templates and exception locations without arbitrary messages/bodies/args; SDK and proxy fault probes exclude marked values. Target edge/provider policies remain rollout inputs.
 - [ ] 65. MONITORING — Partial: QA proves proxy/frontend, API/DB/cache readiness, and Beat heartbeat endpoints; Docker healthchecks cover processes. External uptime, queue/worker, capacity, error-rate, and latency monitors need a production host and provider.
 - [ ] 66. ALERTS — Partial: the runbook defines pages for availability, errors, database, worker, backup, and capacity, but no destination or delivered alert is configured. Payment webhook failure is N/A; email and object-storage dependency alerts still need a real provider.

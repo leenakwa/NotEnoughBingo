@@ -3,6 +3,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.common import health
+from apps.common.client_errors import ClientErrorView
 
 API_V1 = "api/v1/"
 admin.site.disable_action("delete_selected")
@@ -12,6 +13,7 @@ urlpatterns = [
     path(f"{API_V1}health/live/", health.live, name="health-live"),
     path(f"{API_V1}health/ready/", health.ready, name="health-ready"),
     path(f"{API_V1}health/beat/", health.beat, name="health-beat"),
+    path(f"{API_V1}client-errors/", ClientErrorView.as_view(), name="client-errors"),
     path(
         f"{API_V1}schema/",
         SpectacularAPIView.as_view(),

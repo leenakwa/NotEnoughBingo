@@ -239,7 +239,28 @@ Sentry receives environment/release and diagnostic exception locations when
 configured. The event/transaction hooks drop request/user data, breadcrumbs,
 free-text messages, SQL/URL descriptions, task arguments and local variables.
 Installed-SDK tests exercise delivery to an in-memory transport; a real DSN,
-private source maps, frontend capture and alert delivery remain rollout gates.
+private source maps and alert delivery remain rollout gates.
+
+The browser sends boundary exceptions, uncaught errors, unhandled promise
+rejections and unexpected API failures to the same-origin
+`POST /api/v1/client-errors/`. The backend logs the approved `browser.error`
+event and forwards it through the configured Sentry SDK. Reports contain only
+allowlisted error/page categories, optional status and up to eight line/column
+positions in loaded same-origin Next chunks. Error text, URLs, query values,
+form data, user identity, local variables and breadcrumbs are omitted.
+CSRF is required even for guests. Bodies are limited to 4 KiB and the endpoint
+is limited to 20 reports per client/minute, in addition to normal API limits.
+The browser deduplicates and sends at most five reports/minute; the eight-second
+reporting deadline is independent of the user action, with no retry loop.
+Reporting failure never replaces the original recovery UI.
+
+Configure `APP_ENVIRONMENT`, `APP_RELEASE` and `SENTRY_DSN` on the backend.
+Environment/release currently describe the receiving backend deployment; old
+open browser tabs can still run earlier chunk hashes, so use captured chunk
+locations when correlating a browser report. No frontend DSN or provider token
+is exposed. Private source-map upload and verification of delivery/grouping
+and alerts in the actual provider remain required at rollout. Without a DSN,
+safe browser event metadata remains available in the backend logs.
 
 Nginx emits query-free JSON access records with the original path, status,
 upstream status, timing and request ID. Request-level Nginx error text and raw

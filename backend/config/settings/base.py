@@ -189,6 +189,7 @@ REST_FRAMEWORK = {
         "shares": env("SHARE_RATE_LIMIT", default="10/min"),
         "exports": env("BINGO_EXPORT_RATE_LIMIT", default="10/hour"),
         "interactions": "300/min",
+        "client_errors": "20/min",
     },
     "COERCE_DECIMAL_TO_STRING": False,
     "NUM_PROXIES": TRUSTED_PROXY_HOPS,

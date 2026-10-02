@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { AuthDialog } from "@/components/auth/auth-dialog";
+import { BrowserErrorObserver } from "@/components/layout/browser-error-observer";
 import { PageActivity } from "@/components/layout/page-activity";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { absoluteSiteUrl, isPublicProduction, siteUrl } from "@/lib/site";
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </a>
         <AppHeader />
         <PageActivity />
+        <BrowserErrorObserver />
         <AuthDialog />
         {children}
         <SiteFooter />

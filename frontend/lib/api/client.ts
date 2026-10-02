@@ -36,6 +36,7 @@ import type {
   UserProfile,
 } from "@/lib/api/types";
 import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
+import { reportBrowserError } from "@/lib/browser-errors";
 
 type QueryValue = string | number | boolean | null | undefined;
 type Query = Record<string, QueryValue | QueryValue[]>;
@@ -214,6 +215,24 @@ function normalizeError(status: number, data: unknown): ApiErrorPayload {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  try {
+    return await performApiRequest<T>(path, options);
+  } catch (error) {
+    if (
+      !options.signal?.aborted &&
+      path !== "auth/csrf/" &&
+      path !== "client-errors/" &&
+      (error instanceof TypeError ||
+        (error instanceof ApiClientError &&
+          (error.status >= 500 || ["request_timeout", "invalid_response"].includes(error.code))))
+    ) {
+      reportBrowserError(error, "api", error instanceof ApiClientError ? error.status : 0);
+    }
+    throw error;
+  }
+}
+
+async function performApiRequest<T>(path: string, options: RequestOptions): Promise<T> {
   const method = (options.method ?? "GET").toUpperCase();
   let csrf = getCookie(csrfCookieName);
   if (unsafeMethods.has(method) && typeof window !== "undefined" && !options.skipCsrfBootstrap) {

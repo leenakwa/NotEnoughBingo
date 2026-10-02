@@ -20,6 +20,36 @@ const cellImagePng = Buffer.from(
 );
 let moderationReportId = "";
 
+test("browser error diagnostics reach the CSRF-protected backend with no private content", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("/support?private-marker=secret#private-marker");
+  await page.getByRole("link", { name: "Log in", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Log in", exact: true })).toBeVisible();
+  const accepted = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/client-errors/") && response.request().method() === "POST",
+  );
+  await page.evaluate(() => {
+    window.dispatchEvent(new ErrorEvent("error", { error: new TypeError("private-marker") }));
+  });
+  const response = await accepted;
+  expect(response.status()).toBe(204);
+  expect(response.request().postDataJSON()).toMatchObject({
+    kind: "exception",
+    error_type: "TypeError",
+    surface: "support",
+  });
+  expect(response.request().postData()).not.toContain("private-marker");
+  expect(response.request().headers()["x-csrftoken"]).toBeTruthy();
+  await page.getByRole("button", { name: "Close account dialog" }).click();
+  await expect(page.getByRole("heading", { name: "Support & Moderation" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});
+
 test("page arrivals and primary navigation reach first-party analytics without URL values", async ({
   page,
 }) => {

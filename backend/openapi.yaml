@@ -920,6 +920,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedResult'
           description: ''
+  /api/v1/client-errors/:
+    post:
+      operationId: client_errors_create
+      description: Accept bounded diagnostics; never accept messages, URLs or user
+        content.
+      tags:
+      - client-errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrowserErrorRequest'
+        required: true
+      security:
+      - sessionCookie: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/comments/{comment_id}/:
     patch:
       operationId: comments_partial_update
@@ -3106,6 +3125,87 @@ components:
         * `dashed` - Dashed
         * `dotted` - Dotted
         * `double` - Double
+    BrowserErrorKindEnum:
+      enum:
+      - boundary
+      - exception
+      - rejection
+      - api
+      type: string
+      description: |-
+        * `boundary` - boundary
+        * `exception` - exception
+        * `rejection` - rejection
+        * `api` - api
+    BrowserErrorRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/BrowserErrorKindEnum'
+        error_type:
+          $ref: '#/components/schemas/ErrorTypeEnum'
+        surface:
+          $ref: '#/components/schemas/BrowserErrorSurfaceEnum'
+        status_code:
+          type: integer
+          maximum: 599
+          minimum: 0
+        frames:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrowserFrameRequest'
+      required:
+      - error_type
+      - kind
+      - surface
+    BrowserErrorSurfaceEnum:
+      enum:
+      - discover
+      - trending
+      - explore
+      - create
+      - profile
+      - bingo
+      - share
+      - auth
+      - support
+      - legal
+      - notifications
+      - unknown
+      type: string
+      description: |-
+        * `discover` - discover
+        * `trending` - trending
+        * `explore` - explore
+        * `create` - create
+        * `profile` - profile
+        * `bingo` - bingo
+        * `share` - share
+        * `auth` - auth
+        * `support` - support
+        * `legal` - legal
+        * `notifications` - notifications
+        * `unknown` - unknown
+    BrowserFrameRequest:
+      type: object
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 240
+          pattern: ^/_next/static/chunks/[A-Za-z0-9_./-]+\.js$
+        lineno:
+          type: integer
+          maximum: 10000000
+          minimum: 1
+        colno:
+          type: integer
+          maximum: 10000000
+          minimum: 1
+      required:
+      - colno
+      - filename
+      - lineno
     Comment:
       type: object
       properties:
@@ -3480,6 +3580,28 @@ components:
           maxLength: 200
       required:
       - token
+    ErrorTypeEnum:
+      enum:
+      - Error
+      - TypeError
+      - RangeError
+      - ReferenceError
+      - SyntaxError
+      - URIError
+      - EvalError
+      - ApiClientError
+      - UnhandledRejection
+      type: string
+      description: |-
+        * `Error` - Error
+        * `TypeError` - TypeError
+        * `RangeError` - RangeError
+        * `ReferenceError` - ReferenceError
+        * `SyntaxError` - SyntaxError
+        * `URIError` - URIError
+        * `EvalError` - EvalError
+        * `ApiClientError` - ApiClientError
+        * `UnhandledRejection` - UnhandledRejection
     EventTypeEnum:
       enum:
       - impression
@@ -3674,7 +3796,7 @@ components:
       type: object
       properties:
         surface:
-          $ref: '#/components/schemas/SurfaceEnum'
+          $ref: '#/components/schemas/InteractionMetadataSurfaceEnum'
         action:
           $ref: '#/components/schemas/AnalyticsActionEnum'
         author:
@@ -3687,6 +3809,32 @@ components:
           oneOf:
           - $ref: '#/components/schemas/OrderingEnum'
           - $ref: '#/components/schemas/BlankEnum'
+    InteractionMetadataSurfaceEnum:
+      enum:
+      - discover
+      - trending
+      - explore
+      - profile
+      - share
+      - direct
+      - create
+      - register
+      - login
+      - settings
+      - notifications
+      type: string
+      description: |-
+        * `discover` - discover
+        * `trending` - trending
+        * `explore` - explore
+        * `profile` - profile
+        * `share` - share
+        * `direct` - direct
+        * `create` - create
+        * `register` - register
+        * `login` - login
+        * `settings` - settings
+        * `notifications` - notifications
     LanguageEnum:
       enum:
       - en
@@ -5001,32 +5149,6 @@ components:
           nullable: true
       required:
       - selected_cells
-    SurfaceEnum:
-      enum:
-      - discover
-      - trending
-      - explore
-      - profile
-      - share
-      - direct
-      - create
-      - register
-      - login
-      - settings
-      - notifications
-      type: string
-      description: |-
-        * `discover` - discover
-        * `trending` - trending
-        * `explore` - explore
-        * `profile` - profile
-        * `share` - share
-        * `direct` - direct
-        * `create` - create
-        * `register` - register
-        * `login` - login
-        * `settings` - settings
-        * `notifications` - notifications
     Tag:
       type: object
       properties:

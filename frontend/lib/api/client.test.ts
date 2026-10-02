@@ -8,13 +8,27 @@ import {
   isAuthenticationRequiredError,
 } from "@/lib/api/client";
 import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
+import { reportBrowserError } from "@/lib/browser-errors";
+
+vi.mock("@/lib/browser-errors", () => ({ reportBrowserError: vi.fn() }));
 
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.mocked(reportBrowserError).mockClear();
 });
 
 describe("API error presentation", () => {
+  it("reports unexpected API failures without reporting validation errors", async () => {
+    document.cookie = "neb_csrf=synthetic-csrf; path=/";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
+    await expect(api.auth.me()).rejects.toBeInstanceOf(ApiClientError);
+    expect(reportBrowserError).toHaveBeenCalledWith(expect.any(ApiClientError), "api", 503);
+    vi.mocked(reportBrowserError).mockClear();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 400 })));
+    await expect(api.auth.me()).rejects.toBeInstanceOf(ApiClientError);
+    expect(reportBrowserError).not.toHaveBeenCalled();
+  });
   it("keeps CSRF bootstrap alive when analytics flushes during navigation", async () => {
     document.cookie = "neb_csrf=; Max-Age=0; path=/";
     const fetchMock = vi.fn().mockResolvedValue({

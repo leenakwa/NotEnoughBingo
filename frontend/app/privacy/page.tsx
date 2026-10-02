@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage eyebrow="Trust" title="Privacy Policy" updated="September 30, 2026">
+    <LegalPage eyebrow="Trust" title="Privacy Policy" updated="October 3, 2026">
       <p>
         This policy describes the data handled by Not Enough Bingo. The operator of a public
         deployment must identify its responsible maintainer and private contact channel on the
@@ -33,6 +33,12 @@ export default function PrivacyPage() {
           <li>
             Operational security data such as request identifiers, coarse IP/session hints, user
             agent summaries, timestamps, delivery outcomes, and redacted application logs.
+          </li>
+          <li>
+            Browser failure diagnostics contain an error category, page category, optional HTTP
+            status, and positions in loaded application scripts. Reports omit error messages, page
+            URLs, query strings, form values, and bingo content. They help us diagnose broken
+            interactions without collecting what you were writing.
           </li>
           <li>
             Product interactions such as page visits, primary navigation actions, board views,

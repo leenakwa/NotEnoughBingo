@@ -44,9 +44,11 @@ of work; it does not reduce the checklist.
 
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
 open for itemized review: the 2026-09-30 tracker has 56 verified sections,
-42 partial, six N/A and one deployment-only. The current local full live
-regression is 53/53 and the frontend gate has 150 tests; these counts do not
-close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
+42 partial, six N/A and one deployment-only. The latest combined UI CI on
+`e6a54dc` passed 56 live flows and 161 frontend tests; subsequent browser-error
+collection passed 166 frontend tests, 205 backend tests (one container-only
+skip), four browser scenarios and one targeted live scenario locally. These
+counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
 Python dependency locks, abuse/error/privacy work, API destination guard, and
@@ -72,11 +74,12 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. Finish verification of the current combined interface changes and profile
-   validation recovery. CI on `a847b76` passed product/backend/frontend and
-   browser jobs but failed the backend image scan on fixable OpenSSL packages.
-   The refreshed local arm64 runtime image passed the High/Critical scan on
-   2026-10-03; the corresponding x86_64 CI release gate is still required.
+1. CI on combined interface/security source `e6a54dc` passed all nine jobs:
+   194 backend tests, 161 frontend tests, 176 browser smoke checks and 56 live
+   flows, plus both x86_64 production image vulnerability gates. This closes
+   the failed OpenSSL image gate from `a847b76` and the earlier local profile
+   and WebKit compatibility regressions. Database drill scripts and browser
+   error collection were added afterward and need their own exact-source gate.
    Keep the draft PR open while remaining local checklist items are audited.
    Current local evidence: 161 frontend tests; the live sweep passed 54/56,
    then both profile cases and three repeated WebKit compatibility journeys
@@ -94,7 +97,10 @@ only environment-specific smoke and recovery checks after release.
    compatibility, with representative joined/API/concurrent-load measurements
    still belonging to the performance audit.
 3. Prepare provider-independent release/rollback and monitoring artifacts;
-   preserve configuration contracts, keep demo identities out of a production
+   browser exception/rejection/API failure capture is now locally exercised.
+   Section 63 still needs actual provider delivery/grouping, private source maps,
+   release correlation for old open tabs and alert delivery.
+   Preserve configuration contracts, keep demo identities out of a production
    database and retain previous images/configuration. External inputs stay
    separately listed; do not stop local work merely because providers are absent.
 4. Once an operator supplies the actual domain, services, support/legal
