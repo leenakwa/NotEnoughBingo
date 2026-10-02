@@ -88,6 +88,11 @@ only environment-specific smoke and recovery checks after release.
    behavior, native zoom/ARIA/UI contrast, endpoint-by-endpoint contracts,
    database indexes/migration scale and notification/email failure paths.
    Record explicit N/A or target-only limits for each original bullet.
+   The 2026-10-03 structural and scale drills now cover installed indexes,
+   constraints, foreign keys/nullability and a 180,000-cell migration; the
+   remaining database queue is defaults/transactions and target operational
+   compatibility, with representative joined/API/concurrent-load measurements
+   still belonging to the performance audit.
 3. Prepare provider-independent release/rollback and monitoring artifacts;
    preserve configuration contracts, keep demo identities out of a production
    database and retain previous images/configuration. External inputs stay

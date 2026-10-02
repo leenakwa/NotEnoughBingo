@@ -838,11 +838,11 @@ Before launch verify:
 - [x] migrations;
 - [x] migrations tested against realistic existing data;
 - [ ] deployment compatibility;
-- [ ] indexes;
-- [ ] constraints;
-- [ ] unique constraints;
-- [ ] foreign keys;
-- [ ] nullable fields;
+- [x] indexes;
+- [x] constraints;
+- [x] unique constraints;
+- [x] foreign keys;
+- [x] nullable fields;
 - [ ] defaults;
 - [ ] transactions;
 - [ ] rollback/migration strategy.
@@ -851,7 +851,7 @@ Test:
 
 - [x] existing users survive schema changes;
 - [x] old rows missing new fields;
-- [ ] large-table migrations;
+- [x] large-table migrations;
 - [ ] deployment/migration order.
 
 # 43. DATA INTEGRITY

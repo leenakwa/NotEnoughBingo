@@ -2670,3 +2670,38 @@ observed results and their limits. Do not include credentials or session data.
   Catalog/author and notification filter/sort queries still need representative
   data and query-plan inspection; migration lock/runtime measurements and the
   target database deployment/backup/rollback contract remain open.
+
+### 2026-10-03 — Scaled database migration and base query plans (section 42)
+
+- Added two reproducible operation scripts: `infra/scripts/audit-database-schema.py`
+  is read-only and verifies named constraint types, unique fields, foreign-key
+  targets and column nullability; `infra/scripts/audit-database-scale.py`
+  requires an explicitly opted-in development PostgreSQL connection and no
+  custom database routers. It creates its own randomly named disposable database,
+  verifies the connection switched to it, and removes it in `finally`.
+- The scale drill created 200 disabled synthetic users, 10,000 published boards,
+  20,000 revisions and 180,000 cells. It downgraded the isolated schema to
+  `bingos.0002`, reapplied the current migration graph, and verified all four
+  row counts, all 10,000 first/latest publication timestamps and current titles,
+  the old-board `und` language default, and all 180,000 image-description
+  defaults. Final script execution exited 0; seeding took 19.015 s, schema
+  downgrade 0.115 s and upgrade 10.179 s. The original QA database was not
+  selected for writes; cleanup reported the disposable database removed.
+- After `ANALYZE`, actual base queryset `EXPLAIN ANALYZE` execution times were:
+  latest page 6.354 ms; popular page 0.226 ms; one author's page 0.082 ms;
+  case-insensitive title substring 4.699 ms. Popular and author paths used
+  their existing composite indexes. Latest and substring paths used sequential
+  scans; the synthetic catalog intentionally shares publication timestamps.
+  These are one local SQL-plan observation each, excluding API serialization,
+  joins/prefetch hydration, network, cold I/O and concurrent traffic. They do
+  not establish target hosting latency or million-row performance.
+- The strengthened structural audit passed on all 31 current QA tables with
+  no missing/type/target/nullability mismatch. Ruff passed for both scripts.
+  Section 42's structural and scaled-migration bullets now have explicit
+  evidence; defaults across every model, full transaction coverage, target
+  deployment ordering/compatibility, off-site recovery and rollback remain open.
+- The schema script also passed from its committed-path candidate. Running
+  the scale script without the opt-in rejected execution before database
+  creation. A PostgreSQL catalog query then confirmed zero databases with
+  the drill's temporary prefix. Both scripts passed Ruff and formatting;
+  the full 105-section/1,142-item checklist integrity check passed.

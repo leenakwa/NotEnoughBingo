@@ -115,6 +115,29 @@ make a domain inaccessible for the configured lifetime.
    `includeSubDomains`, and at least a one-year max age. Repository settings do
    not opt into browser preload lists automatically.
 
+## Reproducible database QA before release
+
+Use the isolated development Compose project for these drills. The schema
+script is read-only and prints metadata, never connection settings or rows.
+The scale script requires development settings, an explicit opt-in and
+database-creation privileges. It switches to and verifies its own disposable
+database, then removes it on exit. Its disabled accounts and synthetic boards
+are never seeded into the QA source or a production database.
+
+```bash
+QA_PROJECT=nebqa
+docker compose -p "$QA_PROJECT" exec -T backend python manage.py shell \
+  < infra/scripts/audit-database-schema.py
+docker compose -p "$QA_PROJECT" exec -T -e NEB_QA_SCALE_ALLOWED=1 \
+  backend python manage.py shell < infra/scripts/audit-database-scale.py
+```
+
+The scaled baseline is 10,000 boards, 20,000 revisions and 180,000 cells.
+It tests the old bingo schema upgrade and records base SQL query plans.
+It does not model live writer contention, API/network latency or the target
+provider's locking/backup limits. Keep target migration lock/runtime and
+recovery measurements in the deployment rehearsal.
+
 ## Immutable release and migrations
 
 Build each production image once, scan it, record its digest and SBOM, and
