@@ -44,10 +44,11 @@ of work; it does not reduce the checklist.
 
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
 open for itemized review: the 2026-09-30 tracker has 56 verified sections,
-42 partial, six N/A and one deployment-only. The latest combined UI CI on
-`e6a54dc` passed 56 live flows and 161 frontend tests; subsequent browser-error
-collection passed 166 frontend tests, 205 backend tests (one container-only
-skip), four browser scenarios and one targeted live scenario locally. These
+42 partial, six N/A and one deployment-only. The latest exact-source CI on
+`29ac99b` passed all nine jobs: 206 backend tests, 166 frontend tests,
+179 browser smoke checks and 57 live flows, plus both production image gates.
+The subsequent social-form changes passed 172 frontend tests and six related
+live scenarios locally; their own committed-source gate is still pending. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -74,17 +75,11 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
-1. CI on combined interface/security source `e6a54dc` passed all nine jobs:
-   194 backend tests, 161 frontend tests, 176 browser smoke checks and 56 live
-   flows, plus both x86_64 production image vulnerability gates. This closes
-   the failed OpenSSL image gate from `a847b76` and the earlier local profile
-   and WebKit compatibility regressions. Database drill scripts and browser
-   error collection were added afterward and need their own exact-source gate.
+1. Exact-source CI on `29ac99b` passed all nine jobs, including the database
+   audit scripts, browser-error collection and narrow historical documentation
+   scan exemption. No image was promoted or deployed. The subsequent social
+   form changes have targeted local evidence and need their own source gate.
    Keep the draft PR open while remaining local checklist items are audited.
-   Current local evidence: 161 frontend tests; the live sweep passed 54/56,
-   then both profile cases and three repeated WebKit compatibility journeys
-   passed after fixing their remaining label/navigation issues. The four
-   signup smoke expectations now pass against the intended dialog flow.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager

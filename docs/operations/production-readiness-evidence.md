@@ -2786,3 +2786,49 @@ observed results and their limits. Do not include credentials or session data.
 - The full redacted local Gitleaks scan passed across all 72 existing commits
   after this exact fingerprint was added. Final committed-source CI remains
   the release gate.
+
+
+### 2026-10-03 — Exact-source release gate after browser diagnostics
+
+- [CI run 37071307831](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37071307831)
+  on `29ac99b007572bf2d99d165083619c42a076ce6d` passed all nine jobs.
+  Results: 206 backend tests, 166 frontend tests, 179 browser smoke checks
+  (12 intentionally skipped) and 57 full-stack flows; both x86_64 production
+  image vulnerability/non-root/SBOM gates and the full-history secret scan
+  passed. The backend-only container's missing Nginx-template skip did not
+  occur in CI. No artifact was promoted, merged or deployed.
+
+### 2026-10-03 — Social form retention, submission and focus (sections 7–8, partial)
+
+- Before the fix, a live root-comment draft disappeared when following Explore
+  without any warning. The regression reproduced in `nebqa`; after the fix,
+  cancelled anchor navigation retains the exact multiline/emoji/literal text.
+  The existing unload warning is also enabled while these forms are dirty.
+- Root comment, reply, edit and report submissions now use synchronous action
+  guards, lock the submitted fields while pending and retain values on failure.
+  Re-clicking the active Reply/Edit control preserves its text. Cancelling or
+  switching dirty inline forms, changing their comment page, or closing a dirty
+  report dialog requires confirmation. Successful deletion closes a stale editor.
+- Social inputs expose required/optional status and their 2,000-character limit.
+  Report success points its accessible description to the actual success region,
+  focuses Done and returns focus to the invoking Report control after closing.
+- `npm run check` passed 172 frontend tests, ESLint and TypeScript;
+  `npm run format` passed, including the live fixture isolation adjustment. New component cases cover
+  same-tick duplicate submissions, failure retention, inline discard cancellation
+  and accessible report success. The final helper adjustment was included in
+  this quality and formatting check. `npm run build` also passed; its generated
+  Next route-type path change was restored afterward.
+- Six related live Chromium scenarios passed together on source-mounted `nebqa`:
+  both new social-form journeys plus existing zero-data, report scroll-lock,
+  social action and multilingual/long-comment paths. The new cases create and
+  clean up separate unlisted boards so shared empty-state fixtures remain empty.
+  A broad existing Like selector was scoped to the bingo action bar after the
+  combined run exposed ambiguity with comment likes.
+- At 320 and 1710 px, the dirty report dialog had no horizontal page overflow or
+  Axe violations, and screenshots were inspected. The success dialog also had
+  no Axe violations. Delayed real POSTs confirmed pending locks and HTTP 201;
+  repeated native form submission emitted one report request.
+- Limits: this does not prove password-manager autofill, per-field social error
+  placement, network response-loss retry idempotency, or draft recovery through
+  client Back navigation/session expiry. Those remain open. Sections 7–8 stay
+  partial and their all-form/all-control checklist bullets remain unchecked.

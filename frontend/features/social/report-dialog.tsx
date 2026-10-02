@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { api, errorMessage } from "@/lib/api/client";
 import type { PublicId, ReportReason, ReportTargetType } from "@/lib/api/types";
+import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
 
 const reasons: Array<{ value: ReportReason; label: string }> = [
   { value: "spam", label: "Spam" },
@@ -34,6 +35,9 @@ export function ReportDialog({
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const actionInFlight = useRef(false);
+  const dirty = !sent && Boolean(description.trim());
+  useUnsavedChangesWarning(dirty, "Your report has not been sent. Leave and discard it?");
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -53,7 +57,9 @@ export function ReportDialog({
   }, []);
 
   function close() {
-    if (pending) return;
+    if (actionInFlight.current) return;
+    if (dirty && !window.confirm("Discard this report? Your additional context has not been sent."))
+      return;
     if (dialogRef.current?.open && typeof dialogRef.current.close === "function") {
       dialogRef.current.close();
     }
@@ -62,7 +68,8 @@ export function ReportDialog({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
+    if (actionInFlight.current) return;
+    actionInFlight.current = true;
     setPending(true);
     setError("");
     try {
@@ -76,6 +83,7 @@ export function ReportDialog({
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
+      actionInFlight.current = false;
       setPending(false);
     }
   }
@@ -85,7 +93,7 @@ export function ReportDialog({
       ref={dialogRef}
       className="report-dialog"
       aria-labelledby="report-dialog-title"
-      aria-describedby="report-dialog-description"
+      aria-describedby={sent ? "report-success" : "report-dialog-description"}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
         const focusable = Array.from(
@@ -132,8 +140,10 @@ export function ReportDialog({
       </div>
       {sent ? (
         <div>
-          <p role="status">Report received. A moderator will review the content and its context.</p>
-          <button type="button" className="button button--primary" onClick={close}>
+          <p id="report-success" role="status">
+            Report received. A moderator will review the content and its context.
+          </p>
+          <button type="button" className="button button--primary" autoFocus onClick={close}>
             Done
           </button>
         </div>
@@ -143,8 +153,12 @@ export function ReportDialog({
             Choose the closest reason and add only the context moderators need.
           </p>
           <label className="field">
-            <span>Reason</span>
+            <span id="report-reason-label">Reason</span>
             <select
+              aria-labelledby="report-reason-label"
+              aria-describedby="report-reason-hint"
+              required
+              disabled={pending}
               name="reason"
               value={reason}
               onChange={(event) => setReason(event.target.value as ReportReason)}
@@ -155,10 +169,14 @@ export function ReportDialog({
                 </option>
               ))}
             </select>
+            <small id="report-reason-hint">Required.</small>
           </label>
           <label className="field">
-            <span>Additional context (optional)</span>
+            <span id="report-context-label">Additional context (optional)</span>
             <textarea
+              aria-labelledby="report-context-label"
+              aria-describedby="report-context-hint"
+              disabled={pending}
               name="description"
               autoComplete="off"
               rows={4}
@@ -166,6 +184,7 @@ export function ReportDialog({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
+            <small id="report-context-hint">Up to 2,000 characters.</small>
           </label>
           <div className="inline-actions">
             <button

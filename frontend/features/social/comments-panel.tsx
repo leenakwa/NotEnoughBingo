@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { AuthLink } from "@/components/auth/auth-link";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { api, errorMessage } from "@/lib/api/client";
 import type { AuthenticatedUser, Comment, Page, PublicId } from "@/lib/api/types";
 import { formatLocalDateTime } from "@/lib/date-time";
+import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
 
 type Viewer = AuthenticatedUser | "guest";
 
@@ -39,9 +40,38 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
   const [replyBody, setReplyBody] = useState("");
   const [editing, setEditing] = useState<PublicId | null>(null);
   const [editBody, setEditBody] = useState("");
+  const [originalEditBody, setOriginalEditBody] = useState("");
   const [pendingAction, setPendingAction] = useState("");
+  const actionInFlight = useRef(false);
   const [reporting, setReporting] = useState<Comment | null>(null);
   const signedIn = viewer !== "guest";
+  const replyDirty = Boolean(replyingTo && replyBody.trim());
+  const editDirty = Boolean(editing && editBody !== originalEditBody);
+  useUnsavedChangesWarning(
+    Boolean(newBody.trim()) || replyDirty || editDirty,
+    "You have unsent comment text. Leave and discard it?",
+  );
+
+  function beginAction(action: string) {
+    if (actionInFlight.current) return false;
+    actionInFlight.current = true;
+    setPendingAction(action);
+    setError("");
+    return true;
+  }
+
+  function finishAction() {
+    actionInFlight.current = false;
+    setPendingAction("");
+  }
+
+  function discardReply() {
+    return !replyDirty || window.confirm("Discard your unsent reply?");
+  }
+
+  function discardEdit() {
+    return !editDirty || window.confirm("Discard your unsaved comment changes?");
+  }
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -89,9 +119,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
   async function createRoot(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body = newBody.trim();
-    if (!body || pendingAction) return;
-    setPendingAction("create");
-    setError("");
+    if (!body || !beginAction("create")) return;
     try {
       const created = await api.comments.create(bingoId, body);
       setResult((current) =>
@@ -112,16 +140,14 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPendingAction("");
+      finishAction();
     }
   }
 
   async function createReply(event: FormEvent<HTMLFormElement>, parentId: PublicId) {
     event.preventDefault();
     const body = replyBody.trim();
-    if (!body || pendingAction) return;
-    setPendingAction(`reply-${parentId}`);
-    setError("");
+    if (!body || !beginAction(`reply-${parentId}`)) return;
     try {
       const created = await api.comments.reply(parentId, body);
       updateComment(parentId, (comment) => ({
@@ -135,14 +161,12 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPendingAction("");
+      finishAction();
     }
   }
 
   async function loadReplies(parentId: PublicId) {
-    if (pendingAction) return;
-    setPendingAction(`load-${parentId}`);
-    setError("");
+    if (!beginAction(`load-${parentId}`)) return;
     try {
       const replies: Comment[] = [];
       let replyPage = 1;
@@ -160,16 +184,14 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPendingAction("");
+      finishAction();
     }
   }
 
   async function saveEdit(event: FormEvent<HTMLFormElement>, commentId: PublicId) {
     event.preventDefault();
     const body = editBody.trim();
-    if (!body || pendingAction) return;
-    setPendingAction(`edit-${commentId}`);
-    setError("");
+    if (!body || !beginAction(`edit-${commentId}`)) return;
     try {
       const updated = await api.comments.update(commentId, body);
       updateComment(commentId, (current) => ({
@@ -183,16 +205,18 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPendingAction("");
+      finishAction();
     }
   }
 
   async function removeComment(commentId: PublicId) {
-    if (pendingAction || !window.confirm("Delete this comment? Replies will remain visible.")) {
+    if (
+      actionInFlight.current ||
+      !window.confirm("Delete this comment? Replies will remain visible.")
+    ) {
       return;
     }
-    setPendingAction(`delete-${commentId}`);
-    setError("");
+    if (!beginAction(`delete-${commentId}`)) return;
     try {
       await api.comments.remove(commentId);
       updateComment(commentId, (comment) => ({
@@ -201,18 +225,20 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
         deleted_at: new Date().toISOString(),
         is_liked: false,
       }));
+      if (editing === commentId) {
+        setEditing(null);
+        setEditBody("");
+      }
       window.setTimeout(() => document.getElementById(`comment-${commentId}`)?.focus(), 0);
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPendingAction("");
+      finishAction();
     }
   }
 
   async function toggleLike(comment: Comment) {
-    if (!signedIn || pendingAction || comment.deleted_at) return;
-    setPendingAction(`like-${comment.id}`);
-    setError("");
+    if (!signedIn || comment.deleted_at || !beginAction(`like-${comment.id}`)) return;
     try {
       if (comment.is_liked) await api.comments.unlike(comment.id);
       else await api.comments.like(comment.id);
@@ -224,7 +250,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setPendingAction("");
+      finishAction();
     }
   }
 
@@ -247,24 +273,35 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
         {isEditing ? (
           <form className="comment-form" onSubmit={(event) => void saveEdit(event, comment.id)}>
             <label className="field">
-              <span className="sr-only">Edit comment</span>
+              <span id={`edit-comment-label-${comment.id}`} className="sr-only">
+                Edit comment
+              </span>
               <textarea
+                aria-labelledby={`edit-comment-label-${comment.id}`}
+                aria-describedby={`edit-comment-hint-${comment.id}`}
                 name="edited_comment"
                 autoComplete="off"
                 rows={3}
                 maxLength={2_000}
                 required
                 autoFocus
+                disabled={pendingAction === `edit-${comment.id}`}
                 value={editBody}
                 onChange={(event) => setEditBody(event.target.value)}
               />
+              <small id={`edit-comment-hint-${comment.id}`}>
+                Required. Up to 2,000 characters.
+              </small>
             </label>
             <div className="inline-actions">
               <button
                 type="button"
                 className="button button--secondary"
+                disabled={Boolean(pendingAction)}
                 onClick={() => {
+                  if (actionInFlight.current || !discardEdit()) return;
                   setEditing(null);
+                  setEditBody("");
                   restoreActionFocus(comment.id, "edit");
                 }}
               >
@@ -273,9 +310,9 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               <button
                 type="submit"
                 className="button button--primary"
-                disabled={pendingAction === `edit-${comment.id}`}
+                disabled={Boolean(pendingAction) || !editBody.trim()}
               >
-                Save
+                {pendingAction === `edit-${comment.id}` ? "Saving…" : "Save"}
               </button>
             </div>
           </form>
@@ -291,7 +328,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               type="button"
               className="text-button"
               aria-pressed={comment.is_liked}
-              disabled={pendingAction === `like-${comment.id}`}
+              disabled={Boolean(pendingAction)}
               onClick={() => void toggleLike(comment)}
             >
               {comment.is_liked ? "Unlike" : "Like"} · {comment.like_count}
@@ -304,7 +341,9 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               type="button"
               className="text-button"
               data-comment-action={`reply-${comment.id}`}
+              disabled={Boolean(pendingAction)}
               onClick={() => {
+                if (actionInFlight.current || replyingTo === comment.id || !discardReply()) return;
                 setReplyingTo(comment.id);
                 setReplyBody("");
               }}
@@ -318,9 +357,12 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
                 type="button"
                 className="text-button"
                 data-comment-action={`edit-${comment.id}`}
+                disabled={Boolean(pendingAction)}
                 onClick={() => {
+                  if (actionInFlight.current || editing === comment.id || !discardEdit()) return;
                   setEditing(comment.id);
                   setEditBody(comment.body);
+                  setOriginalEditBody(comment.body);
                 }}
               >
                 Edit
@@ -328,7 +370,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               <button
                 type="button"
                 className="text-button"
-                disabled={pendingAction === `delete-${comment.id}`}
+                disabled={Boolean(pendingAction)}
                 onClick={() => void removeComment(comment.id)}
               >
                 Delete
@@ -347,24 +389,31 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
             onSubmit={(event) => void createReply(event, comment.id)}
           >
             <label className="field">
-              <span>Reply</span>
+              <span id={`reply-label-${comment.id}`}>Reply</span>
               <textarea
+                aria-labelledby={`reply-label-${comment.id}`}
+                aria-describedby={`reply-hint-${comment.id}`}
                 name="reply_body"
                 autoComplete="off"
                 rows={3}
                 maxLength={2_000}
                 required
                 autoFocus
+                disabled={pendingAction === `reply-${comment.id}`}
                 value={replyBody}
                 onChange={(event) => setReplyBody(event.target.value)}
               />
+              <small id={`reply-hint-${comment.id}`}>Required. Up to 2,000 characters.</small>
             </label>
             <div className="inline-actions">
               <button
                 type="button"
                 className="button button--secondary"
+                disabled={Boolean(pendingAction)}
                 onClick={() => {
+                  if (actionInFlight.current || !discardReply()) return;
                   setReplyingTo(null);
+                  setReplyBody("");
                   restoreActionFocus(comment.id, "reply");
                 }}
               >
@@ -373,9 +422,9 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               <button
                 type="submit"
                 className="button button--primary"
-                disabled={pendingAction === `reply-${comment.id}`}
+                disabled={Boolean(pendingAction) || !replyBody.trim()}
               >
-                Post reply
+                {pendingAction === `reply-${comment.id}` ? "Posting reply…" : "Post reply"}
               </button>
             </div>
           </form>
@@ -414,21 +463,25 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
       {signedIn && (!loading || result !== null) ? (
         <form className="comment-form comment-form--root" onSubmit={createRoot}>
           <label className="field">
-            <span>Add a comment</span>
+            <span id={`comment-label-${bingoId}`}>Add a comment</span>
             <textarea
+              aria-labelledby={`comment-label-${bingoId}`}
+              aria-describedby={`comment-hint-${bingoId}`}
               name="comment_body"
               autoComplete="off"
               rows={3}
               maxLength={2_000}
               required
+              disabled={pendingAction === "create"}
               value={newBody}
               onChange={(event) => setNewBody(event.target.value)}
             />
+            <small id={`comment-hint-${bingoId}`}>Required. Up to 2,000 characters.</small>
           </label>
           <button
             type="submit"
             className="button button--primary"
-            disabled={pendingAction === "create" || !newBody.trim()}
+            disabled={Boolean(pendingAction) || !newBody.trim()}
           >
             {pendingAction === "create" ? "Posting…" : "Post comment"}
           </button>
@@ -458,8 +511,13 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
           <button
             type="button"
             className="button button--secondary"
-            disabled={!result.previous || loading}
+            disabled={!result.previous || loading || Boolean(pendingAction)}
             onClick={() => {
+              if (!discardReply() || !discardEdit()) return;
+              setReplyingTo(null);
+              setReplyBody("");
+              setEditing(null);
+              setEditBody("");
               setResult(null);
               setPage((value) => Math.max(1, value - 1));
             }}
@@ -470,8 +528,13 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
           <button
             type="button"
             className="button button--secondary"
-            disabled={!result.next || loading}
+            disabled={!result.next || loading || Boolean(pendingAction)}
             onClick={() => {
+              if (!discardReply() || !discardEdit()) return;
+              setReplyingTo(null);
+              setReplyBody("");
+              setEditing(null);
+              setEditBody("");
               setResult(null);
               setPage((value) => value + 1);
             }}

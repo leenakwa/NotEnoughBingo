@@ -45,9 +45,11 @@ removed. The fixed header and revised hover/shadow treatment are also retained.
 The original prompt is preserved unchanged. Earlier language-picker observations
 are historical evidence, not a requirement to restore removed controls. The
 56/42 snapshot above predates these changes. Combined UI source `e6a54dc`
-passed all nine CI jobs, including 56 live flows and 176 smoke checks. The later
-database audit and browser-error collection additions require their own final
-source gate; remaining checklist bullets still need their individual evidence.
+passed all nine CI jobs, including 56 live flows and 176 smoke checks.
+Exact-source CI on `29ac99b` then passed all nine jobs, including the database
+audit and browser-error collection: 206 backend tests, 166 frontend tests,
+179 smoke checks and 57 live flows. Later social-form changes still need their
+own source gate; remaining checklist bullets need their individual evidence.
 
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,
   `frontend/tests/e2e`, and browser checks on the isolated `nebqa` stack.
@@ -67,7 +69,7 @@ source gate; remaining checklist bullets still need their individual evidence.
 - [ ] 4. UI STATES — Partial: first load, loaded/empty/error, offline/retry, authorization, and expired-session journeys were observed in representative routes. Explore removes stale results after a failed filter request; feeds, profile activity, notifications and comments now clear the previous page on failed pagination and expose retry, with browser and component regressions. Other partial-data behavior and a component-by-component sweep remain.
 - [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, and completion feedback were exercised; duplicate submission coverage, layout stability, and byte-level large-upload progress still need an itemized sweep. Skeletons are not used in this release.
 - [x] 6. ERROR HANDLING — Verified before deployment: relevant 400/401/403/404/409/413/422/429/500 and gateway/network/timeout cases have safe human-readable feedback, retained work and appropriate retry; proxy HTML and parser/exception internals stay out of the interface.
-- [ ] 7. FORMS — Partial: registration/login/reset/resend and publication reject simultaneous submissions; registration/reset, editor required title/language, and account password/email-change validation errors appear beside the field and focus it. Browser walks confirmed duplicate username, weak password, email-change rejection and publication validation, including 390 px mobile editor checks. An input label/name/autocomplete inventory covered public auth/search, profile, editor and root-comment forms. Native autofill/password-manager behavior and remaining per-form checks are still open.
+- [ ] 7. FORMS — Partial: registration/login/reset/resend and publication reject simultaneous submissions; registration/reset, editor required title/language, and account password/email-change validation errors appear beside the field and focus it. Browser walks confirmed duplicate username, weak password, email-change rejection and publication validation, including 390 px mobile editor checks. An input label/name/autocomplete inventory covered public auth/search, profile, editor and root-comment forms. Comment/reply/edit/report forms now retain text after failed submission, prevent concurrent duplicate submission and require confirmation before anchor navigation or discarding dirty inline/dialog forms; six related live scenarios passed, including report accessibility at 320/1710 px. Native autofill/password-manager behavior, social draft recovery across Back/session expiry, per-field social validation and remaining per-form checks are still open.
 - [ ] 8. BUTTONS AND CONTROLS — Partial: semantic button/link markup, focus and disabled states, destructive styling/confirmation, and 44px editor touch targets at 320/1710px were checked. Shared button hover/press feedback now changes visibly without mobile overflow; custom control states and form ownership need the remaining per-control sweep.
 - [x] 9. DESTRUCTIVE ACTIONS — Verified before deployment: confirmed permanent Delete/Reset, authorization and repeat safety, account-deletion cancellation, and live Archive/Restore with guest 404/200 and reload persistence; permanent actions do not promise undo.
 - [x] 10. SIGNUP — Verified before deployment: browser validation, password visibility and Enter, Mailpit verification and resend, duplicate and weak-password API behavior, expired and reused links.

@@ -19,6 +19,187 @@ const cellImagePng = Buffer.from(
   "base64",
 );
 let moderationReportId = "";
+const socialFormBoards = new WeakMap<Page, string>();
+
+test.afterEach(async ({ page }) => {
+  const id = socialFormBoards.get(page);
+  if (!id) return;
+  await authenticateAs(page, "author");
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const removed = await page.context().request.delete(`/api/v1/bingos/${id}/`, {
+    headers: { "X-CSRFToken": csrf!.value },
+  });
+  expect(removed.status()).toBe(204);
+  socialFormBoards.delete(page);
+});
+
+test("unsent comment text survives cancelled navigation and cannot change during posting", async ({
+  page,
+}) => {
+  const bingo = await createSocialFormBoard(page);
+  await authenticateAs(page, "player");
+  await page.goto(`/bingo/${bingo.id}`);
+  const body = page.getByLabel("Add a comment", { exact: true });
+  const text = "Comment draft 🎲\nSecond line <literal> & useful context";
+  await body.fill(text);
+  const warnings: string[] = [];
+  page.on("dialog", async (dialog) => {
+    warnings.push(dialog.message());
+    await dialog.dismiss();
+  });
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await expect(body).toHaveValue(text);
+  expect(warnings).toEqual([expect.stringContaining("unsent comment")]);
+
+  let release: () => void = () => undefined;
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/v1/bingos/${bingo.id}/comments/`, async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await hold;
+    await route.continue();
+  });
+  const posted = page.waitForResponse(
+    (response) =>
+      response.url().includes(`/bingos/${bingo.id}/comments/`) &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Post comment", exact: true }).click();
+  try {
+    await expect(body).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Posting…", exact: true })).toBeDisabled();
+  } finally {
+    release();
+  }
+  expect((await posted).status()).toBe(201);
+  await expect(body).toHaveValue("");
+  await expect(body).toBeEnabled();
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  expect(warnings).toHaveLength(1);
+});
+
+test("reply, edit and report forms retain context when discard is cancelled", async ({
+  page,
+}, testInfo) => {
+  const bingo = await createSocialFormBoard(page);
+  await authenticateAs(page, "player");
+  await page.goto(`/bingo/${bingo.id}`);
+  const rootBody = page.getByLabel("Add a comment", { exact: true });
+  const ids: string[] = [];
+  for (const body of ["First form parent", "Second form parent"]) {
+    await rootBody.fill(`${body} ${Date.now()}`);
+    const response = await waitForResponse(
+      page,
+      `/api/v1/bingos/${bingo.id}/comments/`,
+      "POST",
+      () => page.getByRole("button", { name: "Post comment", exact: true }).click(),
+    );
+    expect(response.status()).toBe(201);
+    ids.push((await response.json()).id);
+    await expect(rootBody).toHaveValue("");
+  }
+  const first = page.locator(`#comment-${ids[0]}`);
+  const second = page.locator(`#comment-${ids[1]}`);
+  const warnings: string[] = [];
+  let discard = false;
+  page.on("dialog", async (dialog) => {
+    warnings.push(dialog.message());
+    if (discard) await dialog.accept();
+    else await dialog.dismiss();
+  });
+  await first.getByRole("button", { name: "Edit", exact: true }).click();
+  const edited = first.getByLabel("Edit comment", { exact: true });
+  await edited.fill("Keep edited text 🎲\n<literal> & context");
+  await first.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(edited).toHaveValue("Keep edited text 🎲\n<literal> & context");
+  await first.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(edited).toHaveValue("Keep edited text 🎲\n<literal> & context");
+  discard = true;
+  await first.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(edited).toHaveCount(0);
+  await expect(first.getByRole("button", { name: "Edit", exact: true })).toBeFocused();
+  discard = false;
+  await first.getByRole("button", { name: "Reply", exact: true }).click();
+  const reply = first.getByLabel("Reply", { exact: true });
+  await reply.fill("Keep this reply 🎲\nA second line");
+  await first.getByRole("button", { name: "Reply", exact: true }).click();
+  await expect(reply).toHaveValue("Keep this reply 🎲\nA second line");
+  await second.getByRole("button", { name: "Reply", exact: true }).click();
+  await expect(reply).toHaveValue("Keep this reply 🎲\nA second line");
+  await expect(second.getByLabel("Reply", { exact: true })).toHaveCount(0);
+  discard = true;
+  await first.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(reply).toHaveCount(0);
+  await expect(first.getByRole("button", { name: "Reply", exact: true })).toBeFocused();
+  discard = false;
+
+  const reportTrigger = page.getByRole("button", { name: "Report", exact: true }).first();
+  await reportTrigger.click();
+  const report = page.getByRole("dialog", { name: "Report bingo" });
+  const context = report.getByLabel("Additional context (optional)", { exact: true });
+  const text = "Moderator context 🎲\n<literal> & detail " + "界".repeat(300);
+  await context.fill(text);
+  await context.press("Escape");
+  await expect(report).toBeVisible();
+  await expect(context).toHaveValue(text);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    const accessibility = await new AxeBuilder({ page }).include("dialog.report-dialog").analyze();
+    expect(accessibility.violations).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`report-context-${width}.png`) });
+  }
+  let release: () => void = () => undefined;
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let submissions = 0;
+  await page.route("**/api/v1/reports/", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    submissions += 1;
+    await hold;
+    await route.continue();
+  });
+  const received = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/reports/") && response.request().method() === "POST",
+  );
+  await report.getByRole("button", { name: "Send report", exact: true }).click();
+  try {
+    await expect(context).toBeDisabled();
+    await expect(report.getByLabel("Reason", { exact: true })).toBeDisabled();
+    await expect(report.getByRole("button", { name: "Close report dialog" })).toBeDisabled();
+    await report.locator("form").evaluate((form: HTMLFormElement) => {
+      form.requestSubmit();
+      form.requestSubmit();
+    });
+    expect(submissions).toBe(1);
+  } finally {
+    release();
+  }
+  expect((await received).status()).toBe(201);
+  await expect(report.getByRole("button", { name: "Done", exact: true })).toBeFocused();
+  const successAccessibility = await new AxeBuilder({ page })
+    .include("dialog.report-dialog")
+    .analyze();
+  expect(successAccessibility.violations).toEqual([]);
+  await report.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(report).toHaveCount(0);
+  await expect(reportTrigger).toBeFocused();
+  expect(warnings).toEqual([
+    "Discard your unsaved comment changes?",
+    "Discard your unsaved comment changes?",
+    "Discard your unsent reply?",
+    "Discard your unsent reply?",
+    "Discard this report? Your additional context has not been sent.",
+  ]);
+});
 
 test("browser error diagnostics reach the CSRF-protected backend with no private content", async ({
   page,
@@ -87,6 +268,36 @@ async function authenticateAs(page: Page, role: FixtureRole) {
   };
   await page.context().clearCookies();
   await page.context().addCookies(state.cookies);
+}
+
+async function createSocialFormBoard(page: Page): Promise<{ id: string }> {
+  await authenticateAs(page, "author");
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const headers = { "X-CSRFToken": csrf!.value, "Idempotency-Key": randomUUID() };
+  const created = await page.context().request.post("/api/v1/drafts/", {
+    headers,
+    data: {
+      title: `Social form QA ${randomUUID()}`,
+      visibility: "unlisted",
+      language: "en",
+      size: 3,
+      cells: Array.from({ length: 9 }, (_, position) => ({
+        position,
+        row: Math.floor(position / 3),
+        column: position % 3,
+        text: `Form cell ${position + 1}`,
+      })),
+    },
+  });
+  expect(created.status()).toBe(201);
+  const draft = (await created.json()) as { bingo_id: string };
+  socialFormBoards.set(page, draft.bingo_id);
+  const published = await page.context().request.post(`/api/v1/bingos/${draft.bingo_id}/publish/`, {
+    headers: { ...headers, "Idempotency-Key": randomUUID() },
+  });
+  expect(published.status()).toBe(201);
+  return { id: draft.bingo_id };
 }
 
 test("adversarial content stays literal and unsafe inputs cannot change resource boundaries", async ({
@@ -1495,7 +1706,7 @@ test.describe("live full-stack product flows", () => {
     await authenticateAs(page, "player");
     await page.goto(`/bingo/${bingo.id}`);
 
-    const bingoLike = page.getByRole("button", { name: /^Like ·/ });
+    const bingoLike = page.locator(".play-actions").getByRole("button", { name: /^Like ·/ });
     await expect(bingoLike).toBeVisible();
     await waitForResponse(page, `/api/v1/bingos/${bingo.id}/likes/`, "POST", () =>
       bingoLike.click(),
