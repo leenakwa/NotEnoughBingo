@@ -95,6 +95,58 @@ describe("auth submission safety", () => {
     },
   );
 
+  it.each([
+    ["registration", RegisterForm, "register"],
+    ["login", LoginForm, "login"],
+    ["reset request", ForgotPasswordForm, "requestPasswordReset"],
+    ["reset confirmation", ResetPasswordForm, "resetPassword"],
+  ] as const)(
+    "submits values filled without React change events (%s)",
+    async (_label, Form, method) => {
+      mocks[method].mockRejectedValue(new Error("Test submission rejected."));
+      render(<Form />);
+      if (Form !== ResetPasswordForm) {
+        const email = (await screen.findByLabelText("Email")) as HTMLInputElement;
+        email.value = "filled@example.test";
+      }
+      if (Form === RegisterForm) {
+        const username = screen.getByRole("textbox", { name: /^Username/ }) as HTMLInputElement;
+        username.value = "filled_user";
+      }
+      if (Form !== ForgotPasswordForm) {
+        const password = screen.getByLabelText(
+          Form === ResetPasswordForm ? "New password" : "Password",
+        ) as HTMLInputElement;
+        password.value = "filled synthetic password";
+      }
+      const submit = screen
+        .getAllByRole("button")
+        .find((button) => button.getAttribute("type") === "submit")!;
+      await act(async () => {
+        fireEvent.submit(submit.closest("form")!);
+      });
+      const payload =
+        method === "register"
+          ? {
+              email: "filled@example.test",
+              username: "filled_user",
+              password: "filled synthetic password",
+            }
+          : method === "login"
+            ? { email: "filled@example.test", password: "filled synthetic password" }
+            : method === "requestPasswordReset"
+              ? "filled@example.test"
+              : {
+                  uid: "example-uid",
+                  token: "example-token",
+                  new_password: "filled synthetic password",
+                };
+      expect(mocks[method]).toHaveBeenCalledWith(payload);
+      if (Form !== ResetPasswordForm)
+        expect(screen.getByLabelText("Email")).toHaveValue("filled@example.test");
+    },
+  );
+
   it("does not resend verification twice in the same event batch", async () => {
     mocks.query = "email=user%40example.test";
     let finish!: () => void;

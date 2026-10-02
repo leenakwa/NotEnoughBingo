@@ -31,15 +31,24 @@ export function RegisterForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submissionInFlight.current) return;
+    const data = new FormData(event.currentTarget);
+    const submitted = {
+      email: String(data.get("email") ?? "").trim(),
+      username: String(data.get("username") ?? "").trim(),
+      password: String(data.get("password") ?? ""),
+    };
+    setEmail(submitted.email);
+    setUsername(submitted.username);
+    setPassword(submitted.password);
     submissionInFlight.current = true;
     setPending(true);
     onPendingChange?.(true);
     setError("");
     setFieldErrors({});
     try {
-      await api.auth.register({ email: email.trim(), username: username.trim(), password });
-      if (onRegistered) onRegistered(email.trim());
-      else router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+      await api.auth.register(submitted);
+      if (onRegistered) onRegistered(submitted.email);
+      else router.replace(`/verify-email?email=${encodeURIComponent(submitted.email)}`);
     } catch (caught) {
       submissionInFlight.current = false;
       const errors: Partial<Record<RegistrationField, string>> = {};

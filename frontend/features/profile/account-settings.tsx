@@ -176,7 +176,14 @@ export function AccountSettings({
     event.preventDefault();
     const form = event.currentTarget;
     if (pending || actionInFlight.current) return;
-    if (newPassword !== confirmPassword) {
+    const data = new FormData(form);
+    const submittedCurrentPassword = String(data.get("current_password") ?? "");
+    const submittedNewPassword = String(data.get("new_password") ?? "");
+    const submittedConfirmation = String(data.get("confirm-new-password") ?? "");
+    setCurrentPassword(submittedCurrentPassword);
+    setNewPassword(submittedNewPassword);
+    setConfirmPassword(submittedConfirmation);
+    if (submittedNewPassword !== submittedConfirmation) {
       setError("");
       setMessage("");
       setConfirmPasswordError("The new passwords do not match.");
@@ -189,8 +196,8 @@ export function AccountSettings({
     if (!beginAction("password")) return;
     try {
       await api.auth.changePassword({
-        current_password: currentPassword,
-        new_password: newPassword,
+        current_password: submittedCurrentPassword,
+        new_password: submittedNewPassword,
       });
       setCurrentPassword("");
       setNewPassword("");
@@ -217,13 +224,19 @@ export function AccountSettings({
   async function requestEmailChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    if (pending || !beginAction("email")) return;
+    if (pending || actionInFlight.current) return;
+    const data = new FormData(form);
+    const submittedEmail = String(data.get("new_email") ?? "").trim();
+    const submittedPassword = String(data.get("email-change-password") ?? "");
+    setNewEmail(submittedEmail);
+    setEmailChangePassword(submittedPassword);
+    if (!beginAction("email")) return;
     setNewEmailError("");
     setEmailChangePasswordError("");
     try {
       await api.auth.requestEmailChange({
-        current_password: emailChangePassword,
-        new_email: newEmail,
+        current_password: submittedPassword,
+        new_email: submittedEmail,
       });
       setEmailChangePassword("");
       setEmailFeedback({
@@ -330,9 +343,13 @@ export function AccountSettings({
     ) {
       return;
     }
+    const submittedPassword = String(
+      new FormData(event.currentTarget).get("deletion_password") ?? "",
+    );
+    setDeletionPassword(submittedPassword);
     if (!beginAction("deletion")) return;
     try {
-      const scheduled = await api.auth.scheduleAccountDeletion(deletionPassword);
+      const scheduled = await api.auth.scheduleAccountDeletion(submittedPassword);
       clearAllEditorRecovery();
       clearAllProgressRecovery();
       clearProfileEdits();
@@ -653,6 +670,7 @@ export function AccountSettings({
             <>
               <PasswordField
                 label="Confirm with your password"
+                name="deletion_password"
                 autoComplete="current-password"
                 value={deletionPassword}
                 onChange={(event) => setDeletionPassword(event.target.value)}

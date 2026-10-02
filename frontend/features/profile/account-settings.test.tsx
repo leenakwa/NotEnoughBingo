@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   scheduleAccountDeletion: vi.fn(),
   sessions: vi.fn(),
   changePassword: vi.fn(),
+  requestEmailChange: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -43,6 +44,7 @@ vi.mock("@/lib/api/client", () => ({
       scheduleAccountDeletion: mocks.scheduleAccountDeletion,
       sessions: mocks.sessions,
       changePassword: mocks.changePassword,
+      requestEmailChange: mocks.requestEmailChange,
     },
     profiles: {
       notificationPreferences: mocks.notificationPreferences,
@@ -163,6 +165,86 @@ describe("AccountSettings deletion grace period", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/login?next=%2Fprofile&reason=deletion-scheduled");
     expect(mocks.refresh).toHaveBeenCalledOnce();
     expect(readProfileEdits(currentUser.id)).toBeUndefined();
+  });
+
+  it("submits actual filled password values and retains them on failure", async () => {
+    mocks.changePassword.mockRejectedValue(new Error("Test submission rejected."));
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const current = (await screen.findByLabelText("Current password", {
+      exact: true,
+    })) as HTMLInputElement;
+    const next = screen.getByLabelText("New password", { exact: true }) as HTMLInputElement;
+    const confirm = screen.getByLabelText("Confirm new password", {
+      exact: true,
+    }) as HTMLInputElement;
+    current.value = "filled current synthetic password";
+    next.value = confirm.value = "filled new synthetic password";
+    fireEvent.submit(current.closest("form")!);
+    await waitFor(() =>
+      expect(mocks.changePassword).toHaveBeenCalledWith({
+        current_password: "filled current synthetic password",
+        new_password: "filled new synthetic password",
+      }),
+    );
+    await screen.findByRole("alert");
+    expect(current).toHaveValue("filled current synthetic password");
+    expect(next).toHaveValue("filled new synthetic password");
+  });
+
+  it("compares actual filled password confirmation before making a request", async () => {
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const current = (await screen.findByLabelText("Current password", {
+      exact: true,
+    })) as HTMLInputElement;
+    current.value = "filled current synthetic password";
+    (screen.getByLabelText("New password", { exact: true }) as HTMLInputElement).value =
+      "filled new synthetic password";
+    const confirmation = screen.getByLabelText("Confirm new password", {
+      exact: true,
+    }) as HTMLInputElement;
+    confirmation.value = "different filled synthetic password";
+    fireEvent.submit(current.closest("form")!);
+    expect(mocks.changePassword).not.toHaveBeenCalled();
+    expect(confirmation).toHaveFocus();
+    expect(confirmation).toHaveValue("different filled synthetic password");
+    expect(confirmation).toHaveAccessibleDescription("The new passwords do not match.");
+  });
+
+  it("submits actual filled email-change values and retains them on failure", async () => {
+    mocks.requestEmailChange.mockRejectedValue(new Error("Test submission rejected."));
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const email = (await screen.findByLabelText("New email address")) as HTMLInputElement;
+    const password = screen.getByLabelText("Current password for email change") as HTMLInputElement;
+    email.value = "filled@example.test";
+    password.value = "filled current synthetic password";
+    fireEvent.submit(email.closest("form")!);
+    await waitFor(() =>
+      expect(mocks.requestEmailChange).toHaveBeenCalledWith({
+        new_email: "filled@example.test",
+        current_password: "filled current synthetic password",
+      }),
+    );
+    await screen.findByRole("alert");
+    expect(email).toHaveValue("filled@example.test");
+    expect(password).toHaveValue("filled current synthetic password");
+  });
+
+  it("reads the actual filled deletion confirmation password", async () => {
+    mocks.scheduleAccountDeletion.mockRejectedValue(new Error("Test submission rejected."));
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const password = (await screen.findByLabelText(
+      "Confirm with your password",
+    )) as HTMLInputElement;
+    password.value = "filled deletion synthetic password";
+    fireEvent.submit(password.closest("form")!);
+    await waitFor(() =>
+      expect(mocks.scheduleAccountDeletion).toHaveBeenCalledWith(
+        "filled deletion synthetic password",
+      ),
+    );
+    await screen.findByRole("alert");
+    expect(password).toHaveValue("filled deletion synthetic password");
+    expect(mocks.replace).not.toHaveBeenCalled();
   });
 
   it("focuses mismatched confirmation and keeps the error beside that field", async () => {

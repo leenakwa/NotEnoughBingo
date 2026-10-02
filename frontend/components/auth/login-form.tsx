@@ -89,12 +89,17 @@ export function LoginForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submissionInFlight.current) return;
+    const data = new FormData(event.currentTarget);
+    const submittedEmail = String(data.get("email") ?? "").trim();
+    const submittedPassword = String(data.get("password") ?? "");
+    setEmail(submittedEmail);
+    setPassword(submittedPassword);
     submissionInFlight.current = true;
     setPending(true);
     onPendingChange?.(true);
     setError("");
     try {
-      const { user } = await api.auth.login({ email: email.trim(), password });
+      const { user } = await api.auth.login({ email: submittedEmail, password: submittedPassword });
       if (onSuccess) onSuccess();
       else {
         router.replace(safeNext(next));

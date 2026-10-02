@@ -107,3 +107,74 @@ test("verification does not claim a duplicate account received a new email", asy
     "/forgot-password",
   );
 });
+
+for (const scenario of [
+  {
+    route: "/login",
+    endpoint: "login/",
+    fields: { email: "filled@example.test", password: "filled synthetic password" },
+    expected: { email: "filled@example.test", password: "filled synthetic password" },
+  },
+  {
+    route: "/register",
+    endpoint: "register/",
+    fields: {
+      email: "filled@example.test",
+      username: "filled_user",
+      password: "filled synthetic password",
+    },
+    expected: {
+      email: "filled@example.test",
+      username: "filled_user",
+      password: "filled synthetic password",
+    },
+  },
+  {
+    route: "/forgot-password",
+    endpoint: "password-reset/",
+    fields: { email: "filled@example.test" },
+    expected: { email: "filled@example.test" },
+  },
+  {
+    route: "/reset-password?uid=example-uid&token=example-token",
+    endpoint: "password-reset/confirm/",
+    fields: { new_password: "filled synthetic password" },
+    expected: {
+      uid: "example-uid",
+      token: "example-token",
+      new_password: "filled synthetic password",
+    },
+  },
+]) {
+  test(`actual filled input values survive rejection on ${scenario.route.split("?")[0]}`, async ({
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.name));
+    let submitted: unknown;
+    await page.route(`**/api/v1/auth/${scenario.endpoint}`, (route) => {
+      submitted = route.request().postDataJSON();
+      return route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Test submission rejected." }),
+      });
+    });
+    await page.goto(scenario.route);
+    const form = page.locator("form.stack-form");
+    await expect(form).toBeVisible();
+    await form.evaluate((element: HTMLFormElement, fields) => {
+      for (const [name, value] of Object.entries(fields)) {
+        const input = element.elements.namedItem(name) as HTMLInputElement;
+        input.value = value!;
+      }
+    }, scenario.fields);
+    await form.locator('button[type="submit"]').click();
+    await expect(form.getByRole("alert")).toHaveText("Test submission rejected.");
+    expect(submitted).toEqual(scenario.expected);
+    for (const [name, value] of Object.entries(scenario.fields)) {
+      await expect(form.locator(`input[name="${name}"]`)).toHaveValue(value!);
+    }
+    expect(pageErrors).toEqual([]);
+  });
+}

@@ -201,6 +201,71 @@ test("reply, edit and report forms retain context when discard is cancelled", as
   ]);
 });
 
+test("account forms submit filled DOM values and retain them after real validation", async ({
+  page,
+}) => {
+  await authenticateAs(page, "author");
+  await page.goto("/profile");
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  page.on("dialog", (dialog) => dialog.accept());
+  for (const scenario of [
+    {
+      title: "Change password",
+      endpoint: "password-change/",
+      fields: {
+        current_password: "Filled-Incorrect!2026",
+        new_password: "Filled-New-Password!2026",
+        "confirm-new-password": "Filled-New-Password!2026",
+      },
+      expected: {
+        current_password: "Filled-Incorrect!2026",
+        new_password: "Filled-New-Password!2026",
+      },
+    },
+    {
+      title: "Change email",
+      endpoint: "email-change/",
+      fields: {
+        new_email: "filled@example.test",
+        "email-change-password": "Filled-Incorrect!2026",
+      },
+      expected: { new_email: "filled@example.test", current_password: "Filled-Incorrect!2026" },
+    },
+    {
+      title: "Delete account",
+      endpoint: "account-deletion/",
+      fields: { deletion_password: "Filled-Incorrect!2026" },
+      expected: { password: "Filled-Incorrect!2026" },
+    },
+  ]) {
+    const form = page
+      .locator("form.settings-card")
+      .filter({ has: page.getByRole("heading", { name: scenario.title, exact: true }) });
+    await expect(form).toBeVisible();
+    await form.evaluate((element: HTMLFormElement, fields) => {
+      for (const [name, value] of Object.entries(fields)) {
+        (element.elements.namedItem(name) as HTMLInputElement).value = value!;
+      }
+    }, scenario.fields);
+    const responsePromise = page.waitForResponse(
+      (response) =>
+        response.url().endsWith(`/api/v1/auth/${scenario.endpoint}`) &&
+        response.request().method() === "POST",
+    );
+    await form.locator('button[type="submit"]').click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(400);
+    expect(response.request().postDataJSON()).toEqual(scenario.expected);
+    await expect(form.getByRole("alert")).toBeVisible();
+    for (const [name, value] of Object.entries(scenario.fields)) {
+      await expect(form.locator(`input[name="${name}"]`)).toHaveValue(value!);
+    }
+    await expect(form.locator('button[type="submit"]')).toBeEnabled();
+  }
+  expect(pageErrors).toEqual([]);
+});
+
 test("browser error diagnostics reach the CSRF-protected backend with no private content", async ({
   page,
 }) => {

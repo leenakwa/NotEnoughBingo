@@ -24,13 +24,15 @@ export function ForgotPasswordForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submissionInFlight.current) return;
+    const submittedEmail = String(new FormData(event.currentTarget).get("email") ?? "").trim();
+    setEmail(submittedEmail);
     submissionInFlight.current = true;
     setPending(true);
     onPendingChange?.(true);
     setMessage("");
     setError("");
     try {
-      await api.auth.requestPasswordReset(email.trim());
+      await api.auth.requestPasswordReset(submittedEmail);
       setMessage("If an account exists for that address, a reset email is on its way.");
     } catch (caught) {
       setError(errorMessage(caught));
@@ -100,6 +102,8 @@ export function ResetPasswordForm() {
       setError("This reset link is incomplete.");
       return;
     }
+    const submittedPassword = String(new FormData(event.currentTarget).get("new_password") ?? "");
+    setPassword(submittedPassword);
     submissionInFlight.current = true;
     setPending(true);
     setError("");
@@ -108,7 +112,7 @@ export function ResetPasswordForm() {
       await api.auth.resetPassword({
         uid,
         token,
-        new_password: password,
+        new_password: submittedPassword,
       });
       setMessage("Password changed. You can now log in.");
       setPassword("");

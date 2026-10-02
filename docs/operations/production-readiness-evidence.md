@@ -2832,3 +2832,36 @@ observed results and their limits. Do not include credentials or session data.
   placement, network response-loss retry idempotency, or draft recovery through
   client Back navigation/session expiry. Those remain open. Sections 7–8 stay
   partial and their all-form/all-control checklist bullets remain unchecked.
+
+
+### 2026-10-03 — Silent autofill values at submission (section 7, partial)
+
+- Four auth component regressions reproduced empty submitted values when input
+  DOM properties were filled without dispatching React change events. Login,
+  registration, reset request and reset confirmation now read the submitted
+  form with `FormData`, synchronize controlled values and preserve them after
+  rejection. Email/username boundary whitespace is trimmed; passwords retain
+  their exact characters. Registration confirmation uses the submitted address.
+- Account password, email-change and deletion forms use the same submission
+  rule. Password confirmation compares the actual filled fields before any
+  request, and deletion has an explicit input name. No credential was added to
+  browser storage or diagnostic events. Eight added component cases cover the
+  four auth forms and account confirmation/submission/failure retention.
+- `npm run check` passed all 180 frontend tests, lint and TypeScript;
+  `npm run format` and `npm run build` passed. Sixteen new browser checks passed
+  in Chromium, mobile Chromium, Firefox and WebKit, using actual DOM values
+  without change events and asserting request payload plus rejection retention.
+  The existing twenty auth smoke scenarios also passed across those projects.
+- Two targeted Chromium scenarios passed against `nebqa`: the new account
+  journey sent actual filled values in three real backend requests, received
+  expected 400 validation and retained the inputs; existing field validation
+  still identified/focused the password field. The first harness invocation
+  incorrectly used the success-only response helper for expected 400s; replacing
+  it with an explicit response wait corrected the test, without a product change.
+- Three further live flows passed: registration/Mailpit verification/login,
+  reset email/session expiration/token reuse, and verified email change/reused
+  link rejection. This verifies the affected successful submit paths locally.
+- Limits: these are deterministic silent-fill compatibility checks, not direct
+  tests of native browser saved credentials or a specific password-manager
+  extension. Those original bullets remain open; section 7 stays partial.
+  The new source still needs its own committed CI gate.

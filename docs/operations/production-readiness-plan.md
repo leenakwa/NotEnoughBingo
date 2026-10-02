@@ -48,7 +48,10 @@ open for itemized review: the 2026-09-30 tracker has 56 verified sections,
 `29ac99b` passed all nine jobs: 206 backend tests, 166 frontend tests,
 179 browser smoke checks and 57 live flows, plus both production image gates.
 The subsequent social-form changes passed 172 frontend tests and six related
-live scenarios locally; their own committed-source gate is still pending. These
+live scenarios locally; their own committed-source gate is still pending.
+The later silent-autofill correction passed 180 frontend tests, 36 affected
+browser checks and five live scenarios locally; its committed-source gate
+is still pending. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
