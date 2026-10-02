@@ -2912,3 +2912,74 @@ observed results and their limits. Do not include credentials or session data.
 - Section 7 stays partial: native saved credentials/extensions, recovery across
   client Back/session expiry and the remaining all-form sweep are still open.
   This new implementation still requires its own committed-source CI gate.
+
+
+### 2026-10-03 — Autofill gate, a WebKit retry and later live-gate failure
+
+- [CI run 37074991151](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37074991151)
+  on `1f4a773624e696bc243033e6ca8982857a951526` passed all nine jobs:
+  206 backend tests, 180 frontend tests, 195 smoke checks plus one WebKit check
+  passed on retry (12 intentional skips), 60 live flows and both production
+  image gates. This covers the silent-fill correction, not later social fixes.
+- That WebKit browser-diagnostics test clicked an SSR login link before client
+  initialization and navigated to the functional login page instead of opening
+  the expected dialog. It now waits for the client's session check before
+  clicking, as the existing auth-dialog test does. Three consecutive WebKit
+  diagnostics repetitions passed locally without retries.
+- [CI run 37076012518](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37076012518)
+  on `eca929819cca8485d43072999145599e46bdac1e` failed its live/release gate:
+  57 live cases passed, one failed and three did not run. Backend/frontend,
+  foundation, secret scan, smoke and both production image jobs succeeded.
+  Do not describe this later source as green.
+- The failure was the session assertion immediately after a successful password
+  change. The trace shows the browser's new-session request for sessions returning
+  200; the separate test API request for `me/` sent only the CSRF cookie and
+  received 401. Cookie values were compared in memory and never printed. This
+  proves the API assertion did not send the browser's authenticated session; it
+  does not establish the underlying automation-cookie synchronization cause.
+  The assertion now makes a same-origin request from the actual browser and
+  requires 200 without retry. The reset/change-password flow and existing
+  two-tab logout/editor cleanup passed locally with this correction. A fresh
+  exact-source gate remains required.
+
+### 2026-10-03 — Root comment recovery and explicit sign-out (sections 7/58, partial scope)
+
+- A live client Back/Forward regression reproduced an empty comment after returning
+  to the board. Root comment text now restores from an account/board-scoped
+  in-memory cache. The UI explains the lifetime and announces restored text.
+  Nothing is written to localStorage/sessionStorage or diagnostics; native
+  document-unload protection remains. Clearing/posting removes the record.
+- Retention is bounded to 64 recent board drafts and 24 hours. Switching accounts
+  purges old data, and a generation guard rejects delayed writes after sign-out
+  or an owner change. Guest/owner changes key the comment component separately,
+  preventing another viewer from inheriting its controlled input state. Server
+  rendering does not read or mutate this browser cache.
+- Explicit logout, current-session revocation and scheduled deletion publish a
+  dedicated sign-out signal. Local events clear this tab; storage and
+  BroadcastChannel signals clear other tabs and revalidate their headers, without
+  transmitting identity or draft text. Normal auth refresh and session-expiry
+  events preserve recovery for the same account. Constructors/storage failures
+  are handled; local clearing does not require either cross-tab mechanism.
+- Six cache tests cover board isolation, exact multiline/Unicode text, empty
+  removal, bounds/expiry, owner changes, delayed writes and sign-out with normal,
+  unavailable or cross-tab storage. A component regression covers guest hiding,
+  same-owner recovery and different-owner purge; successful post asserts removal.
+  `npm run check` passed all 192 frontend tests, lint and TypeScript. Final
+  formatting and `npm run build` passed after the privacy text/channel addition;
+  generated Next route imports were restored afterward.
+- Nine related live Chromium scenarios passed together before the channel fallback
+  addition: social errors/discard/pending behavior, Back/Forward, a real backend
+  401 after removing browser credentials followed by same-owner login, explicit
+  two-tab logout, existing editor cleanup, password reset/change and email change.
+  The fallback then passed three related journeys, including two-tab sign-out with
+  the sender's auth-sync storage write deliberately blocked. Fresh login sessions
+  keep the shared fixture sessions valid for following scenarios.
+- Restored root-comment layouts were inspected at 320 and 1710 px with no
+  horizontal overflow or Axe violations. The privacy notice describes memory-only
+  retention and the 64-record/24-hour limits.
+- Limits: this recovery currently covers the root comment only. Reply, edit and
+  report drafts still need account-scoped recovery, stale-target handling and
+  equivalent navigation/auth cleanup evidence. Closing/reloading the document
+  clears memory; recovery is not a server draft. Cross-tab fallback with both
+  messaging and storage unavailable remains unverified. The full forms verdict
+  remains partial, and the new source needs its own CI gate.

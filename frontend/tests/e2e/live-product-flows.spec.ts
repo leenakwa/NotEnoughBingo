@@ -2559,7 +2559,11 @@ test.describe("live full-stack product flows", () => {
       changePassword.getByRole("button", { name: "Change password", exact: true }).click(),
     );
     await expect(changePassword.getByRole("status")).toContainText("Password changed");
-    expect((await page.request.get("/api/v1/auth/me/")).status()).toBe(200);
+    expect(
+      await page.evaluate(
+        async () => (await fetch("/api/v1/auth/me/", { credentials: "same-origin" })).status,
+      ),
+    ).toBe(200);
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     await page.goto("/login");
     await page.getByLabel("Email").fill(email);
@@ -2768,4 +2772,101 @@ test.describe("live full-stack product flows", () => {
       page.getByRole("button", { name: "Save profile", exact: true }).click(),
     );
   });
+});
+
+test("unsent comment draft survives client Back and Forward", async ({ page }, testInfo) => {
+  const bingo = await createSocialFormBoard(page);
+  await page.goto("/profile");
+  await page.getByRole("tab", { name: "Created", exact: true }).click();
+  await page.locator(`a[href="/bingo/${bingo.id}"]`).first().click();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  const input = page.getByLabel("Add a comment", { exact: true });
+  const text = "Keep my comment across Back 🎲\n<literal> & context";
+  await input.fill(text);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/profile$/);
+  await page.goForward();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await expect(input).toHaveValue(text);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    await input.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    expect(
+      (await new AxeBuilder({ page }).include(".comment-form--root").analyze()).violations,
+    ).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`restored-comment-${width}.png`) });
+  }
+});
+
+test("unsent root comment returns after session recovery for the same account", async ({
+  page,
+}) => {
+  const bingo = await createSocialFormBoard(page);
+  await page.goto(`/bingo/${bingo.id}`);
+  await expect(page.getByRole("link", { name: /^Profile for/ })).toBeVisible();
+  const input = page.getByLabel("Add a comment", { exact: true });
+  const text = "Keep my comment through reauthentication 🎲\n<literal> & context";
+  await input.fill(text);
+  await page.context().clearCookies();
+  const expired = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/v1/bingos/${bingo.id}/comments/`) &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Post comment", exact: true }).click();
+  expect((await expired).status()).toBe(401);
+  const login = page.getByRole("dialog", { name: "Log in", exact: true });
+  await expect(login).toBeVisible();
+  await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+  await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+  await login.getByRole("button", { name: "Log in", exact: true }).click();
+  await expect(login).toHaveCount(0);
+  await expect(input).toHaveValue(text);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Unsent comment restored" }),
+  ).toBeVisible();
+});
+
+test("explicit logout from another tab clears comment recovery even when storage is blocked", async ({
+  page,
+}) => {
+  const bingo = await createSocialFormBoard(page);
+  // Use a fresh session; fixture cookies must stay valid for later scenarios.
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+  await page.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+  await page.getByRole("button", { name: "Log in", exact: true }).click();
+  await expect(page).toHaveURL(/\/discover$/);
+  await page.goto(`/bingo/${bingo.id}`);
+  const input = page.getByLabel("Add a comment", { exact: true });
+  await input.fill("Private draft cleared by explicit sign-out 🎲");
+  const settings = await page.context().newPage();
+  try {
+    await settings.addInitScript(() => {
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        if (key === "neb:auth-sync") throw new Error("Cross-tab storage blocked by test");
+        return setItem.call(this, key, value);
+      };
+    });
+    await settings.goto("/profile");
+    await settings.getByRole("button", { name: "Log out", exact: true }).click();
+    const login = page.getByRole("dialog", { name: "Log in", exact: true });
+    await expect(login).toBeVisible();
+    await expect(input).toHaveCount(0);
+    await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+    await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+    await login.getByRole("button", { name: "Log in", exact: true }).click();
+    await expect(login).toHaveCount(0);
+    await expect(input).toHaveValue("");
+    await expect(
+      page.getByRole("status").filter({ hasText: "Unsent comment restored" }),
+    ).toHaveCount(0);
+  } finally {
+    await settings.close();
+  }
 });

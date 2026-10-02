@@ -5,6 +5,7 @@ import { AuthLink } from "@/components/auth/auth-link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
+import { readCommentDraft, rememberCommentDraft } from "@/features/social/comment-draft-cache";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type { AuthenticatedUser, Comment, Page, PublicId } from "@/lib/api/types";
@@ -31,11 +32,25 @@ function updateCommentTree(
 }
 
 export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer }) {
+  return (
+    <CommentThread
+      key={`${bingoId}:${viewer === "guest" ? "guest" : viewer.id}`}
+      bingoId={bingoId}
+      viewer={viewer}
+    />
+  );
+}
+
+function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer }) {
   const [result, setResult] = useState<Page<Comment> | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [newBody, setNewBody] = useState("");
+  const [recovery] = useState(() =>
+    viewer === "guest" ? null : readCommentDraft(viewer.id, bingoId),
+  );
+  const [newBody, setNewBody] = useState(recovery?.body ?? "");
+  const [restored, setRestored] = useState(Boolean(recovery?.body));
   const [bodyErrors, setBodyErrors] = useState<Partial<Record<"root" | "reply" | "edit", string>>>(
     {},
   );
@@ -53,7 +68,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
   const editDirty = Boolean(editing && editBody !== originalEditBody);
   useUnsavedChangesWarning(
     Boolean(newBody.trim()) || replyDirty || editDirty,
-    "You have unsent comment text. Leave and discard it?",
+    "You have unsent comment text. Leave this page?",
   );
 
   useEffect(() => {
@@ -61,6 +76,12 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
     validationFocus.current.focus();
     validationFocus.current = null;
   }, [pendingAction, bodyErrors]);
+
+  useEffect(() => {
+    if (viewer !== "guest" && recovery) {
+      rememberCommentDraft(viewer.id, bingoId, newBody, recovery.generation);
+    }
+  }, [bingoId, newBody, recovery, viewer]);
 
   function beginAction(action: string) {
     if (actionInFlight.current) return false;
@@ -526,6 +547,11 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
 
       {signedIn && (!loading || result !== null) ? (
         <form className="comment-form comment-form--root" onSubmit={createRoot}>
+          {restored && newBody.trim() ? (
+            <p className="form-message" role="status">
+              Unsent comment restored in this tab.
+            </p>
+          ) : null}
           <label className="field">
             <span id={`comment-label-${bingoId}`}>Add a comment</span>
             <textarea
@@ -533,6 +559,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               aria-invalid={Boolean(bodyErrors.root)}
               aria-describedby={[
                 `comment-hint-${bingoId}`,
+                `comment-draft-hint-${bingoId}`,
                 bodyErrors.root ? `comment-error-${bingoId}` : "",
               ]
                 .filter(Boolean)
@@ -546,10 +573,15 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               value={newBody}
               onChange={(event) => {
                 setNewBody(event.target.value);
+                setRestored(false);
                 setBodyErrors((current) => ({ ...current, root: undefined }));
               }}
             />
             <small id={`comment-hint-${bingoId}`}>Required. Up to 2,000 characters.</small>
+            <small id={`comment-draft-hint-${bingoId}`}>
+              Unsent comments stay in this tab for up to 24 hours. Closing the tab or logging out
+              clears them.
+            </small>
             {bodyErrors.root ? (
               <small id={`comment-error-${bingoId}`} className="form-message--error" role="alert">
                 {bodyErrors.root}

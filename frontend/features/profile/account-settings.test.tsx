@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   me: vi.fn(),
   notificationPreferences: vi.fn(),
   notifyAuthChanged: vi.fn(),
+  notifySignedOut: vi.fn(),
   replace: vi.fn(),
   refresh: vi.fn(),
   scheduleAccountDeletion: vi.fn(),
@@ -30,6 +31,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth-events", () => ({
   notifyAuthChanged: mocks.notifyAuthChanged,
+  notifySignedOut: mocks.notifySignedOut,
 }));
 
 vi.mock("@/lib/uploads", () => ({
@@ -161,7 +163,7 @@ describe("AccountSettings deletion grace period", () => {
     await waitFor(() =>
       expect(mocks.scheduleAccountDeletion).toHaveBeenCalledWith("secret password"),
     );
-    expect(mocks.notifyAuthChanged).toHaveBeenCalledOnce();
+    expect(mocks.notifySignedOut).toHaveBeenCalledOnce();
     expect(mocks.replace).toHaveBeenCalledWith("/login?next=%2Fprofile&reason=deletion-scheduled");
     expect(mocks.refresh).toHaveBeenCalledOnce();
     expect(readProfileEdits(currentUser.id)).toBeUndefined();

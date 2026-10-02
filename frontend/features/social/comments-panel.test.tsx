@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { clearCommentDrafts, readCommentDraft } from "@/features/social/comment-draft-cache";
 import { CommentsPanel } from "@/features/social/comments-panel";
 import type { AuthenticatedUser, Comment, Page } from "@/lib/api/types";
 
@@ -63,6 +64,7 @@ function comment(body: string): Comment {
 
 describe("CommentsPanel", () => {
   beforeEach(() => {
+    clearCommentDrafts();
     vi.restoreAllMocks();
     vi.clearAllMocks();
     mocks.list.mockResolvedValue(emptyPage);
@@ -93,6 +95,34 @@ describe("CommentsPanel", () => {
     expect(await screen.findByText(created.body)).toBeVisible();
   });
 
+  it("restores unsent root text only for the same account and board", async () => {
+    const user = userEvent.setup();
+    const bingoId = "33333333-3333-4333-8333-333333333333";
+    const view = render(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    await screen.findByText("No comments yet");
+    await user.type(
+      screen.getByLabelText("Add a comment"),
+      "Keep my draft 🎲{Enter}<literal> & context",
+    );
+    view.rerender(<CommentsPanel bingoId={bingoId} viewer="guest" />);
+    await screen.findByText("No comments yet");
+    expect(screen.queryByLabelText("Add a comment")).not.toBeInTheDocument();
+    view.rerender(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    expect(await screen.findByLabelText("Add a comment")).toHaveValue(
+      "Keep my draft 🎲\n<literal> & context",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Unsent comment restored");
+    view.rerender(
+      <CommentsPanel
+        bingoId={bingoId}
+        viewer={{ ...viewer, id: "44444444-4444-4444-8444-444444444444" }}
+      />,
+    );
+    expect(await screen.findByLabelText("Add a comment")).toHaveValue("");
+    view.rerender(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    expect(await screen.findByLabelText("Add a comment")).toHaveValue("");
+  });
+
   it("locks the submitted text and synchronously prevents duplicate posts", async () => {
     let resolve: (comment: Comment) => void = () => undefined;
     mocks.create.mockReturnValue(
@@ -116,6 +146,7 @@ describe("CommentsPanel", () => {
     });
     expect(input).toBeEnabled();
     expect(input).toHaveValue("");
+    expect(readCommentDraft(viewer.id, "33333333-3333-4333-8333-333333333333").body).toBe("");
   });
 
   it("preserves root text after a failed post and warns before navigation", async () => {

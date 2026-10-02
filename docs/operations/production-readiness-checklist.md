@@ -1134,7 +1134,7 @@ Verify:
 - [x] corrupted JSON/data;
 - [x] incognito/private browsing where relevant;
 - [x] unavailable storage;
-- [x] logout clears sensitive local state;
+- [ ] logout clears sensitive local state;
 - [x] user A's local data does not appear for user B on the same device.
 
 # 59. CACHE

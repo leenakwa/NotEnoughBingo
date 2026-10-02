@@ -272,11 +272,23 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
     const handleStorage = (event: StorageEvent) => {
       if (event.key === AUTH_SYNC_KEY) void refreshUser(true);
     };
+    let signOutChannel: BroadcastChannel | undefined;
+    try {
+      if (typeof window.BroadcastChannel !== "undefined") {
+        signOutChannel = new window.BroadcastChannel(AUTH_SYNC_KEY);
+        signOutChannel.addEventListener("message", (event) => {
+          if (event.data === "signed-out") void refreshUser(true);
+        });
+      }
+    } catch {
+      // Storage events and focus revalidation remain available.
+    }
     window.addEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
     window.addEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
     window.addEventListener("focus", handleFocus);
     window.addEventListener("storage", handleStorage);
     return () => {
+      signOutChannel?.close();
       window.removeEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
       window.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
       window.removeEventListener("focus", handleFocus);

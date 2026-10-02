@@ -16,7 +16,9 @@ test("browser exceptions, rejections and API failures are reported without priva
     return route.fulfill({ status: 204 });
   });
   await page.route("**/api/v1/auth/login/", (route) => route.fulfill({ status: 503 }));
+  const sessionCheck = page.waitForResponse("**/api/v1/auth/session/");
   await page.goto("/support?private-marker=secret#private-marker");
+  await sessionCheck;
   await page.getByRole("link", { name: "Log in", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Log in", exact: true })).toBeVisible();
   await page.evaluate(() => {

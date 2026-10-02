@@ -10,7 +10,7 @@ import { UploadStatus } from "@/components/ui/upload-status";
 import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
 import { clearAllProgressRecovery } from "@/lib/progress-recovery";
 import { clearProfileEdits } from "@/features/profile/profile-edit-cache";
-import { notifyAuthChanged } from "@/lib/auth-events";
+import { notifyAuthChanged, notifySignedOut } from "@/lib/auth-events";
 import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type {
   AuthenticatedUser,
@@ -268,7 +268,7 @@ export function AccountSettings({
         clearAllEditorRecovery();
         clearAllProgressRecovery();
         clearProfileEdits();
-        notifyAuthChanged();
+        notifySignedOut();
         router.replace("/login");
         router.refresh();
         return;
@@ -355,7 +355,7 @@ export function AccountSettings({
       clearProfileEdits();
       setDeletionPassword("");
       setDeletionScheduledFor(scheduled.scheduled_for);
-      notifyAuthChanged();
+      notifySignedOut();
       router.replace("/login?next=%2Fprofile&reason=deletion-scheduled");
       router.refresh();
     } catch (caught) {
@@ -386,7 +386,7 @@ export function AccountSettings({
       clearAllEditorRecovery();
       clearAllProgressRecovery();
       clearProfileEdits();
-      notifyAuthChanged();
+      notifySignedOut();
       router.replace("/login");
       router.refresh();
     } catch (caught) {

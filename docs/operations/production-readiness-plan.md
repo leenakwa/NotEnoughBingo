@@ -43,15 +43,20 @@ of work; it does not reduce the checklist.
 | 5. Deployment handoff | Domain, TLS, email, object storage, monitoring, alerts, external recovery, and scripted live smoke/rollback checks. | Predeployment checklist is complete; external configuration is supplied; deployment-only checks are automated and pass on the target environment. |
 
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
-open for itemized review: the 2026-09-30 tracker has 56 verified sections,
-42 partial, six N/A and one deployment-only. The latest exact-source CI on
+open for itemized review: the 2026-10-03 tracker has 55 verified sections,
+43 partial, six N/A and one deployment-only after reopening storage cleanup
+for the new comment cache's remaining cross-tab fallback condition. The latest exact-source CI on
 `29ac99b` passed all nine jobs: 206 backend tests, 166 frontend tests,
 179 browser smoke checks and 57 live flows, plus both production image gates.
 The social-form source `b466456` also passed all nine CI jobs: 206 backend
 tests, 172 frontend tests, 180 smoke checks and 59 live flows.
-The later silent-autofill correction passed 180 frontend tests, 36 affected
-browser checks and five live scenarios locally; its committed-source gate
-is still pending. These
+The silent-autofill source `1f4a773` passed all nine CI jobs, including
+180 frontend tests and 60 live flows, with one WebKit smoke check passing on
+retry. Later social-validation source `eca9298` failed the live/release gate
+because its post-password-change test API request omitted the session cookie.
+The corrected browser assertion, hydration wait and root-comment recovery now
+have local evidence (192 frontend tests and targeted live journeys); a new
+source gate is required. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -82,13 +87,17 @@ only environment-specific smoke and recovery checks after release.
    audit scripts, browser-error collection and narrow historical documentation
    scan exemption. No image was promoted or deployed. The subsequent social
    form changes on `b466456` passed all nine CI jobs. The later silent-autofill
-   correction has local evidence and still needs its own source gate.
+   correction on `1f4a773` passed all nine jobs. The later `eca9298` gate failed
+   and the corrected browser-session assertion plus comment recovery need their
+   own final-source run.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager
    behavior (silent-fill submission is verified; native saved credentials are not),
-   social draft recovery through Back/session expiry, native zoom/ARIA/UI contrast, endpoint-by-endpoint contracts,
+   reply/edit/report draft recovery through Back/session expiry (root comments
+   now have local recovery/cleanup evidence), native zoom/ARIA/UI contrast,
+   endpoint-by-endpoint contracts,
    database indexes/migration scale and notification/email failure paths.
    Record explicit N/A or target-only limits for each original bullet.
    The 2026-10-03 structural and scale drills now cover installed indexes,
