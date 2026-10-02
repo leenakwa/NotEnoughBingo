@@ -2865,3 +2865,18 @@ observed results and their limits. Do not include credentials or session data.
   tests of native browser saved credentials or a specific password-manager
   extension. Those original bullets remain open; section 7 stays partial.
   The new source still needs its own committed CI gate.
+
+
+### 2026-10-03 — Social-form source gate and autofill history scan
+
+- [CI run 37073927578](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37073927578)
+  on `b46645623b515aaa561fdff1dca895ab6328eec1` passed all nine jobs:
+  206 backend tests, 172 frontend tests, 180 smoke checks (12 intentional skips),
+  59 live flows, both production image scans/non-root/SBOM checks, foundation,
+  full-history secret scan and release gate. These results cover social-form
+  changes and their isolated fixture cleanup, not the later autofill source.
+- Autofill implementation source `78f31fe` subsequently passed a full redacted
+  local Gitleaks history scan over 75 commits with no findings. Its final live
+  response-wait adjustment also passed TypeScript and targeted ESLint. Exact
+  committed-source CI is still required for those later changes. No merge,
+  registry promotion or deployment has occurred.

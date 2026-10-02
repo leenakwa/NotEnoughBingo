@@ -48,8 +48,10 @@ are historical evidence, not a requirement to restore removed controls. The
 passed all nine CI jobs, including 56 live flows and 176 smoke checks.
 Exact-source CI on `29ac99b` then passed all nine jobs, including the database
 audit and browser-error collection: 206 backend tests, 166 frontend tests,
-179 smoke checks and 57 live flows. Later social-form changes still need their
-own source gate; remaining checklist bullets need their individual evidence.
+179 smoke checks and 57 live flows. Social-form source `b466456` then passed
+all nine jobs: 206 backend tests, 172 frontend tests, 180 smoke checks and
+59 live flows. The later silent-autofill correction still needs its own gate;
+remaining checklist bullets need their individual evidence.
 
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,
   `frontend/tests/e2e`, and browser checks on the isolated `nebqa` stack.
