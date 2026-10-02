@@ -2772,3 +2772,17 @@ observed results and their limits. Do not include credentials or session data.
   accurate old-tab release correlation and private source-map upload remain
   open. Public source maps remain disabled. Section 63 stays partial; only its
   frontend/unhandled-promise/API-capture bullets are newly checked.
+
+### 2026-10-03 — Historical documentation secret-scan false positive (section 72)
+
+- CI on `618486d` reported one generic-key finding in the preceding database
+  audit commit `4f740f8`, not in browser diagnostic code or test credentials.
+  The flagged evidence lines describe the request processing, data joins,
+  network and concurrent traffic omitted from the SQL timing measurement.
+- Added an exact commit/file/rule/line fingerprint to `.gitleaksignore` with
+  the reason. No path-wide, rule-wide or credential-pattern exemption was
+  added; the historical evidence remains intact. The new source requires a
+  fresh history scan and release gate.
+- The full redacted local Gitleaks scan passed across all 72 existing commits
+  after this exact fingerprint was added. Final committed-source CI remains
+  the release gate.

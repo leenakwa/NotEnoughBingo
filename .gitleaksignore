@@ -1,2 +1,4 @@
 # False positive: this historical checklist sentence describes input-validation cases, not a credential.
 37832bd2acc27c2f0ed34b5415a9e061621a7562:docs/operations/production-readiness-tracker.md:generic-api-key:102
+# False positive: historical SQL timing sentence describes omitted latency, not a credential.
+4f740f88f90f995a5adc0cbb3cd0905897beacd1:docs/operations/production-readiness-evidence.md:generic-api-key:2695
