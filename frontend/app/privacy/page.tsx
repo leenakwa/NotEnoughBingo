@@ -71,11 +71,12 @@ export default function PrivacyPage() {
           server is managed through your account.
         </p>
         <p>
-          Unsent comment text is kept only in the current tab&apos;s memory for up to 24 hours, so
-          it can be restored while you browse or sign back into the same account. It is tied to that
-          account and board, with at most 64 recent comment drafts retained. Posting, clearing the
-          text, switching accounts, logging out, or closing the tab removes it. It is not written to
-          browser storage or included in diagnostics.
+          Unsent comment and report text is kept only in the current tab&apos;s memory for up to 24
+          hours, so it can be restored while you browse or sign back into the same account. It is
+          tied to that account and the content you are commenting on or reporting, with at most 64
+          recent drafts retained. Sending, discarding or clearing the text, switching accounts,
+          logging out, or closing the tab removes it. It is not written to browser storage or
+          included in diagnostics.
         </p>
       </section>
 

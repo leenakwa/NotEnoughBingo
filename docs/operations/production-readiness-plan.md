@@ -95,8 +95,8 @@ only environment-specific smoke and recovery checks after release.
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager
    behavior (silent-fill submission is verified; native saved credentials are not),
-   reply/edit/report draft recovery through Back/session expiry (root comments
-   now have local recovery/cleanup evidence), native zoom/ARIA/UI contrast,
+   reply/edit draft recovery through Back/session expiry (root comments and
+   reopened reports now have local recovery/cleanup evidence), native zoom/ARIA/UI contrast,
    endpoint-by-endpoint contracts,
    database indexes/migration scale and notification/email failure paths.
    Record explicit N/A or target-only limits for each original bullet.

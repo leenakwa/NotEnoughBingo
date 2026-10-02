@@ -5,7 +5,7 @@ import { AuthLink } from "@/components/auth/auth-link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
-import { readCommentDraft, rememberCommentDraft } from "@/features/social/comment-draft-cache";
+import { readCommentDraft, rememberCommentDraft } from "@/features/social/social-draft-cache";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type { AuthenticatedUser, Comment, Page, PublicId } from "@/lib/api/types";
@@ -653,8 +653,10 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
           </button>
         </nav>
       ) : null}
-      {reporting ? (
+      {reporting && viewer !== "guest" ? (
         <ReportDialog
+          key={`${viewer.id}:${reporting.id}`}
+          accountId={viewer.id}
           targetType="comment"
           targetId={reporting.id}
           targetLabel="comment"

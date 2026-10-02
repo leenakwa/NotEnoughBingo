@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearCommentDrafts, readCommentDraft } from "@/features/social/comment-draft-cache";
+import { clearSocialDrafts, readCommentDraft } from "@/features/social/social-draft-cache";
 import { CommentsPanel } from "@/features/social/comments-panel";
 import type { AuthenticatedUser, Comment, Page } from "@/lib/api/types";
 
@@ -64,7 +64,7 @@ function comment(body: string): Comment {
 
 describe("CommentsPanel", () => {
   beforeEach(() => {
-    clearCommentDrafts();
+    clearSocialDrafts();
     vi.restoreAllMocks();
     vi.clearAllMocks();
     mocks.list.mockResolvedValue(emptyPage);

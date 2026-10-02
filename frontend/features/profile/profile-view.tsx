@@ -542,8 +542,10 @@ export function ProfileView({
           }}
         />
       ) : null}
-      {reportOpen ? (
+      {reportOpen && viewer && viewer !== "guest" ? (
         <ReportDialog
+          key={`${viewer.id}:${profile.id}`}
+          accountId={viewer.id}
           targetType="profile"
           targetId={profile.id}
           targetLabel="profile"

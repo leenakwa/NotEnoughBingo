@@ -747,8 +747,10 @@ export function BingoPlayer({
       ) : null}
 
       {playable && viewer ? <CommentsPanel bingoId={bingo.id} viewer={viewer} /> : null}
-      {reportOpen ? (
+      {reportOpen && viewer && viewer !== "guest" ? (
         <ReportDialog
+          key={`${viewer.id}:${bingo.id}`}
+          accountId={viewer.id}
           targetType="bingo"
           targetId={bingo.id}
           targetLabel="bingo"

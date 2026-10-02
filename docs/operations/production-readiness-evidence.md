@@ -2983,3 +2983,42 @@ observed results and their limits. Do not include credentials or session data.
   clears memory; recovery is not a server draft. Cross-tab fallback with both
   messaging and storage unavailable remains unverified. The full forms verdict
   remains partial, and the new source needs its own CI gate.
+
+
+### 2026-10-03 — Account-scoped report recovery (section 7, partial scope)
+
+- The bounded tab-memory cache now covers root comments and reports through one
+  shared owner/generation/sign-out policy. Its 64-record limit applies to the
+  combined set, with the same 24-hour lifetime. Report keys include account,
+  target type and target ID; reason-only reports are also retained. No report
+  text is written to persistent storage, auth signals or diagnostics.
+- Reopening Report for the same target after client history navigation or
+  same-account reauthentication restores its reason and exact multiline text.
+  The dialog announces recovery and explains its lifetime. Explicit Cancel/close
+  after confirmation and successful sending clear the record. Target/account
+  changes remount controlled input state; signed-out/loading viewers cannot
+  retain a visible report dialog. The privacy notice describes combined retention.
+- Three additional cache cases cover report/comment namespace isolation, reason-only
+  drafts, clearing and delayed writes after logout. Three component cases cover
+  remount recovery, account/target changes and rejected unavailable targets;
+  existing send/discard tests assert cache removal. `npm run check` passed lint,
+  TypeScript and all 198 frontend tests. Formatting and the final production
+  build passed; generated Next route-import changes were restored afterward.
+- Eight related live Chromium journeys passed together on isolated `nebqa`: four
+  new report flows plus existing dirty-form, validation, root Back/Forward and
+  blocked-storage cross-tab logout regressions. The new flows exercise reopening
+  after client Back/Forward; real report submission and removal after send/cancel;
+  real backend 401 after clearing browser credentials followed by same-account
+  login; real backend 400 after the author archives the target; and explicit
+  logout from another tab followed by a fresh login with no report recovery.
+  The rejected report retains context and its original destination; it is not
+  silently redirected. Fresh sessions preserve shared fixture credentials.
+- Restored report layouts were inspected at 320 and 1710 px, with no page-width
+  overflow or Axe violations. Sending/Cancel remain reachable. Initial negative
+  live assertions used a helper that rejects every non-2xx response; they were
+  corrected to await and assert the intentionally expected 401/400 directly.
+- Limits: users reopen Report for recovery; the modal is not automatically opened
+  on return. A full reload/tab close clears memory. Reply/edit recovery, explicit
+  context handling for deleted/moved comment targets, native credential managers
+  and the remaining form sweep stay open. Simultaneous loss of both cross-tab
+  signals remains unverified. This later source still requires its own CI gate.

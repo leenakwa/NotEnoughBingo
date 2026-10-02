@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
+import { readReportDraft, rememberReportDraft } from "@/features/social/social-draft-cache";
 import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type { PublicId, ReportReason, ReportTargetType } from "@/lib/api/types";
 import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
@@ -18,19 +19,23 @@ const reasons: Array<{ value: ReportReason; label: string }> = [
   { value: "other", label: "Other" },
 ];
 
-export function ReportDialog({
-  targetType,
-  targetId,
-  targetLabel,
-  onClose,
-}: {
+interface ReportDialogProps {
+  accountId: PublicId;
   targetType: ReportTargetType;
   targetId: PublicId;
   targetLabel: string;
   onClose: () => void;
-}) {
-  const [reason, setReason] = useState<ReportReason>("spam");
-  const [description, setDescription] = useState("");
+}
+
+export function ReportDialog(props: ReportDialogProps) {
+  return <ReportForm key={`${props.accountId}:${props.targetType}:${props.targetId}`} {...props} />;
+}
+
+function ReportForm({ accountId, targetType, targetId, targetLabel, onClose }: ReportDialogProps) {
+  const [recovery] = useState(() => readReportDraft(accountId, targetType, targetId));
+  const [reason, setReason] = useState<ReportReason>(recovery.reason);
+  const [description, setDescription] = useState(recovery.description);
+  const [restored, setRestored] = useState(recovery.restored);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<"reason" | "description", string>>>(
@@ -41,7 +46,17 @@ export function ReportDialog({
   const actionInFlight = useRef(false);
   const validationFocus = useRef<HTMLElement | null>(null);
   const dirty = !sent && (Boolean(description.trim()) || reason !== "spam");
-  useUnsavedChangesWarning(dirty, "Your report has not been sent. Leave and discard it?");
+  useUnsavedChangesWarning(dirty, "Your report has not been sent. Leave this page?");
+
+  useEffect(() => {
+    rememberReportDraft(
+      accountId,
+      targetType,
+      targetId,
+      sent ? null : { reason, description },
+      recovery.generation,
+    );
+  }, [accountId, targetType, targetId, reason, description, sent, recovery]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -70,6 +85,7 @@ export function ReportDialog({
     if (actionInFlight.current) return;
     if (dirty && !window.confirm("Discard this report? Your additional context has not been sent."))
       return;
+    rememberReportDraft(accountId, targetType, targetId, null, recovery.generation);
     if (dialogRef.current?.open && typeof dialogRef.current.close === "function") {
       dialogRef.current.close();
     }
@@ -170,8 +186,14 @@ export function ReportDialog({
         </div>
       ) : (
         <form className="stack-form" onSubmit={submit}>
+          {restored ? (
+            <p className="form-message" role="status">
+              Unsent report restored in this tab.
+            </p>
+          ) : null}
           <p id="report-dialog-description">
-            Choose the closest reason and add only the context moderators need.
+            Choose the closest reason and add only the context moderators need. Unsent reports stay
+            in this tab for up to 24 hours. Closing the tab or logging out clears them.
           </p>
           <label className="field">
             <span id="report-reason-label">Reason</span>
@@ -190,6 +212,7 @@ export function ReportDialog({
               value={reason}
               onChange={(event) => {
                 setReason(event.target.value as ReportReason);
+                setRestored(false);
                 setFieldErrors((current) => ({ ...current, reason: undefined }));
               }}
             >
@@ -225,6 +248,7 @@ export function ReportDialog({
               value={description}
               onChange={(event) => {
                 setDescription(event.target.value);
+                setRestored(false);
                 setFieldErrors((current) => ({ ...current, description: undefined }));
               }}
             />

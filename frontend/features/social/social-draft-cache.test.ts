@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  clearCommentDrafts,
+  clearSocialDrafts,
   readCommentDraft,
+  readReportDraft,
   rememberCommentDraft,
-} from "@/features/social/comment-draft-cache";
+  rememberReportDraft,
+} from "@/features/social/social-draft-cache";
 import {
   AUTH_SESSION_ENDED_EVENT,
   AUTH_SYNC_KEY,
@@ -19,7 +21,7 @@ function save(owner: string, board: string, body: string) {
 }
 
 describe("comment draft privacy and lifetime", () => {
-  beforeEach(() => clearCommentDrafts());
+  beforeEach(() => clearSocialDrafts());
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -83,5 +85,52 @@ describe("comment draft privacy and lifetime", () => {
     });
     notifySignedOut();
     expect(readCommentDraft("owner", "board").body).toBe("");
+  });
+
+  it("keeps report reason and text isolated from other targets and comments", () => {
+    const saved = readReportDraft("owner", "bingo", "board");
+    rememberReportDraft(
+      "owner",
+      "bingo",
+      "board",
+      { reason: "other", description: "Private context 🎲\n<literal> & detail" },
+      saved.generation,
+    );
+    save("owner", "board", "Separate comment");
+    expect(readReportDraft("owner", "bingo", "board")).toMatchObject({
+      reason: "other",
+      description: "Private context 🎲\n<literal> & detail",
+      restored: true,
+    });
+    expect(readReportDraft("owner", "comment", "board").restored).toBe(false);
+    expect(readReportDraft("owner", "bingo", "another").restored).toBe(false);
+    expect(readCommentDraft("owner", "board").body).toBe("Separate comment");
+    expect(JSON.stringify(window.localStorage)).not.toContain("Private context");
+  });
+
+  it("retains reason-only reports and clears successful or discarded reports", () => {
+    const saved = readReportDraft("owner", "profile", "profile");
+    rememberReportDraft(
+      "owner",
+      "profile",
+      "profile",
+      { reason: "harassment", description: "" },
+      saved.generation,
+    );
+    expect(readReportDraft("owner", "profile", "profile")).toMatchObject({
+      reason: "harassment",
+      restored: true,
+    });
+    rememberReportDraft("owner", "profile", "profile", null, saved.generation);
+    expect(readReportDraft("owner", "profile", "profile").restored).toBe(false);
+  });
+
+  it("purges reports on sign-out and rejects their late writes", () => {
+    const saved = readReportDraft("owner", "bingo", "board");
+    const draft = { reason: "other" as const, description: "Confidential report" };
+    rememberReportDraft("owner", "bingo", "board", draft, saved.generation);
+    notifySignedOut();
+    rememberReportDraft("owner", "bingo", "board", draft, saved.generation);
+    expect(readReportDraft("owner", "bingo", "board").restored).toBe(false);
   });
 });
