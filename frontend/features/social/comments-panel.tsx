@@ -6,7 +6,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { ReportDialog } from "@/features/social/report-dialog";
-import { api, errorMessage } from "@/lib/api/client";
+import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type { AuthenticatedUser, Comment, Page, PublicId } from "@/lib/api/types";
 import { formatLocalDateTime } from "@/lib/date-time";
 import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
@@ -36,6 +36,9 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [newBody, setNewBody] = useState("");
+  const [bodyErrors, setBodyErrors] = useState<Partial<Record<"root" | "reply" | "edit", string>>>(
+    {},
+  );
   const [replyingTo, setReplyingTo] = useState<PublicId | null>(null);
   const [replyBody, setReplyBody] = useState("");
   const [editing, setEditing] = useState<PublicId | null>(null);
@@ -43,6 +46,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
   const [originalEditBody, setOriginalEditBody] = useState("");
   const [pendingAction, setPendingAction] = useState("");
   const actionInFlight = useRef(false);
+  const validationFocus = useRef<HTMLTextAreaElement | null>(null);
   const [reporting, setReporting] = useState<Comment | null>(null);
   const signedIn = viewer !== "guest";
   const replyDirty = Boolean(replyingTo && replyBody.trim());
@@ -51,6 +55,12 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
     Boolean(newBody.trim()) || replyDirty || editDirty,
     "You have unsent comment text. Leave and discard it?",
   );
+
+  useEffect(() => {
+    if (pendingAction || !validationFocus.current) return;
+    validationFocus.current.focus();
+    validationFocus.current = null;
+  }, [pendingAction, bodyErrors]);
 
   function beginAction(action: string) {
     if (actionInFlight.current) return false;
@@ -63,6 +73,16 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
   function finishAction() {
     actionInFlight.current = false;
     setPendingAction("");
+  }
+
+  function showBodyError(caught: unknown, kind: "root" | "reply" | "edit", form: HTMLFormElement) {
+    const message = fieldValidationMessage(caught, "body");
+    if (!message) {
+      setError(errorMessage(caught));
+      return;
+    }
+    validationFocus.current = form.querySelector<HTMLTextAreaElement>("textarea");
+    setBodyErrors((current) => ({ ...current, [kind]: message }));
   }
 
   function discardReply() {
@@ -118,8 +138,10 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
 
   async function createRoot(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     const body = newBody.trim();
     if (!body || !beginAction("create")) return;
+    setBodyErrors((current) => ({ ...current, root: undefined }));
     try {
       const created = await api.comments.create(bingoId, body);
       setResult((current) =>
@@ -138,7 +160,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
       );
       setNewBody("");
     } catch (caught) {
-      setError(errorMessage(caught));
+      showBodyError(caught, "root", form);
     } finally {
       finishAction();
     }
@@ -146,8 +168,10 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
 
   async function createReply(event: FormEvent<HTMLFormElement>, parentId: PublicId) {
     event.preventDefault();
+    const form = event.currentTarget;
     const body = replyBody.trim();
     if (!body || !beginAction(`reply-${parentId}`)) return;
+    setBodyErrors((current) => ({ ...current, reply: undefined }));
     try {
       const created = await api.comments.reply(parentId, body);
       updateComment(parentId, (comment) => ({
@@ -159,7 +183,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
       setReplyingTo(null);
       restoreActionFocus(parentId, "reply");
     } catch (caught) {
-      setError(errorMessage(caught));
+      showBodyError(caught, "reply", form);
     } finally {
       finishAction();
     }
@@ -190,8 +214,10 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
 
   async function saveEdit(event: FormEvent<HTMLFormElement>, commentId: PublicId) {
     event.preventDefault();
+    const form = event.currentTarget;
     const body = editBody.trim();
     if (!body || !beginAction(`edit-${commentId}`)) return;
+    setBodyErrors((current) => ({ ...current, edit: undefined }));
     try {
       const updated = await api.comments.update(commentId, body);
       updateComment(commentId, (current) => ({
@@ -203,7 +229,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
       setEditBody("");
       restoreActionFocus(commentId, "edit");
     } catch (caught) {
-      setError(errorMessage(caught));
+      showBodyError(caught, "edit", form);
     } finally {
       finishAction();
     }
@@ -278,7 +304,13 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               </span>
               <textarea
                 aria-labelledby={`edit-comment-label-${comment.id}`}
-                aria-describedby={`edit-comment-hint-${comment.id}`}
+                aria-invalid={Boolean(bodyErrors.edit)}
+                aria-describedby={[
+                  `edit-comment-hint-${comment.id}`,
+                  bodyErrors.edit ? `edit-comment-error-${comment.id}` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 name="edited_comment"
                 autoComplete="off"
                 rows={3}
@@ -287,11 +319,23 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
                 autoFocus
                 disabled={pendingAction === `edit-${comment.id}`}
                 value={editBody}
-                onChange={(event) => setEditBody(event.target.value)}
+                onChange={(event) => {
+                  setEditBody(event.target.value);
+                  setBodyErrors((current) => ({ ...current, edit: undefined }));
+                }}
               />
               <small id={`edit-comment-hint-${comment.id}`}>
                 Required. Up to 2,000 characters.
               </small>
+              {bodyErrors.edit ? (
+                <small
+                  id={`edit-comment-error-${comment.id}`}
+                  className="form-message--error"
+                  role="alert"
+                >
+                  {bodyErrors.edit}
+                </small>
+              ) : null}
             </label>
             <div className="inline-actions">
               <button
@@ -344,6 +388,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               disabled={Boolean(pendingAction)}
               onClick={() => {
                 if (actionInFlight.current || replyingTo === comment.id || !discardReply()) return;
+                setBodyErrors((current) => ({ ...current, reply: undefined }));
                 setReplyingTo(comment.id);
                 setReplyBody("");
               }}
@@ -360,6 +405,7 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
                 disabled={Boolean(pendingAction)}
                 onClick={() => {
                   if (actionInFlight.current || editing === comment.id || !discardEdit()) return;
+                  setBodyErrors((current) => ({ ...current, edit: undefined }));
                   setEditing(comment.id);
                   setEditBody(comment.body);
                   setOriginalEditBody(comment.body);
@@ -392,7 +438,13 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               <span id={`reply-label-${comment.id}`}>Reply</span>
               <textarea
                 aria-labelledby={`reply-label-${comment.id}`}
-                aria-describedby={`reply-hint-${comment.id}`}
+                aria-invalid={Boolean(bodyErrors.reply)}
+                aria-describedby={[
+                  `reply-hint-${comment.id}`,
+                  bodyErrors.reply ? `reply-error-${comment.id}` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 name="reply_body"
                 autoComplete="off"
                 rows={3}
@@ -401,9 +453,21 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
                 autoFocus
                 disabled={pendingAction === `reply-${comment.id}`}
                 value={replyBody}
-                onChange={(event) => setReplyBody(event.target.value)}
+                onChange={(event) => {
+                  setReplyBody(event.target.value);
+                  setBodyErrors((current) => ({ ...current, reply: undefined }));
+                }}
               />
               <small id={`reply-hint-${comment.id}`}>Required. Up to 2,000 characters.</small>
+              {bodyErrors.reply ? (
+                <small
+                  id={`reply-error-${comment.id}`}
+                  className="form-message--error"
+                  role="alert"
+                >
+                  {bodyErrors.reply}
+                </small>
+              ) : null}
             </label>
             <div className="inline-actions">
               <button
@@ -466,7 +530,13 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
             <span id={`comment-label-${bingoId}`}>Add a comment</span>
             <textarea
               aria-labelledby={`comment-label-${bingoId}`}
-              aria-describedby={`comment-hint-${bingoId}`}
+              aria-invalid={Boolean(bodyErrors.root)}
+              aria-describedby={[
+                `comment-hint-${bingoId}`,
+                bodyErrors.root ? `comment-error-${bingoId}` : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               name="comment_body"
               autoComplete="off"
               rows={3}
@@ -474,9 +544,17 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
               required
               disabled={pendingAction === "create"}
               value={newBody}
-              onChange={(event) => setNewBody(event.target.value)}
+              onChange={(event) => {
+                setNewBody(event.target.value);
+                setBodyErrors((current) => ({ ...current, root: undefined }));
+              }}
             />
             <small id={`comment-hint-${bingoId}`}>Required. Up to 2,000 characters.</small>
+            {bodyErrors.root ? (
+              <small id={`comment-error-${bingoId}`} className="form-message--error" role="alert">
+                {bodyErrors.root}
+              </small>
+            ) : null}
           </label>
           <button
             type="submit"

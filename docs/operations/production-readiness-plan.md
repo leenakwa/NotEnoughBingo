@@ -87,7 +87,8 @@ only environment-specific smoke and recovery checks after release.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager
-   behavior, native zoom/ARIA/UI contrast, endpoint-by-endpoint contracts,
+   behavior (silent-fill submission is verified; native saved credentials are not),
+   social draft recovery through Back/session expiry, native zoom/ARIA/UI contrast, endpoint-by-endpoint contracts,
    database indexes/migration scale and notification/email failure paths.
    Record explicit N/A or target-only limits for each original bullet.
    The 2026-10-03 structural and scale drills now cover installed indexes,

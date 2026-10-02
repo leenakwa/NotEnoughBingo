@@ -2880,3 +2880,35 @@ observed results and their limits. Do not include credentials or session data.
   response-wait adjustment also passed TypeScript and targeted ESLint. Exact
   committed-source CI is still required for those later changes. No merge,
   registry promotion or deployment has occurred.
+
+
+### 2026-10-03 — Social field validation and committed-render focus (section 7, partial)
+
+- Comment creation, reply and edit now map backend `body` validation to the
+  submitted field. Report reason/context validation appears beside each field.
+  Error text is associated through `aria-describedby`, invalid inputs expose
+  `aria-invalid`, and changing a field clears only its own error. General
+  failures still use the existing action-level message. Entered text is retained.
+- A live browser regression caught focus being attempted before a temporarily
+  disabled textarea was enabled by React. Validation focus now runs after the
+  committed state enables the field, using a one-use ref. Report errors focus
+  the first invalid reason/context field after the pending state ends.
+- Five new component cases cover root/reply/edit and both report fields, checking
+  retention, focus, accessible description and correction. The final
+  `npm run check` passed all 185 frontend tests, ESLint and TypeScript;
+  `npm run format` and `npm run build` passed. Build-generated Next route-type
+  imports were restored afterward.
+- Three related live Chromium scenarios passed together on isolated `nebqa`:
+  the new field-validation journey and the existing unsent-root and inline/report
+  discard/submission journeys. The new test deliberately changes outgoing text
+  to 2,001 characters (and injects an invalid report reason), then exercises
+  real backend HTTP 400 parsing, retained visible text, enabled controls and focus
+  for all three comment forms and both report fields. This is fault injection,
+  not a claim that the ordinary 2,000-character browser limit can be exceeded.
+- Report error layouts were inspected at 320 and 1710 px; both had no horizontal
+  page overflow or Axe violations. Correcting reason leaves context validation
+  visible until context is edited. No unrelated page exceptions were recorded.
+  A changed report reason also counts as dirty when closing an unsent dialog.
+- Section 7 stays partial: native saved credentials/extensions, recovery across
+  client Back/session expiry and the remaining all-form sweep are still open.
+  This new implementation still requires its own committed-source CI gate.

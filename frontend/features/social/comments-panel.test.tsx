@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,6 +22,10 @@ vi.mock("@/lib/api/client", () => ({
     reports: { create: vi.fn() },
   },
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
+  fieldValidationMessage: (
+    error: Error & { fieldErrors?: Record<string, string> },
+    field: string,
+  ) => error.fieldErrors?.[field] ?? null,
 }));
 
 const emptyPage: Page<Comment> = {
@@ -160,6 +164,46 @@ describe("CommentsPanel", () => {
     expect(screen.getByLabelText("Reply", { exact: true })).toHaveValue("");
     expect(screen.getByRole("button", { name: "Post reply" })).toBeDisabled();
   });
+
+  it.each([
+    ["root", "create", "Add a comment", "Post comment"],
+    ["reply", "reply", "Reply", "Post reply"],
+    ["edit", "update", "Edit comment", "Save"],
+  ] as const)(
+    "identifies and focuses the body validation field (%s)",
+    async (kind, method, label, button) => {
+      const message = "Please shorten this comment.";
+      mocks[method].mockRejectedValue(
+        Object.assign(new Error("Validation failed."), { fieldErrors: { body: message } }),
+      );
+      if (kind !== "root")
+        mocks.list.mockResolvedValue({
+          ...emptyPage,
+          count: 1,
+          results: [comment("Original parent")],
+        });
+      const user = userEvent.setup();
+      render(<CommentsPanel bingoId="33333333-3333-4333-8333-333333333333" viewer={viewer} />);
+      if (kind === "root") await screen.findByText("No comments yet");
+      else {
+        await screen.findByText("Original parent");
+        await user.click(screen.getByRole("button", { name: kind === "reply" ? "Reply" : "Edit" }));
+      }
+      const input = screen.getByLabelText(label, { exact: true });
+      await user.clear(input);
+      await user.type(input, "Keep this entered text 🎲");
+      await user.click(screen.getByRole("button", { name: button }));
+      expect(await screen.findByText(message)).toBeVisible();
+      await waitFor(() => expect(input).toHaveFocus());
+      expect(input).toBeEnabled();
+      expect(input).toHaveValue("Keep this entered text 🎲");
+      expect(input).toHaveAttribute("aria-invalid", "true");
+      expect(input).toHaveAccessibleDescription(expect.stringContaining(message));
+      await user.type(input, "x");
+      expect(input).toHaveAttribute("aria-invalid", "false");
+      expect(screen.queryByText(message)).not.toBeInTheDocument();
+    },
+  );
 
   it("does not show the previous comment page after a failed page change", async () => {
     mocks.list

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +8,10 @@ const create = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api/client", () => ({
   api: { reports: { create } },
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
+  fieldValidationMessage: (
+    error: Error & { fieldErrors?: Record<string, string> },
+    field: string,
+  ) => error.fieldErrors?.[field] ?? null,
 }));
 
 function report(onClose = vi.fn()) {
@@ -69,6 +73,32 @@ describe("report form recovery", () => {
     expect(screen.getByRole("button", { name: "Done" })).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Done" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["reason", "Reason"],
+    ["description", "Additional context (optional)"],
+  ] as const)("identifies and focuses the report validation field (%s)", async (field, label) => {
+    const message = "Please review this report field.";
+    create.mockRejectedValue(
+      Object.assign(new Error("Validation failed."), { fieldErrors: { [field]: message } }),
+    );
+    const user = userEvent.setup();
+    report();
+    const context = screen.getByLabelText("Additional context (optional)", { exact: true });
+    await user.type(context, "Keep this moderator context 🎲");
+    await user.click(screen.getByRole("button", { name: "Send report" }));
+    const input = screen.getByLabelText(label, { exact: true });
+    expect(await screen.findByText(message)).toBeVisible();
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toBeEnabled();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAccessibleDescription(expect.stringContaining(message));
+    expect(context).toHaveValue("Keep this moderator context 🎲");
+    if (field === "reason") await user.selectOptions(input, "other");
+    else await user.type(input, "x");
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(screen.queryByText(message)).not.toBeInTheDocument();
   });
 
   it("preserves context and reenables controls after an unsuccessful submission", async () => {

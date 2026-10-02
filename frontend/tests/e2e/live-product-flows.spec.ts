@@ -201,6 +201,126 @@ test("reply, edit and report forms retain context when discard is cancelled", as
   ]);
 });
 
+test("social field validation focuses retained input and remains accessible", async ({
+  page,
+}, testInfo) => {
+  const bingo = await createSocialFormBoard(page);
+  await authenticateAs(page, "player");
+  await page.goto(`/bingo/${bingo.id}`);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  const root = page.getByLabel("Add a comment", { exact: true });
+  await root.fill("Validation parent");
+  const parentResponse = await waitForResponse(
+    page,
+    `/api/v1/bingos/${bingo.id}/comments/`,
+    "POST",
+    () => page.getByRole("button", { name: "Post comment", exact: true }).click(),
+  );
+  const parent = (await parentResponse.json()) as { id: string };
+  const article = page.locator(`#comment-${parent.id}`);
+  for (const scenario of [
+    {
+      kind: "root",
+      path: `/api/v1/bingos/${bingo.id}/comments/`,
+      method: "POST",
+      label: "Add a comment",
+      submit: "Post comment",
+    },
+    {
+      kind: "reply",
+      path: `/api/v1/comments/${parent.id}/replies/`,
+      method: "POST",
+      label: "Reply",
+      submit: "Post reply",
+    },
+    {
+      kind: "edit",
+      path: `/api/v1/comments/${parent.id}/`,
+      method: "PATCH",
+      label: "Edit comment",
+      submit: "Save",
+    },
+  ]) {
+    if (scenario.kind !== "root")
+      await article
+        .getByRole("button", { name: scenario.kind === "reply" ? "Reply" : "Edit", exact: true })
+        .click();
+    const input = page.getByLabel(scenario.label, { exact: true });
+    const retained = `Retain ${scenario.kind} text 🎲\n<literal> & context`;
+    await input.fill(retained);
+    await page.route(`**${scenario.path}`, (route) => {
+      if (route.request().method() !== scenario.method) return route.continue();
+      return route.continue({
+        postData: JSON.stringify({ ...route.request().postDataJSON(), body: "x".repeat(2001) }),
+      });
+    });
+    const responsePromise = page.waitForResponse(
+      (response) =>
+        response.url().endsWith(scenario.path) && response.request().method() === scenario.method,
+    );
+    await page.getByRole("button", { name: scenario.submit, exact: true }).click();
+    expect((await responsePromise).status()).toBe(400);
+    await expect(input).toBeEnabled();
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue(retained);
+    await expect(input).toHaveAttribute("aria-invalid", "true");
+    await expect(input).toHaveAccessibleDescription(/2000|2,000/);
+    await page.unroute(`**${scenario.path}`);
+    await input.fill(
+      scenario.kind === "root" ? "" : scenario.kind === "edit" ? "Validation parent" : "x",
+    );
+    await expect(input).toHaveAttribute("aria-invalid", "false");
+    if (scenario.kind === "reply") await input.fill("");
+    if (scenario.kind !== "root")
+      await input
+        .locator("xpath=ancestor::form")
+        .getByRole("button", { name: "Cancel", exact: true })
+        .click();
+  }
+  await page.getByRole("button", { name: "Report", exact: true }).first().click();
+  const report = page.getByRole("dialog", { name: "Report bingo" });
+  const context = report.getByLabel("Additional context (optional)", { exact: true });
+  await context.fill("Keep this report context 🎲\n<literal> & detail");
+  await page.route("**/api/v1/reports/", (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    return route.continue({
+      postData: JSON.stringify({
+        ...route.request().postDataJSON(),
+        reason: "invalid-reason",
+        description: "x".repeat(2001),
+      }),
+    });
+  });
+  const reportResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/reports/") && response.request().method() === "POST",
+  );
+  await report.getByRole("button", { name: "Send report", exact: true }).click();
+  expect((await reportResponse).status()).toBe(400);
+  const reason = report.getByLabel("Reason", { exact: true });
+  await expect(reason).toBeFocused();
+  await expect(reason).toHaveAttribute("aria-invalid", "true");
+  await expect(context).toHaveAttribute("aria-invalid", "true");
+  await expect(context).toHaveValue("Keep this report context 🎲\n<literal> & detail");
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    expect(
+      (await new AxeBuilder({ page }).include("dialog.report-dialog").analyze()).violations,
+    ).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`report-validation-${width}.png`) });
+  }
+  await reason.selectOption("other");
+  await expect(reason).toHaveAttribute("aria-invalid", "false");
+  await expect(context).toHaveAttribute("aria-invalid", "true");
+  await context.fill("Corrected moderator context");
+  await expect(context).toHaveAttribute("aria-invalid", "false");
+  expect(pageErrors).toEqual([]);
+});
+
 test("account forms submit filled DOM values and retain them after real validation", async ({
   page,
 }) => {

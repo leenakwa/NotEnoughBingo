@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
-import { api, errorMessage } from "@/lib/api/client";
+import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type { PublicId, ReportReason, ReportTargetType } from "@/lib/api/types";
 import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
 
@@ -33,10 +33,14 @@ export function ReportDialog({
   const [description, setDescription] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"reason" | "description", string>>>(
+    {},
+  );
   const [sent, setSent] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const actionInFlight = useRef(false);
-  const dirty = !sent && Boolean(description.trim());
+  const validationFocus = useRef<HTMLElement | null>(null);
+  const dirty = !sent && (Boolean(description.trim()) || reason !== "spam");
   useUnsavedChangesWarning(dirty, "Your report has not been sent. Leave and discard it?");
 
   useEffect(() => {
@@ -56,6 +60,12 @@ export function ReportDialog({
     };
   }, []);
 
+  useEffect(() => {
+    if (pending || !validationFocus.current) return;
+    validationFocus.current.focus();
+    validationFocus.current = null;
+  }, [pending, fieldErrors]);
+
   function close() {
     if (actionInFlight.current) return;
     if (dirty && !window.confirm("Discard this report? Your additional context has not been sent."))
@@ -69,9 +79,11 @@ export function ReportDialog({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (actionInFlight.current) return;
+    const form = event.currentTarget;
     actionInFlight.current = true;
     setPending(true);
     setError("");
+    setFieldErrors({});
     try {
       await api.reports.create({
         target_type: targetType,
@@ -81,7 +93,16 @@ export function ReportDialog({
       });
       setSent(true);
     } catch (caught) {
-      setError(errorMessage(caught));
+      const errors: Partial<Record<"reason" | "description", string>> = {};
+      for (const field of ["reason", "description"] as const) {
+        const message = fieldValidationMessage(caught, field);
+        if (message) errors[field] = message;
+      }
+      setFieldErrors(errors);
+      const firstField = errors.reason ? "reason" : errors.description ? "description" : null;
+      if (firstField) {
+        validationFocus.current = form.querySelector<HTMLElement>(`[name="${firstField}"]`);
+      } else setError(errorMessage(caught));
     } finally {
       actionInFlight.current = false;
       setPending(false);
@@ -156,12 +177,21 @@ export function ReportDialog({
             <span id="report-reason-label">Reason</span>
             <select
               aria-labelledby="report-reason-label"
-              aria-describedby="report-reason-hint"
+              aria-invalid={Boolean(fieldErrors.reason)}
+              aria-describedby={[
+                "report-reason-hint",
+                fieldErrors.reason ? "report-reason-error" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               required
               disabled={pending}
               name="reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value as ReportReason)}
+              onChange={(event) => {
+                setReason(event.target.value as ReportReason);
+                setFieldErrors((current) => ({ ...current, reason: undefined }));
+              }}
             >
               {reasons.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -170,21 +200,40 @@ export function ReportDialog({
               ))}
             </select>
             <small id="report-reason-hint">Required.</small>
+            {fieldErrors.reason ? (
+              <small id="report-reason-error" className="form-message--error" role="alert">
+                {fieldErrors.reason}
+              </small>
+            ) : null}
           </label>
           <label className="field">
             <span id="report-context-label">Additional context (optional)</span>
             <textarea
               aria-labelledby="report-context-label"
-              aria-describedby="report-context-hint"
+              aria-invalid={Boolean(fieldErrors.description)}
+              aria-describedby={[
+                "report-context-hint",
+                fieldErrors.description ? "report-context-error" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               disabled={pending}
               name="description"
               autoComplete="off"
               rows={4}
               maxLength={2_000}
               value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                setFieldErrors((current) => ({ ...current, description: undefined }));
+              }}
             />
             <small id="report-context-hint">Up to 2,000 characters.</small>
+            {fieldErrors.description ? (
+              <small id="report-context-error" className="form-message--error" role="alert">
+                {fieldErrors.description}
+              </small>
+            ) : null}
           </label>
           <div className="inline-actions">
             <button
