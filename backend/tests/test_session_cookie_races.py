@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from secrets import token_urlsafe
+
 import pytest
 from django.conf import settings
 from django.contrib.auth.middleware import AuthenticationMiddleware
@@ -13,11 +15,13 @@ from django.utils.module_loading import import_string
 def test_old_request_cannot_clear_the_cookie_rotated_by_password_change(
     verified_user_factory, preload_session
 ) -> None:
-    user = verified_user_factory()
+    initial_password = token_urlsafe(24)
+    next_password = token_urlsafe(24)
+    user = verified_user_factory(password=initial_password)
     browser = Client()
     login = browser.post(
         "/api/v1/auth/login/",
-        {"email": user.email, "password": "Correct-Horse-Battery-42"},
+        {"email": user.email, "password": initial_password},
         content_type="application/json",
     )
     assert login.status_code == 200
@@ -38,8 +42,8 @@ def test_old_request_cannot_clear_the_cookie_rotated_by_password_change(
     changed = browser.post(
         "/api/v1/auth/password-change/",
         {
-            "current_password": "Correct-Horse-Battery-42",
-            "new_password": "Different-Strong-Password-2026",
+            "current_password": initial_password,
+            "new_password": next_password,
         },
         content_type="application/json",
     )

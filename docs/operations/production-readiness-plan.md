@@ -87,7 +87,11 @@ on a password-change/late-analytics cookie race (82 live passes, one failure,
 three not run; smoke 199 passes/one retry/12 skips). Session-cookie correction,
 notification and shared-result action guards now pass 273 frontend tests,
 242 backend tests plus one container-only skip, 12 related engine cases and the
-controlled cookie-race live journey locally; this source needs its own gate. These
+controlled cookie-race live journey locally. Source `82f2f07` passed all
+functional/image/foundation jobs (243 backend, 273 frontend, 200 smoke plus
+12 skips without retries, 90 live); history/Release failed on two synthetic
+test-password findings. Generated test passwords and two exact historical
+exemptions now pass local history scanning; the correction needs its own gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -160,7 +164,9 @@ only environment-specific smoke and recovery checks after release.
    unit regressions and six related engine cases across delayed success/denial,
    duplicate clicks and departure. Repeated active profile tab selection is
    corrected with unit and browser evidence. Remaining component mutation states
-   include profile changes/optional viewer state and account upload/
+   include profile changes/optional viewer state (pending identity controls, independent
+   viewer retry, required-load failure, and late save/privacy/language/follow
+   callbacks) and account upload/
    security/export/deletion. Notification read actions and shared-result copy/
    native-share completion now have regression and engine evidence; actual
    physical-device OS dialogs/permissions remain. Then audit

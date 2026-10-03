@@ -3876,3 +3876,34 @@ observed results and their limits. Do not include credentials or session data.
   API/default/transaction/joined/load and target operations remain. Section 4
   stays partial; counts remain 55 verified / 43 partial / six N/A / one
   deployment-only. Source requires a new CI; no merge/promotion/deployment.
+
+
+### 2026-10-03 — Synthetic regression-password history findings
+
+- Source `82f2f07a3e3d3943932c5eef299d725cbc2e126a` full-history scan
+  detected two generic-api-key matches in the newly added session-cookie race
+  test, at lines 20 and 41. They are synthetic test passwords used only by the
+  temporary test database, not provider credentials. The branch push completed
+  before the failed scan result was inspected; CI run
+  [37095323331](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37095323331)
+  also failed its history-scan job. It completed FAILED: the history scan and Release gate failed, while the
+  other seven jobs passed. Backend 243, frontend 273 across 36 files, smoke
+  200 passes plus 12 intentional skips without retries, all 90 live flows,
+  foundation and both image gates passed. Full log:
+  `/tmp/neb-ci-82f2f07-completed-oct03.log`. No passing release gate is claimed
+  for this source.
+- Current regression passwords are generated with the standard-library
+  token_urlsafe function and passed into the factory and API calls in memory.
+  Ruff and all three focused server regressions pass after this test-only
+  change. Two exact historical commit/file/rule/line fingerprints were added to
+  .gitleaksignore, with a synthetic-test explanation; no directory/rule-wide
+  exemption or history rewrite was added. The existing narrow prose fingerprints
+  remain. A full redacted scan of all 90 commits then passed with no leaks.
+  Logs: `/tmp/neb-notification-share-session-history-oct03.log`,
+  `/tmp/neb-notification-share-session-history-report-oct03.log`,
+  `/tmp/neb-session-cookie-historical-exemptions-oct03.log`,
+  `/tmp/neb-session-cookie-race-generated-passwords-oct03.log`.
+- The private JSON finding report was used only to inspect rule, path, line and
+  fingerprint. No finding values or private trace/auth state were printed.
+  The older GitGuardian dashboard incident still requires its own classification;
+  a local scanner exception does not resolve an external incident automatically.
