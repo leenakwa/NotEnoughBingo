@@ -309,8 +309,10 @@ describe("BingoPlayer", () => {
 
     const cell = await screen.findByRole("button", { name: "Open the board, selected" });
     expect(cell).toHaveAttribute("aria-pressed", "true");
+    const reset = screen.getByRole("button", { name: "Reset" });
+    await waitFor(() => expect(reset).toBeEnabled());
     await act(async () => {
-      screen.getByRole("button", { name: "Reset" }).click();
+      reset.click();
       await Promise.resolve();
     });
 

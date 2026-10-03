@@ -95,6 +95,7 @@ type CellPatch = Partial<
 
 export type EditorAction =
   | { type: "set-size"; size: number }
+  | { type: "new-document" }
   | {
       type: "select-rectangle";
       anchor: { row: number; column: number };
@@ -348,6 +349,7 @@ function reduceDocumentAction(state: EditorState, action: EditorAction): EditorS
 }
 
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
+  if (action.type === "new-document") return createEditorState(5);
   switch (action.type) {
     case "select-rectangle": {
       const minRow = Math.max(0, Math.min(action.anchor.row, action.focus.row));

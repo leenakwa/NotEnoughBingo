@@ -5,6 +5,7 @@ import { BingoEditor } from "@/features/editor/bingo-editor";
 import { writeEditorRecovery } from "@/features/editor/editor-recovery";
 import { createEditorState, editorReducer } from "@/features/editor/editor-state";
 import { ApiClientError } from "@/lib/api/client";
+import { AUTH_SESSION_ENDED_EVENT, AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
 import type { BingoDetail, BingoDraft, ExportJob, RevisionCell } from "@/lib/api/types";
 import { uploadImage } from "@/lib/uploads";
 
@@ -292,6 +293,150 @@ describe("BingoEditor autosave and safety", () => {
     await settle();
     expect(screen.getByText("Saved")).toBeVisible();
     expect(mocks.replace).toHaveBeenCalledWith(`/create?bingo=${BINGO_ID}`, { scroll: false });
+  });
+
+  it.each(["leave", "session ends"])("stops a pending creation after %s", async (boundary) => {
+    let resolveCreate!: (value: BingoDraft) => void;
+    mocks.createDraft.mockReturnValueOnce(
+      new Promise<BingoDraft>((resolve) => {
+        resolveCreate = resolve;
+      }),
+    );
+    const view = render(<BingoEditor />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
+    await advanceAutosave();
+    fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
+    if (boundary === "leave") view.unmount();
+    else {
+      mocks.session.mockResolvedValueOnce(null);
+      act(() => window.dispatchEvent(new Event(AUTH_SESSION_ENDED_EVENT)));
+      await settle();
+    }
+    await act(async () => resolveCreate(draft({ size: 6, cells: cells(6), version: 1 })));
+    await advanceAutosave(1600);
+    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+  });
+
+  it("does not apply the previous board's pending save to the next editor", async () => {
+    let resolveUpdate!: (value: BingoDraft) => void;
+    mocks.updateDraft.mockReturnValueOnce(
+      new Promise<BingoDraft>((resolve) => {
+        resolveUpdate = resolve;
+      }),
+    );
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
+    await advanceAutosave();
+    const nextId = "33333333-3333-4333-8333-333333333333";
+    mocks.getDraft.mockResolvedValueOnce(
+      draft({ bingo_id: nextId, title: "Next draft", version: 8 }),
+    );
+    view.rerender(<BingoEditor bingoId={nextId} />);
+    await settle();
+    await act(async () => resolveUpdate(draft({ size: 4, cells: cells(4), version: 3 })));
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    expect(screen.getByLabelText("Title")).toHaveValue("Next draft");
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Next draft edit" } });
+    await advanceAutosave();
+    expect(mocks.updateDraft).toHaveBeenLastCalledWith(
+      nextId,
+      expect.objectContaining({ title: "Next draft edit" }),
+      8,
+    );
+  });
+
+  it("starts a separate blank board when moving from an existing draft to create", async () => {
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    view.rerender(<BingoEditor />);
+    await settle();
+    expect(screen.getByRole("heading", { name: "Create bingo" })).toBeVisible();
+    expect(screen.getByText("5 × 5")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
+    await advanceAutosave();
+    expect(mocks.createDraft).toHaveBeenCalledTimes(1);
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+  });
+
+  it("does not navigate after a publication completes in a departed editor", async () => {
+    const filled = cells(3);
+    filled[0]!.text = "Publish this";
+    mocks.getDraft.mockResolvedValueOnce(draft({ cells: filled }));
+    let resolvePublish!: (value: BingoDetail) => void;
+    mocks.publishDraft.mockReturnValueOnce(
+      new Promise<BingoDetail>((resolve) => {
+        resolvePublish = resolve;
+      }),
+    );
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+    await settle();
+    expect(mocks.publishDraft).toHaveBeenCalledTimes(1);
+    view.unmount();
+    await act(async () => resolvePublish(bingo));
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("stops export polling after leaving the editor", async () => {
+    mocks.createExport.mockResolvedValueOnce({ id: "pending-export", status: "pending" });
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByText("Download published version"));
+    fireEvent.click(screen.getByRole("button", { name: "Published PNG" }));
+    await settle();
+    view.unmount();
+    await advanceAutosave(1000);
+    expect(mocks.getExport).not.toHaveBeenCalled();
+  });
+
+  it("does not recreate purged recovery after a pending save rejects on logout", async () => {
+    let rejectCreate!: (error: Error) => void;
+    mocks.createDraft.mockReturnValueOnce(
+      new Promise<BingoDraft>((_resolve, reject) => {
+        rejectCreate = reject;
+      }),
+    );
+    await openEditor();
+    fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
+    await advanceAutosave();
+    window.localStorage.clear();
+    mocks.session.mockResolvedValueOnce(null);
+    act(() => window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT)));
+    await settle();
+    await act(async () => rejectCreate(new Error("Old save failed")));
+    expect(window.localStorage.length).toBe(0);
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it("does not continue publication after its pending save outlives the editor", async () => {
+    const filled = cells(3);
+    filled[0]!.text = "Publish this";
+    mocks.getDraft.mockResolvedValueOnce(draft({ cells: filled }));
+    let resolveUpdate!: (value: BingoDraft) => void;
+    mocks.updateDraft.mockReturnValueOnce(
+      new Promise<BingoDraft>((resolve) => {
+        resolveUpdate = resolve;
+      }),
+    );
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Pending publication" } });
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+    await settle();
+    expect(mocks.updateDraft).toHaveBeenCalledTimes(1);
+    view.unmount();
+    await act(async () =>
+      resolveUpdate(draft({ title: "Pending publication", cells: filled, version: 3 })),
+    );
+    expect(mocks.publishDraft).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 
   it("queues edits made while a save is in flight and persists them afterward", async () => {

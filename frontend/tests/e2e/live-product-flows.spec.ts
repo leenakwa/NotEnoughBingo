@@ -141,6 +141,108 @@ test("player protects saved marks during progress outage and loads without autho
   }
 });
 
+test("departed editor does not redirect or continue saving after draft creation", async ({
+  page,
+}) => {
+  await authenticateAs(page, "author");
+  let releaseCreation!: () => void;
+  const held = new Promise<void>((resolve) => {
+    releaseCreation = resolve;
+  });
+  let createdId = "";
+  let updates = 0;
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  page.on("request", (request) => {
+    if (request.method() === "PUT" && request.url().includes("/api/v1/bingos/")) updates += 1;
+  });
+  await page.route("**/api/v1/drafts/", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    const response = await route.fetch();
+    expect(response.status()).toBe(201);
+    const draft = (await response.json()) as { bingo_id: string };
+    createdId = draft.bingo_id;
+    socialFormBoards.set(page, createdId);
+    await held;
+    await route.fulfill({ response });
+  });
+  try {
+    await page.goto("/create");
+    await page.getByRole("button", { name: "Increase bingo size", exact: true }).click();
+    await expect.poll(() => Boolean(createdId)).toBe(true);
+    await page.getByRole("button", { name: "Increase bingo size", exact: true }).click();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("link", { name: "Explore", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+    const response = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/v1/drafts/") && response.request().method() === "POST",
+    );
+    releaseCreation();
+    await response;
+    // Observe beyond the autosave debounce: an old save loop must not send another write.
+    await page.waitForTimeout(1000);
+    await expect(page).toHaveURL(/\/explore$/);
+    expect(updates).toBe(0);
+    const persisted = await page.context().request.get(`/api/v1/bingos/${createdId}/draft/`);
+    expect(persisted.status()).toBe(200);
+    expect((await persisted.json()).size).toBe(6);
+    expect(pageErrors).toEqual([]);
+  } finally {
+    releaseCreation();
+  }
+});
+
+test("departed editor does not navigate after publication completes", async ({ page }) => {
+  const board = await createSocialFormBoard(page);
+  let releasePublication!: () => void;
+  const held = new Promise<void>((resolve) => {
+    releasePublication = resolve;
+  });
+  let published = false;
+  const path = `/api/v1/bingos/${board.id}/publish/`;
+  await page.route(`**${path}`, async (route) => {
+    const response = await route.fetch();
+    expect(response.status()).toBe(201);
+    published = true;
+    await held;
+    await route.fulfill({ response });
+  });
+  try {
+    await page.goto(`/create?bingo=${board.id}`);
+    await page.getByRole("button", { name: "Finish creating →", exact: true }).click();
+    await page.getByRole("button", { name: "Publish bingo", exact: true }).click();
+    await expect.poll(() => published).toBe(true);
+    await page.getByRole("link", { name: "Explore", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+    const response = page.waitForResponse(
+      (response) => response.url().endsWith(path) && response.request().method() === "POST",
+    );
+    releasePublication();
+    await response;
+    await page.waitForTimeout(1000);
+    await expect(page).toHaveURL(/\/explore$/);
+    await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+  } finally {
+    releasePublication();
+  }
+});
+
+test("create navigation opens a separate blank board from an existing draft", async ({ page }) => {
+  const board = await createSocialFormBoard(page);
+  await page.goto(`/create?bingo=${board.id}`);
+  await expect(page.getByRole("heading", { name: "Edit bingo", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Create", exact: true }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByRole("heading", { name: "Create bingo", exact: true })).toBeVisible();
+  await expect(page.getByText("5 × 5", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Finish creating →", exact: true }).click();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue("");
+  const unchanged = await page.context().request.get(`/api/v1/bingos/${board.id}/draft/`);
+  expect(unchanged.status()).toBe(200);
+  expect((await unchanged.json()).size).toBe(3);
+});
+
 test.afterEach(async ({ page }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;

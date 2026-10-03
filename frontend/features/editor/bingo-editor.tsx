@@ -33,7 +33,11 @@ import {
   type EditorStep,
 } from "@/features/editor/editor-state";
 import { api, ApiClientError, errorMessage } from "@/lib/api/client";
-import { AUTH_SIGNED_IN_EVENT, AUTH_SESSION_ENDED_EVENT } from "@/lib/auth-events";
+import {
+  AUTH_SIGNED_IN_EVENT,
+  AUTH_SESSION_ENDED_EVENT,
+  AUTH_SIGNED_OUT_EVENT,
+} from "@/lib/auth-events";
 import { makeIdempotencyKey } from "@/lib/guest-progress";
 import type { BingoDraft, BingoExportFormat, ExportJob, MediaAsset } from "@/lib/api/types";
 import { uploadImage, type UploadPhase } from "@/lib/uploads";
@@ -111,6 +115,47 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const preserveRecovery = useRef(false);
   const recoveryCheckedFor = useRef("");
   const authenticatedOwner = useRef("");
+  const mutationLifetime = useRef(0);
+  const previousRouteBingoId = useRef(bingoId);
+
+  const invalidateMutations = useCallback(() => {
+    mutationLifetime.current += 1;
+    saveLoop.current = null;
+    actionInFlight.current = false;
+    uploadController.current?.abort();
+  }, []);
+
+  useEffect(() => {
+    const openedBlank = previousRouteBingoId.current !== undefined && bingoId === undefined;
+    previousRouteBingoId.current = bingoId;
+    if (openedBlank) {
+      const fresh = createEditorState(5);
+      const fingerprint = editorDocumentFingerprint(fresh);
+      latestState.current = fresh;
+      latestFingerprint.current = fingerprint;
+      savedFingerprintRef.current = fingerprint;
+      dirtyRef.current = false;
+      serverDraft.current = { bingoId: null, version: 0 };
+      pendingCreation.current = null;
+      pendingPublication.current = null;
+      failedFingerprint.current = null;
+      recoveredConflictDocument.current = null;
+      preserveRecovery.current = false;
+      recoveryCheckedFor.current = "";
+      saveStatusRef.current = "pristine";
+      setSavedFingerprint(fingerprint);
+      setSaveStatus("pristine");
+      setSaveError("");
+      setRecoveryAvailable(false);
+      setPendingAction(null);
+      setUploading(null);
+      setError("");
+      setMessage("");
+      setStep("board");
+      dispatch({ type: "new-document" });
+    }
+    return () => invalidateMutations();
+  }, [bingoId, invalidateMutations]);
 
   const currentFingerprint = editorDocumentFingerprint(state);
   const dirty = currentFingerprint !== savedFingerprint;
@@ -122,17 +167,22 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
 
   useEffect(() => {
     const refresh = () => {
+      invalidateMutations();
+      setAuthState("checking");
+      setPendingAction(null);
+      setUploading(null);
       failedFingerprint.current = null;
       setAuthCheckVersion((version) => version + 1);
     };
-    const sessionEnded = () => setAuthCheckVersion((version) => version + 1);
     window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
-    window.addEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
     return () => {
       window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
-      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
     };
-  }, []);
+  }, [invalidateMutations]);
 
   useEffect(() => {
     latestState.current = state;
@@ -207,6 +257,8 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     }
     const controller = new AbortController();
     setHydrating(true);
+    setPendingAction(null);
+    setUploading(null);
     setError("");
     api.bingos
       .getDraft(bingoId, controller.signal)
@@ -285,6 +337,8 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   ) {
     if (uploading) return;
     const controller = new AbortController();
+    const lifetime = mutationLifetime.current;
+    const isCurrent = () => lifetime === mutationLifetime.current;
     uploadController.current = controller;
     setError("");
     setMessage("");
@@ -295,10 +349,14 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     try {
       const asset = await uploadImage(file, kind, {
         signal: controller.signal,
-        onPhase: setUploadPhase,
+        onPhase: (phase) => {
+          if (isCurrent()) setUploadPhase(phase);
+        },
       });
+      if (!isCurrent() || controller.signal.aborted) return;
       replaceMedia(target, { asset, previewUrl: null }, cellKeys);
     } catch (caught) {
+      if (!isCurrent()) return;
       const cancelled = controller.signal.aborted;
       const feedback = cancelled ? "Upload cancelled." : errorMessage(caught);
       if (target === "cell") setCellUploadFeedback({ text: feedback, error: !cancelled });
@@ -306,7 +364,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       else setError(feedback);
     } finally {
       if (uploadController.current === controller) uploadController.current = null;
-      setUploading(null);
+      if (isCurrent()) setUploading(null);
     }
   }
 
@@ -321,9 +379,12 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
 
   const flushDraft = useCallback((): Promise<BingoDraft | null> => {
     if (saveLoop.current) return saveLoop.current;
+    const lifetime = mutationLifetime.current;
+    const isCurrent = () => lifetime === mutationLifetime.current;
     const operation = (async () => {
       let lastSaved: BingoDraft | null = null;
       while (latestFingerprint.current !== savedFingerprintRef.current) {
+        if (!isCurrent()) return null;
         if (saveStatusRef.current === "conflict") {
           throw new Error("Resolve the draft conflict before saving again.");
         }
@@ -347,6 +408,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           requestFingerprint = pending.fingerprint;
           payload = pending.payload;
           draft = await api.bingos.createDraft(payload, pending.idempotencyKey);
+          if (!isCurrent()) return null;
           pendingCreation.current = null;
         } else {
           const persistedBingoId = serverDraft.current.bingoId;
@@ -357,6 +419,8 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
             serverDraft.current.version,
           );
         }
+
+        if (!isCurrent()) return null;
 
         const previousBingoId = serverDraft.current.bingoId;
         serverDraft.current = { bingoId: draft.bingo_id, version: draft.version };
@@ -392,6 +456,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       }
       return lastSaved;
     })().catch((caught: unknown) => {
+      if (!isCurrent()) return null;
       writeEditorRecovery(accountId, latestState.current);
       if (isDraftConflict(caught)) {
         updateSaveStatus("conflict");
@@ -416,6 +481,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
 
   useEffect(() => {
     if (authState !== "allowed" || !accountId || hydrating) return;
+    if (bingoId && state.bingoId !== bingoId) return;
     if (!dirty) {
       failedFingerprint.current = null;
       if (!preserveRecovery.current) {
@@ -442,6 +508,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   }, [
     accountId,
     authState,
+    bingoId,
     currentFingerprint,
     dirty,
     flushDraft,
@@ -502,6 +569,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   async function saveDraft() {
     if (actionInFlight.current || saveStatusRef.current === "conflict") return;
     actionInFlight.current = true;
+    const lifetime = mutationLifetime.current;
     setPendingAction("save");
     failedFingerprint.current = null;
     setError("");
@@ -511,17 +579,21 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     } catch {
       // The persistent save status presents the actionable failure.
     } finally {
-      actionInFlight.current = false;
-      setPendingAction(null);
+      if (lifetime === mutationLifetime.current) {
+        actionInFlight.current = false;
+        setPendingAction(null);
+      }
     }
   }
 
   async function loadLatestAfterConflict() {
+    const lifetime = mutationLifetime.current;
     const currentBingoId = serverDraft.current.bingoId;
     if (!currentBingoId) return;
     const localDocument = editorDocumentSnapshot(latestState.current);
     try {
       const latest = await api.bingos.getDraft(currentBingoId);
+      if (lifetime !== mutationLifetime.current) return;
       const latestState = editorStateFromDraft(latest);
       const latestServerFingerprint = editorDocumentFingerprint(latestState);
       serverDraft.current = { bingoId: latest.bingo_id, version: latest.version };
@@ -538,16 +610,19 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       updateSaveStatus("saved");
       setSaveError("");
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       setSaveError(errorMessage(caught));
       updateSaveStatus("failed");
     }
   }
 
   async function keepLocalAfterConflict() {
+    const lifetime = mutationLifetime.current;
     const currentBingoId = serverDraft.current.bingoId;
     if (!currentBingoId) return;
     try {
       const latest = await api.bingos.getDraft(currentBingoId);
+      if (lifetime !== mutationLifetime.current) return;
       const latestServerFingerprint = editorDocumentFingerprint(editorStateFromDraft(latest));
       serverDraft.current = { bingoId: latest.bingo_id, version: latest.version };
       savedFingerprintRef.current = latestServerFingerprint;
@@ -557,6 +632,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       updateSaveStatus("dirty");
       await flushDraft();
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       if (!isDraftConflict(caught)) {
         setSaveError(errorMessage(caught));
         updateSaveStatus("failed");
@@ -603,11 +679,13 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       return;
     }
     actionInFlight.current = true;
+    const lifetime = mutationLifetime.current;
     setPendingAction("publish");
     setError("");
     setMessage("");
     try {
       await flushDraft();
+      if (lifetime !== mutationLifetime.current) return;
       const persistedBingoId = serverDraft.current.bingoId;
       if (!persistedBingoId) throw new Error("The server did not return a bingo identifier.");
       const fingerprint = latestFingerprint.current;
@@ -627,20 +705,24 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         persistedBingoId,
         pendingPublication.current.idempotencyKey,
       );
+      if (lifetime !== mutationLifetime.current) return;
       router.push(`/bingo/${published.id}`);
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       actionInFlight.current = false;
       if (!isDraftConflict(caught)) setError(errorMessage(caught));
       setPendingAction(null);
     }
   }
 
-  async function waitForExport(job: ExportJob): Promise<ExportJob> {
+  async function waitForExport(job: ExportJob, lifetime: number): Promise<ExportJob> {
     let current = job;
     for (let attempt = 0; attempt < 30 && current.status !== "ready"; attempt += 1) {
       if (current.status === "failed" || current.status === "expired") return current;
       await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      if (lifetime !== mutationLifetime.current) return current;
       current = await api.exports.get(current.id);
+      if (lifetime !== mutationLifetime.current) return current;
     }
     return current;
   }
@@ -652,6 +734,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       return;
     }
     actionInFlight.current = true;
+    const lifetime = mutationLifetime.current;
     setPendingAction(`export-${format}`);
     setError("");
     setMessage(`Preparing published ${format.toUpperCase()} export…`);
@@ -659,7 +742,9 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       const persistedBingoId = serverDraft.current.bingoId ?? state.bingoId;
       if (!persistedBingoId) throw new Error("Publish the bingo before exporting it.");
       const job = await api.exports.create(persistedBingoId, format, makeIdempotencyKey());
-      const completed = await waitForExport(job);
+      if (lifetime !== mutationLifetime.current) return;
+      const completed = await waitForExport(job, lifetime);
+      if (lifetime !== mutationLifetime.current) return;
       if (completed.status === "ready" && completed.download_url) {
         window.location.assign(completed.download_url);
       } else if (completed.status === "failed" || completed.status === "expired") {
@@ -668,10 +753,13 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         setMessage("The export is still processing. Try downloading again shortly.");
       }
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      actionInFlight.current = false;
-      setPendingAction(null);
+      if (lifetime === mutationLifetime.current) {
+        actionInFlight.current = false;
+        setPendingAction(null);
+      }
     }
   }
 

@@ -3492,3 +3492,79 @@ observed results and their limits. Do not include credentials or session data.
   remain. Counts stay 55 verified / 43 partial / 6 N/A / 1 deployment-only.
   These changes need their own exact-source CI; no merge, promotion or deployment
   occurred. Provider-independent local evidence does not establish production.
+
+
+### 2026-10-03 — Editor mutation lifetime, logout and separate new document (sections 4, 7, 58)
+
+- A departed editor's pending creation could replace the current URL and continue
+  saving newer edits; a late existing-board save could change the next editor's
+  identifier/version. Publication could navigate after departure and export
+  polling continued. Five added regressions initially failed with the prior 20
+  editor cases passing. A separate added existing-draft-to-Create regression
+  failed against the first lifetime correction: it still opened the old document.
+- Editor operations now capture a lifetime invalidated on unmount, draft-route
+  changes, sign-in, session end and explicit logout. Save loops stop before follow-up
+  requests and after completed writes; obsolete success/error callbacks cannot
+  replace URLs, update draft/version/recovery/status, or continue publication.
+  Conflict reload/save choices and uploads use the same guards. Uploads are
+  aborted; obsolete phases/assets are ignored. Export polling stops at the next
+  wake/read completion and obsolete results cannot trigger a download/navigation.
+  Session events immediately hide controls during revalidation. This does not
+  cancel writes already accepted by the server; a lost response still uses existing
+  idempotency/version/conflict rules. Physical account-switch timing and every
+  player mutation remain separate requirements.
+- Existing-draft-to-blank Create now resets document, draft identity/version,
+  pending creation/publication keys, history/recovery references and visible save
+  state to a separate blank 5x5 board. A newly persisted board's own URL update
+  preserves its document. Autosave also waits for a requested existing-board ID
+  to match the hydrated state. Existing recovery prompts remain available for
+  account-scoped earlier unsaved documents; this reset does not delete them.
+- Eight added editor cases now pass (28 total), covering departure/session end,
+  next-board version, late publication, export polling, purged logout recovery,
+  publication waiting on save and a separate blank document. The complete final
+  frontend check passed lint/types and 248 tests across 34 files; build and
+  formatting passed. One intermediate full run had 247 passes and a failure in
+  the existing offline-reset player test; it passed in isolation. That test now
+  waits for Reset to become enabled before clicking, and the final full run passed.
+  This is one readiness-wait correction, not proof of eliminating all timing races.
+  An initial upload guard was placed in the adjacent effect, caught by the editor
+  tests, and moved into the upload handler before successful verification.
+  Logs: `/tmp/neb-editor-mutation-baseline-oct03.log`,
+  `/tmp/neb-editor-new-route-baseline-oct03.log`,
+  `/tmp/neb-editor-mutation-check-final-oct03.log`,
+  `/tmp/neb-editor-mutation-build-oct03.log`,
+  `/tmp/neb-editor-mutation-format-oct03.log`.
+- Two real QA flows hold actual successful server responses while the user leaves
+  via Explore. Creation saves the first 6x6 snapshot; a second 7x7 edit is made
+  while its response is held. After confirmed departure and released response,
+  Explore remains open, no follow-up PUT occurs beyond the 800ms debounce window,
+  and direct backend reads still show the first 6x6 snapshot. Publication similarly
+  completes on the server but its departed UI does not navigate. Temporary boards
+  are cleaned up. Six cases passed without retries in Chromium, mobile WebKit and
+  Firefox: `/tmp/neb-editor-mutation-browsers-oct03.log`,
+  `/tmp/neb-editor-mutation-browser.config.ts`. An initial draft-write counter used
+  PATCH rather than this API's PUT; corrected final six-case run observes PUT.
+- A third real Chromium flow follows the header Create link from an existing
+  3x3 draft: URL loses its draft query, a blank 5x5 editor/title opens, and actual
+  backend reads confirm the original board remains 3x3. It passed without retries:
+  `/tmp/neb-editor-new-route-live-oct03.log`. Browser engine/device emulations
+  are not physical-device or native password-manager evidence. Generated next-env
+  imports were restored; no backend implementation or API contract changed.
+- The pending player mutation/account queue, remaining component states,
+  per-form/control/native-device checks and broader data/API/performance items
+  remain open. Section counts stay 55 verified / 43 partial / 6 N/A /
+  1 deployment-only. New source requires its own CI. No merge, promotion or public
+  deployment occurred; domain/providers remain unselected.
+
+
+### 2026-10-03 — Completed catalog/player source gate
+
+- Exact source `6eaaf25efce153b6ca002dfe2dced947b68d2db0` passed all nine
+  [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37090152888):
+  240 PostgreSQL backend tests, 240 frontend tests, 200 browser smoke passes
+  with 12 intentional skips and no retries, 78 live product journeys, foundation
+  and history scan, both production image scans/SBOMs and release gate.
+  Terminal log: `/tmp/neb-ci-6eaaf25-completed-oct03.log`. This covers the
+  catalog/player read changes, not the later editor mutation changes. Full
+  redacted local history scan covered 86 commits with no leaks. No workflow was
+  restarted, image promoted, PR merged or public deployment performed.

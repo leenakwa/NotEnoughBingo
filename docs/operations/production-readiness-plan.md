@@ -73,7 +73,9 @@ Partial-settings source `7381042` then passed all nine jobs (240 backend, 226
 frontend, 200 smoke passes with 12 intentional skips and no retries, 74 live).
 Editor hydration source `371dd1b` then passed all nine jobs (240 backend, 231
 frontend, 200 smoke passes plus 12 intentional skips without retries, 76 live).
-Subsequent catalog/player corrections have local evidence and need their own
+Catalog/player source `6eaaf25` then passed all nine jobs (240 backend, 240
+frontend, 200 smoke passes plus 12 intentional skips without retries, 78 live).
+Subsequent editor mutation corrections have local evidence and need their own
 source gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
@@ -117,19 +119,22 @@ only environment-specific smoke and recovery checks after release.
    frontend-release source `b5ebaff` also passed all nine jobs, including
    production-image identity/relabel guards. Partial-settings source `7381042`
    passed all nine jobs. Editor hydration source `371dd1b` passed all nine jobs.
-   Catalog/player corrections now have local evidence and need their own gate.
+   Catalog/player source `6eaaf25` passed all nine jobs. Editor mutation
+   corrections now have local evidence and need their own gate.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
-   pending editor/player mutations across route and account changes. The section 4
+   pending player mutations across route and account changes. The section 4
    partial-data sweep now includes catalog hints/results, Discover refresh, player
    author/progress/comments independence and header unread-count failure. Account settings now have
    independent sessions/preferences failure/loading/retry evidence and actual
    password success despite an unavailable subsequent sessions refresh. Do not
    close the whole UI-state section from those account cases alone. Editor
    initial draft/optional-download reads now have independent failure/retry and
-   stale-response protection with real-stack evidence; pending editor mutations
-   during route changes still need their own lifecycle audit. Then audit
+   stale-response protection with real-stack evidence; editor mutation guards now stop obsolete saves/publications/exports across
+   departure/draft-route/session boundaries, with eight new unit cases and seven
+   real-stack/browser cases including separate blank Create navigation. Player
+   mutations and broader account/device timing still need their own audit. Then audit
    remaining dirty forms, autofill/password-manager
    behavior (silent-fill submission is verified; native saved credentials are not),
    remaining per-form/control checks (root/reply/edit and reopened-report
