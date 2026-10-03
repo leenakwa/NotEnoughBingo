@@ -1,14 +1,17 @@
 "use client";
 
 import type { Dispatch } from "react";
+import { useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
+import { UploadStatus } from "@/components/ui/upload-status";
 import {
   selectedPrimaryCell,
   type EditorAction,
   type EditorState,
   type TextFormat,
 } from "@/features/editor/editor-state";
+import type { UploadPhase } from "@/lib/uploads";
 
 const formats: { value: TextFormat; label: string; glyph: string }[] = [
   { value: "bold", label: "Bold", glyph: "B" },
@@ -22,14 +25,24 @@ export function CellInspector({
   dispatch,
   onImageSelected,
   uploadPending,
+  uploadPhase,
+  onCancelUpload,
+  uploadFeedback,
 }: {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
   onImageSelected: (file: File) => void;
   uploadPending: boolean;
+  uploadPhase?: UploadPhase;
+  onCancelUpload: () => void;
+  uploadFeedback: { text: string; error: boolean } | null;
 }) {
+  const [bulkTextSelection, setBulkTextSelection] = useState<string | null>(null);
   const cell = selectedPrimaryCell(state);
   if (!cell) return null;
+  const selectionToken = state.selectedKeys.join("|");
+  const multipleSelected = state.selectedKeys.length > 1;
+  const bulkTextEnabled = multipleSelected && bulkTextSelection === selectionToken;
 
   return (
     <aside className="cell-inspector" aria-labelledby="inspector-title">
@@ -59,21 +72,41 @@ export function CellInspector({
         </button>
       </div>
 
-      <label className="field">
-        <span>Text</span>
-        <textarea
-          rows={4}
-          maxLength={100}
-          value={cell.text}
-          placeholder="Write something…"
-          onChange={(event) =>
-            dispatch({
-              type: "patch-selected",
-              patch: { text: event.target.value },
-            })
-          }
-        />
-      </label>
+      {multipleSelected && !bulkTextEnabled ? (
+        <div className="bulk-text-safety">
+          <p>Text is kept separate for each selected cell.</p>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => setBulkTextSelection(selectionToken)}
+          >
+            Set same text for {state.selectedKeys.length} cells
+          </button>
+        </div>
+      ) : (
+        <label className="field">
+          <span id={bulkTextEnabled ? "bulk-text-label" : undefined}>
+            {bulkTextEnabled ? `Shared text for ${state.selectedKeys.length} cells` : "Text"}
+          </span>
+          <textarea
+            rows={4}
+            maxLength={100}
+            value={cell.text}
+            placeholder="Write something…"
+            aria-labelledby={bulkTextEnabled ? "bulk-text-label" : undefined}
+            aria-describedby={bulkTextEnabled ? "bulk-text-description" : undefined}
+            onChange={(event) =>
+              dispatch({
+                type: "patch-selected",
+                patch: { text: event.target.value },
+              })
+            }
+          />
+          {bulkTextEnabled ? (
+            <small id="bulk-text-description">This replaces the text in every selected cell.</small>
+          ) : null}
+        </label>
+      )}
 
       <div className="format-row" role="group" aria-label="Text formatting">
         {formats.map((format) => (
@@ -124,6 +157,8 @@ export function CellInspector({
         </span>
         <input
           type="range"
+          aria-label="Background opacity"
+          aria-valuetext={`${Math.round(cell.backgroundOpacity * 100)} percent`}
           min="0"
           max="100"
           value={Math.round(cell.backgroundOpacity * 100)}
@@ -142,7 +177,7 @@ export function CellInspector({
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif"
-          hidden
+          className="sr-only"
           disabled={uploadPending}
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -151,6 +186,15 @@ export function CellInspector({
           }}
         />
       </label>
+      {uploadPhase ? <UploadStatus phase={uploadPhase} onCancel={onCancelUpload} /> : null}
+      {uploadFeedback ? (
+        <p
+          className={uploadFeedback.error ? "form-message form-message--error" : "form-message"}
+          role={uploadFeedback.error ? "alert" : "status"}
+        >
+          {uploadFeedback.text}
+        </p>
+      ) : null}
       {cell.image.asset || cell.image.previewUrl ? (
         <button
           type="button"
@@ -166,12 +210,34 @@ export function CellInspector({
           Remove cell image
         </button>
       ) : null}
+      {cell.image.asset || cell.image.previewUrl ? (
+        state.selectedKeys.length === 1 ? (
+          <label className="field">
+            <span>Image description</span>
+            <input
+              type="text"
+              maxLength={160}
+              value={cell.imageAlt}
+              placeholder="Describe what this image shows"
+              aria-invalid={!cell.text.trim() && !cell.imageAlt.trim()}
+              onChange={(event) =>
+                dispatch({ type: "patch-selected", patch: { imageAlt: event.target.value } })
+              }
+            />
+            <small>Required for image-only cells so everyone can understand them.</small>
+          </label>
+        ) : (
+          <p className="field-hint">Select one cell at a time to describe its image.</p>
+        )
+      ) : null}
       <label className="field">
         <span className="range-heading">
           Image opacity <output>{Math.round(cell.imageOpacity * 100)}%</output>
         </span>
         <input
           type="range"
+          aria-label="Image opacity"
+          aria-valuetext={`${Math.round(cell.imageOpacity * 100)} percent`}
           min="0"
           max="100"
           value={Math.round(cell.imageOpacity * 100)}
@@ -206,6 +272,8 @@ export function CellInspector({
         </span>
         <input
           type="range"
+          aria-label="Border width"
+          aria-valuetext={`${cell.borderWidth} ${cell.borderWidth === 1 ? "pixel" : "pixels"}`}
           min="0"
           max="12"
           value={cell.borderWidth}

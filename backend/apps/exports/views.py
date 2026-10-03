@@ -7,6 +7,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.bingos.models import Bingo
@@ -20,6 +21,8 @@ IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9._:-]{8,128}$")
 
 class BingoExportCreateView(APIView):
     permission_classes = [IsVerifiedUser]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "exports"
 
     @extend_schema(request=ExportRequestSerializer, responses={202: ExportJobSerializer})
     def post(self, request, bingo_id):

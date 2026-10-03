@@ -6,6 +6,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.bingos.models import Bingo
@@ -94,6 +95,8 @@ class ProgressView(APIView):
 
 class SharedResultCreateView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "shares"
 
     @extend_schema(
         request=SharedResultCreateSerializer,

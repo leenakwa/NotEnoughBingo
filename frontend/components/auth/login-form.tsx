@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthLink } from "@/components/auth/auth-link";
+import { PasswordField } from "@/components/auth/password-field";
+import { LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage } from "@/lib/api/client";
-import { notifyAuthChanged } from "@/lib/auth-events";
+import { notifySignedIn } from "@/lib/auth-events";
+import { openRegistrationOnboarding } from "@/lib/registration-onboarding";
 
 export function safeNext(value: string | null): string {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
@@ -16,75 +19,156 @@ export function safeNext(value: string | null): string {
     const base = new URL("https://not-enough-bingo.invalid");
     const destination = new URL(value, base);
     if (destination.origin !== base.origin) return "/discover";
+    if (
+      ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password"].includes(
+        destination.pathname.replace(/\/+$/, ""),
+      )
+    ) {
+      return "/discover";
+    }
     return `${destination.pathname}${destination.search}${destination.hash}`;
   } catch {
     return "/discover";
   }
 }
 
-export function LoginForm() {
+export function loginNotice(reason: string | null): string {
+  if (reason === "session-expired") {
+    return "Your session ended. Log in again to continue where you left off.";
+  }
+  if (reason === "deletion-scheduled") {
+    return "Account deletion is scheduled and all sessions were signed out. Log back in to review or cancel it during the grace period.";
+  }
+  return "";
+}
+
+export function LoginForm({
+  presentation = "page",
+  reason,
+  onSuccess,
+  onPendingChange,
+}: {
+  presentation?: "page" | "dialog";
+  reason?: string | null;
+  onSuccess?: () => void;
+  onPendingChange?: (pending: boolean) => void;
+} = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
+  const submissionInFlight = useRef(false);
   const [error, setError] = useState("");
+  const [sessionStatus, setSessionStatus] = useState<"checking" | "guest" | "error">("checking");
+  const next = searchParams.get("next");
+  const notice = loginNotice(reason === undefined ? searchParams.get("reason") : reason);
+
+  useEffect(() => {
+    let active = true;
+    api.auth
+      .session()
+      .then((user) => {
+        if (!active) return;
+        if (user) {
+          if (onSuccess) {
+            onSuccess();
+            notifySignedIn();
+          } else router.replace(safeNext(next));
+          openRegistrationOnboarding(user.id);
+        } else setSessionStatus("guest");
+      })
+      .catch(() => {
+        if (active) setSessionStatus("error");
+      });
+    return () => {
+      active = false;
+    };
+  }, [next, onSuccess, router]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submissionInFlight.current) return;
+    const data = new FormData(event.currentTarget);
+    const submittedEmail = String(data.get("email") ?? "").trim();
+    const submittedPassword = String(data.get("password") ?? "");
+    setEmail(submittedEmail);
+    setPassword(submittedPassword);
+    submissionInFlight.current = true;
     setPending(true);
+    onPendingChange?.(true);
     setError("");
     try {
-      await api.auth.login({ email, password });
-      notifyAuthChanged();
-      router.replace(safeNext(searchParams.get("next")));
-      router.refresh();
+      const { user } = await api.auth.login({ email: submittedEmail, password: submittedPassword });
+      if (onSuccess) onSuccess();
+      else {
+        router.replace(safeNext(next));
+        router.refresh();
+      }
+      notifySignedIn();
+      openRegistrationOnboarding(user.id);
     } catch (caught) {
+      submissionInFlight.current = false;
       setError(errorMessage(caught));
       setPending(false);
+    } finally {
+      onPendingChange?.(false);
     }
   }
 
   return (
     <AuthShell
+      presentation={presentation}
       eyebrow="Welcome back"
       title="Log in"
       description="Use the email address connected to your account."
       footer={{ text: "New here?", href: "/register", label: "Create an account" }}
     >
-      <form className="stack-form" onSubmit={submit}>
-        <label className="field">
-          <span>Email</span>
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>Password</span>
-          <input
-            type="password"
+      {sessionStatus === "checking" ? <LoadingState label="Checking your session…" /> : null}
+      {sessionStatus !== "checking" ? (
+        <form className="stack-form" onSubmit={submit}>
+          {sessionStatus === "error" ? (
+            <p className="form-message" role="status">
+              We could not check your current session. You can still try to log in.
+            </p>
+          ) : null}
+          {notice ? (
+            <p className="form-message" role="status">
+              {notice}
+            </p>
+          ) : null}
+          <label className="field">
+            <span>Email</span>
+            <input
+              type="email"
+              name="email"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+          <PasswordField
+            label="Password"
             autoComplete="current-password"
-            required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-        </label>
-        <div className="form-row">
-          <Link href="/forgot-password">Forgot password?</Link>
-          <button className="button button--primary" type="submit" disabled={pending}>
-            {pending ? "Logging in…" : "Log in"}
-          </button>
-        </div>
-        {error ? (
-          <p className="form-message form-message--error" role="alert">
-            {error}
-          </p>
-        ) : null}
-      </form>
+          <div className="form-row">
+            <AuthLink href="/forgot-password">Forgot password?</AuthLink>
+            <button className="button button--primary" type="submit" disabled={pending}>
+              {pending ? "Logging in…" : "Log in"}
+            </button>
+          </div>
+          {error ? (
+            <p className="form-message form-message--error" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </form>
+      ) : null}
     </AuthShell>
   );
 }

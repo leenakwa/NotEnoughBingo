@@ -1,13 +1,24 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { PasswordField } from "@/components/auth/password-field";
 import { ErrorState, LoadingState } from "@/components/ui/page-state";
-import { notifyAuthChanged } from "@/lib/auth-events";
-import { api, errorMessage } from "@/lib/api/client";
+import { UploadStatus } from "@/components/ui/upload-status";
+import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
+import { clearAllProgressRecovery } from "@/lib/progress-recovery";
+import { clearProfileEdits } from "@/features/profile/profile-edit-cache";
+import {
+  AUTH_SIGNED_IN_EVENT,
+  AUTH_SESSION_ENDED_EVENT,
+  AUTH_SIGNED_OUT_EVENT,
+  notifyAuthChanged,
+  notifySignedOut,
+} from "@/lib/auth-events";
+import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type {
-  AccountDeletionResult,
   AuthenticatedUser,
   ExportJob,
   NotificationPreferences,
@@ -15,7 +26,8 @@ import type {
   SessionMetadata,
   UserProfile,
 } from "@/lib/api/types";
-import { uploadImage } from "@/lib/uploads";
+import { uploadImage, type UploadPhase } from "@/lib/uploads";
+import { formatLocalDateTime } from "@/lib/date-time";
 
 const preferenceLabels: Record<keyof NotificationPreferences, string> = {
   new_comment: "New comments on my bingos",
@@ -38,111 +50,356 @@ export function AccountSettings({
   const [sessions, setSessions] = useState<Page<SessionMetadata> | null>(null);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
+  const [emailChangePassword, setEmailChangePassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [emailFeedback, setEmailFeedback] = useState<{ error: boolean; text: string } | null>(null);
+  const [newEmailError, setNewEmailError] = useState("");
+  const [emailChangePasswordError, setEmailChangePasswordError] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
   const [deletionPassword, setDeletionPassword] = useState("");
-  const [deletion, setDeletion] = useState<AccountDeletionResult | null>(null);
+  const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
   const [exportJob, setExportJob] = useState<ExportJob | null>(null);
   const [pending, setPending] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUploadPhase, setAvatarUploadPhase] = useState<UploadPhase>("preparing");
+  const avatarUploadController = useRef<AbortController | null>(null);
+  const actionInFlight = useRef(false);
+  const actionLifetime = useRef(0);
+  const [feedbackAction, setFeedbackAction] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
   const [initialError, setInitialError] = useState("");
   const [loadVersion, setLoadVersion] = useState(0);
+  const [sessionsVersion, setSessionsVersion] = useState(0);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState("");
+  const [preferencesVersion, setPreferencesVersion] = useState(0);
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+  const [preferencesError, setPreferencesError] = useState("");
 
   useEffect(() => {
-    let active = true;
+    const reset = () => {
+      actionLifetime.current += 1;
+      actionInFlight.current = false;
+      avatarUploadController.current?.abort();
+      avatarUploadController.current = null;
+      setUser(null);
+      setInitialLoading(true);
+      setPending("");
+      setAvatarUploading(false);
+      setExportJob(null);
+      setDeletionScheduledFor(null);
+      setFeedbackAction("");
+      setMessage("");
+      setError("");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setDeletionPassword("");
+      setNewEmail("");
+      setEmailChangePassword("");
+      setEmailFeedback(null);
+      setCurrentPasswordError("");
+      setNewPasswordError("");
+      setConfirmPasswordError("");
+      setNewEmailError("");
+      setEmailChangePasswordError("");
+    };
+    reset();
+    const refresh = () => {
+      reset();
+      setLoadVersion((version) => version + 1);
+    };
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
+    return () => {
+      actionLifetime.current += 1;
+      actionInFlight.current = false;
+      avatarUploadController.current?.abort();
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
+    };
+  }, [profile.id]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const lifetime = actionLifetime.current;
     setInitialLoading(true);
     setInitialError("");
-    Promise.all([api.auth.me(), api.auth.sessions(), api.profiles.notificationPreferences()])
-      .then(([currentUser, activeSessions, notificationPreferences]) => {
-        if (!active) return;
+    api.auth
+      .me(controller.signal)
+      .then((currentUser) => {
+        if (controller.signal.aborted || lifetime !== actionLifetime.current) return;
+        if (currentUser.id !== profile.id) {
+          throw new Error("Your account changed. Reload your profile to continue.");
+        }
         setUser(currentUser);
-        setSessions(activeSessions);
-        setPreferences(notificationPreferences);
+        setDeletionScheduledFor(currentUser.deletion_scheduled_for);
       })
       .catch((caught) => {
-        if (active) setInitialError(errorMessage(caught));
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setInitialError(errorMessage(caught));
       })
       .finally(() => {
-        if (active) setInitialLoading(false);
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setInitialLoading(false);
       });
-    return () => {
-      active = false;
-    };
-  }, [loadVersion]);
+    return () => controller.abort();
+  }, [loadVersion, profile.id]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const lifetime = actionLifetime.current;
+    setSessions(null);
+    setSessionsLoading(true);
+    setSessionsError("");
+    api.auth
+      .sessions(controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted && lifetime === actionLifetime.current) setSessions(value);
+      })
+      .catch((caught) => {
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setSessionsError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setSessionsLoading(false);
+      });
+    return () => controller.abort();
+  }, [loadVersion, sessionsVersion, profile.id]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const lifetime = actionLifetime.current;
+    setPreferences(null);
+    setPreferencesLoading(true);
+    setPreferencesError("");
+    api.profiles
+      .notificationPreferences(controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setPreferences(value);
+      })
+      .catch((caught) => {
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setPreferencesError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setPreferencesLoading(false);
+      });
+    return () => controller.abort();
+  }, [loadVersion, preferencesVersion, profile.id]);
+
+  function cancelAvatarUpload() {
+    avatarUploadController.current?.abort();
+    setError("");
+    setMessage("Upload cancelled.");
+  }
 
   function beginAction(action: string) {
+    if (actionInFlight.current) return false;
+    actionInFlight.current = true;
     setPending(action);
+    setFeedbackAction(action);
     setMessage("");
     setError("");
+    setEmailFeedback(null);
+    return true;
+  }
+
+  function finishAction(lifetime: number) {
+    if (lifetime !== actionLifetime.current) return;
+    actionInFlight.current = false;
+    setPending("");
+  }
+
+  function actionFeedback(action: string) {
+    if (!(feedbackAction === action || feedbackAction.startsWith(`${action}-`))) return null;
+    if (!error && !message) return null;
+    return (
+      <p
+        className={error ? "form-message form-message--error" : "form-message"}
+        role={error ? "alert" : "status"}
+      >
+        {error || message}
+      </p>
+    );
   }
 
   async function updateAvatar(file: File) {
-    if (pending) return;
-    beginAction("avatar");
+    if (pending || !beginAction("avatar")) return;
+    const lifetime = actionLifetime.current;
+    const controller = new AbortController();
+    avatarUploadController.current = controller;
+    setAvatarUploading(true);
+    setAvatarUploadPhase("preparing");
     try {
-      const asset = await uploadImage(file, "avatar");
+      const asset = await uploadImage(file, "avatar", {
+        signal: controller.signal,
+        onPhase: (phase) => {
+          if (lifetime === actionLifetime.current && !controller.signal.aborted)
+            setAvatarUploadPhase(phase);
+        },
+      });
+      if (lifetime !== actionLifetime.current) return;
+      if (controller.signal.aborted) {
+        setMessage("Upload cancelled.");
+        return;
+      }
+      avatarUploadController.current = null;
+      setAvatarUploading(false);
       const updated = await api.profiles.update({ avatar_id: asset.id });
+      if (lifetime !== actionLifetime.current) return;
       onProfileChange(updated);
       setUser((current) => (current ? { ...current, avatar: asset } : current));
       notifyAuthChanged();
       setMessage("Avatar updated.");
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (lifetime !== actionLifetime.current) return;
+      if (controller.signal.aborted) setMessage("Upload cancelled.");
+      else setError(errorMessage(caught));
     } finally {
-      setPending("");
+      if (lifetime === actionLifetime.current) {
+        if (avatarUploadController.current === controller) avatarUploadController.current = null;
+        setAvatarUploading(false);
+        finishAction(lifetime);
+      }
     }
   }
 
   async function removeAvatar() {
-    if (pending) return;
-    beginAction("avatar");
+    if (pending || !beginAction("avatar")) return;
+    const lifetime = actionLifetime.current;
     try {
       const updated = await api.profiles.update({ avatar_id: null });
+      if (lifetime !== actionLifetime.current) return;
       onProfileChange(updated);
       setUser((current) => (current ? { ...current, avatar: null } : current));
       notifyAuthChanged();
       setMessage("Avatar removed.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction(lifetime);
     }
   }
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending) return;
-    if (newPassword !== confirmPassword) {
-      setError("The new passwords do not match.");
+    const form = event.currentTarget;
+    if (pending || actionInFlight.current) return;
+    const data = new FormData(form);
+    const submittedCurrentPassword = String(data.get("current_password") ?? "");
+    const submittedNewPassword = String(data.get("new_password") ?? "");
+    const submittedConfirmation = String(data.get("confirm-new-password") ?? "");
+    setCurrentPassword(submittedCurrentPassword);
+    setNewPassword(submittedNewPassword);
+    setConfirmPassword(submittedConfirmation);
+    if (submittedNewPassword !== submittedConfirmation) {
+      setError("");
+      setMessage("");
+      setConfirmPasswordError("The new passwords do not match.");
+      form.querySelector<HTMLInputElement>('input[name="confirm-new-password"]')?.focus();
       return;
     }
-    beginAction("password");
+    setConfirmPasswordError("");
+    setCurrentPasswordError("");
+    setNewPasswordError("");
+    if (!beginAction("password")) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.changePassword({
-        current_password: currentPassword,
-        new_password: newPassword,
+        current_password: submittedCurrentPassword,
+        new_password: submittedNewPassword,
       });
+      if (lifetime !== actionLifetime.current) return;
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setMessage("Password changed. Other sessions were signed out.");
-      setSessions(await api.auth.sessions());
+      setSessions(null);
+      setSessionsVersion((version) => version + 1);
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (lifetime !== actionLifetime.current) return;
+      const currentFieldError = fieldValidationMessage(caught, "current_password");
+      const newFieldError = fieldValidationMessage(caught, "new_password");
+      setCurrentPasswordError(currentFieldError ?? "");
+      setNewPasswordError(newFieldError ?? "");
+      if (currentFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="current_password"]')?.focus();
+      } else if (newFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="new_password"]')?.focus();
+      } else {
+        setError(errorMessage(caught));
+      }
     } finally {
-      setPending("");
+      finishAction(lifetime);
+    }
+  }
+
+  async function requestEmailChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (pending || actionInFlight.current) return;
+    const data = new FormData(form);
+    const submittedEmail = String(data.get("new_email") ?? "").trim();
+    const submittedPassword = String(data.get("email-change-password") ?? "");
+    setNewEmail(submittedEmail);
+    setEmailChangePassword(submittedPassword);
+    if (!beginAction("email")) return;
+    const lifetime = actionLifetime.current;
+    setNewEmailError("");
+    setEmailChangePasswordError("");
+    try {
+      await api.auth.requestEmailChange({
+        current_password: submittedPassword,
+        new_email: submittedEmail,
+      });
+      if (lifetime !== actionLifetime.current) return;
+      setEmailChangePassword("");
+      setEmailFeedback({
+        error: false,
+        text: "Check the new email address for a confirmation link. Your current address remains active until you confirm it.",
+      });
+    } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
+      const emailFieldError = fieldValidationMessage(caught, "new_email");
+      const passwordFieldError = fieldValidationMessage(caught, "current_password");
+      setNewEmailError(emailFieldError ?? "");
+      setEmailChangePasswordError(passwordFieldError ?? "");
+      if (emailFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="new_email"]')?.focus();
+      } else if (passwordFieldError) {
+        form.querySelector<HTMLInputElement>('input[name="email-change-password"]')?.focus();
+      } else {
+        setEmailFeedback({ error: true, text: errorMessage(caught) });
+      }
+    } finally {
+      finishAction(lifetime);
     }
   }
 
   async function revokeSession(session: SessionMetadata) {
-    if (pending) return;
-    beginAction(`session-${session.id}`);
+    if (pending || !beginAction(`session-${session.id}`)) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.revokeSession(session.id);
+      if (lifetime !== actionLifetime.current) return;
       if (session.current) {
-        notifyAuthChanged();
+        clearAllEditorRecovery();
+        clearAllProgressRecovery();
+        clearProfileEdits();
+        notifySignedOut();
         router.replace("/login");
         router.refresh();
         return;
@@ -158,34 +415,40 @@ export function AccountSettings({
       );
       setMessage("Session signed out.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction(lifetime);
     }
   }
 
   async function updatePreference(key: keyof NotificationPreferences, value: boolean) {
-    if (!preferences || pending) return;
+    if (!preferences || pending || !beginAction(`preference-${key}`)) return;
+    const lifetime = actionLifetime.current;
     const previous = preferences;
     setPreferences({ ...preferences, [key]: value });
-    beginAction(`preference-${key}`);
     try {
-      setPreferences(await api.profiles.updateNotificationPreferences({ [key]: value }));
+      const updated = await api.profiles.updateNotificationPreferences({ [key]: value });
+      if (lifetime !== actionLifetime.current) return;
+      setPreferences(updated);
       setMessage("Notification preferences saved.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setPreferences(previous);
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction(lifetime);
     }
   }
 
   async function requestExport() {
-    if (pending) return;
-    beginAction("export");
+    if (pending || !beginAction("export")) return;
+    const lifetime = actionLifetime.current;
     try {
       const requested = await api.auth.requestAccountExport();
+      if (lifetime !== actionLifetime.current) return;
       let job = await api.exports.get(requested.job_id);
+      if (lifetime !== actionLifetime.current) return;
       setExportJob(job);
       for (
         let attempt = 0;
@@ -193,7 +456,9 @@ export function AccountSettings({
         attempt += 1
       ) {
         await new Promise((resolve) => window.setTimeout(resolve, 1_000));
+        if (lifetime !== actionLifetime.current) return;
         job = await api.exports.get(requested.job_id);
+        if (lifetime !== actionLifetime.current) return;
         setExportJob(job);
       }
       if (job.status === "ready") {
@@ -204,9 +469,10 @@ export function AccountSettings({
         setMessage("Your export is still processing. Check this page again shortly.");
       }
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction(lifetime);
     }
   }
 
@@ -214,50 +480,69 @@ export function AccountSettings({
     event.preventDefault();
     if (
       pending ||
+      actionInFlight.current ||
       !window.confirm("Schedule account deletion? You can cancel during the grace period.")
     ) {
       return;
     }
-    beginAction("deletion");
+    const submittedPassword = String(
+      new FormData(event.currentTarget).get("deletion_password") ?? "",
+    );
+    setDeletionPassword(submittedPassword);
+    if (!beginAction("deletion")) return;
+    const lifetime = actionLifetime.current;
     try {
-      const scheduled = await api.auth.scheduleAccountDeletion(deletionPassword);
-      setDeletion(scheduled);
+      const scheduled = await api.auth.scheduleAccountDeletion(submittedPassword);
+      if (lifetime !== actionLifetime.current) return;
+      clearAllEditorRecovery();
+      clearAllProgressRecovery();
+      clearProfileEdits();
       setDeletionPassword("");
-      setMessage(
-        `Account deletion is scheduled for ${new Date(scheduled.scheduled_for).toLocaleString()}.`,
-      );
+      setDeletionScheduledFor(scheduled.scheduled_for);
+      notifySignedOut();
+      router.replace("/login?next=%2Fprofile&reason=deletion-scheduled");
+      router.refresh();
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction(lifetime);
     }
   }
 
   async function cancelDeletion() {
-    if (pending) return;
-    beginAction("deletion");
+    if (pending || !beginAction("deletion")) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.cancelAccountDeletion();
-      setDeletion(null);
+      if (lifetime !== actionLifetime.current) return;
+      setDeletionScheduledFor(null);
+      setUser((current) => (current ? { ...current, deletion_scheduled_for: null } : current));
       setMessage("Account deletion cancelled.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      setPending("");
+      finishAction(lifetime);
     }
   }
 
   async function logout() {
-    if (pending) return;
-    beginAction("logout");
+    if (pending || !beginAction("logout")) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.logout();
-      notifyAuthChanged();
+      if (lifetime !== actionLifetime.current) return;
+      clearAllEditorRecovery();
+      clearAllProgressRecovery();
+      clearProfileEdits();
+      notifySignedOut();
       router.replace("/login");
       router.refresh();
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
-      setPending("");
+      finishAction(lifetime);
     }
   }
 
@@ -270,7 +555,7 @@ export function AccountSettings({
     );
   }
 
-  if (initialError || !user || !sessions || !preferences) {
+  if (initialError || !user) {
     return (
       <section className="account-settings" aria-labelledby="account-settings-title">
         <h2 id="account-settings-title">Account settings</h2>
@@ -298,7 +583,8 @@ export function AccountSettings({
               {pending === "avatar" ? "Processing…" : "Upload avatar"}
               <input
                 type="file"
-                hidden
+                name="avatar"
+                className="sr-only"
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 disabled={Boolean(pending)}
                 onChange={(event) => {
@@ -319,6 +605,10 @@ export function AccountSettings({
               </button>
             ) : null}
           </div>
+          {avatarUploading ? (
+            <UploadStatus phase={avatarUploadPhase} onCancel={cancelAvatarUpload} />
+          ) : null}
+          {actionFeedback("avatar")}
         </div>
 
         <div className="settings-card">
@@ -333,50 +623,117 @@ export function AccountSettings({
           >
             {pending === "logout" ? "Logging out…" : "Log out"}
           </button>
+          {actionFeedback("logout")}
         </div>
+
+        <form className="settings-card" onSubmit={requestEmailChange}>
+          <h3>Change email</h3>
+          <p>Current address: {user.email}</p>
+          <label className="field">
+            <span>New email address</span>
+            <input
+              type="email"
+              name="new_email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              required
+              value={newEmail}
+              aria-invalid={Boolean(newEmailError)}
+              aria-describedby={newEmailError ? "new-email-error" : undefined}
+              onChange={(event) => {
+                setNewEmail(event.target.value);
+                setNewEmailError("");
+                setEmailFeedback(null);
+              }}
+            />
+            {newEmailError ? (
+              <small id="new-email-error" className="form-message--error" role="alert">
+                {newEmailError}
+              </small>
+            ) : null}
+          </label>
+          <PasswordField
+            label="Current password for email change"
+            name="email-change-password"
+            autoComplete="current-password"
+            value={emailChangePassword}
+            onChange={(event) => {
+              setEmailChangePassword(event.target.value);
+              setEmailChangePasswordError("");
+              setEmailFeedback(null);
+            }}
+            error={emailChangePasswordError}
+          />
+          <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
+            {pending === "email" ? "Sending…" : "Send confirmation email"}
+          </button>
+          {emailFeedback ? (
+            <p
+              className={emailFeedback.error ? "form-message form-message--error" : "form-message"}
+              role={emailFeedback.error ? "alert" : "status"}
+            >
+              {emailFeedback.text}
+            </p>
+          ) : null}
+        </form>
 
         <form className="settings-card" onSubmit={changePassword}>
           <h3>Change password</h3>
-          <label className="field">
-            <span>Current password</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>New password</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength={12}
-              required
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>Confirm new password</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength={12}
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-          </label>
+          <PasswordField
+            label="Current password"
+            name="current_password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => {
+              setCurrentPassword(event.target.value);
+              setCurrentPasswordError("");
+            }}
+            error={currentPasswordError}
+          />
+          <PasswordField
+            label="New password"
+            name="new_password"
+            autoComplete="new-password"
+            minLength={12}
+            value={newPassword}
+            onChange={(event) => {
+              setNewPassword(event.target.value);
+              setNewPasswordError("");
+            }}
+            error={newPasswordError}
+          />
+          <PasswordField
+            label="Confirm new password"
+            name="confirm-new-password"
+            autoComplete="new-password"
+            minLength={12}
+            value={confirmPassword}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              setConfirmPasswordError("");
+            }}
+            error={confirmPasswordError}
+          />
           <button type="submit" className="button button--primary" disabled={Boolean(pending)}>
             {pending === "password" ? "Changing…" : "Change password"}
           </button>
+          <Link href="/forgot-password" className="text-button">
+            Forgot your current password?
+          </Link>
+          {actionFeedback("password")}
         </form>
 
         <div className="settings-card">
           <h3>Active sessions</h3>
-          {sessions.results.length ? (
+          {sessionsLoading ? <LoadingState label="Loading active sessions…" /> : null}
+          {sessionsError ? (
+            <ErrorState
+              message={sessionsError}
+              onRetry={() => setSessionsVersion((version) => version + 1)}
+            />
+          ) : null}
+          {sessions?.results.length ? (
             <ul className="session-list">
               {sessions.results.map((session) => (
                 <li key={session.id}>
@@ -384,7 +741,7 @@ export function AccountSettings({
                     <b>{session.current ? "This device" : "Signed-in device"}</b>
                     <small>{session.user_agent || "Unknown browser"}</small>
                     <time dateTime={session.last_seen_at}>
-                      Last active {new Date(session.last_seen_at).toLocaleString()}
+                      Last active {formatLocalDateTime(session.last_seen_at)}
                     </time>
                   </div>
                   <button
@@ -398,28 +755,39 @@ export function AccountSettings({
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : sessions ? (
             <p>No active sessions were returned.</p>
-          )}
+          ) : null}
+          {actionFeedback("session")}
         </div>
 
         <div className="settings-card">
           <h3>Notification preferences</h3>
-          <div className="switch-list">
-            {(
-              Object.entries(preferenceLabels) as Array<[keyof NotificationPreferences, string]>
-            ).map(([key, label]) => (
-              <label key={key}>
-                <input
-                  type="checkbox"
-                  checked={preferences[key]}
-                  disabled={Boolean(pending)}
-                  onChange={(event) => void updatePreference(key, event.target.checked)}
-                />
-                <span>{label}</span>
-              </label>
-            ))}
-          </div>
+          {preferencesLoading ? <LoadingState label="Loading notification preferences…" /> : null}
+          {preferencesError ? (
+            <ErrorState
+              message={preferencesError}
+              onRetry={() => setPreferencesVersion((version) => version + 1)}
+            />
+          ) : null}
+          {preferences ? (
+            <div className="switch-list">
+              {(
+                Object.entries(preferenceLabels) as Array<[keyof NotificationPreferences, string]>
+              ).map(([key, label]) => (
+                <label key={key}>
+                  <input
+                    type="checkbox"
+                    checked={preferences[key]}
+                    disabled={Boolean(pending)}
+                    onChange={(event) => void updatePreference(key, event.target.checked)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          ) : null}
+          {actionFeedback("preference")}
         </div>
 
         <div className="settings-card">
@@ -439,6 +807,7 @@ export function AccountSettings({
               {pending === "export" ? "Preparing export…" : "Request data export"}
             </button>
           )}
+          {actionFeedback("export")}
         </div>
 
         <form className="settings-card settings-card--danger" onSubmit={scheduleDeletion}>
@@ -447,12 +816,12 @@ export function AccountSettings({
             Deletion is scheduled after a grace period. Shared public snapshots remain stable but
             are anonymized according to the deletion policy.
           </p>
-          {deletion ? (
+          {deletionScheduledFor ? (
             <>
               <p>
                 Scheduled for{" "}
-                <time dateTime={deletion.scheduled_for}>
-                  {new Date(deletion.scheduled_for).toLocaleString()}
+                <time dateTime={deletionScheduledFor}>
+                  {formatLocalDateTime(deletionScheduledFor)}
                 </time>
               </p>
               <button
@@ -466,30 +835,21 @@ export function AccountSettings({
             </>
           ) : (
             <>
-              <label className="field">
-                <span>Confirm with your password</span>
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={deletionPassword}
-                  onChange={(event) => setDeletionPassword(event.target.value)}
-                />
-              </label>
+              <PasswordField
+                label="Confirm with your password"
+                name="deletion_password"
+                autoComplete="current-password"
+                value={deletionPassword}
+                onChange={(event) => setDeletionPassword(event.target.value)}
+              />
               <button type="submit" className="button button--danger" disabled={Boolean(pending)}>
                 {pending === "deletion" ? "Scheduling…" : "Schedule account deletion"}
               </button>
             </>
           )}
+          {actionFeedback("deletion")}
         </form>
       </div>
-
-      <p
-        className={error ? "form-message form-message--error" : "form-message"}
-        role={error ? "alert" : "status"}
-      >
-        {error || message}
-      </p>
     </section>
   );
 }

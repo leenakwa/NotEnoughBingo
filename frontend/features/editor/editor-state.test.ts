@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   activeCells,
+  canRedo,
+  canUndo,
   cellKey,
   createEditorState,
   editorPayload,
   editorReducer,
+  meaningfulCellsRemovedByResize,
 } from "@/features/editor/editor-state";
 
 describe("editorReducer", () => {
@@ -28,7 +31,7 @@ describe("editorReducer", () => {
     }
   });
 
-  it("keeps cell coordinates stable across resizing", () => {
+  it("removes out-of-bounds cells on shrink and restores them with undo", () => {
     let state = createEditorState(5);
     state = editorReducer(state, {
       type: "select-rectangle",
@@ -42,10 +45,54 @@ describe("editorReducer", () => {
 
     state = editorReducer(state, { type: "set-size", size: 3 });
     expect(activeCells(state)).toHaveLength(9);
-    expect(state.cells[cellKey(4, 4)]?.text).toBe("Bottom right");
+    expect(state.cells[cellKey(4, 4)]).toBeUndefined();
 
-    state = editorReducer(state, { type: "set-size", size: 5 });
+    state = editorReducer(state, { type: "undo" });
+    expect(state.size).toBe(5);
     expect(state.cells[cellKey(4, 4)]?.text).toBe("Bottom right");
+  });
+
+  it("warns only when shrinking would remove customized cells", () => {
+    let state = createEditorState(5);
+    expect(meaningfulCellsRemovedByResize(state, 3)).toHaveLength(0);
+
+    state = editorReducer(state, {
+      type: "select-rectangle",
+      anchor: { row: 4, column: 1 },
+      focus: { row: 4, column: 1 },
+    });
+    state = editorReducer(state, {
+      type: "patch-selected",
+      patch: { borderWidth: 4 },
+    });
+    expect(meaningfulCellsRemovedByResize(state, 3)).toHaveLength(1);
+    expect(meaningfulCellsRemovedByResize(state, 5)).toHaveLength(0);
+  });
+
+  it("groups rapid typing into one undo step and supports redo", () => {
+    let state = createEditorState(3);
+    state = editorReducer(state, { type: "set-title", value: "M" });
+    state = editorReducer(state, { type: "set-title", value: "Movie" });
+    state = editorReducer(state, { type: "set-title", value: "Movie night" });
+
+    expect(canUndo(state)).toBe(true);
+    state = editorReducer(state, { type: "undo" });
+    expect(state.title).toBe("");
+    expect(canRedo(state)).toBe(true);
+
+    state = editorReducer(state, { type: "redo" });
+    expect(state.title).toBe("Movie night");
+  });
+
+  it("does not record selection-only changes in document history", () => {
+    let state = createEditorState(3);
+    state = editorReducer(state, {
+      type: "select-rectangle",
+      anchor: { row: 0, column: 0 },
+      focus: { row: 1, column: 1 },
+    });
+    state = editorReducer(state, { type: "clear-selection" });
+    expect(canUndo(state)).toBe(false);
   });
 
   it("serializes only cells inside the active board", () => {

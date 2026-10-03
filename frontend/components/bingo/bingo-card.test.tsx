@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoCard } from "@/components/bingo/bingo-card";
-import type { BingoSummary, RevisionCell } from "@/lib/api/types";
+import { AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
+import type { BingoSummary, MediaAsset, RevisionCell } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
   unlike: vi.fn(),
@@ -45,6 +46,7 @@ const previewCells: RevisionCell[] = Array.from({ length: 9 }, (_, index) => ({
   background_color: "#ffffff",
   background_opacity: 1,
   image: null,
+  image_alt: "",
   image_opacity: 1,
   border_color: "#000000",
   border_width: 1,
@@ -55,6 +57,7 @@ const bingo: BingoSummary = {
   id: "11111111-1111-4111-8111-111111111111",
   title: "Production readiness",
   description: "",
+  language: "en",
   author: {
     id: "22222222-2222-4222-8222-222222222222",
     username: "author",
@@ -84,9 +87,18 @@ const bingo: BingoSummary = {
   updated_at: "2026-07-20T00:00:00Z",
 };
 
+const image: MediaAsset = {
+  id: "44444444-4444-4444-8444-444444444444",
+  kind: "cell_image",
+  status: "ready",
+  url: "/api/v1/media/full/",
+  thumbnail_url: "/api/v1/media/thumbnail/",
+  mime_type: "image/webp",
+};
+
 describe("BingoCard", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mocks.unlike.mockResolvedValue(undefined);
   });
 
@@ -115,6 +127,50 @@ describe("BingoCard", () => {
     expect(card.lastElementChild?.previousElementSibling).toHaveClass("bingo-card__tags");
   });
 
+  it("identifies the language of creator-written titles", () => {
+    render(<BingoCard bingo={{ ...bingo, title: "Русское бинго", language: "ru" }} />);
+
+    expect(screen.getByRole("heading", { name: "Русское бинго" })).toHaveAttribute("lang", "ru");
+  });
+
+  it("loads small preview images lazily and hides decorative images from screen readers", () => {
+    render(
+      <BingoCard
+        bingo={{
+          ...bingo,
+          preview: {
+            size: 3,
+            board_background: { ...image, kind: "board_background" },
+            cells: [{ ...previewCells[0]!, image }, ...previewCells.slice(1)],
+          },
+        }}
+      />,
+    );
+    const images = screen
+      .getByRole("img", { name: /Preview of Production readiness/ })
+      .querySelectorAll("img");
+    expect(images).toHaveLength(2);
+    for (const item of images) {
+      expect(item).toHaveAttribute("src", image.thumbnail_url);
+      expect(item).toHaveAttribute("loading", "lazy");
+      expect(item).toHaveAttribute("alt", "");
+    }
+    fireEvent.error(images[0]!);
+    expect(
+      screen.getByRole("img", { name: /Preview of Production readiness/ }).querySelectorAll("img"),
+    ).toHaveLength(1);
+  });
+
+  it("opens an unpublished creator card directly in the editor", () => {
+    render(<BingoCard bingo={{ ...bingo, status: "draft", title: "" }} />);
+
+    expect(screen.getByRole("heading", { name: "Untitled bingo" })).toBeVisible();
+    expect(screen.getByRole("link", { name: /Untitled bingo/ })).toHaveAttribute(
+      "href",
+      `/create?bingo=${bingo.id}`,
+    );
+  });
+
   it("redirects guests to login without rendering an API error", async () => {
     const user = userEvent.setup();
     mocks.unlike.mockRejectedValueOnce({
@@ -129,5 +185,45 @@ describe("BingoCard", () => {
       `/login?next=${encodeURIComponent(`/bingo/${bingo.id}`)}`,
     );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("does not redirect a departed page when its pending like rejects authentication", async () => {
+    let rejectUnlike!: (error: { status: number }) => void;
+    mocks.unlike.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        rejectUnlike = reject;
+      }),
+    );
+    const view = render(<BingoCard bingo={bingo} />);
+    fireEvent.click(screen.getByRole("button", { name: `Unlike ${bingo.title}` }));
+    view.unmount();
+    await act(async () => rejectUnlike({ status: 403 }));
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("does not apply a previous account's unlike response after logout", async () => {
+    let resolveUnlike!: () => void;
+    mocks.unlike.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveUnlike = resolve;
+      }),
+    );
+    const view = render(<BingoCard bingo={bingo} />);
+    fireEvent.click(screen.getByRole("button", { name: `Unlike ${bingo.title}` }));
+    act(() => window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT)));
+    view.rerender(<BingoCard bingo={{ ...bingo, liked_by_me: false }} />);
+    await act(async () => resolveUnlike());
+    expect(screen.getByRole("button", { name: `Like ${bingo.title}` })).toHaveTextContent("4");
+  });
+
+  it("starts only one write for simultaneous like clicks", async () => {
+    mocks.unlike.mockReturnValueOnce(new Promise(() => undefined));
+    render(<BingoCard bingo={bingo} />);
+    const button = screen.getByRole("button", { name: `Unlike ${bingo.title}` });
+    act(() => {
+      button.click();
+      button.click();
+    });
+    expect(mocks.unlike).toHaveBeenCalledTimes(1);
   });
 });

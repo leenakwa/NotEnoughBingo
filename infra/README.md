@@ -1,6 +1,7 @@
 # Infrastructure
 
-`compose.yml` defines the local development topology:
+`compose.yml` defines the local development topology. Fresh checkouts also
+load `compose.s3-emulator.yml` through `.env.example`:
 
 - `frontend`: Next.js development server;
 - `backend`: Django development server;
@@ -8,12 +9,13 @@
 - `beat`: Celery beat scheduler;
 - `postgres`: application database;
 - `redis`: cache and Celery transport;
-- `minio`: local S3-compatible storage;
-- `minio-init`: one-shot private/versioned bucket, scoped IAM, and lifecycle setup;
+- `minio`: local S3-compatible storage (SeaweedFS in the fresh-install override);
+- `minio-init`: MinIO bootstrap on legacy local stacks; the SeaweedFS override
+  creates its bucket at startup and makes this service a no-op;
 - `mailpit`: local SMTP capture;
 - `proxy`: same-origin Nginx entrypoint.
 
-Only the proxy, developer database/cache ports, MinIO, and Mailpit are bound to
+Only the proxy, developer database/cache ports, S3 emulator, and Mailpit are bound to
 loopback. Frontend/backend communicate on the private Compose network.
 
 The application Dockerfiles must expose matching `development` and
@@ -28,14 +30,15 @@ Production uses immutable images built from the production stages. The local
 bind mounts and development servers in `compose.yml` are not production
 settings.
 
-The pinned MinIO Community image is provided only as the requested local
-S3-compatible emulator. Its upstream repository is archived; do not deploy it
-as the production object store. Production must use a maintained S3-compatible
-provider and credentials/endpoints supplied through environment configuration.
-Community MinIO uses the server-level `MINIO_API_CORS_ALLOW_ORIGIN`; local
-Compose restricts it to the application origin instead of its wildcard default.
-Production configures the equivalent provider policy with only the real web
-origin.
+Fresh local installs and CI use the maintained SeaweedFS 4.47 S3 emulator.
+The withdrawn MinIO Community images remain in the base Compose file solely
+for existing local stacks with cached images and data. Their `minio_data`
+volume is never mounted into SeaweedFS; migrating existing objects requires
+an explicit S3 copy. Neither local emulator is the production object store.
+Production must use a maintained provider with private, versioned storage,
+least-privilege credentials, lifecycle rules, and a CORS policy for the real
+web origin. The local SeaweedFS identity and automatic bucket are for
+development only; they do not demonstrate those production controls.
 
 ## Proxy
 
@@ -45,23 +48,32 @@ Nginx:
 - routes `/api/`, `/admin/`, and `/static/` to Django;
 - routes everything else to Next.js;
 - forwards correlation and proxy headers;
+- accepts forwarded client identity only from an explicit trusted ingress CIDR,
+  then normalizes it before application forwarding and rate limiting;
+- asserts an explicit browser-facing scheme so external TLS termination cannot
+  create Django HTTPS redirect loops;
 - applies baseline security headers;
 - rate limits sensitive auth endpoints and general API bursts;
 - sets a configurable request-body ceiling.
 
 Application-level throttles and permissions remain authoritative.
 
-`minio-init` creates a non-root application identity limited to
+In a legacy MinIO stack, `minio-init` creates a non-root application identity limited to
 `staging/uploads/`, `media/`, and `exports/`, then installs a two-day purge rule
 for every version and delete marker under the staging prefix. Browser uploads
 are presigned for one staging key; only backend/worker credentials can write
 final prefixes.
 
-The local topology has exactly one trusted proxy hop, so
-`TRUSTED_PROXY_HOPS=1`. The backend selects a client address from the
-right-hand side of `X-Forwarded-For`; production must set this value to the
-exact number of controlled ingress/proxy hops. Do not increase it to accept
-client-supplied entries.
+The local topology has exactly one trusted application proxy hop, so
+`TRUSTED_PROXY_HOPS=1`. Production keeps that value when using this Nginx:
+`NGINX_TRUSTED_PROXY_CIDR` identifies the controlled CDN/LB network, Real-IP
+resolves the client, and Nginx overwrites the upstream chain with one address.
+Set `NGINX_FORWARDED_PROTO=https`, firewall the origin to the controlled edge,
+and set `NGINX_ADMIN_ALLOW_CIDR` to the staff VPN/IAP egress network. Do not
+trust user-supplied forwarding headers or expose the origin directly.
+
+See the [production deployment baseline](../docs/operations/production-deployment.md)
+for the full topology, CSP/HSTS rollout, release job, and external checklist.
 
 ## Scripts
 

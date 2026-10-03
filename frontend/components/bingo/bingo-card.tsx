@@ -8,11 +8,14 @@ import { BingoCardPreview } from "@/components/bingo/bingo-card-preview";
 import { CommentIcon, HeartIcon } from "@/components/ui/icons";
 import { trackInteraction } from "@/lib/analytics";
 import { api, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
+import {
+  AUTH_SIGNED_IN_EVENT,
+  AUTH_SESSION_ENDED_EVENT,
+  AUTH_SIGNED_OUT_EVENT,
+} from "@/lib/auth-events";
 import type { BingoSummary } from "@/lib/api/types";
-
-function formatCount(value: number): string {
-  return new Intl.NumberFormat("en", { notation: "compact" }).format(value);
-}
+import { formatCount } from "@/lib/format-count";
+import { languageLabel } from "@/lib/languages";
 
 export function BingoCard({ bingo }: { bingo: BingoSummary }) {
   const router = useRouter();
@@ -21,6 +24,10 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
   const [likeCount, setLikeCount] = useState(bingo.stats.likes);
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState("");
+  const actionInFlight = useRef(false);
+  const actionLifetime = useRef(0);
+  const title = bingo.title.trim() || "Untitled bingo";
+  const cardHref = bingo.status === "draft" ? `/create?bingo=${bingo.id}` : `/bingo/${bingo.id}`;
 
   useEffect(() => {
     const element = articleRef.current;
@@ -44,45 +51,82 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
   useEffect(() => {
     setLiked(bingo.liked_by_me);
     setLikeCount(bingo.stats.likes);
-  }, [bingo.liked_by_me, bingo.stats.likes]);
+  }, [bingo.id, bingo.liked_by_me, bingo.stats.likes]);
+
+  useEffect(() => {
+    const invalidate = () => {
+      actionLifetime.current += 1;
+      actionInFlight.current = false;
+    };
+    const refresh = () => {
+      invalidate();
+      setPending(false);
+      setActionError("");
+    };
+    refresh();
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
+    return () => {
+      invalidate();
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
+    };
+  }, [bingo.id]);
 
   async function toggleLike() {
-    if (pending) return;
+    if (actionInFlight.current) return;
+    actionInFlight.current = true;
+    const lifetime = actionLifetime.current;
     setPending(true);
     setActionError("");
     try {
       if (liked) {
         await api.bingos.unlike(bingo.id);
+        if (lifetime !== actionLifetime.current) return;
         setLiked(false);
         setLikeCount((current) => Math.max(0, current - 1));
       } else {
         const updated = await api.bingos.like(bingo.id);
+        if (lifetime !== actionLifetime.current) return;
         setLiked(updated.liked_by_me);
         setLikeCount(updated.stats.likes);
       }
     } catch (error) {
+      if (lifetime !== actionLifetime.current) return;
       if (isAuthenticationRequiredError(error)) {
         router.push(`/login?next=${encodeURIComponent(`/bingo/${bingo.id}`)}`);
         return;
       }
       setActionError(errorMessage(error));
     } finally {
-      setPending(false);
+      if (lifetime === actionLifetime.current) {
+        actionInFlight.current = false;
+        setPending(false);
+      }
     }
   }
 
   return (
-    <article ref={articleRef} className="bingo-card">
+    <article ref={articleRef} className="bingo-card hover-lift">
       <Link
         className="bingo-card__main"
-        href={`/bingo/${bingo.id}`}
-        onClick={() => trackInteraction("open", { bingoId: bingo.id })}
+        href={cardHref}
+        onClick={() => {
+          if (bingo.status === "published") trackInteraction("open", { bingoId: bingo.id });
+        }}
       >
         <div className="bingo-card__heading">
-          <h2>{bingo.title}</h2>
-          <span>by {bingo.author.display_name || `@${bingo.author.username}`}</span>
+          <h2 lang={bingo.language || undefined} dir="auto">
+            {title}
+          </h2>
+          <span>
+            by {bingo.author.display_name || `@${bingo.author.username}`} ·{" "}
+            {languageLabel(bingo.language)}
+          </span>
         </div>
-        <BingoCardPreview preview={bingo.preview} fallbackSize={bingo.size} title={bingo.title} />
+        <BingoCardPreview preview={bingo.preview} fallbackSize={bingo.size} title={title} />
       </Link>
       {actionError ? (
         <p className="card-action-error" role="alert">
@@ -90,7 +134,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
         </p>
       ) : null}
       {bingo.tags.length ? (
-        <nav className="bingo-card__tags" aria-label={`Tags for ${bingo.title}`}>
+        <nav className="bingo-card__tags" aria-label={`Tags for ${title}`}>
           {bingo.tags.slice(0, 3).map((tag) => (
             <Link
               key={tag.id}
@@ -115,7 +159,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
             <button
               type="button"
               className="card-action"
-              aria-label={liked ? `Unlike ${bingo.title}` : `Like ${bingo.title}`}
+              aria-label={liked ? `Unlike ${title}` : `Like ${title}`}
               aria-pressed={liked}
               disabled={pending}
               onClick={toggleLike}
@@ -126,7 +170,7 @@ export function BingoCard({ bingo }: { bingo: BingoSummary }) {
             <Link
               className="card-action"
               href={`/bingo/${bingo.id}#comments`}
-              aria-label={`View comments for ${bingo.title}`}
+              aria-label={`View comments for ${title}`}
             >
               <CommentIcon />
               <span>{formatCount(bingo.stats.comments)}</span>

@@ -2,6 +2,7 @@ import type {
   ApiErrorPayload,
   AccountDeletionResult,
   AccountExportResult,
+  AuthorSuggestion,
   AuthResult,
   AuthenticatedUser,
   BingoDetail,
@@ -10,10 +11,12 @@ import type {
   BingoSummary,
   ClientInteraction,
   Comment,
+  CommentContext,
   ExportJob,
   MediaAsset,
   Notification,
   NotificationPreferences,
+  OwnUserProfile,
   Page,
   PlayProgress,
   ProfilePlayHistoryItem,
@@ -33,6 +36,8 @@ import type {
   UserPrivacySettings,
   UserProfile,
 } from "@/lib/api/types";
+import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
+import { reportBrowserError } from "@/lib/browser-errors";
 
 type QueryValue = string | number | boolean | null | undefined;
 type Query = Record<string, QueryValue | QueryValue[]>;
@@ -42,14 +47,18 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   query?: Query;
   idempotencyKey?: string;
   skipCsrfBootstrap?: boolean;
+  timeoutMs?: number;
 }
 
 const publicApiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "/api/v1";
 const serverApiBase =
   process.env.API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8000/api/v1";
 const csrfCookieName = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME ?? "neb_csrf";
+const requestTimeoutMs = 20_000;
+const uploadRequestTimeoutMs = 120_000;
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+let csrfBootstrapInFlight: Promise<string | null> | null = null;
 
 export class ApiClientError extends Error {
   readonly status: number;
@@ -106,18 +115,62 @@ function buildUrl(path: string, query?: Query): string {
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
   const prefix = `${encodeURIComponent(name)}=`;
-  const item = document.cookie.split("; ").find((cookie) => cookie.startsWith(prefix));
+  const item = document.cookie
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(prefix));
   return item ? decodeURIComponent(item.slice(prefix.length)) : null;
 }
 
-async function bootstrapCsrf(): Promise<void> {
-  if (typeof window === "undefined" || getCookie(csrfCookieName)) return;
-  await fetch(buildUrl("auth/csrf/"), {
-    method: "GET",
-    credentials: "include",
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
+function bootstrapCsrf(): Promise<string | null> {
+  const existing = getCookie(csrfCookieName);
+  if (typeof window === "undefined" || existing) return Promise.resolve(existing);
+  if (!csrfBootstrapInFlight) {
+    const request = apiRequest<{ csrf?: string }>("auth/csrf/", {
+      skipCsrfBootstrap: true,
+      keepalive: true,
+    })
+      .then((response) => response?.csrf || getCookie(csrfCookieName))
+      .finally(() => {
+        if (csrfBootstrapInFlight === request) csrfBootstrapInFlight = null;
+      });
+    csrfBootstrapInFlight = request;
+  }
+  return csrfBootstrapInFlight;
+}
+
+async function withRequestDeadline<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  upstream: AbortSignal | null | undefined,
+  method: string,
+  timeoutMs: number,
+): Promise<T> {
+  const controller = new AbortController();
+  const cancel = () => controller.abort(upstream?.reason);
+  if (upstream?.aborted) cancel();
+  else upstream?.addEventListener("abort", cancel, { once: true });
+  let timedOut = false;
+  const timer = globalThis.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    return await run(controller.signal);
+  } catch (error) {
+    if (timedOut && !upstream?.aborted) {
+      throw new ApiClientError(0, {
+        code: "request_timeout",
+        message: unsafeMethods.has(method)
+          ? "The request timed out. It may have completed. Refresh before trying again."
+          : "The service took too long to respond. Try again.",
+      });
+    }
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timer);
+    upstream?.removeEventListener("abort", cancel);
+  }
 }
 
 function normalizeError(status: number, data: unknown): ApiErrorPayload {
@@ -144,16 +197,47 @@ function normalizeError(status: number, data: unknown): ApiErrorPayload {
     };
   }
 
+  const statusMessages: Record<number, string> = {
+    400: "Please check the fields and try again.",
+    401: "Log in to continue.",
+    403: "You do not have permission to perform this action.",
+    404: "This item is unavailable or no longer exists.",
+    409: "This item changed. Refresh it before trying again.",
+    413: "The upload is too large. Choose a smaller file and try again.",
+    422: "Please check the fields and try again.",
+    429: "Too many requests. Wait a moment and try again.",
+  };
   return {
     code: `http_${status}`,
-    message: status >= 500 ? "The service is temporarily unavailable." : "The request failed.",
+    message:
+      statusMessages[status] ??
+      (status >= 500 ? "The service is temporarily unavailable." : "The request failed."),
   };
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  try {
+    return await performApiRequest<T>(path, options);
+  } catch (error) {
+    if (
+      !options.signal?.aborted &&
+      path !== "auth/csrf/" &&
+      path !== "client-errors/" &&
+      (error instanceof TypeError ||
+        (error instanceof ApiClientError &&
+          (error.status >= 500 || ["request_timeout", "invalid_response"].includes(error.code))))
+    ) {
+      reportBrowserError(error, "api", error instanceof ApiClientError ? error.status : 0);
+    }
+    throw error;
+  }
+}
+
+async function performApiRequest<T>(path: string, options: RequestOptions): Promise<T> {
   const method = (options.method ?? "GET").toUpperCase();
+  let csrf = getCookie(csrfCookieName);
   if (unsafeMethods.has(method) && typeof window !== "undefined" && !options.skipCsrfBootstrap) {
-    await bootstrapCsrf();
+    csrf = await bootstrapCsrf();
   }
 
   const headers = new Headers(options.headers);
@@ -161,7 +245,6 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (options.idempotencyKey) {
     headers.set("Idempotency-Key", options.idempotencyKey);
   }
-  const csrf = getCookie(csrfCookieName);
   if (unsafeMethods.has(method) && csrf) {
     headers.set("X-CSRFToken", csrf);
   }
@@ -174,20 +257,53 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(buildUrl(path, options.query), {
-    ...options,
+  const { response, data } = await withRequestDeadline(
+    async (signal) => {
+      const response = await fetch(buildUrl(path, options.query), {
+        ...options,
+        method,
+        body,
+        headers,
+        credentials: "include",
+        cache: options.cache ?? "no-store",
+        signal,
+      });
+      const contentType = response.headers.get("content-type") ?? "";
+      let data: unknown = null;
+      if (
+        response.status !== 204 &&
+        response.status !== 205 &&
+        contentType.includes("application/json")
+      ) {
+        try {
+          data = await response.json();
+        } catch {
+          throw new ApiClientError(response.status, {
+            code: "invalid_response",
+            message:
+              response.status >= 500
+                ? "The service is temporarily unavailable."
+                : "The service returned an invalid response. Try again.",
+          });
+        }
+      }
+      return { response, data };
+    },
+    options.signal,
     method,
-    body,
-    headers,
-    credentials: "include",
-    cache: options.cache ?? "no-store",
-  });
-
-  const contentType = response.headers.get("content-type") ?? "";
-  const data: unknown = contentType.includes("application/json") ? await response.json() : null;
+    options.timeoutMs ?? requestTimeoutMs,
+  );
 
   if (!response.ok) {
-    throw new ApiClientError(response.status, normalizeError(response.status, data));
+    const error = new ApiClientError(response.status, normalizeError(response.status, data));
+    if (
+      typeof window !== "undefined" &&
+      path !== "auth/me/" &&
+      isAuthenticationRequiredError(error)
+    ) {
+      window.dispatchEvent(new Event(AUTH_REQUIRED_EVENT));
+    }
+    throw error;
   }
   return data as T;
 }
@@ -203,6 +319,18 @@ export function errorMessage(error: unknown): string {
   }
   if (error instanceof Error) return error.message;
   return "Something went wrong. Please try again.";
+}
+
+export function fieldValidationMessage(error: unknown, field: string): string | null {
+  if (
+    !(error instanceof ApiClientError) ||
+    !error.details ||
+    typeof error.details !== "object" ||
+    Array.isArray(error.details)
+  ) {
+    return null;
+  }
+  return firstValidationDetail((error.details as Record<string, unknown>)[field]);
 }
 
 function firstValidationDetail(value: unknown, path: string[] = []): string | null {
@@ -232,7 +360,9 @@ function firstValidationDetail(value: unknown, path: string[] = []): string | nu
 export const api = {
   auth: {
     csrf: () => apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true }),
-    me: () => apiRequest<AuthenticatedUser>("auth/me/"),
+    me: (signal?: AbortSignal) => apiRequest<AuthenticatedUser>("auth/me/", { signal }),
+    session: async () =>
+      (await apiRequest<{ user: AuthenticatedUser | null }>("auth/session/")).user,
     register: (input: { email: string; username: string; password: string }) =>
       apiRequest<RegistrationResult>("auth/register/", {
         method: "POST",
@@ -263,7 +393,15 @@ export const api = {
         method: "POST",
         body: input,
       }),
-    sessions: () => apiRequest<Page<SessionMetadata>>("auth/sessions/"),
+    requestEmailChange: (input: { current_password: string; new_email: string }) =>
+      apiRequest<void>("auth/email-change/", { method: "POST", body: input }),
+    confirmEmailChange: (token: string) =>
+      apiRequest<void>("auth/email-change/confirm/", {
+        method: "POST",
+        body: { token },
+      }),
+    sessions: (signal?: AbortSignal) =>
+      apiRequest<Page<SessionMetadata>>("auth/sessions/", { signal }),
     revokeSession: (sessionId: PublicId) =>
       apiRequest<void>(`auth/sessions/${sessionId}/`, { method: "DELETE" }),
     requestAccountExport: () =>
@@ -278,14 +416,24 @@ export const api = {
     cancelAccountDeletion: () => apiRequest<void>("auth/account-deletion/", { method: "DELETE" }),
   },
   feeds: {
-    discover: (page = 1, signal?: AbortSignal) =>
+    discover: (page = 1, signal?: AbortSignal, languages: string[] | null = null) =>
       apiRequest<Page<BingoSummary>>("feeds/discover/", {
-        query: { page },
+        query: {
+          page,
+          languages: languages === null ? undefined : languages.length ? languages : ["all"],
+        },
         signal,
       }),
     trending: (page = 1, signal?: AbortSignal) =>
       apiRequest<Page<BingoSummary>>("feeds/trending/", {
         query: { page },
+        signal,
+      }),
+  },
+  authors: {
+    list: (search = "", page = 1, signal?: AbortSignal) =>
+      apiRequest<Page<AuthorSuggestion>>("authors/", {
+        query: { search, page },
         signal,
       }),
   },
@@ -302,6 +450,7 @@ export const api = {
         search?: string;
         author?: string;
         tags?: string[];
+        languages?: string[];
         ordering?: "popular" | "newest";
         page?: number;
       },
@@ -320,6 +469,7 @@ export const api = {
     updateDraft: (bingoId: PublicId, input: unknown, version: number) =>
       apiRequest<BingoDraft>(`bingos/${bingoId}/draft/`, {
         method: "PUT",
+        headers: { "If-Match": `"draft-${version}"` },
         body: { ...asRecord(input), version },
       }),
     publishDraft: (bingoId: PublicId, idempotencyKey: string) =>
@@ -334,15 +484,22 @@ export const api = {
     remove: (id: PublicId) => apiRequest<void>(`bingos/${id}/`, { method: "DELETE" }),
   },
   uploads: {
-    createIntent: (intent: UploadIntent) =>
-      apiRequest<UploadTicket>("uploads/intents/", { method: "POST", body: intent }),
-    complete: (assetId: PublicId) =>
-      apiRequest<MediaAsset>(`uploads/${assetId}/complete/`, { method: "POST" }),
-    uploadContent: (assetId: PublicId, file: Blob, headers: Record<string, string>) =>
+    createIntent: (intent: UploadIntent, signal?: AbortSignal) =>
+      apiRequest<UploadTicket>("uploads/intents/", { method: "POST", body: intent, signal }),
+    complete: (assetId: PublicId, signal?: AbortSignal) =>
+      apiRequest<MediaAsset>(`uploads/${assetId}/complete/`, { method: "POST", signal }),
+    uploadContent: (
+      assetId: PublicId,
+      file: Blob,
+      headers: Record<string, string>,
+      signal?: AbortSignal,
+    ) =>
       apiRequest<MediaAsset>(`uploads/${assetId}/content/`, {
         method: "PUT",
         headers,
         body: file,
+        signal,
+        timeoutMs: uploadRequestTimeoutMs,
       }),
     get: (assetId: PublicId, signal?: AbortSignal) =>
       apiRequest<MediaAsset>(`uploads/${assetId}/`, { signal }),
@@ -391,28 +548,28 @@ export const api = {
       }),
   },
   profiles: {
-    me: () => apiRequest<UserProfile>("profiles/me/"),
+    me: () => apiRequest<OwnUserProfile>("profiles/me/"),
     get: (username: string, signal?: AbortSignal) =>
       apiRequest<UserProfile>(`profiles/${encodeURIComponent(username)}/`, {
         signal,
       }),
     update: (input: ProfileUpdate) =>
-      apiRequest<UserProfile>("profiles/me/", { method: "PATCH", body: input }),
+      apiRequest<OwnUserProfile>("profiles/me/", { method: "PATCH", body: input }),
     updatePrivacy: (input: UserPrivacySettings) =>
       apiRequest<UserPrivacySettings>("profiles/me/privacy/", {
         method: "PUT",
         body: input,
       }),
-    notificationPreferences: () =>
-      apiRequest<NotificationPreferences>("profiles/notification-preferences/"),
+    notificationPreferences: (signal?: AbortSignal) =>
+      apiRequest<NotificationPreferences>("profiles/notification-preferences/", { signal }),
     updateNotificationPreferences: (input: Partial<NotificationPreferences>) =>
       apiRequest<NotificationPreferences>("profiles/notification-preferences/", {
         method: "PATCH",
         body: input,
       }),
-    bingos: (username: string, page = 1, signal?: AbortSignal) =>
+    bingos: (username: string, page = 1, signal?: AbortSignal, status?: "draft" | "created") =>
       apiRequest<Page<BingoSummary>>(`profiles/${encodeURIComponent(username)}/bingos/`, {
-        query: { page },
+        query: { page, status },
         signal,
       }),
     playHistory: (username: string, page = 1, signal?: AbortSignal) =>
@@ -457,6 +614,8 @@ export const api = {
     unreadCount: () => apiRequest<{ count: number }>("notifications/unread-count/"),
   },
   comments: {
+    context: (commentId: PublicId, signal?: AbortSignal) =>
+      apiRequest<CommentContext>(`comments/${commentId}/context/`, { signal }),
     list: (bingoId: PublicId, page = 1, signal?: AbortSignal) =>
       apiRequest<Page<Comment>>(`bingos/${bingoId}/comments/`, {
         query: { page },
@@ -508,6 +667,7 @@ export const api = {
       apiRequest<{ accepted: number }>("interactions/", {
         method: "POST",
         body: { events },
+        keepalive: true,
       }),
   },
 };

@@ -19,21 +19,31 @@ RUN apt-get update \
 
 RUN python -m venv "${VIRTUAL_ENV}"
 
-COPY pyproject.toml ./
+COPY pyproject.toml requirements.lock requirements-dev.lock ./
 COPY apps ./apps
 COPY config ./config
 COPY manage.py ./
 
-# Versions are constrained centrally by pyproject.toml.
+# Production dependencies, including transitive packages, use the committed lock.
 # hadolint ignore=DL3013
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && python -m pip install --no-cache-dir .
+    && python -m pip install --no-cache-dir -r requirements.lock \
+    && python -m pip install --no-cache-dir --no-deps . \
+    && python -m pip check \
+    && rm -rf build
 
 FROM builder AS development
 
-# Development tool versions are constrained centrally by pyproject.toml.
+# Use the same multilingual text renderer and fonts as the production worker.
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+       pango1.0-tools fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \
+    && rm -rf /var/lib/apt/lists/*
+
+# The development lock includes the production graph and test tools.
 # hadolint ignore=DL3013
-RUN python -m pip install --no-cache-dir ".[dev]"
+RUN python -m pip install --no-cache-dir -r requirements-dev.lock
 
 COPY . .
 RUN chmod +x /app/docker-entrypoint.sh
@@ -44,13 +54,23 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 FROM python-base AS production
 
 # Runtime libraries only; build tools never reach the production image.
-# hadolint ignore=DL3008
+# Refresh base packages for security fixes that have not reached the Python image.
+# hadolint ignore=DL3005,DL3008
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y libjpeg62-turbo libpq5 zlib1g \
+    && apt-get upgrade --no-install-recommends -y \
+    && apt-get install --no-install-recommends -y \
+       libjpeg62-turbo libpq5 zlib1g \
+       pango1.0-tools fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 10001 app
 
 COPY --from=builder /opt/venv /opt/venv
+
+# Packaging tools are build-time only. Removing them from both Python installations
+# keeps pip's vendored dependencies out of the runtime vulnerability surface.
+RUN /opt/venv/bin/python -m pip uninstall --yes pip setuptools wheel \
+    && PIP_ROOT_USER_ACTION=ignore /usr/local/bin/python -m pip uninstall --yes pip setuptools wheel
+
 COPY --chown=app:app apps ./apps
 COPY --chown=app:app config ./config
 COPY --chown=app:app manage.py ./
@@ -69,4 +89,4 @@ USER app
 
 EXPOSE 8000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--timeout", "60", "--graceful-timeout", "30", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--access-logfile", "-", "--error-logfile", "-"]
+CMD ["gunicorn", "config.wsgi:application", "--config", "python:config.gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--timeout", "60", "--graceful-timeout", "30", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--error-logfile", "-"]

@@ -70,7 +70,7 @@ test-e2e: ## Run Playwright end-to-end tests.
 	$(FRONTEND) npm run test:e2e
 
 test-e2e-live: ## Run live Playwright product flows against an already running local stack (host Node required).
-	cd frontend && E2E_LIVE=1 PLAYWRIGHT_BASE_URL=http://localhost:8080 MAILPIT_BASE_URL=http://localhost:8025 npm run test:e2e -- --project=live-chromium
+	cd frontend && E2E_LIVE=1 PLAYWRIGHT_BASE_URL=http://localhost:8080 MAILPIT_BASE_URL=http://localhost:8025 npm run test:e2e -- --project=live-chromium --project=live-mobile-webkit --project=live-firefox-compat --project=live-webkit-compat --project=live-android-compat
 
 lint: ## Run backend and frontend static checks.
 	$(BACKEND) ruff check .

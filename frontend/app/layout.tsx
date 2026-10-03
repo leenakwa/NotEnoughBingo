@@ -4,26 +4,38 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
+import { AuthDialog } from "@/components/auth/auth-dialog";
+import { BrowserErrorObserver } from "@/components/layout/browser-error-observer";
+import { PageActivity } from "@/components/layout/page-activity";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { absoluteSiteUrl, isPublicProduction, siteUrl } from "@/lib/site";
 
 import "./globals.css";
 
-function publicAppUrl(): URL | undefined {
-  const value = process.env.NEXT_PUBLIC_APP_URL;
-  if (!value) return undefined;
-  try {
-    return new URL(value);
-  } catch {
-    return undefined;
-  }
-}
-
 export const metadata: Metadata = {
-  metadataBase: publicAppUrl(),
+  metadataBase: siteUrl(),
   title: {
     default: "Not Enough Bingo",
     template: "%s — Not Enough Bingo",
   },
   description: "Create, play, and share community bingo boards.",
+  robots: isPublicProduction() ? undefined : { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    siteName: "Not Enough Bingo",
+    images: [
+      {
+        url: absoluteSiteUrl("/opengraph-image"),
+        width: 1200,
+        height: 630,
+        alt: "Not Enough Bingo — create, play, and share community bingo boards",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [absoluteSiteUrl("/opengraph-image")],
+  },
 };
 
 export const viewport: Viewport = {
@@ -38,14 +50,20 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // every framework script and inline style element.
   await connection();
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en">
       <body>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
         <AppHeader />
+        <PageActivity />
+        <BrowserErrorObserver />
+        <AuthDialog />
         {children}
-        {process.env.NODE_ENV === "development" && <Agentation />}
+        <SiteFooter />
+        {process.env.NODE_ENV === "development" && process.env.AGENTATION_ENABLED !== "false" ? (
+          <Agentation />
+        ) : null}
       </body>
     </html>
   );

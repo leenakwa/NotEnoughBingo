@@ -30,7 +30,11 @@ export function readGuestProgress(bingoId: PublicId, revisionId: PublicId): Gues
     }
     return value as GuestProgress;
   } catch {
-    window.localStorage.removeItem(key(bingoId));
+    try {
+      window.localStorage.removeItem(key(bingoId));
+    } catch {
+      // Private browsing may block both reading and removing local progress.
+    }
     return null;
   }
 }

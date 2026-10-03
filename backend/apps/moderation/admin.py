@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.template.response import TemplateResponse
 
 from apps.moderation.models import ModerationAction, Report, ReportStatusHistory
 from apps.moderation.services import apply_moderation_action
@@ -35,6 +36,7 @@ class ModerationActionInline(admin.TabularInline):
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
+    max_action_reports = 20
     list_display = (
         "public_id",
         "target_type",
@@ -87,9 +89,39 @@ class ReportAdmin(admin.ModelAdmin):
             and request.user.has_perm("moderation.moderate_content")
         )
 
-    def _apply_action(self, request, queryset, *, action, reason):
+    def _apply_action(self, request, queryset, *, action, action_name, reason):
+        if request.POST.get("select_across") == "1":
+            self.message_user(
+                request,
+                "Select individual reports before applying a moderation action.",
+                level=messages.ERROR,
+            )
+            return None
+        selected_reports = list(queryset.order_by("pk")[: self.max_action_reports + 1])
+        if len(selected_reports) > self.max_action_reports:
+            self.message_user(
+                request,
+                f"Choose at most {self.max_action_reports} reports per action.",
+                level=messages.ERROR,
+            )
+            return None
+        if request.POST.get("confirm_moderation_action") != action_name:
+            action_label = self.get_actions(request)[action_name][2]
+            return TemplateResponse(
+                request,
+                "admin/moderation/confirm_action.html",
+                {
+                    **self.admin_site.each_context(request),
+                    "title": f"Confirm: {action_label}",
+                    "action_name": action_name,
+                    "action_label": action_label,
+                    "report_count": len(selected_reports),
+                    "selected_reports": selected_reports,
+                    "opts": self.model._meta,
+                },
+            )
         count = 0
-        for report in queryset:
+        for report in selected_reports:
             try:
                 apply_moderation_action(
                     report=report,
@@ -104,64 +136,71 @@ class ReportAdmin(admin.ModelAdmin):
 
     @admin.action(description="Hide reported content")
     def hide_reported_content(self, request, queryset):
-        self._apply_action(
+        return self._apply_action(
             request,
             queryset,
             action=ModerationAction.Action.HIDE,
+            action_name="hide_reported_content",
             reason="Hidden through Django Admin",
         )
 
     @admin.action(description="Restore reported content")
     def restore_reported_content(self, request, queryset):
-        self._apply_action(
+        return self._apply_action(
             request,
             queryset,
             action=ModerationAction.Action.RESTORE,
+            action_name="restore_reported_content",
             reason="Restored through Django Admin",
         )
 
     @admin.action(description="Soft-delete reported content")
     def soft_delete_reported_content(self, request, queryset):
-        self._apply_action(
+        return self._apply_action(
             request,
             queryset,
             action=ModerationAction.Action.SOFT_DELETE,
+            action_name="soft_delete_reported_content",
             reason="Soft-deleted through Django Admin",
         )
 
     @admin.action(description="Suspend reported user")
     def suspend_reported_user(self, request, queryset):
-        self._apply_action(
+        return self._apply_action(
             request,
             queryset,
             action=ModerationAction.Action.SUSPEND_USER,
+            action_name="suspend_reported_user",
             reason="Suspended through Django Admin",
         )
 
     @admin.action(description="Unsuspend reported user")
     def unsuspend_reported_user(self, request, queryset):
-        self._apply_action(
+        return self._apply_action(
             request,
             queryset,
             action=ModerationAction.Action.UNSUSPEND_USER,
+            action_name="unsuspend_reported_user",
             reason="Unsuspended through Django Admin",
         )
 
     @admin.action(description="Resolve without action")
     def resolve_without_action(self, request, queryset):
-        self._apply_action(
+        return self._apply_action(
             request,
             queryset,
             action=ModerationAction.Action.RESOLVE_NO_ACTION,
+            action_name="resolve_without_action",
             reason="Resolved without action through Django Admin",
         )
 
     @admin.action(description="Dismiss reports")
     def dismiss_reports(self, request, queryset):
-        self._apply_action(
+        return self._apply_action(
             request,
             queryset,
             action=ModerationAction.Action.DISMISS,
+            action_name="dismiss_reports",
             reason="Dismissed through Django Admin",
         )
 

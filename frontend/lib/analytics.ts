@@ -48,7 +48,6 @@ export function trackInteraction(
     bingoId?: PublicId;
     revisionId?: PublicId;
     tag?: string;
-    query?: string;
     metadata?: Record<string, unknown>;
   } = {},
 ): void {
@@ -59,7 +58,6 @@ export function trackInteraction(
     bingo_id: options.bingoId,
     revision_id: options.revisionId,
     tag: options.tag,
-    query: options.query,
     metadata: options.metadata ?? {},
     occurred_at: new Date().toISOString(),
     anonymous_id: anonymousId(),

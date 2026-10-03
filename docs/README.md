@@ -17,7 +17,13 @@ from the static prototype to the full-stack application.
 ## Operations
 
 - [Operations runbook](operations/runbook.md)
+- [Production deployment baseline](operations/production-deployment.md)
 - [Backup and restore](operations/backups.md)
+- [Local release assessment (2026-09-29)](operations/release-assessment-2026-09-29.md)
+- [Complete user production-readiness prompt](operations/production-readiness-prompt.txt)
+- [Production-readiness section tracker](operations/production-readiness-tracker.md)
+- [Production-readiness execution plan](operations/production-readiness-plan.md)
+- [Production-readiness evidence log](operations/production-readiness-evidence.md)
 
 These documents describe intended invariants and boundaries. The OpenAPI
 document, database migrations, and executable tests are the authoritative

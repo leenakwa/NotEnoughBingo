@@ -1,44 +1,65 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
-import { api, errorMessage } from "@/lib/api/client";
+import { AuthLink } from "@/components/auth/auth-link";
+import { PasswordField } from "@/components/auth/password-field";
+import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({
+  presentation = "page",
+  onPendingChange,
+}: {
+  presentation?: "page" | "dialog";
+  onPendingChange?: (pending: boolean) => void;
+} = {}) {
   const [email, setEmail] = useState("");
   const [pending, setPending] = useState(false);
+  const submissionInFlight = useRef(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submissionInFlight.current) return;
+    const submittedEmail = String(new FormData(event.currentTarget).get("email") ?? "").trim();
+    setEmail(submittedEmail);
+    submissionInFlight.current = true;
     setPending(true);
+    onPendingChange?.(true);
+    setMessage("");
+    setError("");
     try {
-      await api.auth.requestPasswordReset(email);
-    } catch {
-      // Deliberately keep the same response for unknown accounts and transient
-      // delivery failures to avoid turning recovery into an enumeration oracle.
-    } finally {
+      await api.auth.requestPasswordReset(submittedEmail);
       setMessage("If an account exists for that address, a reset email is on its way.");
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      submissionInFlight.current = false;
       setPending(false);
+      onPendingChange?.(false);
     }
   }
 
   return (
     <AuthShell
+      presentation={presentation}
       eyebrow="Account recovery"
       title="Reset your password"
       description="We will email a time-limited reset link."
-      footer={{ text: "Remembered it?", href: "/login", label: "Back to login" }}
+      footer={{ text: "Remembered it?", href: "/login", label: "Back to log in" }}
     >
       <form className="stack-form" onSubmit={submit}>
         <label className="field">
           <span>Email</span>
           <input
             type="email"
+            name="email"
             autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -47,9 +68,16 @@ export function ForgotPasswordForm() {
         <button className="button button--primary" type="submit" disabled={pending}>
           {pending ? "Sending…" : "Send reset link"}
         </button>
-        <p className="form-message" role="status">
-          {message}
-        </p>
+        {message ? (
+          <p className="form-message" role="status">
+            {message}
+          </p>
+        ) : null}
+        {error ? (
+          <p className="form-message form-message--error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </form>
     </AuthShell>
   );
@@ -61,27 +89,44 @@ export function ResetPasswordForm() {
   const token = searchParams.get("token") ?? "";
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
+  const submissionInFlight = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submissionInFlight.current || message) return;
     if (!uid || !token) {
       setError("This reset link is incomplete.");
       return;
     }
+    const submittedPassword = String(new FormData(event.currentTarget).get("new_password") ?? "");
+    setPassword(submittedPassword);
+    submissionInFlight.current = true;
     setPending(true);
     setError("");
+    setPasswordError("");
     try {
       await api.auth.resetPassword({
         uid,
         token,
-        new_password: password,
+        new_password: submittedPassword,
       });
       setMessage("Password changed. You can now log in.");
+      setPassword("");
+      window.history.replaceState(null, "", window.location.pathname);
     } catch (caught) {
-      setError(errorMessage(caught));
+      const fieldError = fieldValidationMessage(caught, "new_password");
+      if (fieldError) {
+        setPasswordError(fieldError);
+        formRef.current?.querySelector<HTMLInputElement>('[name="new_password"]')?.focus();
+      } else {
+        setError(errorMessage(caught));
+      }
     } finally {
+      submissionInFlight.current = false;
       setPending(false);
     }
   }
@@ -92,18 +137,19 @@ export function ResetPasswordForm() {
       title="Choose a new password"
       description="Reset links are single-use and expire for your safety."
     >
-      <form className="stack-form" onSubmit={submit}>
-        <label className="field">
-          <span>New password</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            minLength={12}
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+      <form ref={formRef} className="stack-form" onSubmit={submit}>
+        <PasswordField
+          label="New password"
+          name="new_password"
+          autoComplete="new-password"
+          minLength={12}
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            setPasswordError("");
+          }}
+          error={passwordError}
+        />
         <button
           className="button button--primary"
           type="submit"
@@ -117,7 +163,7 @@ export function ResetPasswordForm() {
         >
           {error || message}
         </p>
-        {message ? <Link href="/login">Continue to login</Link> : null}
+        {message ? <AuthLink href="/login">Continue to log in</AuthLink> : null}
       </form>
     </AuthShell>
   );

@@ -1,9 +1,10 @@
 "use client";
 
-import type { Dispatch } from "react";
-import { useState } from "react";
+import type { Dispatch, ReactNode } from "react";
+import { useRef, useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
+import { bingoLanguages } from "@/lib/languages";
 import type { EditorAction, EditorState } from "@/features/editor/editor-state";
 import type { BingoExportFormat } from "@/lib/api/types";
 
@@ -21,6 +22,8 @@ export function BingoDetails({
   onPublish,
   onExport,
   exportAvailable,
+  exportStatus,
+  saveStatus,
 }: {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
@@ -35,13 +38,27 @@ export function BingoDetails({
   onPublish: () => void;
   onExport: (format: BingoExportFormat) => void;
   exportAvailable: boolean;
+  exportStatus?: ReactNode;
+  saveStatus: ReactNode;
 }) {
   const [tagInput, setTagInput] = useState("");
+  const [failedCoverUrl, setFailedCoverUrl] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const languageSelectRef = useRef<HTMLSelectElement>(null);
   const coverUrl = state.cover.previewUrl ?? state.cover.asset?.url;
+  const titleValidation = error === "Add a title before publishing.";
+  const languageValidation = error === "Choose a bingo language before publishing.";
+  const actionError = titleValidation || languageValidation ? "" : error;
 
   function addTag() {
     dispatch({ type: "add-tag", value: tagInput });
     setTagInput("");
+  }
+
+  function publishWithFieldFocus() {
+    if (!state.title.trim()) titleInputRef.current?.focus();
+    else if (!state.language) languageSelectRef.current?.focus();
+    onPublish();
   }
 
   return (
@@ -54,15 +71,54 @@ export function BingoDetails({
       <p>Give your bingo a clear identity and decide who can open it.</p>
 
       <label className="field">
-        <span>Title</span>
+        <span id="bingo-title-label">Title</span>
         <input
+          ref={titleInputRef}
           type="text"
+          aria-labelledby="bingo-title-label"
+          aria-describedby={
+            titleValidation && !state.title.trim()
+              ? "bingo-title-help bingo-title-error"
+              : "bingo-title-help"
+          }
           maxLength={70}
           required
           value={state.title}
           onChange={(event) => dispatch({ type: "set-title", value: event.target.value })}
-          aria-invalid={Boolean(error && !state.title.trim())}
+          aria-invalid={titleValidation && !state.title.trim()}
         />
+        <small id="bingo-title-help">Up to 70 characters.</small>
+        {titleValidation && !state.title.trim() ? (
+          <small id="bingo-title-error" className="form-message--error" role="alert">
+            Add a title before publishing.
+          </small>
+        ) : null}
+      </label>
+      <label className="field">
+        <span id="bingo-language-label">Bingo language</span>
+        <select
+          ref={languageSelectRef}
+          aria-labelledby="bingo-language-label"
+          aria-describedby={
+            languageValidation && !state.language ? "bingo-language-error" : undefined
+          }
+          required
+          value={state.language}
+          aria-invalid={languageValidation && !state.language}
+          onChange={(event) => dispatch({ type: "set-language", value: event.target.value })}
+        >
+          <option value="">Choose a language</option>
+          {bingoLanguages.map((language) => (
+            <option key={language.code} value={language.code}>
+              {language.flag} {language.name}
+            </option>
+          ))}
+        </select>
+        {languageValidation && !state.language ? (
+          <small id="bingo-language-error" className="form-message--error" role="alert">
+            Choose a bingo language before publishing.
+          </small>
+        ) : null}
       </label>
       <label className="field">
         <span>
@@ -161,14 +217,20 @@ export function BingoDetails({
           Cover image <small>optional</small>
         </span>
         <div className="cover-control">
-          {coverUrl ? (
+          {coverUrl && failedCoverUrl !== coverUrl ? (
             // The preview is either a local object URL or an API-owned asset.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverUrl} alt="Selected bingo cover preview" />
+            <img
+              src={coverUrl}
+              alt={`Cover preview for ${state.title.trim() || "this bingo"}`}
+              width={170}
+              height={105}
+              onError={() => setFailedCoverUrl(coverUrl)}
+            />
           ) : (
             <div className="cover-empty">
               <ImageIcon />
-              <span>No cover selected</span>
+              <span>{coverUrl ? "Cover unavailable" : "No cover selected"}</span>
             </div>
           )}
           <label className="button button--secondary upload-button">
@@ -177,7 +239,7 @@ export function BingoDetails({
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/avif"
-              hidden
+              className="sr-only"
               disabled={uploadPending}
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -209,7 +271,7 @@ export function BingoDetails({
           type="button"
           className="button button--primary"
           disabled={Boolean(pendingAction) || uploadPending}
-          onClick={onPublish}
+          onClick={publishWithFieldFocus}
         >
           {pendingAction === "publish" ? "Publishing…" : "Publish bingo"}
         </button>
@@ -223,25 +285,25 @@ export function BingoDetails({
         </button>
         {exportAvailable ? (
           <details className="download-control">
-            <summary className="button button--secondary">Download</summary>
+            <summary className="button button--secondary">Download published version</summary>
             <div>
               <button
                 type="button"
                 disabled={Boolean(pendingAction) || uploadPending}
                 onClick={() => onExport("png")}
               >
-                PNG
+                Published PNG
               </button>
               <button
                 type="button"
                 disabled={Boolean(pendingAction) || uploadPending}
                 onClick={() => onExport("pdf")}
               >
-                PDF
+                Published PDF
               </button>
             </div>
           </details>
-        ) : (
+        ) : exportStatus ? null : (
           <button
             type="button"
             className="button button--secondary"
@@ -252,12 +314,20 @@ export function BingoDetails({
           </button>
         )}
       </div>
+      {exportStatus}
+      {exportAvailable ? (
+        <p className="export-explanation">
+          Downloads use the currently published revision. Draft edits are included only after you
+          publish them.
+        </p>
+      ) : null}
+      {saveStatus}
       <p
-        className={error ? "form-message form-message--error" : "form-message"}
+        className={actionError ? "form-message form-message--error" : "form-message"}
         role={error ? "alert" : "status"}
         aria-live="polite"
       >
-        {error || message}
+        {actionError || message}
       </p>
     </section>
   );

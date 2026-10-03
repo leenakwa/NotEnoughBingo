@@ -5,7 +5,6 @@ import os
 import secrets
 import uuid
 from datetime import timedelta
-from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
@@ -45,7 +44,7 @@ def _storage_key(*, owner_public_id: uuid.UUID, kind: str, extension: str) -> st
 
 
 def _safe_filename(value: str) -> str:
-    return Path(value).name[:255]
+    return value.replace("\\", "/").rsplit("/", 1)[-1][:255]
 
 
 @transaction.atomic
@@ -259,6 +258,7 @@ def create_thumbnail(*, original: MediaAsset, data: bytes) -> MediaAsset | None:
         MediaAsset.Kind.COVER,
         MediaAsset.Kind.AVATAR,
         MediaAsset.Kind.BOARD_BACKGROUND,
+        MediaAsset.Kind.CELL_IMAGE,
     }:
         return None
     existing = original.derivatives.filter(
@@ -267,7 +267,13 @@ def create_thumbnail(*, original: MediaAsset, data: bytes) -> MediaAsset | None:
     ).first()
     if existing:
         return existing
-    maximum = (720, 450) if original.kind != MediaAsset.Kind.AVATAR else (512, 512)
+    sizes: dict[str, tuple[int, int]] = {
+        MediaAsset.Kind.COVER: (720, 450),
+        MediaAsset.Kind.AVATAR: (512, 512),
+        MediaAsset.Kind.BOARD_BACKGROUND: (1536, 1536),
+        MediaAsset.Kind.CELL_IMAGE: (512, 512),
+    }
+    maximum = sizes[original.kind]
     thumbnail_data = _thumbnail_bytes(data, max_size=maximum)
     key = f"media/derived/{original.public_id}/thumbnail.webp"
     if default_storage.exists(key):
@@ -374,9 +380,7 @@ def asset_is_publicly_accessible(asset: MediaAsset) -> bool:
     from django.db.models import Q
 
     if public_bingos.filter(
-        Q(cover=asset)
-        | Q(background=asset)
-        | Q(current_revision__cover=asset)
+        Q(current_revision__cover=asset)
         | Q(current_revision__background=asset)
         | Q(current_revision__cells__image=asset)
     ).exists():
@@ -391,6 +395,10 @@ def asset_is_publicly_accessible(asset: MediaAsset) -> bool:
             hidden_at__isnull=True,
             revoked_at__isnull=True,
             bingo__hidden_at__isnull=True,
+            bingo__deleted_at__isnull=True,
+            bingo__status=Bingo.Status.PUBLISHED,
+            bingo__visibility__in=(Bingo.Visibility.PUBLIC, Bingo.Visibility.UNLISTED),
+            revision__visibility__in=(Bingo.Visibility.PUBLIC, Bingo.Visibility.UNLISTED),
         )
         .filter(
             Q(revision__cover=asset)

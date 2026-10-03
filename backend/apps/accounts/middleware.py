@@ -3,10 +3,29 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import timedelta
 
+from django.conf import settings
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 
 from apps.accounts.models import SessionMetadata
+
+
+class RotationSafeSessionMiddleware(SessionMiddleware):
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+        response = super().process_response(request, response)
+        cookie = response.cookies.get(settings.SESSION_COOKIE_NAME)
+        if (
+            cookie is not None
+            and not cookie.value
+            and cookie["max-age"] == 0
+            and not getattr(request, "_neb_explicit_logout", False)
+        ):
+            # An old request may finish after login/password-change rotated the
+            # browser cookie. Server-side invalidation already rejects its old
+            # key; an implicit deletion here would erase the newer valid cookie.
+            del response.cookies[settings.SESSION_COOKIE_NAME]
+        return response
 
 
 class SessionMetadataMiddleware:

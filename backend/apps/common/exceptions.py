@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, ErrorDetail
+from rest_framework.exceptions import APIException, ErrorDetail, ParseError, Throttled
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -29,11 +29,23 @@ def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response |
         code = getattr(exc, "default_code", code)
         if isinstance(exc.detail, ErrorDetail):
             message = str(exc.detail)
+    details = _normalize_details(response.data)
+    if isinstance(exc, Throttled):
+        retry_after = response.get("Retry-After", "")
+        if retry_after.isdecimal():
+            message = f"Too many requests. Try again in {retry_after} seconds."
+            details = {"retry_after_seconds": int(retry_after)}
+        else:
+            message = "Too many requests. Wait a moment and try again."
+            details = {}
+    elif isinstance(exc, ParseError):
+        message = "The request could not be read. Refresh the page and try again."
+        details = {}
     response.data = {
         "error": {
             "code": code,
             "message": message,
-            "details": _normalize_details(response.data),
+            "details": details,
             "request_id": getattr(request, "request_id", None),
         }
     }

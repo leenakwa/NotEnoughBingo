@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "next dev",
@@ -21,13 +21,13 @@
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
-    "agentation": "^3.0.2",
-    "next": "^16.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "next": "^16.3.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "zod": "^4.1.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.55.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -36,15 +36,22 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "agentation": "^3.0.2",
     "eslint": "^9.35.0",
-    "eslint-config-next": "^16.0.0",
+    "eslint-config-next": "^16.3.7",
     "jsdom": "^27.0.0",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.6.0",
     "typescript": "^5.9.0",
-    "vitest": "^3.2.0"
+    "vitest": "^5.0.2"
   },
   "overrides": {
-    "postcss": "8.5.20"
+    "js-yaml": "4.3.2"
+  },
+  "registries": {
+    "@react-bits": "https://reactbits.dev/r/{name}.json",
+    "@magicui": "https://magicui.design/r/{name}",
+    "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
+    "@motion-primitives": "https://motion-primitives.com/c/{name}.json"
   }
 }

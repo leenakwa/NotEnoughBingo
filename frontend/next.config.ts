@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      ...["/reset-password", "/verify-email", "/confirm-email-change"].map((source) => ({
+        source,
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      })),
     ];
   },
 };

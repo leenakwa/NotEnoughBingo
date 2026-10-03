@@ -3,9 +3,11 @@ from __future__ import annotations
 import copy
 import io
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from django.conf import settings
+from django.test import Client
 from django.utils import timezone
 from PIL import Image
 from rest_framework.test import APIClient
@@ -24,6 +26,20 @@ from apps.social.models import Comment
 pytestmark = [pytest.mark.django_db, pytest.mark.integration]
 
 
+def test_csrf_bootstrap_returns_a_token_for_the_first_unsafe_request() -> None:
+    client = APIClient(enforce_csrf_checks=True)
+    bootstrap = client.get("/api/v1/auth/csrf/")
+    assert bootstrap.status_code == 200
+    assert client.cookies[settings.CSRF_COOKIE_NAME].value
+    token = bootstrap.data["csrf"]
+    assert isinstance(token, str)
+    assert len(token) >= 32
+
+    rejected_fields = client.post("/api/v1/auth/login/", {}, format="json", HTTP_X_CSRFTOKEN=token)
+    assert rejected_fields.status_code == 400
+    assert "email" in rejected_fields.data["error"]["details"]
+
+
 def _api_client(user=None) -> APIClient:
     client = APIClient(enforce_csrf_checks=True)
     if user is not None:
@@ -36,7 +52,7 @@ def _api_client(user=None) -> APIClient:
 
 
 def _document(*, title: str, visibility: str = Bingo.Visibility.PUBLIC) -> dict:
-    document = empty_draft_document(title=title, size=3)
+    document = empty_draft_document(title=title, size=3, language="en")
     document["visibility"] = visibility
     document["cells"][0]["text"] = f"{title} first cell"
     return document
@@ -93,14 +109,167 @@ def test_bingo_api_enforces_catalog_and_direct_link_visibility(verified_user_fac
     assert guest.get(f"/api/v1/bingos/{public.public_id}/").status_code == 200
     assert guest.get(f"/api/v1/bingos/{unlisted.public_id}/").status_code == 200
     assert guest.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert guest.get("/api/v1/bingos/", {"mine": "true"}).status_code == 401
+    assert guest.get("/api/v1/bingos/", {"mine": "maybe"}).status_code == 400
 
     owner = _api_client(author)
+    owned = owner.get("/api/v1/bingos/", {"mine": "true"})
+    assert owned.status_code == 200
+    assert {item["id"] for item in owned.data["results"]} == {
+        str(public.public_id),
+        str(unlisted.public_id),
+        str(private.public_id),
+    }
     private_response = owner.get(f"/api/v1/bingos/{private.public_id}/")
     assert private_response.status_code == 200
     assert private_response.data["permissions"]["can_edit"] is True
 
     stranger = _api_client(verified_user_factory())
     assert stranger.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+
+
+def test_catalog_search_handles_unicode_literals_limits_and_pagination(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory(username="catalogowner")
+    boards = {}
+    for title in ("Summer day", "Summer night", "Zebra", "Привет ☕", "100% under_score"):
+        board, _ = _published_bingo(author=author, title=title)
+        boards[title] = str(board.public_id)
+    guest = _api_client()
+
+    assert guest.get("/api/v1/bingos/", {"search": ""}).data["count"] == 5
+    assert guest.get("/api/v1/bingos/", {"search": "   "}).data["count"] == 5
+    assert guest.get("/api/v1/bingos/", {"search": "z"}).data["results"][0]["id"] == boards["Zebra"]
+    assert guest.get("/api/v1/bingos/", {"search": "SUMMER"}).data["count"] == 2
+    for query, title in (
+        ("Привет", "Привет ☕"),
+        ("☕", "Привет ☕"),
+        ("%", "100% under_score"),
+        ("_", "100% under_score"),
+    ):
+        response = guest.get("/api/v1/bingos/", {"search": query})
+        assert response.status_code == 200
+        assert [item["id"] for item in response.data["results"]] == [boards[title]], query
+    assert guest.get("/api/v1/bingos/", {"search": "no-match-typo"}).data["count"] == 0
+
+    first_page = guest.get("/api/v1/bingos/", {"page_size": 2})
+    assert first_page.data["count"] == 5
+    assert len(first_page.data["results"]) == 2
+    assert first_page.data["next"] is not None
+    assert guest.get("/api/v1/bingos/", {"page_size": 2, "page": 3}).data["count"] == 5
+
+    Bingo.objects.filter(public_id=boards["Summer day"]).update(trending_score=10)
+    newest = guest.get("/api/v1/bingos/", {"search": "Summer", "ordering": "newest"})
+    popular = guest.get(
+        "/api/v1/bingos/",
+        {"search": "Summer", "author": "catalogowner", "ordering": "popular"},
+    )
+    assert [item["id"] for item in newest.data["results"]] == [
+        boards["Summer night"],
+        boards["Summer day"],
+    ]
+    assert [item["id"] for item in popular.data["results"]] == [
+        boards["Summer day"],
+        boards["Summer night"],
+    ]
+    assert guest.get("/api/v1/bingos/", {"author": "nobody"}).data["count"] == 0
+    assert guest.get("/api/v1/bingos/", {"search": "x" * 81}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"author": "x" * 81}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"ordering": "random"}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"tags": ["public"] * 16}).status_code == 400
+    assert guest.get("/api/v1/bingos/", {"tags": ["x" * 51]}).status_code == 400
+
+
+def test_catalog_orders_real_instants_and_serializes_calendar_boundaries(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory(username="dateboundaryowner")
+    boundaries = (
+        ("Leap day", datetime(2024, 2, 29, 23, 59, tzinfo=UTC)),
+        ("March start", datetime(2024, 3, 1, 0, 1, tzinfo=UTC)),
+        ("Year end", datetime(2024, 12, 31, 23, 59, tzinfo=UTC)),
+        ("New year", datetime(2025, 1, 1, 0, 1, tzinfo=UTC)),
+    )
+    expected = {}
+    for title, instant in boundaries:
+        bingo, _ = _published_bingo(author=author, title=f"Boundary {title}")
+        Bingo.objects.filter(pk=bingo.pk).update(published_at=instant)
+        expected[title] = (str(bingo.public_id), instant)
+
+    response = _api_client().get("/api/v1/bingos/", {"search": "Boundary", "ordering": "newest"})
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["results"]] == [
+        expected[title][0] for title in ("New year", "Year end", "March start", "Leap day")
+    ]
+    for item in response.data["results"]:
+        expected_instant = next(
+            instant for public_id, instant in expected.values() if public_id == item["id"]
+        )
+        assert datetime.fromisoformat(item["published_at"]).astimezone(UTC) == expected_instant
+
+
+def test_direct_urls_and_spoofed_role_cannot_change_another_users_bingo(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory(username="access_author")
+    stranger = verified_user_factory(username="access_stranger")
+    public, _ = _published_bingo(author=author, title="Access public board")
+    private, _ = _published_bingo(
+        author=author,
+        title="Access private board",
+        visibility=Bingo.Visibility.PRIVATE,
+    )
+    client = _api_client(stranger)
+
+    assert client.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert client.get(f"/api/v1/bingos/{private.public_id}/draft/").status_code == 404
+    assert (
+        client.put(
+            f"/api/v1/bingos/{private.public_id}/draft/",
+            _document(title="Stolen board"),
+            format="json",
+            HTTP_IF_MATCH='"draft-1"',
+        ).status_code
+        == 404
+    )
+    assert (
+        client.post(
+            f"/api/v1/bingos/{private.public_id}/publish/",
+            {},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="spoofed-publish",
+        ).status_code
+        == 404
+    )
+    assert client.delete(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert client.delete(f"/api/v1/bingos/{public.public_id}/").status_code == 403
+    assert (
+        Bingo.objects.filter(pk__in=(public.pk, private.pk), deleted_at__isnull=True).count() == 2
+    )
+    owner_client = _api_client(author)
+    assert owner_client.delete(f"/api/v1/bingos/{private.public_id}/").status_code == 204
+    deleted_at = Bingo.objects.get(pk=private.pk).deleted_at
+    assert deleted_at is not None
+    assert owner_client.delete(f"/api/v1/bingos/{private.public_id}/").status_code == 404
+    assert Bingo.objects.get(pk=private.pk).deleted_at == deleted_at
+
+    moderation = client.get(
+        "/api/v1/moderation/reports/?role=moderator",
+        HTTP_X_ROLE="moderator",
+        HTTP_X_IS_STAFF="true",
+    )
+    assert moderation.status_code == 403
+    stranger.refresh_from_db()
+    assert stranger.is_staff is False
+
+    browser = Client()
+    browser.force_login(stranger)
+    for path in ("/admin/", "/admin/accounts/user/"):
+        response = browser.get(path)
+        assert response.status_code == 302
+        assert "/admin/login/" in response["Location"]
 
 
 def test_tag_catalog_only_exposes_tags_used_by_public_bingos(verified_user_factory) -> None:
@@ -136,6 +305,87 @@ def test_tag_catalog_only_exposes_tags_used_by_public_bingos(verified_user_facto
     ]
     assert client.get("/api/v1/tags/?search=visible").data["count"] == 1
     assert client.get("/api/v1/tags/?search=secret").data["count"] == 0
+
+
+def test_author_suggestions_are_public_catalog_scoped_and_privacy_minimal(
+    verified_user_factory,
+) -> None:
+    alpha = verified_user_factory(username="alpha_catalog")
+    alpha.profile.display_name = "Alpha Maker"
+    alpha.profile.save(update_fields=["display_name"])
+    _published_bingo(author=alpha, title="Alpha public board")
+
+    zeta = verified_user_factory(username="zeta_catalog")
+    zeta.profile.display_name = "Zed Display"
+    zeta.profile.save(update_fields=["display_name"])
+    _published_bingo(author=zeta, title="Zeta public board")
+
+    draft_only = verified_user_factory(username="draft_catalog")
+    create_bingo(author=draft_only, document=_document(title="Draft only"))
+
+    unlisted = verified_user_factory(username="unlisted_catalog")
+    _published_bingo(
+        author=unlisted,
+        title="Unlisted only",
+        visibility=Bingo.Visibility.UNLISTED,
+    )
+
+    hidden = verified_user_factory(username="hidden_catalog")
+    hidden_bingo, _ = _published_bingo(author=hidden, title="Hidden public board")
+    hidden_bingo.hidden_at = timezone.now()
+    hidden_bingo.save(update_fields=["hidden_at"])
+
+    deleted_bingo_author = verified_user_factory(username="deleted_bingo_catalog")
+    deleted_bingo, _ = _published_bingo(
+        author=deleted_bingo_author,
+        title="Deleted public board",
+    )
+    deleted_bingo.deleted_at = timezone.now()
+    deleted_bingo.save(update_fields=["deleted_at"])
+
+    for username, field in (
+        ("suspended_catalog", "suspended_at"),
+        ("deleted_user_catalog", "deleted_at"),
+    ):
+        author = verified_user_factory(username=username)
+        _published_bingo(author=author, title=f"{username} public board")
+        setattr(author, field, timezone.now())
+        author.save(update_fields=[field])
+
+    inactive = verified_user_factory(username="inactive_catalog")
+    _published_bingo(author=inactive, title="Inactive public board")
+    inactive.is_active = False
+    inactive.save(update_fields=["is_active"])
+
+    client = _api_client()
+    assert client.get(f"/api/v1/bingos/{deleted_bingo.public_id}/").status_code == 404
+    response = client.get("/api/v1/authors/?search=catalog")
+
+    assert response.status_code == 200
+    assert [item["username"] for item in response.data["results"]] == [
+        "alpha_catalog",
+        "zeta_catalog",
+    ]
+    assert all(set(item) == {"id", "username", "display_name"} for item in response.data["results"])
+    assert client.get("/api/v1/authors/?search=zed").data["results"][0]["username"] == (
+        "zeta_catalog"
+    )
+    assert client.get(f"/api/v1/authors/?search={'x' * 81}").status_code == 400
+
+
+def test_author_suggestion_page_size_is_capped(verified_user_factory) -> None:
+    for index in range(11):
+        author = verified_user_factory(username=f"bounded_author_{index:02d}")
+        _published_bingo(author=author, title=f"Bounded public board {index}")
+
+    response = _api_client().get("/api/v1/authors/?search=bounded&page_size=999")
+
+    assert response.status_code == 200
+    assert response.data["count"] == 11
+    assert len(response.data["results"]) == 10
+    assert [item["username"] for item in response.data["results"]] == [
+        f"bounded_author_{index:02d}" for index in range(10)
+    ]
 
 
 def test_bingo_create_publish_and_revision_api_preserves_old_snapshot(
@@ -206,7 +456,7 @@ def test_unverified_user_cannot_create_bingo(user_factory) -> None:
         format="json",
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 401
     assert not Bingo.objects.filter(author=user).exists()
 
 
@@ -232,9 +482,13 @@ def test_registered_progress_and_guest_share_routes_keep_immutable_revision_snap
     assert reset_progress.status_code == 200
     assert reset_progress.data["selected_cells"] == []
     assert reset_progress.data["reset_at"] is not None
+    assert player_client.delete(progress_url).status_code == 204
+    repeated_reset = player_client.get(progress_url)
+    assert repeated_reset.data["version"] == reset_progress.data["version"]
+    assert repeated_reset.data["reset_at"] == reset_progress.data["reset_at"]
 
     guest = _api_client()
-    assert guest.get(progress_url).status_code == 403
+    assert guest.get(progress_url).status_code == 401
     share_created = guest.post(
         f"/api/v1/bingos/{bingo.public_id}/shares/",
         {"selected_cells": [first_cell_id], "display_name": "Guest player"},
@@ -345,7 +599,64 @@ def test_upload_intent_content_and_complete_are_owner_scoped(
         },
         format="json",
     )
-    assert denied.status_code == 403
+    assert denied.status_code == 401
+
+
+def test_upload_rejection_has_actionable_message(verified_user_factory) -> None:
+    owner = verified_user_factory(username="upload_error_owner")
+    client = _api_client(owner)
+    response = client.post(
+        "/api/v1/uploads/intents/",
+        {
+            "kind": "cover",
+            "file_name": "cover.jpg",
+            "content_type": "image/png",
+            "size": len(_png_bytes()),
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data["error"]["details"]["file"] == {
+        "message": "The filename extension does not match the image type.",
+        "code": "invalid",
+    }
+
+    oversized = client.post(
+        "/api/v1/uploads/intents/",
+        {
+            "kind": "cover",
+            "file_name": "cover.png",
+            "content_type": "image/png",
+            "size": 13 * 1024 * 1024,
+        },
+        format="json",
+    )
+    assert oversized.status_code == 400
+    assert oversized.data["error"]["details"]["file"]["message"] == (
+        "The image is empty or exceeds the upload size limit."
+    )
+
+    intent = client.post(
+        "/api/v1/uploads/intents/",
+        {
+            "kind": "cover",
+            "file_name": "cover.png",
+            "content_type": "image/png",
+            "size": len(_png_bytes()),
+        },
+        format="json",
+    )
+    assert intent.status_code == 201
+    MediaAsset.objects.filter(public_id=intent.data["asset_id"]).update(
+        status=MediaAsset.Status.REJECTED,
+        rejection_reason="invalid_image",
+    )
+    detail = client.get(f"/api/v1/uploads/{intent.data['asset_id']}/")
+    assert detail.status_code == 200
+    assert detail.data["rejection_reason"] == (
+        "This file could not be read as an image. Choose another image."
+    )
 
 
 def test_export_api_is_author_only_idempotent_and_owner_scoped(verified_user_factory) -> None:
@@ -581,6 +892,33 @@ def test_interaction_and_feed_api_validate_guest_events_and_public_content(
     )
     assert forbidden.status_code == 400
 
+    search_event_id = uuid.uuid4()
+    sensitive_search = guest.post(
+        "/api/v1/interactions/",
+        {
+            "events": [
+                {
+                    "client_event_id": str(search_event_id),
+                    "event_type": "search",
+                    "query": "someone@example.test private phrase",
+                    "occurred_at": timezone.now().isoformat(),
+                    "anonymous_id": "browser-session-123",
+                    "metadata": {
+                        "surface": "explore",
+                        "author": "someone@example.test",
+                        "tags": "private phrase",
+                        "ordering": "newest",
+                    },
+                }
+            ]
+        },
+        format="json",
+    )
+    assert sensitive_search.status_code == 202
+    stored_search = InteractionEvent.objects.get(client_event_id=search_event_id)
+    assert stored_search.query == ""
+    assert stored_search.metadata == {"surface": "explore", "ordering": "newest"}
+
     trending = guest.get("/api/v1/feeds/trending/")
     discover = guest.get("/api/v1/feeds/discover/")
     assert trending.status_code == discover.status_code == 200
@@ -607,6 +945,13 @@ def test_profile_subresources_apply_independent_privacy_and_visibility(
         title="Profile unlisted board",
         visibility=Bingo.Visibility.UNLISTED,
     )
+    draft_document = _document(
+        title="Profile private draft",
+        visibility=Bingo.Visibility.PRIVATE,
+    )
+    draft_document["description"] = "Only the creator can see this saved draft."
+    draft_document["tags"] = ["Work in progress"]
+    draft_bingo = create_bingo(author=profile_user, document=draft_document)
     played_bingo, played_revision = _published_bingo(
         author=other_author,
         title="Profile played board",
@@ -665,4 +1010,14 @@ def test_profile_subresources_apply_independent_privacy_and_visibility(
         assert hidden.data["count"] == 0
 
     owner = _api_client(profile_user)
-    assert owner.get(f"{base}/bingos/").data["count"] == 2
+    owner_bingos = owner.get(f"{base}/bingos/")
+    assert owner_bingos.data["count"] == 3
+    draft_card = next(
+        item for item in owner_bingos.data["results"] if item["id"] == str(draft_bingo.public_id)
+    )
+    assert draft_card["status"] == Bingo.Status.DRAFT
+    assert draft_card["title"] == "Profile private draft"
+    assert draft_card["description"] == "Only the creator can see this saved draft."
+    assert draft_card["visibility"] == Bingo.Visibility.PRIVATE
+    assert draft_card["tags"][0]["name"] == "work in progress"
+    assert draft_card["preview"]["cells"][0]["text"] == "Profile private draft first cell"

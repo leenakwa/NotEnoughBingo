@@ -30,6 +30,7 @@ export interface PublicUser {
 export interface AuthenticatedUser extends PublicUser {
   email: string;
   email_verified: boolean;
+  deletion_scheduled_for: string | null;
 }
 
 export interface Tag {
@@ -37,6 +38,12 @@ export interface Tag {
   name: string;
   slug: string;
   usage_count?: number;
+}
+
+export interface AuthorSuggestion {
+  id: PublicId;
+  username: string;
+  display_name: string;
 }
 
 export interface BingoStats {
@@ -51,6 +58,7 @@ export interface BingoSummary {
   id: PublicId;
   title: string;
   description: string;
+  language: string;
   author: PublicUser;
   cover: MediaAsset | null;
   preview: BingoCardPreview | null;
@@ -84,6 +92,7 @@ export interface RevisionCell {
   background_color: string;
   background_opacity: number;
   image: MediaAsset | null;
+  image_alt: string;
   image_opacity: number;
   border_color: string;
   border_width: number;
@@ -95,6 +104,7 @@ export interface BingoRevision {
   number: number;
   title: string;
   description: string;
+  language: string;
   size: number;
   board_background: MediaAsset | null;
   cover: MediaAsset | null;
@@ -119,6 +129,7 @@ export interface BingoDraft {
   bingo_id: PublicId | null;
   title: string;
   description: string;
+  language: string;
   size: number;
   visibility: Visibility;
   completion_style: CompletionStyle;
@@ -176,8 +187,11 @@ export interface UserProfile extends PublicUser {
   following_count: number;
   is_following: boolean;
   privacy: UserPrivacySettings;
-  created_bingos?: Page<BingoSummary>;
-  recent_bingos?: Page<BingoSummary>;
+}
+
+export interface OwnUserProfile extends UserProfile {
+  preferred_languages: string[];
+  language_preferences_confirmed: boolean;
 }
 
 export interface ProfilePlayHistoryItem {
@@ -203,6 +217,7 @@ export interface ProfileUpdate {
   username?: string;
   display_name?: string;
   bio?: string;
+  preferred_languages?: string[];
   avatar_id?: PublicId | null;
 }
 
@@ -218,6 +233,12 @@ export interface Comment {
   edited_at: string | null;
   deleted_at: string | null;
   created_at: string;
+}
+
+export interface CommentContext {
+  bingo_id: PublicId;
+  comment: Comment;
+  parent: Comment | null;
 }
 
 export type NotificationKind =

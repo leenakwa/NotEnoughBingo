@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from apps.media_assets.models import MediaAsset
 from apps.media_assets.services import build_upload_instructions, create_upload_intent
-from apps.media_assets.validators import AssetValidationError
+from apps.media_assets.validators import AssetValidationError, asset_error_message
 
 
 class MediaAssetSerializer(serializers.ModelSerializer):
@@ -14,6 +14,7 @@ class MediaAssetSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     thumbnail_id = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    rejection_reason = serializers.SerializerMethodField()
 
     class Meta:
         model = MediaAsset
@@ -49,6 +50,9 @@ class MediaAssetSerializer(serializers.ModelSerializer):
             None,
         )
         return str(thumbnail.public_id) if thumbnail else None
+
+    def get_rejection_reason(self, obj: MediaAsset) -> str:
+        return asset_error_message(obj.rejection_reason) if obj.rejection_reason else ""
 
     def get_mime_type(self, obj: MediaAsset) -> str:
         return obj.detected_mime or obj.declared_mime
@@ -119,7 +123,7 @@ class UploadIntentSerializer(serializers.Serializer):
                 checksum_sha256=validated_data.get("checksum_sha256", ""),
             )
         except AssetValidationError as exc:
-            raise serializers.ValidationError({"file": exc.code}) from exc
+            raise serializers.ValidationError({"file": exc.user_message}) from exc
 
     def to_representation(self, instance: MediaAsset) -> dict:
         asset = MediaAssetSerializer(instance).data

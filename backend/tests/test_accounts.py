@@ -5,21 +5,26 @@ from unittest.mock import patch
 
 import pytest
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sessions.backends.cached_db import SessionStore as CachedDbSessionStore
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.core import mail
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
+from django.test import override_settings
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from freezegun import freeze_time
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework.throttling import AnonRateThrottle
 
 from apps.accounts.models import (
     EmailVerification,
@@ -30,15 +35,26 @@ from apps.accounts.models import (
     UserPrivacySettings,
     UserProfile,
 )
+from apps.accounts.security import LoginRateLimiter
 from apps.accounts.serializers import PrivacySerializer, UserProfileReadSerializer
 from apps.accounts.services import (
+    confirm_email_change,
     create_authenticated_session,
     issue_email_verification,
+    request_email_change,
     revoke_session,
     token_digest,
     verify_email,
 )
+from apps.accounts.tasks import (
+    send_critical_security_email,
+    send_email_change_notice,
+    send_password_reset_email,
+    send_verification_email,
+)
 from apps.accounts.views import (
+    EmailChangeConfirmView,
+    EmailChangeRequestView,
     LoginView,
     PasswordChangeView,
     PasswordResetConfirmView,
@@ -52,6 +68,31 @@ from apps.common.authentication import StrictSessionAuthentication
 pytestmark = pytest.mark.django_db
 
 
+def test_session_status_is_guest_safe_and_never_cacheable(client, verified_user_factory) -> None:
+    guest = client.get("/api/v1/auth/session/")
+    assert guest.status_code == 200
+    assert guest.data == {"user": None}
+    assert guest["Cache-Control"] == "private, no-store"
+    protected = client.get("/api/v1/auth/me/")
+    assert protected.status_code == 401
+    assert protected["WWW-Authenticate"] == 'Session realm="api"'
+
+    user = verified_user_factory()
+    client.force_login(user)
+    signed_in = client.get("/api/v1/auth/session/")
+    assert signed_in.status_code == 200
+    assert signed_in.data["user"]["id"] == str(user.public_id)
+    assert signed_in["Cache-Control"] == "private, no-store"
+
+
+def test_session_status_does_not_consume_the_general_guest_quota(client, monkeypatch) -> None:
+    monkeypatch.setitem(AnonRateThrottle.THROTTLE_RATES, "anon", "1/min")
+    for _ in range(2):
+        response = client.get("/api/v1/auth/session/", REMOTE_ADDR="192.0.2.203")
+        assert response.status_code == 200
+        assert response.data == {"user": None}
+
+
 def test_user_creation_normalizes_identity_and_creates_account_relations(user_factory) -> None:
     user = user_factory(username="  Mixed_Case  ", email="Mixed@EXAMPLE.TEST")
 
@@ -60,6 +101,134 @@ def test_user_creation_normalizes_identity_and_creates_account_relations(user_fa
     assert UserProfile.objects.filter(user=user).exists()
     assert UserPrivacySettings.objects.filter(user=user).exists()
     assert NotificationPreference.objects.filter(user=user).exists()
+
+
+def test_email_change_requires_password_and_new_address_confirmation(
+    csrf_request, verified_user_factory, monkeypatch
+) -> None:
+    user = verified_user_factory(email="before@example.test")
+    monkeypatch.setattr(
+        "apps.accounts.services.secrets.token_urlsafe",
+        lambda _: "new-email-token-long-enough-for-api-confirm",
+    )
+    path = "/api/v1/auth/email-change/"
+    confirm_path = "/api/v1/auth/email-change/confirm/"
+
+    wrong_password = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            path,
+            {"new_email": "after@example.test", "current_password": "wrong-password"},
+            user=user,
+        )
+    )
+    assert wrong_password.status_code == 400
+    assert not EmailVerification.objects.filter(
+        purpose=EmailVerification.Purpose.CHANGE_EMAIL
+    ).exists()
+
+    verified_user_factory(email="taken@example.test")
+    hidden_address = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            path,
+            {"new_email": "taken@example.test", "current_password": "wrong-password"},
+            user=user,
+        )
+    )
+    assert hidden_address.status_code == 400
+    assert "new_email" not in hidden_address.data
+
+    requested = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            path,
+            {"new_email": "After@EXAMPLE.TEST", "current_password": "Correct-Horse-Battery-42"},
+            user=user,
+        )
+    )
+    assert requested.status_code == 202
+    user.refresh_from_db()
+    assert user.email == "before@example.test"
+    verification = EmailVerification.objects.get(purpose=EmailVerification.Purpose.CHANGE_EMAIL)
+    assert verification.email == "after@example.test"
+
+    invalid = EmailChangeConfirmView.as_view()(
+        csrf_request("post", confirm_path, {"token": "incorrect-token-long-enough-for-api-confirm"})
+    )
+    assert invalid.status_code == 400
+    confirmed = EmailChangeConfirmView.as_view()(
+        csrf_request("post", confirm_path, {"token": "new-email-token-long-enough-for-api-confirm"})
+    )
+    assert confirmed.status_code == 204
+    user.refresh_from_db()
+    verification.refresh_from_db()
+    assert user.email == "after@example.test"
+    assert authenticate(email="before@example.test", password="Correct-Horse-Battery-42") is None
+    assert authenticate(email="after@example.test", password="Correct-Horse-Battery-42") == user
+    assert verification.used_at is not None
+    assert SecurityEvent.objects.filter(
+        user=user, event_type=SecurityEvent.EventType.EMAIL_CHANGED
+    ).exists()
+    replay = EmailChangeConfirmView.as_view()(
+        csrf_request("post", confirm_path, {"token": "new-email-token-long-enough-for-api-confirm"})
+    )
+    assert replay.status_code == 400
+
+
+def test_email_change_rejects_an_address_taken_during_verification(
+    csrf_request, verified_user_factory, monkeypatch
+) -> None:
+    user = verified_user_factory(email="original@example.test")
+    monkeypatch.setattr(
+        "apps.accounts.services.secrets.token_urlsafe",
+        lambda _: "pending-email-token-long-enough-for-confirm",
+    )
+    request = EmailChangeRequestView.as_view()(
+        csrf_request(
+            "post",
+            "/api/v1/auth/email-change/",
+            {"new_email": "pending@example.test", "current_password": "Correct-Horse-Battery-42"},
+            user=user,
+        )
+    )
+    assert request.status_code == 202
+    verified_user_factory(email="PENDING@example.test")
+    confirm = EmailChangeConfirmView.as_view()(
+        csrf_request(
+            "post",
+            "/api/v1/auth/email-change/confirm/",
+            {"token": "pending-email-token-long-enough-for-confirm"},
+        )
+    )
+    assert confirm.status_code == 400
+    user.refresh_from_db()
+    assert user.email == "original@example.test"
+
+
+def test_new_email_change_request_invalidates_earlier_link_and_expired_link(
+    verified_user_factory, monkeypatch
+) -> None:
+    user = verified_user_factory(email="first@example.test")
+    tokens = iter(
+        ("first-email-change-token-value-123456", "second-email-change-token-value-12345")
+    )
+    monkeypatch.setattr("apps.accounts.services.secrets.token_urlsafe", lambda _: next(tokens))
+    request_email_change(user=user, new_email="second@example.test")
+    request_email_change(user=user, new_email="third@example.test")
+
+    with pytest.raises(DjangoValidationError, match="already been used"):
+        confirm_email_change("first-email-change-token-value-123456")
+
+    latest = EmailVerification.objects.get(
+        token_hash=token_digest("second-email-change-token-value-12345")
+    )
+    latest.expires_at = timezone.now() - timedelta(seconds=1)
+    latest.save(update_fields=("expires_at",))
+    with pytest.raises(DjangoValidationError, match="expired"):
+        confirm_email_change("second-email-change-token-value-12345")
+    user.refresh_from_db()
+    assert user.email == "first@example.test"
 
 
 def test_case_insensitive_identity_constraints_are_database_enforced(user_factory) -> None:
@@ -116,6 +285,47 @@ def test_registration_is_anti_enumerating_and_creates_a_verification(
     attempts = user.email_verifications.filter(used_at__isnull=True)
     assert attempts.count() == 2
     assert set(attempts.values_list("pending_username", flat=True)) == {"new_person"}
+
+
+def test_existing_verified_email_does_not_disclose_the_account_or_change_it(
+    csrf_request,
+    verified_user_factory,
+) -> None:
+    existing = verified_user_factory(email="already@example.test")
+    old_password = existing.password
+    response = RegisterView.as_view()(
+        csrf_request(
+            "post",
+            "/api/v1/auth/register/",
+            {
+                "email": existing.email.upper(),
+                "username": "fresh_choice",
+                "password": "Strong-and-Unique-Pass-42",
+            },
+        )
+    )
+
+    assert response.status_code == 202
+    assert response.data == {"status": "verification_required"}
+    existing.refresh_from_db()
+    assert existing.password == old_password
+    assert not existing.email_verifications.exists()
+    assert User.objects.filter(email__iexact=existing.email).count() == 1
+
+
+def test_registration_rejects_weak_or_username_similar_passwords(csrf_request) -> None:
+    base = {"email": "new@example.test", "username": "bingo_creator"}
+    for password in ("short", "password123456789", "bingo_creator_2026"):
+        response = RegisterView.as_view()(
+            csrf_request(
+                "post",
+                "/api/v1/auth/register/",
+                {**base, "password": password},
+            )
+        )
+        assert response.status_code == 400
+        assert "password" in response.data["error"]["details"]
+    assert not User.objects.filter(email=base["email"]).exists()
 
 
 def test_registration_without_csrf_is_rejected(api_request_factory: APIRequestFactory) -> None:
@@ -282,6 +492,24 @@ def test_login_has_generic_failure_and_success_creates_server_side_session(
         user=user,
         event_type=SecurityEvent.EventType.LOGIN,
     ).exists()
+
+
+def test_login_locks_repeated_failures_for_the_same_email(
+    csrf_request,
+    verified_user_factory,
+    monkeypatch,
+) -> None:
+    user = verified_user_factory(email="limited@example.test")
+    monkeypatch.setattr(LoginRateLimiter, "max_email_attempts", 2)
+    endpoint = LoginView.as_view()
+    payload = {"email": user.email, "password": "incorrect-password"}
+
+    for _ in range(2):
+        response = endpoint(csrf_request("post", "/api/v1/auth/login/", payload, with_session=True))
+        assert response.status_code == 400
+    limited = endpoint(csrf_request("post", "/api/v1/auth/login/", payload, with_session=True))
+    assert limited.status_code == 429
+    assert "Retry-After" in limited
 
 
 def test_revoke_session_deletes_django_session_and_is_idempotent(user_factory) -> None:
@@ -455,6 +683,79 @@ def test_password_reset_changes_password_and_revokes_every_active_session(
     ).exists()
 
 
+@override_settings(FRONTEND_URL="https://bingo.example.test")
+def test_password_reset_email_uses_the_configured_public_origin(user_factory) -> None:
+    user = user_factory()
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    send_password_reset_email(user.pk, uid, token)
+
+    assert len(mail.outbox) == 1
+    assert f"https://bingo.example.test/reset-password?uid={uid}&token={token}" in (
+        mail.outbox[0].body
+    )
+    assert "https://bingo.example.test/support" in mail.outbox[0].body
+
+
+@pytest.mark.parametrize(
+    ("purpose", "route"),
+    [
+        (EmailVerification.Purpose.VERIFY_EMAIL, "verify-email"),
+        (EmailVerification.Purpose.CHANGE_EMAIL, "confirm-email-change"),
+    ],
+)
+@override_settings(FRONTEND_URL="https://bingo.example.test")
+def test_verification_emails_include_the_public_support_destination(
+    user_factory, purpose: str, route: str
+) -> None:
+    user = user_factory()
+    verification = EmailVerification.objects.create(
+        user=user,
+        email=user.email,
+        purpose=purpose,
+        token_hash=token_digest("example-token"),
+        expires_at=timezone.now() + timedelta(hours=1),
+    )
+    send_verification_email(verification.pk, "example-token")
+
+    assert len(mail.outbox) == 1
+    assert f"https://bingo.example.test/{route}?token=example-token" in mail.outbox[0].body
+    assert "https://bingo.example.test/support" in mail.outbox[0].body
+
+
+@override_settings(FRONTEND_URL="https://bingo.example.test")
+def test_security_emails_include_the_public_support_destination(user_factory) -> None:
+    user = user_factory()
+    send_email_change_notice("former@example.test")
+    send_critical_security_email(user.pk, "Security notice", "Check your account.")
+
+    assert len(mail.outbox) == 2
+    assert all("https://bingo.example.test/support" in message.body for message in mail.outbox)
+
+
+@override_settings(PASSWORD_RESET_TIMEOUT=60)
+def test_password_reset_token_expires_without_changing_credentials(
+    user_factory, csrf_request
+) -> None:
+    user = user_factory(password="Old-Strong-Password-42")
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    with freeze_time("2026-09-30 10:00:00+00:00"):
+        token = default_token_generator.make_token(user)
+
+    with freeze_time("2026-09-30 10:01:01+00:00"):
+        response = PasswordResetConfirmView.as_view()(
+            csrf_request(
+                "post",
+                "/api/v1/auth/password-reset/confirm/",
+                {"uid": uid, "token": token, "new_password": "New-Strong-Password-84"},
+            )
+        )
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.check_password("Old-Strong-Password-42")
+
+
 def test_password_change_preserves_current_session_and_revokes_other_sessions(
     user_factory,
     csrf_request,
@@ -522,7 +823,7 @@ def test_public_profile_obeys_bio_and_relationship_privacy(user_factory) -> None
     assert public_data["bio"] == ""
     assert public_data["follower_count"] == 0
     assert public_data["following_count"] == 0
-    assert public_data["created_bingos"] is None
+    assert "created_bingos" not in public_data
 
     owner_request = APIRequestFactory().get("/profiles/me/")
     owner_request.user = owner

@@ -69,6 +69,8 @@ class UserProfile(PublicIdModel, TimeStampedModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     display_name = models.CharField(max_length=80, blank=True)
     bio = models.CharField(max_length=500, blank=True)
+    preferred_languages = models.JSONField(default=list, blank=True)
+    language_preferences_confirmed = models.BooleanField(default=False)
     avatar = models.ForeignKey(
         "media_assets.MediaAsset",
         null=True,
@@ -165,6 +167,7 @@ class SecurityEvent(PublicIdModel, TimeStampedModel):
     class EventType(models.TextChoices):
         REGISTERED = "registered", "Registered"
         EMAIL_VERIFIED = "email_verified", "Email verified"
+        EMAIL_CHANGED = "email_changed", "Email changed"
         LOGIN = "login", "Login"
         LOGIN_FAILED = "login_failed", "Login failed"
         PASSWORD_CHANGED = "password_changed", "Password changed"

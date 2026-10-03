@@ -7,6 +7,7 @@ from django.core.files.storage import default_storage
 from django.db import models, transaction
 from django.utils import timezone
 
+from apps.common.jobs import periodic_task
 from apps.media_assets.models import MediaAsset
 from apps.media_assets.services import (
     ORPHAN_GRACE_PERIOD,
@@ -42,7 +43,10 @@ def process_media_asset(self, asset_id: int) -> str:
             return "already_processing"
         asset.status = MediaAsset.Status.PROCESSING
         asset.processing_task_id = task_id
-        asset.save(update_fields=("status", "processing_task_id", "updated_at"))
+        asset.processing_attempt_count += 1
+        asset.save(
+            update_fields=("status", "processing_task_id", "processing_attempt_count", "updated_at")
+        )
     try:
         data, _original_inspection = inspect_asset(asset)
         normalized_data = normalize_image_bytes(data)
@@ -58,6 +62,16 @@ def process_media_asset(self, asset_id: int) -> str:
             inspection=inspection,
         )
         create_thumbnail(original=asset, data=normalized_data)
+    except OSError as exc:
+        if self.request.retries >= self.max_retries or asset.processing_attempt_count >= 5:
+            MediaAsset.objects.filter(pk=asset_id).update(
+                status=MediaAsset.Status.REJECTED,
+                processing_task_id="",
+                rejection_reason="storage_unavailable",
+                updated_at=timezone.now(),
+            )
+            raise RuntimeError("storage_unavailable") from exc
+        raise
     except AssetValidationError as exc:
         with transaction.atomic():
             rejected = MediaAsset.objects.select_for_update().get(pk=asset_id)
@@ -112,7 +126,7 @@ def process_media_asset(self, asset_id: int) -> str:
     return "ready"
 
 
-@shared_task(ignore_result=True)
+@periodic_task
 def cleanup_orphaned_media() -> int:
     now = timezone.now()
     candidates = MediaAsset.objects.filter(
@@ -139,7 +153,7 @@ def cleanup_orphaned_media() -> int:
     for asset_id in candidates.values_list("pk", flat=True).iterator():
         with transaction.atomic():
             asset = MediaAsset.objects.select_for_update().filter(pk=asset_id).first()
-            if not asset or asset_is_referenced(asset):
+            if not asset or asset.deleted_at is not None or asset_is_referenced(asset):
                 continue
             if default_storage.exists(asset.storage_key):
                 default_storage.delete(asset.storage_key)

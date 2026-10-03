@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 env = environ.Env(
@@ -14,7 +16,7 @@ env = environ.Env(
 )
 
 env_file = BASE_DIR.parent / ".env"
-if env_file.exists():
+if env_file.exists() and os.environ.get("DJANGO_SETTINGS_MODULE") != "config.settings.production":
     environ.Env.read_env(env_file)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsafe-development-only-change-me")
@@ -55,7 +57,8 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "apps.common.middleware.RequestIdMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
+    "apps.common.middleware.RequestLogMiddleware",
+    "apps.accounts.middleware.RotationSafeSessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -103,6 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "apps.accounts.password_validation.PredictablePasswordValidator"},
 ]
 
 LANGUAGE_CODE = "en-us"
@@ -160,22 +164,32 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "120/min",
+        "anon": env("ANON_RATE_LIMIT", default="120/min"),
         "user": "600/min",
+        "session_status": env("AUTH_SESSION_RATE_LIMIT", default="300/min"),
         "auth_login": env("AUTH_LOGIN_RATE_LIMIT", default="5/min"),
         "auth_register": env("AUTH_REGISTER_RATE_LIMIT", default="5/hour"),
         "auth_verify": env(
             "AUTH_EMAIL_VERIFICATION_RATE_LIMIT",
             default="5/hour",
         ),
-        "password_reset": env(
+        "password_reset_request": env(
             "AUTH_PASSWORD_RESET_RATE_LIMIT",
             default="3/hour",
         ),
+        "password_reset_confirm": env(
+            "AUTH_PASSWORD_RESET_CONFIRM_RATE_LIMIT",
+            default="20/hour",
+        ),
+        "email_change_request": env("AUTH_EMAIL_CHANGE_RATE_LIMIT", default="3/hour"),
+        "email_change_confirm": env("AUTH_EMAIL_CHANGE_CONFIRM_RATE_LIMIT", default="20/hour"),
         "comments": env("COMMENT_RATE_LIMIT", default="10/min"),
         "reports": env("REPORT_RATE_LIMIT", default="5/hour"),
         "uploads": env("UPLOAD_RATE_LIMIT", default="30/hour"),
+        "shares": env("SHARE_RATE_LIMIT", default="10/min"),
+        "exports": env("BINGO_EXPORT_RATE_LIMIT", default="10/hour"),
         "interactions": "300/min",
+        "client_errors": "20/min",
     },
     "COERCE_DECIMAL_TO_STRING": False,
     "NUM_PROXIES": TRUSTED_PROXY_HOPS,
@@ -189,6 +203,8 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {
+        "AnalyticsActionEnum": ["create", "register", "login"],
+        "ModerationActionEnum": "apps.moderation.models.ModerationAction.Action",
         "AccountDeletionStatus": [
             ("scheduled", "Scheduled"),
             ("cancelled", "Cancelled"),
@@ -253,7 +269,23 @@ CELERY_TASK_SOFT_TIME_LIMIT = env.int(
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+ANALYTICS_RAW_EVENT_RETENTION_DAYS = env.int(
+    "ANALYTICS_RAW_EVENT_RETENTION_DAYS",
+    default=90,
+)
+if ANALYTICS_RAW_EVENT_RETENTION_DAYS < 7:
+    raise ImproperlyConfigured(
+        "ANALYTICS_RAW_EVENT_RETENTION_DAYS must retain the seven-day trending window."
+    )
 CELERY_BEAT_SCHEDULE = {
+    "recover-stalled-jobs-every-five-minutes": {
+        "task": "apps.common.tasks.recover_stalled_jobs",
+        "schedule": timedelta(minutes=5),
+    },
+    "record-beat-heartbeat-every-minute": {
+        "task": "apps.common.tasks.record_beat_heartbeat",
+        "schedule": timedelta(minutes=1),
+    },
     "cleanup-orphaned-media-hourly": {
         "task": "apps.media_assets.tasks.cleanup_orphaned_media",
         "schedule": timedelta(hours=1),
@@ -261,6 +293,14 @@ CELERY_BEAT_SCHEDULE = {
     "recompute-trending-quarter-hourly": {
         "task": "apps.analytics.tasks.recompute_trending_scores",
         "schedule": timedelta(minutes=15),
+    },
+    "purge-expired-interaction-events-daily": {
+        "task": "apps.analytics.tasks.purge_expired_interaction_events",
+        "schedule": timedelta(hours=24),
+    },
+    "reconcile-denormalized-counters-daily": {
+        "task": "apps.analytics.tasks.reconcile_denormalized_counters",
+        "schedule": timedelta(hours=24),
     },
     "process-account-deletions-daily": {
         "task": "apps.accounts.tasks.process_scheduled_account_deletions",
@@ -359,18 +399,31 @@ X_FRAME_OPTIONS = "DENY"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 
 LOG_LEVEL = env("LOG_LEVEL", default="INFO")
+APP_ENVIRONMENT = env(
+    "APP_ENVIRONMENT",
+    default=env("SENTRY_ENVIRONMENT", default="development"),
+)
+APP_RELEASE = env("APP_RELEASE", default="")
+SERVICE_NAME = env("SERVICE_NAME", default="backend")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "json": {
             "()": "apps.common.logging.JsonFormatter",
+            "service": SERVICE_NAME,
+            "environment": APP_ENVIRONMENT,
+            "release": APP_RELEASE,
         }
     },
     "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "json"}},
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
     "loggers": {
         "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "celery": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "celery.task": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "gunicorn.error": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "gunicorn.access": {"handlers": ["console"], "level": "WARNING", "propagate": False},
     },
 }
 
@@ -378,9 +431,16 @@ SENTRY_DSN = env("SENTRY_DSN", default="")
 if SENTRY_DSN:
     import sentry_sdk
 
+    from apps.common.error_tracking import scrub_error_event
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        environment=env("SENTRY_ENVIRONMENT", default="development"),
+        environment=APP_ENVIRONMENT,
+        release=APP_RELEASE or None,
         send_default_pii=False,
+        include_local_variables=False,
+        max_request_body_size="never",
+        before_send=scrub_error_event,
+        before_send_transaction=scrub_error_event,
         traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05),
     )

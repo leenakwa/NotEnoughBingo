@@ -25,6 +25,8 @@ class InteractionEvent(PublicIdModel):
         FOLLOW = "follow", "Follow"
         SEARCH = "search", "Search"
         TAG_INTERACTION = "tag_interaction", "Tag interaction"
+        PAGE_VIEW = "page_view", "Page view"
+        CTA = "cta", "Primary action"
 
     actor = models.ForeignKey(
         User,

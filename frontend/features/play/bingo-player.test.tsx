@@ -1,8 +1,11 @@
-import { act, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
-import type { AuthenticatedUser, BingoDetail, PlayProgress } from "@/lib/api/types";
+import type { AuthenticatedUser, BingoDetail, PlayProgress, UserProfile } from "@/lib/api/types";
+import { readGuestProgress, writeGuestProgress } from "@/lib/guest-progress";
+import { AUTH_SIGNED_IN_EVENT, AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
+import { ApiClientError } from "@/lib/api/client";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -10,6 +13,14 @@ const mocks = vi.hoisted(() => ({
   getViewer: vi.fn(),
   getProgress: vi.fn(),
   saveProgress: vi.fn(),
+  resetProgress: vi.fn(),
+  createShare: vi.fn(),
+  likeBingo: vi.fn(),
+  follow: vi.fn(),
+  unfollow: vi.fn(),
+  archive: vi.fn(),
+  restore: vi.fn(),
+  remove: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
   track: vi.fn(),
@@ -36,19 +47,32 @@ vi.mock("@/features/social/report-dialog", () => ({
 
 vi.mock("@/lib/api/client", () => ({
   api: {
-    auth: { me: mocks.getViewer },
-    bingos: { get: mocks.getBingo },
+    auth: { session: mocks.getViewer },
+    bingos: {
+      get: mocks.getBingo,
+      like: mocks.likeBingo,
+      archive: mocks.archive,
+      restore: mocks.restore,
+      remove: mocks.remove,
+    },
+    follows: { follow: mocks.follow, unfollow: mocks.unfollow },
+    shares: { create: mocks.createShare },
     profiles: { get: mocks.getProfile },
     progress: {
       get: mocks.getProgress,
       save: mocks.saveProgress,
-      reset: vi.fn(),
+      reset: mocks.resetProgress,
     },
   },
   ApiClientError: class extends Error {
-    status = 500;
+    readonly status: number;
+    constructor(status: number, payload: { message: string }) {
+      super(payload.message);
+      this.status = status;
+    }
   },
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
+  isAuthenticationRequiredError: () => false,
 }));
 
 const viewer: AuthenticatedUser = {
@@ -58,12 +82,14 @@ const viewer: AuthenticatedUser = {
   avatar: null,
   email: "reader@example.test",
   email_verified: true,
+  deletion_scheduled_for: null,
 };
 
 const bingo: BingoDetail = {
   id: "22222222-2222-4222-8222-222222222222",
   title: "Hydration safety",
   description: "",
+  language: "en",
   author: {
     id: "33333333-3333-4333-8333-333333333333",
     username: "author",
@@ -92,6 +118,7 @@ const bingo: BingoDetail = {
     number: 1,
     title: "Hydration safety",
     description: "",
+    language: "en",
     size: 3,
     board_background: null,
     cover: null,
@@ -110,6 +137,7 @@ const bingo: BingoDetail = {
         background_color: "#ffffff",
         background_opacity: 1,
         image: null,
+        image_alt: "",
         image_opacity: 1,
         border_color: "#000000",
         border_width: 1,
@@ -123,6 +151,22 @@ const bingo: BingoDetail = {
     can_comment: true,
     can_like: true,
     can_report: true,
+  },
+};
+
+const authorProfile: UserProfile = {
+  ...bingo.author,
+  bio: "",
+  follower_count: 0,
+  following_count: 0,
+  is_following: false,
+  privacy: {
+    show_bio: true,
+    show_created_bingos: true,
+    show_play_history: true,
+    show_shared_results: true,
+    show_followers: true,
+    show_following: true,
   },
 };
 
@@ -141,11 +185,176 @@ const progress: PlayProgress = {
 
 describe("BingoPlayer", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     mocks.getBingo.mockResolvedValue(bingo);
     mocks.getViewer.mockResolvedValue(viewer);
     mocks.getProgress.mockResolvedValue(progress);
+    mocks.saveProgress.mockResolvedValue({ ...progress, version: 3 });
+    mocks.resetProgress.mockResolvedValue(undefined);
     mocks.getProfile.mockRejectedValue(new Error("Profile is optional here"));
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(["leave", "logout"])("does not send queued marks after %s", async (boundary) => {
+    let resolveSave!: (value: PlayProgress) => void;
+    mocks.saveProgress.mockReturnValueOnce(
+      new Promise<PlayProgress>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    await act(async () => cell.click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(1));
+    await act(async () => cell.click());
+    await act(() => new Promise((resolve) => window.setTimeout(resolve, 450)));
+    if (boundary === "leave") view.unmount();
+    else {
+      mocks.getViewer.mockResolvedValueOnce(null);
+      act(() => window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT)));
+      await waitFor(() =>
+        expect(screen.getByRole("link", { name: "Log in to like" })).toBeVisible(),
+      );
+    }
+    await act(async () => resolveSave({ ...progress, version: 2 }));
+    expect(mocks.saveProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry an obsolete progress conflict after departure", async () => {
+    let rejectSave!: (error: Error) => void;
+    mocks.saveProgress.mockReturnValueOnce(
+      new Promise<PlayProgress>((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    await act(async () => cell.click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(1));
+    view.unmount();
+    await act(async () =>
+      rejectSave(new ApiClientError(409, { code: "conflict", message: "Old version" })),
+    );
+    expect(mocks.getProgress).toHaveBeenCalledTimes(1);
+    expect(mocks.saveProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not let an old save replace the next board's progress version", async () => {
+    let resolveSave!: (value: PlayProgress) => void;
+    mocks.saveProgress.mockReturnValueOnce(
+      new Promise<PlayProgress>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    await act(async () => cell.click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(1));
+    const next = {
+      ...bingo,
+      id: "next-board",
+      title: "Next board",
+      current_revision: { ...bingo.current_revision!, title: "Next board" },
+    };
+    mocks.getBingo.mockResolvedValueOnce(next);
+    mocks.getProgress.mockResolvedValueOnce({ ...progress, version: 8 });
+    mocks.saveProgress.mockResolvedValueOnce({ ...progress, version: 9 });
+    view.rerender(<BingoPlayer bingoId={next.id} />);
+    await screen.findByRole("heading", { name: "Next board" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+    );
+    await act(async () => resolveSave({ ...progress, version: 2 }));
+    await act(async () => screen.getByRole("button", { name: "Open the board" }).click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(2));
+    expect(mocks.saveProgress).toHaveBeenLastCalledWith(
+      next.id,
+      bingo.current_revision!.id,
+      [bingo.current_revision!.cells[0]!.id],
+      8,
+    );
+  });
+
+  it("does not reload progress after a departed reset completes", async () => {
+    mocks.getProgress.mockResolvedValueOnce({
+      ...progress,
+      selected_cells: [bingo.current_revision!.cells[0]!.id],
+    });
+    let resolveReset!: () => void;
+    mocks.resetProgress.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveReset = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const reset = await screen.findByRole("button", { name: "Reset" });
+    await waitFor(() => expect(reset).toBeEnabled());
+    await act(async () => reset.click());
+    await waitFor(() => expect(mocks.resetProgress).toHaveBeenCalledTimes(1));
+    view.unmount();
+    await act(async () => resolveReset());
+    expect(mocks.getProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not open a completed share from a departed player", async () => {
+    let resolveShare!: (value: { id: string }) => void;
+    mocks.createShare.mockReturnValueOnce(
+      new Promise<{ id: string }>((resolve) => {
+        resolveShare = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const share = screen.getByRole("button", { name: "Share result" });
+    await waitFor(() => expect(share).toBeEnabled());
+    await act(async () => share.click());
+    await act(async () => screen.getByRole("button", { name: "Create share link" }).click());
+    expect(mocks.createShare).toHaveBeenCalledTimes(1);
+    view.unmount();
+    await act(async () => resolveShare({ id: "old-share" }));
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("does not apply an old like response to the next board", async () => {
+    let resolveLike!: (value: BingoDetail) => void;
+    mocks.likeBingo.mockReturnValueOnce(
+      new Promise<BingoDetail>((resolve) => {
+        resolveLike = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const like = screen.getByRole("button", { name: "Like · 0" });
+    await waitFor(() => expect(like).toBeEnabled());
+    await act(async () => like.click());
+    const next = {
+      ...bingo,
+      id: "next-board",
+      title: "Next board",
+      current_revision: { ...bingo.current_revision!, title: "Next board" },
+      stats: { ...bingo.stats, likes: 7 },
+    };
+    mocks.getBingo.mockResolvedValueOnce(next);
+    view.rerender(<BingoPlayer bingoId={next.id} />);
+    await screen.findByRole("heading", { name: "Next board" });
+    await act(async () =>
+      resolveLike({ ...bingo, liked_by_me: true, stats: { ...bingo.stats, likes: 15 } }),
+    );
+    expect(screen.getByRole("button", { name: "Like · 7" })).toBeVisible();
   });
 
   it("does not write progress merely because server state was hydrated", async () => {
@@ -156,5 +365,362 @@ describe("BingoPlayer", () => {
 
     expect(mocks.getProgress).toHaveBeenCalledWith(bingo.id);
     expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("uses a server-verified viewer immediately without a second session request", async () => {
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+
+    expect(screen.getByRole("button", { name: "Like · 0" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
+    await act(() => Promise.resolve());
+    expect(mocks.getViewer).not.toHaveBeenCalled();
+  });
+
+  it("does not wait for the optional author profile before loading progress and enabling play", async () => {
+    mocks.getProfile.mockReturnValueOnce(new Promise(() => undefined));
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    expect(mocks.getProgress).toHaveBeenCalledWith(bingo.id);
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("does not allow empty marks to overwrite progress after an initial read failure and supports retry", async () => {
+    const cellId = bingo.current_revision!.cells[0]!.id!;
+    mocks.getProgress.mockRejectedValueOnce(
+      new Error("Saved progress is temporarily unavailable."),
+    );
+    mocks.getProgress.mockResolvedValueOnce({ ...progress, selected_cells: [cellId] });
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    await screen.findByRole("alert");
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    expect(cell).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Share result" })).toBeDisabled();
+    expect(screen.queryByText("Loading your progress…")).not.toBeInTheDocument();
+    await act(async () => cell.click());
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
+    await act(async () => screen.getByRole("button", { name: "Retry loading progress" }).click());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board, selected" })).toBeEnabled(),
+    );
+    expect(mocks.getProgress).toHaveBeenCalledTimes(2);
+    await act(() => new Promise((resolve) => window.setTimeout(resolve, 450)));
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("allows a first play when no saved progress exists", async () => {
+    mocks.getProgress.mockRejectedValueOnce(
+      new ApiClientError(404, {
+        code: "not_found",
+        message: "No saved progress.",
+      }),
+    );
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Retry loading progress" }),
+    ).not.toBeInTheDocument();
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("keeps saved guest cells while the server-rendered viewer hydrates", async () => {
+    const cellId = bingo.current_revision!.cells[0]!.id!;
+    writeGuestProgress(bingo.id, bingo.current_revision!.id, [cellId]);
+
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+
+    expect(await screen.findByRole("button", { name: "Open the board, selected" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(readGuestProgress(bingo.id, bingo.current_revision!.id)?.selected_cells).toEqual([
+      cellId,
+    ]);
+    expect(mocks.getViewer).not.toHaveBeenCalled();
+    window.localStorage.clear();
+  });
+
+  it("keeps guest marks and syncs them after signing in over the board", async () => {
+    const cellId = bingo.current_revision!.cells[0]!.id!;
+    writeGuestProgress(bingo.id, bingo.current_revision!.id, [cellId]);
+    mocks.saveProgress.mockResolvedValue({ ...progress, selected_cells: [cellId], version: 3 });
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+    await screen.findByRole("button", { name: "Open the board, selected" });
+
+    act(() => window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT)));
+
+    await screen.findByRole("button", { name: "Like · 0" });
+    expect(screen.getByRole("button", { name: "Open the board, selected" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await waitFor(() =>
+      expect(mocks.saveProgress).toHaveBeenCalledWith(
+        bingo.id,
+        bingo.current_revision!.id,
+        [cellId],
+        2,
+      ),
+    );
+    window.localStorage.clear();
+  });
+
+  it("waits for initial progress before allowing the first mark", async () => {
+    let finish!: (value: PlayProgress) => void;
+    mocks.getProgress.mockImplementationOnce(
+      () =>
+        new Promise<PlayProgress>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    expect(cell).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Share result" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Like · 0" })).toBeDisabled();
+    expect(screen.getByText("Loading your progress…")).toBeVisible();
+    cell.click();
+    await waitFor(() => expect(mocks.getProgress).toHaveBeenCalled());
+    await act(async () => {
+      finish(progress);
+    });
+    expect(cell).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Like · 0" })).toBeEnabled();
+    await act(async () => {
+      cell.click();
+    });
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("restores selected cells when a registered reset fails offline", async () => {
+    mocks.getProgress.mockResolvedValue({
+      ...progress,
+      selected_cells: [bingo.current_revision!.cells[0]!.id],
+    });
+    mocks.resetProgress.mockRejectedValueOnce(new Error("Unable to reach the service"));
+    render(<BingoPlayer bingoId={bingo.id} />);
+
+    const cell = await screen.findByRole("button", { name: "Open the board, selected" });
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    const reset = screen.getByRole("button", { name: "Reset" });
+    await waitFor(() => expect(reset).toBeEnabled());
+    await act(async () => {
+      reset.click();
+      await Promise.resolve();
+    });
+
+    expect(await screen.findByText("Unable to reach the service")).toBeVisible();
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    expect(mocks.track).not.toHaveBeenCalledWith("reset", expect.anything());
+  });
+
+  it("keeps marks when reset is cancelled", async () => {
+    mocks.getProgress.mockResolvedValue({
+      ...progress,
+      selected_cells: [bingo.current_revision!.cells[0]!.id],
+    });
+    vi.mocked(window.confirm).mockReturnValue(false);
+    render(<BingoPlayer bingoId={bingo.id} />);
+
+    const cell = await screen.findByRole("button", { name: "Open the board, selected" });
+    screen.getByRole("button", { name: "Reset" }).click();
+    expect(window.confirm).toHaveBeenCalledWith(
+      "Clear all marks on this bingo? This cannot be undone.",
+    );
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    expect(mocks.resetProgress).not.toHaveBeenCalled();
+  });
+
+  it("keeps guest selections when browser storage blocks reset", async () => {
+    mocks.getViewer.mockResolvedValue(null);
+    writeGuestProgress(bingo.id, bingo.current_revision!.id, [
+      bingo.current_revision!.cells[0]!.id!,
+    ]);
+    render(<BingoPlayer bingoId={bingo.id} />);
+
+    const cell = await screen.findByRole("button", { name: "Open the board, selected" });
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("Storage denied", "SecurityError");
+    });
+    await act(async () => {
+      screen.getByRole("button", { name: "Reset" }).click();
+    });
+
+    expect(screen.getByText(/progress could not be reset/)).toBeVisible();
+    expect(cell).toHaveAttribute("aria-pressed", "true");
+    expect(mocks.track).not.toHaveBeenCalledWith("reset", expect.anything());
+    window.localStorage.clear();
+  });
+
+  it.each(["like", "follow"] as const)(
+    "sends one %s request for synchronous duplicate clicks",
+    async (action) => {
+      mocks.getProfile.mockResolvedValue(authorProfile);
+      mocks.likeBingo.mockReturnValue(new Promise(() => {}));
+      mocks.follow.mockReturnValue(new Promise(() => {}));
+      render(
+        <BingoPlayer
+          bingoId={bingo.id}
+          initialBingo={bingo}
+          initialViewer={viewer}
+          initialAuthorProfile={authorProfile}
+        />,
+      );
+      const button = screen.getByRole("button", {
+        name: action === "like" ? "Like · 0" : "Follow author",
+      });
+      await waitFor(() => expect(button).toBeEnabled());
+      await act(async () => {
+        button.click();
+        button.click();
+      });
+      expect(action === "like" ? mocks.likeBingo : mocks.follow).toHaveBeenCalledOnce();
+      expect(button).toBeDisabled();
+    },
+  );
+
+  it("locks other social actions immediately while a like is starting", async () => {
+    mocks.getProfile.mockResolvedValue(authorProfile);
+    mocks.likeBingo.mockReturnValue(new Promise(() => {}));
+    mocks.follow.mockReturnValue(new Promise(() => {}));
+    render(
+      <BingoPlayer
+        bingoId={bingo.id}
+        initialBingo={bingo}
+        initialViewer={viewer}
+        initialAuthorProfile={authorProfile}
+      />,
+    );
+    const like = screen.getByRole("button", { name: "Like · 0" });
+    const follow = screen.getByRole("button", { name: "Follow author" });
+    await waitFor(() => expect(like).toBeEnabled());
+    await act(async () => {
+      like.click();
+      follow.click();
+    });
+    expect(mocks.likeBingo).toHaveBeenCalledOnce();
+    expect(mocks.follow).not.toHaveBeenCalled();
+  });
+
+  it.each(["success", "failure"] as const)(
+    "ignores a previous author's follow %s on the next board",
+    async (outcome) => {
+      let resolveFollow!: () => void;
+      let rejectFollow!: (error: Error) => void;
+      mocks.follow.mockReturnValue(
+        new Promise<void>((resolve, reject) => {
+          resolveFollow = resolve;
+          rejectFollow = reject;
+        }),
+      );
+      mocks.getProfile.mockResolvedValue(authorProfile);
+      const view = render(
+        <BingoPlayer
+          bingoId={bingo.id}
+          initialBingo={bingo}
+          initialViewer={viewer}
+          initialAuthorProfile={authorProfile}
+        />,
+      );
+      const follow = screen.getByRole("button", { name: "Follow author" });
+      await waitFor(() => expect(follow).toBeEnabled());
+      await act(async () => follow.click());
+      const next = {
+        ...bingo,
+        id: "next-board",
+        title: "Next board",
+        current_revision: { ...bingo.current_revision!, title: "Next board" },
+        author: { ...bingo.author, id: "next-author", username: "next-author" },
+      };
+      mocks.getBingo.mockResolvedValue(next);
+      mocks.getProfile.mockResolvedValue({ ...authorProfile, ...next.author });
+      view.rerender(<BingoPlayer bingoId={next.id} />);
+      await screen.findByRole("heading", { name: "Next board" });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Follow author" })).toBeEnabled(),
+      );
+      await act(async () => {
+        if (outcome === "success") resolveFollow();
+        else rejectFollow(new Error("Old follow failed"));
+      });
+      expect(screen.getByRole("button", { name: "Follow author" })).toBeEnabled();
+      expect(screen.queryByText("Old follow failed")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Following" })).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(["archive", "restore", "delete"] as const)(
+    "ignores an old %s completion after loading the next board",
+    async (action) => {
+      let resolveManage!: (value?: unknown) => void;
+      const request =
+        action === "archive" ? mocks.archive : action === "restore" ? mocks.restore : mocks.remove;
+      request.mockReturnValue(
+        new Promise((resolve) => {
+          resolveManage = resolve;
+        }),
+      );
+      const editable: BingoDetail = {
+        ...bingo,
+        status: action === "restore" ? "archived" : "published",
+        permissions: { ...bingo.permissions, can_edit: true },
+      };
+      const view = render(
+        <BingoPlayer bingoId={editable.id} initialBingo={editable} initialViewer={viewer} />,
+      );
+      const manage = screen.getByRole("button", {
+        name: action === "archive" ? "Archive" : action === "restore" ? "Restore" : "Delete",
+      });
+      await waitFor(() => expect(manage).toBeEnabled());
+      await act(async () => {
+        manage.click();
+        manage.click();
+      });
+      expect(request).toHaveBeenCalledOnce();
+      const next = {
+        ...bingo,
+        id: "next-board",
+        title: "Next board",
+        current_revision: { ...bingo.current_revision!, title: "Next board" },
+      };
+      mocks.getBingo.mockResolvedValue(next);
+      view.rerender(<BingoPlayer bingoId={next.id} />);
+      await screen.findByRole("heading", { name: "Next board" });
+      await act(async () =>
+        resolveManage({ ...editable, status: action === "archive" ? "archived" : "published" }),
+      );
+      expect(screen.getByRole("heading", { name: "Next board" })).toBeVisible();
+      expect(mocks.replace).not.toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: "Restore" })).not.toBeInTheDocument();
+    },
+  );
+
+  it("unlocks follow after a failure and supports follow then unfollow", async () => {
+    mocks.getProfile.mockResolvedValue(authorProfile);
+    mocks.follow.mockRejectedValueOnce(new Error("Follow is temporarily unavailable"));
+    mocks.follow.mockResolvedValueOnce(undefined);
+    mocks.unfollow.mockResolvedValue(undefined);
+    render(
+      <BingoPlayer
+        bingoId={bingo.id}
+        initialBingo={bingo}
+        initialViewer={viewer}
+        initialAuthorProfile={authorProfile}
+      />,
+    );
+    const follow = screen.getByRole("button", { name: "Follow author" });
+    await waitFor(() => expect(follow).toBeEnabled());
+    await act(async () => follow.click());
+    expect(screen.getByText("Follow is temporarily unavailable")).toBeVisible();
+    expect(follow).toBeEnabled();
+    await act(async () => follow.click());
+    const following = screen.getByRole("button", { name: "Following" });
+    expect(following).toBeEnabled();
+    await act(async () => following.click());
+    expect(screen.getByRole("button", { name: "Follow author" })).toBeEnabled();
+    expect(mocks.follow).toHaveBeenCalledTimes(2);
+    expect(mocks.unfollow).toHaveBeenCalledOnce();
   });
 });
