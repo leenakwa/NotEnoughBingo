@@ -4542,3 +4542,90 @@ test("explicit logout from another tab clears comment recovery even when storage
     await settings.close();
   }
 });
+
+for (const reauthenticateElsewhere of [false, true]) {
+  test(`focus fallback clears comment recovery when both auth sync channels are unavailable (${reauthenticateElsewhere ? "after" : "before"} re-login)`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.name));
+    await page.context().addInitScript(() => {
+      Object.defineProperty(window, "BroadcastChannel", { value: undefined, configurable: true });
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        if (key === "neb:auth-sync") throw new Error("Auth storage unavailable in QA");
+        return setItem.call(this, key, value);
+      };
+    });
+    const bingo = await createSocialFormBoard(page);
+    // Use a fresh session; fixture cookies must stay valid for later scenarios.
+    await page.context().clearCookies();
+    await page.goto("/login");
+    await page.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+    await page.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+    await page.getByRole("button", { name: "Log in", exact: true }).click();
+    await expect(page).toHaveURL(/\/discover$/);
+    await page.goto(`/bingo/${bingo.id}`);
+    const input = page.getByLabel("Add a comment", { exact: true });
+    await input.fill("Private draft cleared by explicit sign-out 🎲");
+    const settings = await page.context().newPage();
+    settings.on("pageerror", (error) => errors.push(error.name));
+    try {
+      await settings.goto("/profile");
+      await settings.getByRole("button", { name: "Log out", exact: true }).click();
+      await expect(settings).toHaveURL(/\/login$/);
+      const marker = (await page.context().cookies()).find(
+        (cookie) => cookie.name === "neb_logout_event",
+      );
+      expect(marker?.httpOnly).toBe(true);
+      expect(
+        await page.evaluate(() =>
+          document.cookie
+            .split(";")
+            .some((cookie) => cookie.trim().startsWith("neb_logout_event=")),
+        ),
+      ).toBe(false);
+      if (reauthenticateElsewhere) {
+        await settings
+          .getByLabel("Email", { exact: true })
+          .fill(readLiveFixture().users.author.email);
+        await settings.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+        await settings.getByRole("button", { name: "Log in", exact: true }).click();
+        await expect(settings).toHaveURL(/\/discover$/);
+      }
+      const focusCheck = page.waitForResponse((response) =>
+        response.url().endsWith("/api/v1/auth/session/"),
+      );
+      await page.bringToFront();
+      await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+      expect((await focusCheck).status()).toBe(200);
+      expect(await page.evaluate(() => typeof window.BroadcastChannel)).toBe("undefined");
+      expect(
+        await page.evaluate(() => {
+          try {
+            window.localStorage.setItem("neb:auth-sync", "probe");
+            return false;
+          } catch {
+            return true;
+          }
+        }),
+      ).toBe(true);
+      const login = page.getByRole("dialog", { name: "Log in", exact: true });
+      if (!reauthenticateElsewhere) {
+        await expect(login).toBeVisible();
+        await expect(input).toHaveCount(0);
+        await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+        await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+        await login.getByRole("button", { name: "Log in", exact: true }).click();
+      }
+      await expect(login).toHaveCount(0);
+      await expect(input).toHaveValue("");
+      await expect(
+        page.getByRole("status").filter({ hasText: "Unsent comment restored" }),
+      ).toHaveCount(0);
+      expect(errors).toEqual([]);
+    } finally {
+      await settings.close();
+    }
+  });
+}

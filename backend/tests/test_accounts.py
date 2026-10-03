@@ -71,7 +71,7 @@ pytestmark = pytest.mark.django_db
 def test_session_status_is_guest_safe_and_never_cacheable(client, verified_user_factory) -> None:
     guest = client.get("/api/v1/auth/session/")
     assert guest.status_code == 200
-    assert guest.data == {"user": None}
+    assert guest.data == {"user": None, "logout_event": None}
     assert guest["Cache-Control"] == "private, no-store"
     protected = client.get("/api/v1/auth/me/")
     assert protected.status_code == 401
@@ -90,7 +90,7 @@ def test_session_status_does_not_consume_the_general_guest_quota(client, monkeyp
     for _ in range(2):
         response = client.get("/api/v1/auth/session/", REMOTE_ADDR="192.0.2.203")
         assert response.status_code == 200
-        assert response.data == {"user": None}
+        assert response.data == {"user": None, "logout_event": None}
 
 
 def test_user_creation_normalizes_identity_and_creates_account_relations(user_factory) -> None:

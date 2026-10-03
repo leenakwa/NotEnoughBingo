@@ -13,6 +13,7 @@ import {
   AUTH_REQUIRED_EVENT,
   AUTH_SYNC_KEY,
   AUTH_SESSION_ENDED_EVENT,
+  AUTH_SIGNED_OUT_EVENT,
   openAuthDialog,
 } from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
@@ -181,6 +182,7 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
   const currentUserId = useRef<string | null | undefined>(undefined);
   const refreshVersion = useRef(0);
+  const lastLogoutEvent = useRef<string | null | undefined>(undefined);
   const authenticationCheckInFlight = useRef(false);
   const avatarUrl = user?.avatar?.thumbnail_url ?? user?.avatar?.url ?? undefined;
 
@@ -235,7 +237,13 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
         }
       };
       return api.auth
-        .session()
+        .session((event) => {
+          if (version !== refreshVersion.current) return;
+          const previous = lastLogoutEvent.current;
+          lastLogoutEvent.current = event;
+          if (previous !== undefined && event && previous !== event)
+            window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT));
+        })
         .then(applyUser)
         .catch((caught) => {
           if (isAuthenticationRequiredError(caught)) applyUser(null);

@@ -4122,3 +4122,80 @@ observed results and their limits. Do not include credentials or session data.
   Sections 4/5 remain open for the remaining component/state/control inventory;
   section 58 still needs simultaneous cross-tab storage/BroadcastChannel
   unavailability evidence. New player source needs its own CI.
+
+### 2026-10-03 — missed explicit sign-out with both cross-tab channels unavailable
+
+- Account source `808cb81cc5255e19cdcea23bbbc32ca94f4eb161` passed all nine
+  CI jobs: 243 backend, 293 frontend/37 files, 200 smoke passes plus 12
+  intentional skips without retries, 95 live journeys and both images/scans/SBOM.
+  Run: https://github.com/leenakwa/NotEnoughBingo/actions/runs/37099333862.
+  Player source `1a671eb74afcde567c89d4240a12de1b8707b87e` also passed all nine
+  jobs: 243 backend, 302 frontend/37 files, 200 smoke plus 12 skips without
+  retries and 98 live journeys. Run:
+  https://github.com/leenakwa/NotEnoughBingo/actions/runs/37100203993.
+  Complete logs: `/tmp/neb-ci-808cb81-completed-oct03.log`,
+  `/tmp/neb-ci-1a671eb-completed-oct03.log`.
+- The remaining section 58 case was reproduced: with auth-sync storage writes
+  blocked and BroadcastChannel absent in both tabs, focus revalidation detects
+  the guest session, but re-login as the same account restores the comment
+  from the previous explicitly signed-out session. Browser baseline:
+  `/tmp/neb-dual-auth-sync-baseline-oct03.log`. Header baseline has one failure
+  and 11 passes; the three initial backend contract controls fail because the
+  explicit-logout event field does not exist on the previous source. Logs:
+  `/tmp/neb-logout-event-header-baseline-oct03.log`,
+  `/tmp/neb-logout-event-backend-baseline-oct03.log`.
+- Explicit Django logout now writes a signed, HttpOnly, seven-day browser
+  notification cookie. It contains a random event ID, no account identity or
+  authentication capability, and inherits session cookie Secure/SameSite/domain/
+  path settings. Session status validates its signature/age and returns the
+  nullable event with its existing private/no-store policy. Login retains it so
+  a tab that missed both logout and re-login can still notice the event. Plain
+  expiry/invalidated old-session reads do not create it. OpenAPI and generated
+  frontend types are updated. Privacy copy states the purpose and retention.
+- Header session lookup observes the event only for the current request version.
+  A changed event dispatches the existing local signed-out signal, clearing
+  private draft generations even when identity is unchanged. First lookup,
+  unchanged events and cookie expiry do not cause a purge. Ordinary session
+  expiry still preserves same-account reauthentication recovery. The event is
+  not written to localStorage/sessionStorage and does not broadcast recursive
+  auth-change notifications. Existing rotated-cookie protections remain.
+- Full frontend lint/types, 305 tests/37 files, build/format and validated
+  schema/type generation pass. Three header controls cover missed logout,
+  ordinary expiry and obsolete responses; existing draft preservation controls
+  pass. Backend full suite passed 246 tests plus the existing container-only
+  Nginx skip; final secure/insecure-cookie parameter controls, accounts and
+  rotated-cookie controls pass all 39 focused cases. The initial full run had
+  one failure solely because a second strict guest-response assertion still
+  expected the old JSON shape; it was corrected to require the new null field
+  while retaining the two-request throttle check. Ruff/format (170 files) and
+  mypy (75 source files) pass. Logs:
+  `/tmp/neb-logout-event-frontend-check-oct03.log`,
+  `/tmp/neb-logout-event-backend-tests-oct03.log`,
+  `/tmp/neb-logout-event-backend-final-tests-oct03.log`,
+  `/tmp/neb-logout-event-cookie-policy-tests-oct03.log`,
+  `/tmp/neb-logout-event-backend-types-oct03.log`,
+  `/tmp/neb-logout-event-build-oct03.log`,
+  `/tmp/neb-logout-event-final-types-format-oct03.log`,
+  `/tmp/neb-logout-event-schema-oct03.log`,
+  `/tmp/neb-logout-event-api-types-oct03.log`. Generated next-env restored.
+- Both missed-sign-out cases pass in Chromium, mobile WebKit, desktop WebKit
+  and Firefox: eight final cases without retries/page errors. One returns to
+  the first tab before same-account re-login; the other reauthenticates in the
+  second tab first. Auth-sync writes are denied in both tabs and messaging is
+  absent. Focus triggers a real session-status request; the private comment
+  stays empty and recovery feedback is absent. Browser cookies confirm the
+  marker is HttpOnly and document.cookie cannot read it. The existing
+  storage-blocked/BroadcastChannel case also passes in Chromium. Logs/config:
+  `/tmp/neb-dual-auth-sync-final-live-oct03.log`,
+  `/tmp/neb-dual-auth-sync-browser.config.ts`,
+  `/tmp/neb-dual-auth-sync-browsers-oct03.log`,
+  `/tmp/neb-dual-auth-sync-final-cookie-browsers-oct03.log`,
+  `/tmp/neb-dual-auth-sync-final-errors-browsers-oct03.log` (both tabs assert no
+  page errors). Focus events and
+  devices are automated/emulated; physical-device behavior and a real deployed
+  cookie domain remain outside this evidence.
+- Section 58's last unchecked bullet now has repository/browser evidence.
+  Predeployment counts become 56 verified / 42 partial / six N/A / one
+  deployment-only. Cookie domain/target HTTPS and the remaining native-device/
+  form/control/API/default/transaction/joined/load/operations items remain open
+  in their respective sections. New logout-event source requires its own CI.

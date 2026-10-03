@@ -2221,6 +2221,7 @@ export interface components {
         };
         SessionStatus: {
             readonly user: components["schemas"]["CurrentUser"] | null;
+            readonly logout_event: string | null;
         };
         SharedResult: {
             readonly id: string;

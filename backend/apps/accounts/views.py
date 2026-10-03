@@ -58,6 +58,7 @@ from apps.accounts.services import (
     validate_account_can_authenticate,
     verify_email,
 )
+from apps.accounts.session_events import read_logout_event
 from apps.accounts.session_management import invalidate_session_keys
 from apps.accounts.tasks import send_critical_security_email, send_password_reset_email
 from apps.analytics.models import InteractionEvent
@@ -191,7 +192,7 @@ class SessionStatusView(APIView):
     @extend_schema(responses=SessionStatusSerializer)
     def get(self, request):
         user = CurrentUserSerializer(request.user).data if request.user.is_authenticated else None
-        response = Response({"user": user})
+        response = Response({"user": user, "logout_event": read_logout_event(request)})
         response["Cache-Control"] = "private, no-store"
         return response
 

@@ -9,6 +9,7 @@ from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 
 from apps.accounts.models import SessionMetadata
+from apps.accounts.session_events import record_logout_event
 
 
 class RotationSafeSessionMiddleware(SessionMiddleware):
@@ -25,6 +26,8 @@ class RotationSafeSessionMiddleware(SessionMiddleware):
             # browser cookie. Server-side invalidation already rejects its old
             # key; an implicit deletion here would erase the newer valid cookie.
             del response.cookies[settings.SESSION_COOKIE_NAME]
+        if getattr(request, "_neb_explicit_logout", False):
+            record_logout_event(response)
         return response
 
 

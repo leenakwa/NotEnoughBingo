@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppHeader } from "@/components/layout/app-header";
-import { AUTH_CHANGED_EVENT, AUTH_DIALOG_EVENT } from "@/lib/auth-events";
+import { AUTH_CHANGED_EVENT, AUTH_DIALOG_EVENT, AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
@@ -194,5 +194,84 @@ describe("AppHeader session expiry", () => {
     act(() => window.dispatchEvent(new Event("neb:auth-required")));
     expect(mocks.session).toHaveBeenCalledTimes(2);
     window.removeEventListener(AUTH_DIALOG_EVENT, openDialog);
+  });
+
+  it("clears old account scope when focus detects an explicit logout event", async () => {
+    let logoutEvent: string | null = null;
+    mocks.session.mockImplementation(async (observe?: (event: string | null) => void) => {
+      observe?.(logoutEvent);
+      return user;
+    });
+    mocks.unreadCount.mockResolvedValue({ count: 0 });
+    const ended = vi.fn();
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, ended);
+    try {
+      await act(async () => render(<AppHeader />));
+      expect(ended).not.toHaveBeenCalled();
+      logoutEvent = "new-logout-event";
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+      });
+      expect(ended).toHaveBeenCalledOnce();
+      expect(mocks.replace).not.toHaveBeenCalled();
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+      });
+      expect(ended).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, ended);
+    }
+  });
+
+  it("does not turn ordinary session expiry into explicit sign-out", async () => {
+    let current: AuthenticatedUser | null = user;
+    mocks.session.mockImplementation(async (observe?: (event: string | null) => void) => {
+      observe?.(null);
+      return current;
+    });
+    mocks.unreadCount.mockResolvedValue({ count: 0 });
+    const ended = vi.fn();
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, ended);
+    try {
+      await act(async () => render(<AppHeader />));
+      current = null;
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+      });
+      expect(ended).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, ended);
+    }
+  });
+
+  it("does not purge drafts from an obsolete session lookup", async () => {
+    let call = 0;
+    let release!: () => void;
+    mocks.session.mockImplementation(async (observe?: (event: string | null) => void) => {
+      call += 1;
+      if (call === 2) {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        observe?.("obsolete-logout-event");
+      } else observe?.(null);
+      return user;
+    });
+    mocks.unreadCount.mockResolvedValue({ count: 0 });
+    const ended = vi.fn();
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, ended);
+    try {
+      await act(async () => render(<AppHeader />));
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+      });
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+      });
+      await act(async () => release());
+      expect(ended).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, ended);
+    }
   });
 });

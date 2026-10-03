@@ -43,9 +43,9 @@ of work; it does not reduce the checklist.
 | 5. Deployment handoff | Domain, TLS, email, object storage, monitoring, alerts, external recovery, and scripted live smoke/rollback checks. | Predeployment checklist is complete; external configuration is supplied; deployment-only checks are automated and pass on the target environment. |
 
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
-open for itemized review: the 2026-10-03 tracker has 55 verified sections,
-43 partial, six N/A and one deployment-only after reopening storage cleanup
-for the new comment cache's remaining cross-tab fallback condition. An earlier exact-source CI on
+open for itemized review: the 2026-10-03 tracker has 56 verified sections,
+42 partial, six N/A and one deployment-only after correcting and verifying
+the comment cache's simultaneous cross-tab-channel failure condition. An earlier exact-source CI on
 `29ac99b` passed all nine jobs: 206 backend tests, 166 frontend tests,
 179 browser smoke checks and 57 live flows, plus both production image gates.
 The social-form source `b466456` also passed all nine CI jobs: 206 backend
@@ -97,7 +97,7 @@ viewer/action corrections pass 281 frontend tests and nine engine cases locally;
 their `438a452` gate failed one avatar keyboard assertion (91 live passes, one
 failure, one not run; other seven jobs and 200 smoke plus 12 skips without
 retries passed). The keyboard scenario now waits for loaded profile activity
-before testing its tab order; a held response reproduced the dependency. Keyboard/activity source `4b5e8e4` then passed all nine jobs (243 backend, 281 frontend, 200 smoke plus 12 skips without retries, 93 live). Account action ownership now passes 293 frontend tests, build/format and 12 real-stack/browser cases locally; accepted avatar/export responses cannot continue old UI work after departure. Account/session error timing also has focused unit evidence. Its new source requires its own CI. These
+before testing its tab order; a held response reproduced the dependency. Keyboard/activity source `4b5e8e4` then passed all nine jobs (243 backend, 281 frontend, 200 smoke plus 12 skips without retries, 93 live). Account action ownership now passes 293 frontend tests, build/format and 12 real-stack/browser cases locally; accepted avatar/export responses cannot continue old UI work after departure. Account/session error timing also has focused unit evidence. Its new source requires its own CI. Account `808cb81` and player `1a671eb` subsequently passed all nine jobs (95 and 98 live respectively, with 200 smoke plus 12 skips without retries). Missed explicit logout has 305 frontend tests, backend cookie/signature/age controls and eight final engine cases locally; section 58 now closes. New logout-event source requires its own gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the

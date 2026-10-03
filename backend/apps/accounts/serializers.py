@@ -59,6 +59,7 @@ class AuthResultSerializer(serializers.Serializer):
 
 class SessionStatusSerializer(serializers.Serializer):
     user = CurrentUserSerializer(read_only=True, allow_null=True)
+    logout_event = serializers.CharField(read_only=True, allow_null=True, max_length=32)
 
 
 class FollowStateSerializer(serializers.Serializer):

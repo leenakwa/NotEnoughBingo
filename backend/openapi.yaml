@@ -5108,7 +5108,13 @@ components:
           - $ref: '#/components/schemas/CurrentUser'
           readOnly: true
           nullable: true
+        logout_event:
+          type: string
+          readOnly: true
+          nullable: true
+          maxLength: 32
       required:
+      - logout_event
       - user
     SharedResult:
       type: object

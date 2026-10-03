@@ -361,8 +361,14 @@ export const api = {
   auth: {
     csrf: () => apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true }),
     me: (signal?: AbortSignal) => apiRequest<AuthenticatedUser>("auth/me/", { signal }),
-    session: async () =>
-      (await apiRequest<{ user: AuthenticatedUser | null }>("auth/session/")).user,
+    session: async (observeLogoutEvent?: (event: string | null) => void) => {
+      const result = await apiRequest<{
+        user: AuthenticatedUser | null;
+        logout_event?: string | null;
+      }>("auth/session/");
+      observeLogoutEvent?.(result.logout_event ?? null);
+      return result.user;
+    },
     register: (input: { email: string; username: string; password: string }) =>
       apiRequest<RegistrationResult>("auth/register/", {
         method: "POST",

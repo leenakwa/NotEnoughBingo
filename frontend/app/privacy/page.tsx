@@ -64,11 +64,12 @@ export default function PrivacyPage() {
         <h2>Cookies and browser storage</h2>
         <p>
           We use first-party session and CSRF cookies to keep accounts signed in and protect forms.
-          The session cookie is not readable by page scripts. Your browser also stores guest bingo
-          progress, play-mark preferences, temporary editor recovery data, and a random identifier
-          for product interaction counts. Temporary recovery data may use session storage. Clearing
-          browser data removes local progress and recovery data; signed-in progress saved on the
-          server is managed through your account.
+          The session cookie is not readable by page scripts. A signed cookie lasting up to seven
+          days helps other tabs clear temporary drafts after you log out. Your browser also stores
+          guest bingo progress, play-mark preferences, temporary editor recovery data, and a random
+          identifier for product interaction counts. Temporary recovery data may use session
+          storage. Clearing browser data removes local progress and recovery data; signed-in
+          progress saved on the server is managed through your account.
         </p>
         <p>
           Unsent comments, replies, comment edits, and reports are kept only in the current
