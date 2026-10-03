@@ -54,6 +54,7 @@ describe("SharedResultView", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.mocked(api.shares.get).mockReset();
+    Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -136,5 +137,83 @@ describe("SharedResultView", () => {
     await act(async () => resolveOld(result));
     expect(screen.getByRole("heading", { name: "Next shared result" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Movie Night Bingo" })).not.toBeInTheDocument();
+  });
+  it.each(["copy", "share"] as const)(
+    "ignores late %s feedback after changing shared links",
+    async (action) => {
+      let resolveAction!: () => void;
+      const operation = vi.fn().mockReturnValue(
+        new Promise<void>((resolve) => {
+          resolveAction = resolve;
+        }),
+      );
+      if (action === "copy")
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: { writeText: operation },
+        });
+      else Object.defineProperty(navigator, "share", { configurable: true, value: operation });
+      const next = {
+        ...result,
+        id: "share-2",
+        revision: { ...result.revision, title: "Next shared result" },
+      };
+      vi.mocked(api.shares.get).mockResolvedValueOnce(next);
+      const view = render(
+        <SharedResultView bingoId="bingo-1" shareId="share-1" initialResult={result} />,
+      );
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: action === "copy" ? "Copy link" : "Share",
+        }),
+      );
+      view.rerender(<SharedResultView bingoId="bingo-1" shareId="share-2" />);
+      await screen.findByRole("heading", { name: "Next shared result" });
+      await act(async () => resolveAction());
+      expect(
+        screen.queryByText(action === "copy" ? "Link copied." : "Shared."),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Share" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
+    },
+  );
+  it.each(["copy", "share"] as const)(
+    "prevents duplicate %s operations and exposes pending feedback",
+    async (action) => {
+      const operation = vi.fn().mockReturnValue(new Promise(() => undefined));
+      if (action === "copy")
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: { writeText: operation },
+        });
+      else Object.defineProperty(navigator, "share", { configurable: true, value: operation });
+      render(<SharedResultView bingoId="bingo-1" shareId="share-1" initialResult={result} />);
+      const button = screen.getByRole("button", {
+        name: action === "copy" ? "Copy link" : "Share",
+      });
+      act(() => {
+        button.click();
+        button.click();
+      });
+      expect(operation).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("button", { name: "Share" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
+      expect(screen.getByRole("status")).toHaveTextContent(
+        action === "copy" ? "Copying link…" : "Sharing…",
+      );
+    },
+  );
+  it("clears earlier success feedback when native sharing is cancelled", async () => {
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: vi.fn().mockRejectedValue(new DOMException("Cancelled", "AbortError")),
+    });
+    render(<SharedResultView bingoId="bingo-1" shareId="share-1" initialResult={result} />);
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+    await screen.findByText("Link copied.");
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await waitFor(() => expect(screen.queryByText("Link copied.")).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Share" })).toBeEnabled();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 });

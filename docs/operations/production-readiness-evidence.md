@@ -3760,3 +3760,119 @@ observed results and their limits. Do not include credentials or session data.
   boundaries need dedicated cases. Counts remain 55 verified / 43 partial /
   six N/A / one deployment-only; section 4 stays partial. User UI changes are
   preserved. New source requires its own CI; no merge/promotion/deployment.
+
+
+### 2026-10-03 — Native/card/shared-result candidate CI failed on session cookie rotation
+
+- Exact-source `bdd953b85bd07a2587ea1fd44c7ff2eaa0649214` gate
+  [37093719560](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37093719560)
+  completed FAILED. Backend 240, frontend 262, history/foundation and both image
+  gates passed. Smoke had 199 passes, one WebKit case passing on retry and 12
+  intentional skips; it was not retry-free. Live had 82 passes, one failure and
+  three not run; Release failed. The previously failed WebKit compatibility
+  journey passed. Logs: `/tmp/neb-ci-bdd953b-completed-oct03.log`,
+  `/tmp/neb-ci-bdd953b-live-failed-oct03.log`.
+- The failed password-reset journey first loaded an authenticated current
+  session, changed password successfully (204), saw the deliberate sessions
+  outage (503), then its sessions retry returned 401. Private trace inspection
+  confirmed a rotated cookie on password-change and a subsequent old analytics
+  response deleting that cookie (202 with empty session cookie / Max-Age 0).
+  This is a concrete server/browser cookie race, not just a missing selector.
+  Only route/status/timing, cookie attribute and old/new/absent classification
+  were inspected; no cookie values, passwords, reset links or raw trace bodies
+  were printed.
+- Standard Django session response handling deletes an empty session cookie
+  even for an obsolete request. RotationSafeSessionMiddleware retains Django's
+  normal processing and removes only implicit empty-cookie deletion. Invalidated
+  server sessions remain rejected; explicit Django logout signals mark the
+  underlying request so actual logout still deletes the cookie. The signal
+  handles DRF wrappers and native Django requests. An invalid server-side key
+  can remain in the browser until a subsequent login/logout or normal expiry;
+  it grants no authentication. This prevents a late old request from erasing a
+  newer valid cookie without delaying server-side revocation.
+- Two server regressions failed on prior source: old request whose session loads
+  after rotation, and old preloaded payload whose password hash is checked after
+  rotation. Both now pass, plus explicit logout deletion/401. Full Ruff lint and
+  format passed; mypy found no issues in 75 source files. A first full pytest
+  invocation accidentally inherited QA development settings and had four S3
+  HeadObject failures (238 passes/one skip). Re-running with the required
+  `DJANGO_SETTINGS_MODULE=config.settings.test` passed 242 tests with one skip:
+  the Nginx template is outside the backend container, covered by foundation CI.
+  This was an environment correction, not relaxed storage assertions. Logs:
+  `/tmp/neb-session-cookie-race-baseline-oct03.log`,
+  `/tmp/neb-session-cookie-race-fixed-oct03.log`,
+  `/tmp/neb-session-cookie-race-backend-{lint,format,types}-oct03.log`,
+  `/tmp/neb-session-cookie-race-backend-tests-oct03.log`,
+  `/tmp/neb-session-cookie-race-backend-tests-test-settings-oct03.log`.
+- The real password-reset journey now deliberately holds analytics with the old
+  request headers through password-change, forwards its actual backend response,
+  requires no session-cookie deletion, then retries session details and verifies
+  current device/authentication, logout and changed-credential login. Chromium
+  passed without retries, using actual QA mail/backend and strict existing token/
+  outage assertions. Cleanup releases held analytics even on failure. Log:
+  `/tmp/neb-session-cookie-race-live-oct03.log`.
+- The smoke retry was `pending requests keep the dialog open and prevent duplicate
+  submission` in WebKit. Its trace confirms the click before client hydration
+  followed the real /login fallback while the test awaited a dialog. The test
+  now waits for the initial mocked session check, matching the existing modal
+  scenario; the separate deliberately delayed-script fallback is retained.
+  Both scenarios passed three WebKit repetitions each without retries. Log:
+  `/tmp/neb-auth-pending-hydration-smoke-oct03.log`. No error filter or retry
+  setting was loosened.
+
+### 2026-10-03 — Notification and shared-result action boundaries (sections 4–5)
+
+- Six notification regressions failed on previous source: mark-all completion
+  changed the next page, old-account read error appeared in the new account,
+  old notifications remained visible during account reload, duplicate same-tick
+  all/individual reads issued two writes, and an authentication denial retained
+  private rows. Operation lifetimes now invalidate on page/reload/unmount and
+  account/session events; synchronous refs prevent duplicate writes. Account
+  events clear rows/pending/error immediately and reset pagination. Required
+  loads hide old rows and disable mark-all; action auth denial shows the existing
+  private-account login state. Six regressions now pass. Logs:
+  `/tmp/neb-notification-lifetime-baseline-oct03.log`,
+  `/tmp/neb-notification-lifetime-fixed-oct03.log`.
+- Two real notification flows hold a synthetic 503, double-click and leave or
+  explicitly log out in another tab. They retain the destination/private login
+  state without late errors, send exactly one action, and check the real new
+  notification is still unread through isolated author API access. They use
+  temporary unlisted boards and separate real logout sessions. Both pass in
+  Chromium, mobile WebKit and Firefox (six cases without retries); the existing
+  actual mark-all/persistence/target-navigation Chromium journey also passes.
+  Logs: `/tmp/neb-notification-lifetime-live-oct03.log`,
+  `/tmp/neb-notification-lifetime-browsers-oct03.log`.
+- Five added shared-result action regressions failed with four prior tests
+  passing: late copy/native-share completion appeared on the next result,
+  simultaneous duplicate actions ran twice, and cancelled native sharing left
+  earlier copy success visible. A per-link/retry operation lifetime now bounds
+  feedback; synchronous refs and disabled buttons prevent duplicate operations;
+  persistent pending feedback describes copying/sharing and cancellation clears
+  previous success. Copy fallback/error feedback and native share APIs remain.
+  All nine unit cases pass. Logs: `/tmp/neb-shared-action-baseline-oct03.log`,
+  `/tmp/neb-shared-action-fixed-oct03.log`.
+- Two actual shared-snapshot browser cases inject controlled clipboard/native-
+  share promises to check duplicate protection, pending/disabled controls,
+  copy-denial/native-cancel recovery, late departure and subsequent success.
+  They check 320/1710 px overflow and no page errors. With the two notification
+  cases, all 12 passed across Chromium, mobile WebKit and Firefox without retries.
+  Actual normal guest mark/reset/replay/share/read-only flow also passed. These
+  injected OS API outcomes do not prove physical-device system dialogs or native
+  clipboard permissions. Same-component next-link timing is unit evidence;
+  browser cases exercise actual route departure. Logs/config:
+  `/tmp/neb-shared-action-live-oct03.log`,
+  `/tmp/neb-notification-share-browser.config.ts`,
+  `/tmp/neb-notification-share-browsers-oct03.log`.
+- Combined frontend source passed lint/types and 273 tests across 36 files,
+  production build and formatting. Test-only lint/type issues (unused mock
+  parameter and Testing Library role options copied from Playwright) were fixed
+  before the final checks. Logs:
+  `/tmp/neb-notification-share-session-final-check-oct03.log`,
+  `/tmp/neb-notification-share-final-build-oct03.log`,
+  `/tmp/neb-notification-share-session-final-format-oct03.log`.
+- Remaining component inventory: profile mutations/optional viewer state,
+  account upload/security/export/delete lifetimes and dedicated player follow/
+  management cases. Native physical-device verification, broader controls/forms,
+  API/default/transaction/joined/load and target operations remain. Section 4
+  stays partial; counts remain 55 verified / 43 partial / six N/A / one
+  deployment-only. Source requires a new CI; no merge/promotion/deployment.

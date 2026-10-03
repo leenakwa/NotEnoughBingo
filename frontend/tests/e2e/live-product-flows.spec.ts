@@ -426,6 +426,209 @@ for (const outcome of ["success", "authentication failure"] as const) {
   });
 }
 
+for (const boundary of ["leave", "cross-tab logout"] as const) {
+  test(`notifications ignore a delayed mark-all error after ${boundary} and prevent duplicate writes`, async ({
+    page,
+    playwright,
+  }) => {
+    const board = await createSocialFormBoard(page);
+    await authenticateAs(page, "player");
+    const playerCsrf = (await page.context().cookies()).find(
+      (cookie) => cookie.name === "neb_csrf",
+    );
+    expect(playerCsrf).toBeDefined();
+    expect(
+      (
+        await page.context().request.post(`/api/v1/bingos/${board.id}/likes/`, {
+          headers: { "X-CSRFToken": playerCsrf!.value },
+        })
+      ).status(),
+    ).toBe(201);
+    if (boundary === "leave") await authenticateAs(page, "author");
+    else {
+      await page.context().clearCookies();
+      expect((await page.context().request.get("/api/v1/auth/csrf/")).status()).toBe(200);
+      const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+      expect(
+        (
+          await page.context().request.post("/api/v1/auth/login/", {
+            headers: { "X-CSRFToken": csrf!.value },
+            data: { email: readLiveFixture().users.author.email, password: E2E_FIXTURE_PASSWORD },
+          })
+        ).status(),
+      ).toBe(200);
+    }
+    const path = "/api/v1/notifications/read-all/";
+    let writes = 0;
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.name));
+    await page.route(`**${path}`, async (route) => {
+      writes += 1;
+      await held;
+      await route.fulfill({ status: 503, json: { detail: "Delayed notification failure." } });
+    });
+    const otherTab = boundary === "cross-tab logout" ? await page.context().newPage() : null;
+    const authorApi = await playwright.request.newContext({
+      baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+      storageState: authStatePath("author"),
+    });
+    try {
+      if (otherTab) {
+        await otherTab.goto("/profile");
+        await expect(otherTab.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+      }
+      await page.goto("/notifications");
+      const markAll = page.getByRole("button", { name: "Mark all as read", exact: true });
+      await expect(markAll).toBeEnabled();
+      const notification = page.locator(`.notification-list a[href="/bingo/${board.id}"]`).first();
+      await expect(notification).toBeVisible();
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 989 });
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        ).toBe(true);
+      }
+      await markAll.evaluate((button: HTMLButtonElement) => {
+        button.click();
+        button.click();
+      });
+      await expect.poll(() => writes).toBe(1);
+      if (otherTab) {
+        await otherTab.getByRole("button", { name: "Log out", exact: true }).click();
+        await expect(page.getByText("Log in to view notifications", { exact: true })).toBeVisible();
+        await expect(page.locator(".notification-list")).toHaveCount(0);
+      } else {
+        await page.getByRole("link", { name: "Explore", exact: true }).click();
+        await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+      }
+      const response = page.waitForResponse((response) => response.url().endsWith(path));
+      release();
+      await response;
+      await page.waitForTimeout(500);
+      expect(writes).toBe(1);
+      await expect(
+        page.getByRole("alert").filter({ hasText: "Delayed notification failure." }),
+      ).toHaveCount(0);
+      if (otherTab)
+        await expect(page.getByText("Log in to view notifications", { exact: true })).toBeVisible();
+      else await expect(page).toHaveURL(/\/explore$/);
+      const saved = await authorApi.get("/api/v1/notifications/");
+      expect(saved.status()).toBe(200);
+      const own = (await saved.json()).results.find(
+        (item: { target_url: string }) => item.target_url === `/bingo/${board.id}`,
+      );
+      expect(own).toBeDefined();
+      expect(own.read_at).toBeNull();
+      expect(pageErrors).toEqual([]);
+    } finally {
+      release();
+      await otherTab?.close();
+      await authorApi.dispose();
+    }
+  });
+}
+
+for (const action of ["copy", "native share"] as const) {
+  test(`shared-result ${action} gives pending feedback, prevents duplicates and recovers`, async ({
+    page,
+  }) => {
+    const snapshot = readLiveFixture().revision_snapshot;
+    const path = `/share/${snapshot.bingo_id}/${snapshot.share_id}`;
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.name));
+    await page.addInitScript((action) => {
+      const state: { calls: number; resolve: () => void; reject: (error: unknown) => void } = {
+        calls: 0,
+        resolve: () => {},
+        reject: () => {},
+      };
+      Object.assign(window, { nebShareAction: state });
+      const operation = () => {
+        state.calls += 1;
+        return new Promise<void>((resolve, reject) => {
+          state.resolve = resolve;
+          state.reject = reject;
+        });
+      };
+      if (action === "copy")
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: { writeText: operation },
+        });
+      else Object.defineProperty(navigator, "share", { configurable: true, value: operation });
+    }, action);
+    await page.goto(path);
+    await expect(page.getByRole("heading", { name: snapshot.title, exact: true })).toBeVisible();
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 989 });
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+    const button = page.getByRole("button", {
+      name: action === "copy" ? "Copy link" : "Share",
+      exact: true,
+    });
+    await button.evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    });
+    await expect(page.locator(".share-status")).toHaveText(
+      action === "copy" ? "Copying link…" : "Sharing…",
+    );
+    await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Share", exact: true })).toBeDisabled();
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { nebShareAction: { calls: number } }).nebShareAction.calls,
+      ),
+    ).toBe(1);
+    await page.evaluate((action) => {
+      (
+        window as unknown as { nebShareAction: { reject: (error: unknown) => void } }
+      ).nebShareAction.reject(
+        new DOMException(
+          "Test browser action failure",
+          action === "copy" ? "NotAllowedError" : "AbortError",
+        ),
+      );
+    }, action);
+    await expect(button).toBeEnabled();
+    await expect(page.locator(".share-status")).toHaveText(
+      action === "copy" ? "Copy failed. Select the address from your browser to share it." : "",
+    );
+    await button.click();
+    await expect(page.locator(".share-status")).toHaveText(
+      action === "copy" ? "Copying link…" : "Sharing…",
+    );
+    await page.getByRole("link", { name: "Play this bingo", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/bingo/${snapshot.bingo_id}$`));
+    await expect(page.locator("button.play-cell").first()).toBeEnabled();
+    await page.evaluate(() =>
+      (window as unknown as { nebShareAction: { resolve: () => void } }).nebShareAction.resolve(),
+    );
+    await page.waitForTimeout(200);
+    await expect(
+      page.getByText(action === "copy" ? "Link copied." : "Shared.", { exact: true }),
+    ).toHaveCount(0);
+    await page.goto(path);
+    await expect(button).toBeEnabled();
+    await button.click();
+    await page.evaluate(() =>
+      (window as unknown as { nebShareAction: { resolve: () => void } }).nebShareAction.resolve(),
+    );
+    await expect(page.locator(".share-status")).toHaveText(
+      action === "copy" ? "Link copied." : "Shared.",
+    );
+    await expect(button).toBeEnabled();
+    expect(pageErrors).toEqual([]);
+  });
+}
+
 test.afterEach(async ({ page, playwright }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;
@@ -3556,52 +3759,82 @@ test.describe("live full-stack product flows", () => {
     );
     await expect(page).toHaveURL(/\/discover$/);
 
-    await page.goto("/profile");
-    const changePassword = page
-      .locator("form.settings-card")
-      .filter({ has: page.getByRole("heading", { name: "Change password", exact: true }) });
-    const changedPassword = `${nextPassword}-changed`;
-    await changePassword.getByLabel("Current password", { exact: true }).fill(nextPassword);
-    await changePassword.getByLabel("New password", { exact: true }).fill(changedPassword);
-    await changePassword.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);
-    const sessions = page.locator(".settings-card").filter({
-      has: page.getByRole("heading", { name: "Active sessions", exact: true }),
+    // Hold an analytics request carrying the old session until password-change
+    // rotates the cookie. Its late response must not erase the new session.
+    let releaseAnalytics!: () => void;
+    const heldAnalytics = new Promise<void>((resolve) => {
+      releaseAnalytics = resolve;
     });
-    await expect(sessions.getByText("This device", { exact: true })).toBeVisible();
-    await page.route("**/api/v1/auth/sessions/", (route) =>
-      route.fulfill({
-        status: 503,
-        json: {
-          error: { code: "unavailable", message: "Session details are temporarily unavailable." },
-        },
-      }),
-    );
-    await waitForResponse(page, "/api/v1/auth/password-change/", "POST", () =>
-      changePassword.getByRole("button", { name: "Change password", exact: true }).click(),
-    );
-    await expect(changePassword.getByRole("status")).toContainText("Password changed");
-    await expect(changePassword.getByRole("alert")).toHaveCount(0);
-    await expect(changePassword.getByLabel("Current password", { exact: true })).toHaveValue("");
-    await expect(sessions.getByRole("alert")).toContainText(
-      "Session details are temporarily unavailable.",
-    );
-    await expect(sessions.getByText("This device", { exact: true })).toHaveCount(0);
-    await page.unroute("**/api/v1/auth/sessions/");
-    await sessions.getByRole("button", { name: "Try again" }).click();
-    await expect(sessions.getByText("This device", { exact: true })).toBeVisible();
-    expect(
-      await page.evaluate(
-        async () => (await fetch("/api/v1/auth/me/", { credentials: "same-origin" })).status,
-      ),
-    ).toBe(200);
-    await page.getByRole("button", { name: "Log out", exact: true }).click();
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(changedPassword);
-    await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
-      page.getByRole("button", { name: "Log in" }).click(),
-    );
-    await expect(page).toHaveURL(/\/discover$/);
+    let analyticsCaptured = false;
+    await page.route("**/api/v1/interactions/", async (route) => {
+      const headers = await route.request().allHeaders();
+      analyticsCaptured = true;
+      await heldAnalytics;
+      const response = await route.fetch({ headers });
+      expect(response.status()).toBe(202);
+      expect(Boolean(response.headers()["set-cookie"]?.includes("neb_session="))).toBe(false);
+      await route.fulfill({ response });
+    });
+    try {
+      await page.goto("/profile");
+      const changePassword = page
+        .locator("form.settings-card")
+        .filter({ has: page.getByRole("heading", { name: "Change password", exact: true }) });
+      const changedPassword = `${nextPassword}-changed`;
+      await changePassword.getByLabel("Current password", { exact: true }).fill(nextPassword);
+      await changePassword.getByLabel("New password", { exact: true }).fill(changedPassword);
+      await changePassword
+        .getByLabel("Confirm new password", { exact: true })
+        .fill(changedPassword);
+      const sessions = page.locator(".settings-card").filter({
+        has: page.getByRole("heading", { name: "Active sessions", exact: true }),
+      });
+      await expect(sessions.getByText("This device", { exact: true })).toBeVisible();
+      await expect.poll(() => analyticsCaptured).toBe(true);
+      await page.route("**/api/v1/auth/sessions/", (route) =>
+        route.fulfill({
+          status: 503,
+          json: {
+            error: { code: "unavailable", message: "Session details are temporarily unavailable." },
+          },
+        }),
+      );
+      await waitForResponse(page, "/api/v1/auth/password-change/", "POST", () =>
+        changePassword.getByRole("button", { name: "Change password", exact: true }).click(),
+      );
+      await expect(changePassword.getByRole("status")).toContainText("Password changed");
+      await expect(changePassword.getByRole("alert")).toHaveCount(0);
+      await expect(changePassword.getByLabel("Current password", { exact: true })).toHaveValue("");
+      await expect(sessions.getByRole("alert")).toContainText(
+        "Session details are temporarily unavailable.",
+      );
+      await expect(sessions.getByText("This device", { exact: true })).toHaveCount(0);
+      const analyticsResponse = page.waitForResponse((response) =>
+        response.url().endsWith("/api/v1/interactions/"),
+      );
+      releaseAnalytics();
+      await analyticsResponse;
+      await page.unroute("**/api/v1/interactions/");
+      await page.unroute("**/api/v1/auth/sessions/");
+      await sessions.getByRole("button", { name: "Try again" }).click();
+      await expect(sessions.getByText("This device", { exact: true })).toBeVisible();
+      expect(
+        await page.evaluate(
+          async () => (await fetch("/api/v1/auth/me/", { credentials: "same-origin" })).status,
+        ),
+      ).toBe(200);
+      await page.getByRole("button", { name: "Log out", exact: true }).click();
+      await page.goto("/login");
+      await page.getByLabel("Email").fill(email);
+      await page.getByLabel("Password").fill(changedPassword);
+      await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
+        page.getByRole("button", { name: "Log in" }).click(),
+      );
+      await expect(page).toHaveURL(/\/discover$/);
+    } finally {
+      releaseAnalytics();
+      await page.unroute("**/api/v1/interactions/");
+    }
   });
 
   test("email change verifies the new address and rejects a reused link", async ({

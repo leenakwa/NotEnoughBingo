@@ -82,7 +82,12 @@ passed locally; their `07d3e41` gate then failed with 82 live passes and one
 uncaught WebKit Load failed error (other checks/images passed). Native editor
 URL/query sync, card action lifetime and active-profile-tab corrections now
 pass 262 frontend tests, nine engine cases, three WebKit journey repetitions
-and related editor/shared-result flows locally; this source needs its own gate. These
+and related editor/shared-result flows locally. Its `bdd953b` gate failed
+on a password-change/late-analytics cookie race (82 live passes, one failure,
+three not run; smoke 199 passes/one retry/12 skips). Session-cookie correction,
+notification and shared-result action guards now pass 273 frontend tests,
+242 backend tests plus one container-only skip, 12 related engine cases and the
+controlled cookie-race live journey locally; this source needs its own gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -130,7 +135,9 @@ only environment-specific smoke and recovery checks after release.
    cleanup corrections now have local evidence, together with player lifetime
    guards. Source `07d3e41` then failed one live WebKit page-error assertion;
    native URL/query sync, card lifetime and profile-tab corrections now have
-   local evidence and require their own gate.
+   local evidence. Their `bdd953b` gate then exposed the session-cookie race;
+   its server fix and notification/share guards have local evidence and need
+   their own gate.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
@@ -153,8 +160,10 @@ only environment-specific smoke and recovery checks after release.
    unit regressions and six related engine cases across delayed success/denial,
    duplicate clicks and departure. Repeated active profile tab selection is
    corrected with unit and browser evidence. Remaining component mutation states
-   include notification read actions, profile changes/optional viewer state, account upload/
-   security/export/deletion and clipboard/native-share completion. Then audit
+   include profile changes/optional viewer state and account upload/
+   security/export/deletion. Notification read actions and shared-result copy/
+   native-share completion now have regression and engine evidence; actual
+   physical-device OS dialogs/permissions remain. Then audit
    remaining dirty forms, autofill/password-manager
    behavior (silent-fill submission is verified; native saved credentials are not),
    remaining per-form/control checks (root/reply/edit and reopened-report

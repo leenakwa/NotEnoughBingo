@@ -171,7 +171,9 @@ test("pending requests keep the dialog open and prevent duplicate submission", a
       json: { error: { code: "unavailable", message: "Try again later." } },
     });
   });
+  const sessionCheck = page.waitForResponse("**/api/v1/auth/session/");
   await page.goto("/support");
+  await sessionCheck;
   await page.getByRole("link", { name: "Log in", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Email").fill(user.email);
