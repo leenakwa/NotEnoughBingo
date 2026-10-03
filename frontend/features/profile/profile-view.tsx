@@ -13,6 +13,7 @@ import { ReportDialog } from "@/features/social/report-dialog";
 import {
   AUTH_SIGNED_IN_EVENT,
   AUTH_SESSION_ENDED_EVENT,
+  AUTH_SIGNED_OUT_EVENT,
   notifyAuthChanged,
 } from "@/lib/auth-events";
 import { LANGUAGE_PREFERENCES_CHANGED_EVENT } from "@/lib/registration-onboarding";
@@ -57,23 +58,55 @@ export function ProfileView({
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ProfileField, string>>>({});
   const [feedbackAction, setFeedbackAction] = useState("profile");
   const [viewer, setViewer] = useState<AuthenticatedUser | "guest" | null>(null);
+  const [viewerError, setViewerError] = useState("");
+  const [viewerVersion, setViewerVersion] = useState(0);
   const [reportOpen, setReportOpen] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
   const [loadVersion, setLoadVersion] = useState(0);
+  const actionInFlight = useRef(false);
+  const actionLifetime = useRef(0);
 
   useEffect(() => {
-    const refresh = () => setLoadVersion((version) => version + 1);
+    const refresh = () => {
+      actionLifetime.current += 1;
+      actionInFlight.current = false;
+      setPending(false);
+      setLoading(true);
+      setProfile(null);
+      setViewer(null);
+      setViewerError("");
+      setError("");
+      setMessage("");
+      setFieldErrors({});
+      setPreferredLanguages([]);
+      setSavedPreferredLanguages([]);
+      setLoadVersion((version) => version + 1);
+    };
     window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
     window.addEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
     window.addEventListener(LANGUAGE_PREFERENCES_CHANGED_EVENT, refresh);
     return () => {
       window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
       window.removeEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
       window.removeEventListener(LANGUAGE_PREFERENCES_CHANGED_EVENT, refresh);
     };
   }, []);
   const initialProfileConsumed = useRef(false);
-  const actionInFlight = useRef(false);
+
+  useEffect(() => {
+    actionLifetime.current += 1;
+    actionInFlight.current = false;
+    setPending(false);
+    setMessage("");
+    setError("");
+    setFieldErrors({});
+    return () => {
+      actionLifetime.current += 1;
+      actionInFlight.current = false;
+    };
+  }, [loadVersion, username]);
   const profileFormRef = useRef<HTMLFormElement>(null);
   const invalidFieldToFocus = useRef<ProfileField | undefined>(undefined);
 
@@ -125,6 +158,7 @@ export function ProfileView({
     }
     initialProfileConsumed.current = true;
     const controller = new AbortController();
+    setProfile(null);
     setLoading(true);
     setError("");
     setAuthRequired(false);
@@ -165,22 +199,27 @@ export function ProfileView({
   useEffect(() => {
     if (ownProfile) return;
     let active = true;
+    setViewer(null);
+    setViewerError("");
     api.auth
       .session()
       .then((user) => {
         if (active) setViewer(user ?? "guest");
       })
-      .catch(() => {
-        if (active) setViewer("guest");
+      .catch((caught) => {
+        if (!active) return;
+        if (isAuthenticationRequiredError(caught)) setViewer("guest");
+        else setViewerError(errorMessage(caught));
       });
     return () => {
       active = false;
     };
-  }, [ownProfile, loadVersion]);
+  }, [ownProfile, loadVersion, viewerVersion]);
 
   async function saveProfile() {
     if (!profile || actionInFlight.current) return;
     actionInFlight.current = true;
+    const lifetime = actionLifetime.current;
     setFeedbackAction("profile");
     setPending(true);
     setError("");
@@ -192,6 +231,7 @@ export function ProfileView({
         display_name: displayName,
         bio,
       });
+      if (lifetime !== actionLifetime.current) return;
       setProfile(updated);
       setUsernameValue(updated.username);
       setDisplayName(updated.display_name);
@@ -199,6 +239,7 @@ export function ProfileView({
       notifyAuthChanged();
       setMessage("Profile saved.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       const errors: Partial<Record<ProfileField, string>> = {};
       for (const field of ["username", "display_name", "bio"] as const) {
         const message = fieldValidationMessage(caught, field);
@@ -214,14 +255,17 @@ export function ProfileView({
         setError(errorMessage(caught));
       }
     } finally {
-      actionInFlight.current = false;
-      setPending(false);
+      if (lifetime === actionLifetime.current) {
+        actionInFlight.current = false;
+        setPending(false);
+      }
     }
   }
 
   async function updatePrivacy(key: keyof UserPrivacySettings, checked: boolean) {
     if (!profile || actionInFlight.current) return;
     actionInFlight.current = true;
+    const lifetime = actionLifetime.current;
     setFeedbackAction("privacy");
     const privacy = { ...profile.privacy, [key]: checked };
     setProfile({ ...profile, privacy });
@@ -230,40 +274,57 @@ export function ProfileView({
     setMessage("");
     try {
       const saved = await api.profiles.updatePrivacy(privacy);
+      if (lifetime !== actionLifetime.current) return;
       setProfile((current) => (current ? { ...current, privacy: saved } : current));
       setMessage("Privacy settings saved.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setProfile((current) => (current ? { ...current, privacy: profile.privacy } : current));
       setError(errorMessage(caught));
     } finally {
-      actionInFlight.current = false;
-      setPending(false);
+      if (lifetime === actionLifetime.current) {
+        actionInFlight.current = false;
+        setPending(false);
+      }
     }
   }
 
   async function saveLanguagePreferences() {
     if (actionInFlight.current) return;
     actionInFlight.current = true;
+    const lifetime = actionLifetime.current;
     setFeedbackAction("languages");
     setPending(true);
     setError("");
     setMessage("");
     try {
       const updated = await api.profiles.update({ preferred_languages: preferredLanguages });
+      if (lifetime !== actionLifetime.current) return;
       setProfile(updated);
       setSavedPreferredLanguages(preferredLanguages);
       setMessage("Bingo languages saved.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      actionInFlight.current = false;
-      setPending(false);
+      if (lifetime === actionLifetime.current) {
+        actionInFlight.current = false;
+        setPending(false);
+      }
     }
   }
 
   async function toggleFollow() {
-    if (!profile || actionInFlight.current) return;
+    if (
+      !profile ||
+      !viewer ||
+      viewer === "guest" ||
+      viewer.id === profile.id ||
+      actionInFlight.current
+    )
+      return;
     actionInFlight.current = true;
+    const lifetime = actionLifetime.current;
     setFeedbackAction("follow");
     const next = !profile.is_following;
     setPending(true);
@@ -272,16 +333,20 @@ export function ProfileView({
     try {
       if (next) await api.follows.follow(profile.id);
       else await api.follows.unfollow(profile.id);
+      if (lifetime !== actionLifetime.current) return;
       setProfile({
         ...profile,
         is_following: next,
         follower_count: Math.max(0, profile.follower_count + (next ? 1 : -1)),
       });
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      actionInFlight.current = false;
-      setPending(false);
+      if (lifetime === actionLifetime.current) {
+        actionInFlight.current = false;
+        setPending(false);
+      }
     }
   }
 
@@ -350,7 +415,19 @@ export function ProfileView({
             </span>
           </p>
         </div>
-        {!ownProfile && viewer !== "guest" && viewer?.id !== profile.id ? (
+        {!ownProfile && !viewer ? (
+          <div className="profile-viewer-state">
+            {viewerError ? (
+              <ErrorState
+                message={viewerError}
+                onRetry={() => setViewerVersion((version) => version + 1)}
+              />
+            ) : (
+              <p role="status">Checking your account…</p>
+            )}
+          </div>
+        ) : null}
+        {!ownProfile && viewer && viewer !== "guest" && viewer.id !== profile.id ? (
           <button
             type="button"
             className={profile.is_following ? "button button--secondary" : "button button--primary"}
@@ -370,7 +447,7 @@ export function ProfileView({
         ) : null}
       </header>
 
-      {!ownProfile && viewer !== "guest" && viewer?.id !== profile.id ? (
+      {!ownProfile && viewer && viewer !== "guest" && viewer.id !== profile.id ? (
         <div className="profile-moderation-actions">
           <button type="button" className="text-button" onClick={() => setReportOpen(true)}>
             Report profile

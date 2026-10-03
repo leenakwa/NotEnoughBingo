@@ -629,6 +629,141 @@ for (const action of ["copy", "native share"] as const) {
   });
 }
 
+test("public profile retries viewer identity without losing its content", async ({ page }) => {
+  const fixture = readLiveFixture();
+  await authenticateAs(page, "player");
+  let unavailable = true;
+  let profileReads = 0;
+  let identityReads = 0;
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  await page.route(`**/api/v1/profiles/${fixture.users.author.username}/`, async (route) => {
+    profileReads += 1;
+    await route.continue();
+  });
+  await page.route("**/api/v1/auth/session/", async (route) => {
+    identityReads += 1;
+    if (unavailable)
+      return route.fulfill({
+        status: 503,
+        json: { detail: "Account details are temporarily unavailable." },
+      });
+    return route.continue();
+  });
+  await page.goto(`/profile/${fixture.users.author.username}`);
+  await expect(
+    page.getByRole("heading", { name: fixture.users.author.display_name, exact: true }),
+  ).toBeVisible();
+  const viewerState = page.locator(".profile-viewer-state");
+  await expect(viewerState.getByRole("alert")).toContainText(
+    "Account details are temporarily unavailable.",
+  );
+  await expect(page.getByRole("button", { name: "Follow", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Report profile", exact: true })).toHaveCount(0);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await expect(viewerState.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  const before = { profileReads, identityReads };
+  unavailable = false;
+  await viewerState.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: /^(Follow|Following)$/, exact: true }),
+  ).toBeEnabled();
+  expect(profileReads).toBe(before.profileReads);
+  expect(identityReads).toBe(before.identityReads + 1);
+  await expect(viewerState).toHaveCount(0);
+  expect(pageErrors).toEqual([]);
+});
+
+for (const outcome of ["success", "failure"] as const) {
+  test(`departed profile ignores a delayed save ${outcome}`, async ({ page, playwright }) => {
+    await authenticateAs(page, "author");
+    const authorApi = await playwright.request.newContext({
+      baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+      storageState: authStatePath("author"),
+    });
+    const originalResponse = await authorApi.get("/api/v1/profiles/me/");
+    expect(originalResponse.status()).toBe(200);
+    const original = await originalResponse.json();
+    const csrf = (await authorApi.storageState()).cookies.find(
+      (cookie) => cookie.name === "neb_csrf",
+    );
+    expect(csrf).toBeDefined();
+    const headers = { "X-CSRFToken": csrf!.value };
+    const editedName = "Pending profile QA name";
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let writes = 0;
+    let accepted = false;
+    const path = "/api/v1/profiles/me/";
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.name));
+    page.on("dialog", (dialog) => void dialog.accept());
+    await page.route(`**${path}`, async (route) => {
+      if (route.request().method() !== "PATCH") return route.continue();
+      writes += 1;
+      if (outcome === "success") {
+        const response = await route.fetch();
+        expect(response.status()).toBe(200);
+        accepted = true;
+        await held;
+        await route.fulfill({ response });
+      } else {
+        accepted = true;
+        await held;
+        await route.fulfill({ status: 503, json: { detail: "Delayed profile save failed." } });
+      }
+    });
+    try {
+      await page.goto("/profile");
+      await page.getByLabel("Display name", { exact: true }).fill(editedName);
+      await page
+        .getByRole("button", { name: "Save profile", exact: true })
+        .evaluate((button: HTMLButtonElement) => {
+          button.click();
+          button.click();
+        });
+      await expect.poll(() => accepted).toBe(true);
+      expect(writes).toBe(1);
+      await page.getByRole("link", { name: "Explore", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+      const response = page.waitForResponse(
+        (response) => response.url().endsWith(path) && response.request().method() === "PATCH",
+      );
+      release();
+      await response;
+      await page.waitForTimeout(300);
+      await expect(page).toHaveURL(/\/explore$/);
+      await expect(page.getByText("Profile saved.", { exact: true })).toHaveCount(0);
+      await expect(
+        page.getByRole("alert").filter({ hasText: "Delayed profile save failed." }),
+      ).toHaveCount(0);
+      const saved = await authorApi.get(path);
+      expect(saved.status()).toBe(200);
+      expect((await saved.json()).display_name).toBe(
+        outcome === "success" ? editedName : original.display_name,
+      );
+      expect(writes).toBe(1);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      release();
+      expect(
+        (
+          await authorApi.patch(path, { headers, data: { display_name: original.display_name } })
+        ).status(),
+      ).toBe(200);
+      await authorApi.dispose();
+    }
+  });
+}
+
 test.afterEach(async ({ page, playwright }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;

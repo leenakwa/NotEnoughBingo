@@ -3907,3 +3907,70 @@ observed results and their limits. Do not include credentials or session data.
   fingerprint. No finding values or private trace/auth state were printed.
   The older GitGuardian dashboard incident still requires its own classification;
   a local scanner exception does not resolve an external incident automatically.
+
+
+### 2026-10-03 — Generated-password source passes the complete release gate
+
+- `eca815d1fe299da35240d5fcfa5a07a71c105d37`
+  [run 37096117679](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37096117679)
+  completed SUCCESS: all nine jobs passed, including full-history scanning,
+  foundation, frontend/backend quality, both production-image scans/SBOM and
+  Release gate. Backend 243, frontend 273 across 36 files, smoke 200 passes plus
+  12 intentional skips without retries, and all 90 live flows passed. Log:
+  `/tmp/neb-ci-eca815d-completed-oct03.log`. The redacted local full-history
+  scan covered all 91 commits with no leaks after the exact historical
+  synthetic-password classifications. Log:
+  `/tmp/neb-session-cookie-generated-history-oct03.log`.
+- This source gate is independent of the failed `82f2f07` scan/Release gate;
+  that failed run remains recorded. New subsequent profile changes do not
+  inherit this passing source gate. No merge, promotion or deployment occurred.
+
+### 2026-10-03 — Profile required/optional loading and action lifetime (section 4)
+
+- Seven new profile regressions failed on the previous source, with the own-
+  profile session-denial control passing. A failed next required profile load
+  could redisplay the previous profile; unknown viewer identity exposed Follow/
+  Report; viewer lookup failure falsely presented guest login without retry;
+  late profile, privacy, language and follow successes overwrote the next scope.
+  Required reads now clear the previous profile, retain error/Retry and ignore
+  obsolete success. Viewer identity has independent loading/error/Retry; protected
+  controls require a known signed-in viewer. Viewer retry does not refetch the
+  public profile or block its content. Log:
+  `/tmp/neb-profile-lifetime-baseline-oct03.log`.
+- Profile mutation lifetime invalidates on username/reload, unmount and account/
+  session events. Account events clear profile/viewer data and pending/feedback/
+  language state before loading the new account. Save/privacy/language/follow
+  callbacks check ownership after awaits, including errors, rollback, auth-change
+  notification and ref cleanup. Existing synchronous duplicate-action guard,
+  profile edit recovery, field validation and dirty navigation warning remain.
+  Already accepted backend writes can finish; no server cancellation is claimed.
+- Eight profile cases pass; the full frontend check passed lint/types and 281
+  tests across 37 files, production build and formatting. An initial React hook
+  lint error from refs declared after the effect capturing them was fixed by
+  declaring refs first; no lint suppression was added. Logs:
+  `/tmp/neb-profile-lifetime-check-oct03.log`,
+  `/tmp/neb-profile-lifetime-final-check-oct03.log`,
+  `/tmp/neb-profile-lifetime-build-oct03.log`,
+  `/tmp/neb-profile-lifetime-format-oct03.log`.
+- Three real QA flows passed in Chromium, mobile WebKit and Firefox (nine cases,
+  no retries): optional viewer outage/retry while public SSR content remains,
+  and held save success/failure followed by departure. Viewer outage checks
+  hidden protected controls, independent request counts, 320/1710 px overflow
+  and Axe. Save success forwards the actual accepted backend response; failure
+  is a held synthetic 503. Each checks one browser mutation, destination and
+  no late feedback/page errors, verifies actual persisted/unmodified name and
+  restores the original profile through isolated author API access. Existing
+  dirty-form navigation is explicitly accepted. Logs/config:
+  `/tmp/neb-profile-lifetime-live-oct03.log`,
+  `/tmp/neb-profile-lifetime-browser.config.ts`,
+  `/tmp/neb-profile-lifetime-browsers-oct03.log`.
+- Same-component next-profile/account timing and privacy/language/follow late
+  responses are controlled unit evidence. Browser cases exercise the actual
+  viewer failure and save/departure paths; they do not prove every account
+  mutation or physical-device condition. Remaining component inventory now
+  prioritizes AccountSettings upload/security/preferences/export/deletion
+  lifetimes (including its callbacks into ProfileView), and dedicated player
+  follow/management cases. Broader forms/controls/native-device, API/default/
+  transaction/joined/load and target operations remain. Section counts stay
+  55 verified / 43 partial / six N/A / one deployment-only; section 4 is partial.
+  User UI changes are retained. This new source requires its own CI.
