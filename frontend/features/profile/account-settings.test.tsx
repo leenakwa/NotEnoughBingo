@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,6 +9,7 @@ import {
   rememberProfileEdits,
 } from "@/features/profile/profile-edit-cache";
 import type { AuthenticatedUser, NotificationPreferences, UserProfile } from "@/lib/api/types";
+import { AUTH_SIGNED_IN_EVENT } from "@/lib/auth-events";
 import { uploadImage } from "@/lib/uploads";
 
 const mocks = vi.hoisted(() => ({
@@ -23,13 +24,20 @@ const mocks = vi.hoisted(() => ({
   sessions: vi.fn(),
   changePassword: vi.fn(),
   requestEmailChange: vi.fn(),
+  updateProfile: vi.fn(),
+  updatePreferences: vi.fn(),
+  requestExport: vi.fn(),
+  getExport: vi.fn(),
+  logout: vi.fn(),
+  revokeSession: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mocks.replace, refresh: mocks.refresh }),
 }));
 
-vi.mock("@/lib/auth-events", () => ({
+vi.mock("@/lib/auth-events", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/auth-events")>()),
   notifyAuthChanged: mocks.notifyAuthChanged,
   notifySignedOut: mocks.notifySignedOut,
 }));
@@ -47,8 +55,14 @@ vi.mock("@/lib/api/client", () => ({
       sessions: mocks.sessions,
       changePassword: mocks.changePassword,
       requestEmailChange: mocks.requestEmailChange,
+      requestAccountExport: mocks.requestExport,
+      logout: mocks.logout,
+      revokeSession: mocks.revokeSession,
     },
+    exports: { get: mocks.getExport },
     profiles: {
+      update: mocks.updateProfile,
+      updateNotificationPreferences: mocks.updatePreferences,
       notificationPreferences: mocks.notificationPreferences,
     },
   },
@@ -100,6 +114,7 @@ describe("AccountSettings deletion grace period", () => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.mocked(uploadImage).mockReset();
     mocks.me.mockResolvedValue(currentUser);
     mocks.sessions.mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
     mocks.notificationPreferences.mockResolvedValue(preferences);
@@ -369,5 +384,254 @@ describe("AccountSettings deletion grace period", () => {
     ).toBeVisible();
     expect(current).toHaveValue("");
     expect(mocks.changePassword).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not attach an avatar when its upload completes after departure", async () => {
+    let resolveUpload!: (asset: Awaited<ReturnType<typeof uploadImage>>) => void;
+    vi.mocked(uploadImage).mockReturnValue(
+      new Promise((resolve) => {
+        resolveUpload = resolve;
+      }),
+    );
+    mocks.updateProfile.mockResolvedValue(profile);
+    const changed = vi.fn();
+    const view = render(<AccountSettings profile={profile} onProfileChange={changed} />);
+    const input = await screen.findByLabelText("Upload avatar");
+    fireEvent.change(input, {
+      target: { files: [new File(["image"], "avatar.png", { type: "image/png" })] },
+    });
+    view.unmount();
+    await act(async () =>
+      resolveUpload({
+        id: "avatar",
+        kind: "avatar",
+        status: "ready",
+        url: null,
+        mime_type: "image/png",
+      }),
+    );
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
+    expect(changed).not.toHaveBeenCalled();
+    expect(mocks.notifyAuthChanged).not.toHaveBeenCalled();
+  });
+
+  it("does not apply a completed avatar save to the next profile", async () => {
+    let resolveSave!: (value: UserProfile) => void;
+    const avatar = {
+      id: "avatar",
+      kind: "avatar" as const,
+      status: "ready" as const,
+      url: null,
+      mime_type: "image/png",
+    };
+    vi.mocked(uploadImage).mockResolvedValue(avatar);
+    mocks.updateProfile.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    const changed = vi.fn();
+    const view = render(<AccountSettings profile={profile} onProfileChange={changed} />);
+    fireEvent.change(await screen.findByLabelText("Upload avatar"), {
+      target: { files: [new File(["image"], "avatar.png", { type: "image/png" })] },
+    });
+    await waitFor(() => expect(mocks.updateProfile).toHaveBeenCalledOnce());
+    const next = { ...profile, id: "22222222-2222-4222-8222-222222222222", username: "next" };
+    mocks.me.mockResolvedValue({ ...currentUser, ...next });
+    view.rerender(<AccountSettings profile={next} onProfileChange={changed} />);
+    await waitFor(() => expect(mocks.me).toHaveBeenCalledTimes(2));
+    mocks.requestExport.mockReturnValue(new Promise(() => {}));
+    fireEvent.click(await screen.findByRole("button", { name: "Request data export" }));
+    await act(async () => resolveSave({ ...profile, avatar }));
+    expect(changed).not.toHaveBeenCalled();
+    expect(mocks.notifyAuthChanged).not.toHaveBeenCalled();
+    expect(screen.queryByText("Avatar updated.")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Upload avatar")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Preparing export…" })).toBeDisabled();
+  });
+
+  it("does not start private export reads after the requester leaves", async () => {
+    let resolveRequest!: (value: { job_id: string }) => void;
+    mocks.requestExport.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+    mocks.getExport.mockResolvedValue({ status: "ready" });
+    const view = render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Request data export" }));
+    view.unmount();
+    await act(async () => resolveRequest({ job_id: "export-job" }));
+    expect(mocks.getExport).not.toHaveBeenCalled();
+  });
+
+  it("stops export polling when the page leaves during its timer", async () => {
+    mocks.requestExport.mockResolvedValue({ job_id: "export-job" });
+    mocks.getExport.mockResolvedValue({ status: "queued" });
+    const view = render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const button = await screen.findByRole("button", { name: "Request data export" });
+    vi.useFakeTimers();
+    try {
+      await act(async () => fireEvent.click(button));
+      expect(mocks.getExport).toHaveBeenCalledOnce();
+      view.unmount();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(mocks.getExport).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("ignores a preference rollback after an account refresh", async () => {
+    let rejectSave!: (error: Error) => void;
+    mocks.updatePreferences.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    fireEvent.click(await screen.findByLabelText("Optional product email"));
+    mocks.notificationPreferences.mockResolvedValue({ ...preferences, marketing_email: true });
+    await act(async () => {
+      window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT));
+    });
+    await waitFor(() => expect(mocks.notificationPreferences).toHaveBeenCalledTimes(2));
+    await act(async () => rejectSave(new Error("Old preference failure")));
+    expect(screen.getByLabelText("Optional product email")).toBeChecked();
+    expect(screen.queryByText("Old preference failure")).not.toBeInTheDocument();
+  });
+
+  it("keeps new credentials and sessions after an obsolete password success", async () => {
+    let resolveSave!: () => void;
+    mocks.changePassword.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const current = await screen.findByLabelText("Current password", { exact: true });
+    fireEvent.change(current, { target: { value: "current example" } });
+    fireEvent.change(screen.getByLabelText("New password", { exact: true }), {
+      target: { value: "new example" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirm new password", { exact: true }), {
+      target: { value: "new example" },
+    });
+    fireEvent.submit(current.closest("form")!);
+    await act(async () => {
+      window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT));
+    });
+    await waitFor(() => expect(mocks.sessions).toHaveBeenCalledTimes(2));
+    fireEvent.change(await screen.findByLabelText("Current password", { exact: true }), {
+      target: { value: "next account example" },
+    });
+    await act(async () => resolveSave());
+    expect(mocks.sessions).toHaveBeenCalledTimes(2);
+    expect(screen.getByLabelText("Current password", { exact: true })).toHaveValue(
+      "next account example",
+    );
+  });
+
+  it("clears credential fields on account refresh and ignores an old email response", async () => {
+    let resolveSave!: () => void;
+    mocks.requestEmailChange.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const email = await screen.findByLabelText("New email address", { exact: true });
+    fireEvent.change(email, { target: { value: "next@example.test" } });
+    fireEvent.change(screen.getByLabelText("Current password for email change"), {
+      target: { value: "current example" },
+    });
+    fireEvent.submit(email.closest("form")!);
+    await act(async () => {
+      window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT));
+    });
+    expect(await screen.findByLabelText("Current password for email change")).toHaveValue("");
+    await act(async () => resolveSave());
+    expect(
+      screen.queryByText(/Check the new email address for a confirmation link/),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each(["logout", "revokeSession", "scheduleAccountDeletion"] as const)(
+    "does not redirect the next scope after a late %s response",
+    async (action) => {
+      let resolveAction!: (value?: unknown) => void;
+      mocks[action].mockReturnValue(
+        new Promise((resolve) => {
+          resolveAction = resolve;
+        }),
+      );
+      mocks.sessions.mockResolvedValue({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "current",
+            current: true,
+            user_agent: "Test browser",
+            last_seen_at: "2026-10-01T00:00:00Z",
+          },
+        ],
+      });
+      const view = render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+      await screen.findByRole("button", { name: "Log out" });
+      if (action === "scheduleAccountDeletion") {
+        const password = screen.getByLabelText("Confirm with your password");
+        fireEvent.change(password, { target: { value: "current example" } });
+        fireEvent.submit(password.closest("form")!);
+      } else
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: action === "logout" ? "Log out" : "Sign out",
+          }),
+        );
+      view.unmount();
+      await act(async () => resolveAction({ scheduled_for: "2026-11-01T00:00:00Z" }));
+      expect(mocks.notifySignedOut).not.toHaveBeenCalled();
+      expect(mocks.replace).not.toHaveBeenCalled();
+      expect(mocks.refresh).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps export polling and download feedback for the active requester", async () => {
+    mocks.requestExport.mockResolvedValue({ job_id: "export-job" });
+    mocks.getExport.mockResolvedValueOnce({ status: "queued" });
+    mocks.getExport.mockResolvedValueOnce({
+      status: "ready",
+      download_url: "/api/v1/exports/export-job/download/",
+    });
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const button = await screen.findByRole("button", { name: "Request data export" });
+    vi.useFakeTimers();
+    try {
+      await act(async () => fireEvent.click(button));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(mocks.getExport).toHaveBeenCalledTimes(2);
+      expect(screen.getByText("Your data export is ready to download.")).toBeVisible();
+      expect(screen.getByRole("link", { name: "Download data export" })).toHaveAttribute(
+        "href",
+        "/api/v1/exports/export-job/download/",
+      );
+      expect(screen.getByRole("button", { name: "Change password" })).toBeEnabled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("withholds private controls when the session identity no longer matches the profile", async () => {
+    mocks.me.mockResolvedValue({ ...currentUser, id: "22222222-2222-4222-8222-222222222222" });
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your account changed.");
+    expect(screen.queryByLabelText("Current password", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Log out" })).not.toBeInTheDocument();
   });
 });

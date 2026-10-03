@@ -4011,3 +4011,69 @@ observed results and their limits. Do not include credentials or session data.
   `/tmp/neb-avatar-focus-types-oct03.log`. Their keyboard traversal remains an
   open browser-specific investigation. The configured CI chooser flow uses
   Chromium. This correction requires its own source CI.
+
+### 2026-10-03 — account action ownership and export polling
+
+- Keyboard/activity source `4b5e8e469b07c348838c960555c9b41016c01233`
+  passed all nine CI jobs: 243 backend, 281 frontend/37 files, 200 smoke passes
+  plus 12 intentional skips without retries, 93 live journeys, foundation,
+  full-history secret scan, both images/scans/SBOM and Release. Run:
+  https://github.com/leenakwa/NotEnoughBingo/actions/runs/37098611723.
+  The earlier `438a452` failure remains recorded.
+- Ten corrected baseline regressions failed in AccountSettings, alongside 14
+  existing passes: late upload continued to a profile write after departure;
+  accepted avatar save called the next profile's callback; export creation
+  started private reads after departure and polling continued after unmount;
+  old preference/password/email results and logout/current-session/deletion
+  redirects crossed account/page boundaries. Initial test-only incorrect label
+  selectors were corrected before establishing the ten-case baseline. Logs:
+  `/tmp/neb-account-lifetime-baseline-oct03.log`,
+  `/tmp/neb-account-lifetime-baseline-corrected-oct03.log`.
+- Account/profile/session boundaries now invalidate action ownership, abort
+  avatar upload and clear credentials, pending state, export/deletion state and
+  feedback. Reads check ownership plus their abort signal. Identity mismatch
+  withholds private controls and asks for a profile reload. Each mutation checks
+  ownership after awaits and before errors/final cleanup; old cleanup cannot
+  unlock a new account's export. Avatar phase callbacks are guarded; cancelled
+  uploads cannot attach even if their adapter resolves after abort. Export
+  creation, reads and the next polling step stop after leaving the scope.
+  Already accepted server writes/jobs can finish; no server cancellation or
+  rollback is claimed. Normal logout/deletion notifications and navigation stay
+  effective after the owning response succeeds.
+- All 26 account tests pass, including active export polling/download and
+  mismatched identity controls. Full frontend lint/types and 293 tests across
+  37 files, production build and formatting pass. Initial test-only ByRole
+  `exact` typing and export control labels were corrected without suppression.
+  Final logs: `/tmp/neb-account-lifetime-final-guard-check-oct03.log`,
+  `/tmp/neb-account-lifetime-live-types-oct03.log`,
+  `/tmp/neb-account-lifetime-build-oct03.log`,
+  `/tmp/neb-account-lifetime-format-oct03.log`. Generated next-env changes restored.
+- Two real held-success flows (avatar PATCH and account export POST) each pass
+  in Chromium, mobile WebKit, desktop WebKit and Firefox: eight cases. They
+  check one mutation, 320/1710px overflow, departure, actual backend accepted
+  avatar/job and no late feedback/page errors. The export UI makes zero job
+  reads after departure; isolated author API access verifies the accepted job.
+  Avatar cleanup restores the original asset via isolated author access. Normal
+  avatar upload/removal persistence and ZIP export download also pass in
+  Chromium. Browser logs/config: `/tmp/neb-account-lifetime-live-oct03.log`,
+  `/tmp/neb-account-lifetime-browser.config.ts`,
+  `/tmp/neb-account-lifetime-browsers-oct03.log`.
+- The original expanded WebKit Shift+Tab/Tab failures are explained by a
+  browser keyboard setting difference: Apple documents Option+Tab for
+  traversing all clickable controls with default Safari settings:
+  https://support.apple.com/en-lamr/guide/safari/cpsh003/mac. The keyboard flow
+  uses Option+Tab in WebKit and plain Tab elsewhere, preserving predecessor/
+  successor focus, 3px outline, Enter and filechooser checks. One first
+  Option+Tab attempt reached its final page-error assertion but failed on an
+  Agentation development chunk-load error; it was not filtered or counted as
+  a pass (`/tmp/neb-avatar-focus-optiontab-webkit-oct03.log`). The unchanged
+  checks subsequently pass in all four browser modes: four additional cases
+  within the 12-case account/browser packet. These are headless/emulated
+  keyboard/filechooser checks; physical iOS keyboards and native OS dialogs
+  remain unverified.
+- Account-switch/error/private-action timing beyond those avatar/export browser
+  flows remains unit evidence. Dedicated player follow/management and the
+  wider remaining forms/controls/device/API/default/transaction/joined/load/
+  target-operations inventory remain open. Section counts stay 55 verified /
+  43 partial / six N/A / one deployment-only. This new account source requires
+  its own CI; it does not inherit `4b5e8e4`'s pass.

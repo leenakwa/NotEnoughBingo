@@ -764,6 +764,119 @@ for (const outcome of ["success", "failure"] as const) {
   });
 }
 
+for (const action of ["avatar", "export"] as const) {
+  test(`departed account settings ignore a delayed ${action} success`, async ({
+    page,
+    playwright,
+  }) => {
+    await authenticateAs(page, "author");
+    const authorApi = await playwright.request.newContext({
+      baseURL: test.info().project.use.baseURL,
+      storageState: authStatePath("author"),
+    });
+    const originalResponse = await authorApi.get("/api/v1/profiles/me/");
+    expect(originalResponse.status()).toBe(200);
+    const original = await originalResponse.json();
+    const csrf = (await authorApi.storageState()).cookies.find(
+      (cookie) => cookie.name === "neb_csrf",
+    );
+    expect(csrf).toBeDefined();
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let accepted = false;
+    let writes = 0;
+    let exportReads = 0;
+    let changedAvatarId: string | undefined;
+    let exportId: string | undefined;
+    const path = action === "avatar" ? "/api/v1/profiles/me/" : "/api/v1/auth/account-export/";
+    const method = action === "avatar" ? "PATCH" : "POST";
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.name));
+    await page.route("**/api/v1/exports/**", (route) => {
+      if (route.request().method() === "GET") exportReads += 1;
+      return route.continue();
+    });
+    await page.route(`**${path}`, async (route) => {
+      if (route.request().method() !== method) return route.continue();
+      writes += 1;
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true);
+      const value = await response.json();
+      if (action === "avatar") changedAvatarId = value.avatar?.id;
+      else exportId = value.job_id;
+      accepted = true;
+      await held;
+      await route.fulfill({ response });
+    });
+    try {
+      await page.goto("/profile");
+      await expect(page.getByRole("tabpanel")).toHaveAttribute("aria-busy", "false");
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 989 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+          width,
+        );
+      }
+      if (action === "avatar") {
+        await page
+          .getByLabel("Upload avatar", { exact: true })
+          .setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: cellImagePng });
+      } else {
+        await page
+          .getByRole("button", { name: "Request data export", exact: true })
+          .evaluate((button: HTMLButtonElement) => {
+            button.click();
+            button.click();
+          });
+      }
+      await expect.poll(() => accepted).toBe(true);
+      expect(writes).toBe(1);
+      await page.getByRole("link", { name: "Explore", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+      const delivered = page.waitForResponse(
+        (response) => response.url().endsWith(path) && response.request().method() === method,
+      );
+      release();
+      await (await delivered).finished();
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      await expect(page).toHaveURL(/\/explore$/);
+      await expect(page.getByText("Avatar updated.", { exact: true })).toHaveCount(0);
+      expect(exportReads).toBe(0);
+      if (action === "avatar") {
+        expect(changedAvatarId).toBeDefined();
+        const saved = await authorApi.get("/api/v1/profiles/me/");
+        expect(saved.status()).toBe(200);
+        expect((await saved.json()).avatar?.id).toBe(changedAvatarId);
+      } else {
+        expect(exportId).toBeDefined();
+        expect((await authorApi.get(`/api/v1/exports/${exportId}/`)).status()).toBe(200);
+      }
+      expect(writes).toBe(1);
+      expect(errors).toEqual([]);
+    } finally {
+      release();
+      if (action === "avatar") {
+        expect(
+          (
+            await authorApi.patch("/api/v1/profiles/me/", {
+              headers: { "X-CSRFToken": csrf!.value },
+              data: { avatar_id: original.avatar?.id ?? null },
+            })
+          ).status(),
+        ).toBe(200);
+      }
+      await authorApi.dispose();
+    }
+  });
+}
+
 test.afterEach(async ({ page, playwright }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;
@@ -4070,7 +4183,10 @@ test.describe("live full-stack product flows", () => {
     await expect(page).toHaveURL(/\/discover$/);
   });
 
-  test("all image choosers work with Tab and Enter and show focus", async ({ page }) => {
+  test("all image choosers support keyboard traversal and Enter with visible focus", async ({
+    page,
+    browserName,
+  }) => {
     await authenticateAs(page, "author");
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -4081,8 +4197,9 @@ test.describe("live full-stack product flows", () => {
         await expect(page.getByRole("tabpanel")).toHaveAttribute("aria-busy", "false");
       }
       await input.focus();
-      await page.keyboard.press("Shift+Tab");
-      await page.keyboard.press("Tab");
+      // Safari uses Option+Tab to traverse all controls with its default settings.
+      await page.keyboard.press(browserName === "webkit" ? "Alt+Shift+Tab" : "Shift+Tab");
+      await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
       await expect(input).toBeFocused();
       expect(
         await input.evaluate((node) => getComputedStyle(node.closest("label")!).outlineWidth),

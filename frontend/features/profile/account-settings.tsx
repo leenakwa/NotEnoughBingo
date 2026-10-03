@@ -10,7 +10,13 @@ import { UploadStatus } from "@/components/ui/upload-status";
 import { clearAllEditorRecovery } from "@/features/editor/editor-recovery";
 import { clearAllProgressRecovery } from "@/lib/progress-recovery";
 import { clearProfileEdits } from "@/features/profile/profile-edit-cache";
-import { notifyAuthChanged, notifySignedOut } from "@/lib/auth-events";
+import {
+  AUTH_SIGNED_IN_EVENT,
+  AUTH_SESSION_ENDED_EVENT,
+  AUTH_SIGNED_OUT_EVENT,
+  notifyAuthChanged,
+  notifySignedOut,
+} from "@/lib/auth-events";
 import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
 import type {
   AuthenticatedUser,
@@ -62,6 +68,7 @@ export function AccountSettings({
   const [avatarUploadPhase, setAvatarUploadPhase] = useState<UploadPhase>("preparing");
   const avatarUploadController = useRef<AbortController | null>(null);
   const actionInFlight = useRef(false);
+  const actionLifetime = useRef(0);
   const [feedbackAction, setFeedbackAction] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -76,64 +83,121 @@ export function AccountSettings({
   const [preferencesError, setPreferencesError] = useState("");
 
   useEffect(() => {
+    const reset = () => {
+      actionLifetime.current += 1;
+      actionInFlight.current = false;
+      avatarUploadController.current?.abort();
+      avatarUploadController.current = null;
+      setUser(null);
+      setInitialLoading(true);
+      setPending("");
+      setAvatarUploading(false);
+      setExportJob(null);
+      setDeletionScheduledFor(null);
+      setFeedbackAction("");
+      setMessage("");
+      setError("");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setDeletionPassword("");
+      setNewEmail("");
+      setEmailChangePassword("");
+      setEmailFeedback(null);
+      setCurrentPasswordError("");
+      setNewPasswordError("");
+      setConfirmPasswordError("");
+      setNewEmailError("");
+      setEmailChangePasswordError("");
+    };
+    reset();
+    const refresh = () => {
+      reset();
+      setLoadVersion((version) => version + 1);
+    };
+    window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+    window.addEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
+    return () => {
+      actionLifetime.current += 1;
+      actionInFlight.current = false;
+      avatarUploadController.current?.abort();
+      window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
+      window.removeEventListener(AUTH_SESSION_ENDED_EVENT, refresh);
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
+    };
+  }, [profile.id]);
+
+  useEffect(() => {
     const controller = new AbortController();
+    const lifetime = actionLifetime.current;
     setInitialLoading(true);
     setInitialError("");
     api.auth
       .me(controller.signal)
       .then((currentUser) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || lifetime !== actionLifetime.current) return;
+        if (currentUser.id !== profile.id) {
+          throw new Error("Your account changed. Reload your profile to continue.");
+        }
         setUser(currentUser);
         setDeletionScheduledFor(currentUser.deletion_scheduled_for);
       })
       .catch((caught) => {
-        if (!controller.signal.aborted) setInitialError(errorMessage(caught));
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setInitialError(errorMessage(caught));
       })
       .finally(() => {
-        if (!controller.signal.aborted) setInitialLoading(false);
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setInitialLoading(false);
       });
     return () => controller.abort();
   }, [loadVersion, profile.id]);
 
   useEffect(() => {
     const controller = new AbortController();
+    const lifetime = actionLifetime.current;
     setSessions(null);
     setSessionsLoading(true);
     setSessionsError("");
     api.auth
       .sessions(controller.signal)
       .then((value) => {
-        if (!controller.signal.aborted) setSessions(value);
+        if (!controller.signal.aborted && lifetime === actionLifetime.current) setSessions(value);
       })
       .catch((caught) => {
-        if (!controller.signal.aborted) setSessionsError(errorMessage(caught));
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setSessionsError(errorMessage(caught));
       })
       .finally(() => {
-        if (!controller.signal.aborted) setSessionsLoading(false);
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setSessionsLoading(false);
       });
     return () => controller.abort();
   }, [loadVersion, sessionsVersion, profile.id]);
 
   useEffect(() => {
     const controller = new AbortController();
+    const lifetime = actionLifetime.current;
     setPreferences(null);
     setPreferencesLoading(true);
     setPreferencesError("");
     api.profiles
       .notificationPreferences(controller.signal)
       .then((value) => {
-        if (!controller.signal.aborted) setPreferences(value);
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setPreferences(value);
       })
       .catch((caught) => {
-        if (!controller.signal.aborted) setPreferencesError(errorMessage(caught));
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setPreferencesError(errorMessage(caught));
       })
       .finally(() => {
-        if (!controller.signal.aborted) setPreferencesLoading(false);
+        if (!controller.signal.aborted && lifetime === actionLifetime.current)
+          setPreferencesLoading(false);
       });
     return () => controller.abort();
   }, [loadVersion, preferencesVersion, profile.id]);
-
-  useEffect(() => () => avatarUploadController.current?.abort(), []);
 
   function cancelAvatarUpload() {
     avatarUploadController.current?.abort();
@@ -152,7 +216,8 @@ export function AccountSettings({
     return true;
   }
 
-  function finishAction() {
+  function finishAction(lifetime: number) {
+    if (lifetime !== actionLifetime.current) return;
     actionInFlight.current = false;
     setPending("");
   }
@@ -172,6 +237,7 @@ export function AccountSettings({
 
   async function updateAvatar(file: File) {
     if (pending || !beginAction("avatar")) return;
+    const lifetime = actionLifetime.current;
     const controller = new AbortController();
     avatarUploadController.current = controller;
     setAvatarUploading(true);
@@ -179,37 +245,52 @@ export function AccountSettings({
     try {
       const asset = await uploadImage(file, "avatar", {
         signal: controller.signal,
-        onPhase: setAvatarUploadPhase,
+        onPhase: (phase) => {
+          if (lifetime === actionLifetime.current && !controller.signal.aborted)
+            setAvatarUploadPhase(phase);
+        },
       });
+      if (lifetime !== actionLifetime.current) return;
+      if (controller.signal.aborted) {
+        setMessage("Upload cancelled.");
+        return;
+      }
       avatarUploadController.current = null;
       setAvatarUploading(false);
       const updated = await api.profiles.update({ avatar_id: asset.id });
+      if (lifetime !== actionLifetime.current) return;
       onProfileChange(updated);
       setUser((current) => (current ? { ...current, avatar: asset } : current));
       notifyAuthChanged();
       setMessage("Avatar updated.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       if (controller.signal.aborted) setMessage("Upload cancelled.");
       else setError(errorMessage(caught));
     } finally {
-      if (avatarUploadController.current === controller) avatarUploadController.current = null;
-      setAvatarUploading(false);
-      finishAction();
+      if (lifetime === actionLifetime.current) {
+        if (avatarUploadController.current === controller) avatarUploadController.current = null;
+        setAvatarUploading(false);
+        finishAction(lifetime);
+      }
     }
   }
 
   async function removeAvatar() {
     if (pending || !beginAction("avatar")) return;
+    const lifetime = actionLifetime.current;
     try {
       const updated = await api.profiles.update({ avatar_id: null });
+      if (lifetime !== actionLifetime.current) return;
       onProfileChange(updated);
       setUser((current) => (current ? { ...current, avatar: null } : current));
       notifyAuthChanged();
       setMessage("Avatar removed.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
@@ -235,11 +316,13 @@ export function AccountSettings({
     setCurrentPasswordError("");
     setNewPasswordError("");
     if (!beginAction("password")) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.changePassword({
         current_password: submittedCurrentPassword,
         new_password: submittedNewPassword,
       });
+      if (lifetime !== actionLifetime.current) return;
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -247,6 +330,7 @@ export function AccountSettings({
       setSessions(null);
       setSessionsVersion((version) => version + 1);
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       const currentFieldError = fieldValidationMessage(caught, "current_password");
       const newFieldError = fieldValidationMessage(caught, "new_password");
       setCurrentPasswordError(currentFieldError ?? "");
@@ -259,7 +343,7 @@ export function AccountSettings({
         setError(errorMessage(caught));
       }
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
@@ -273,6 +357,7 @@ export function AccountSettings({
     setNewEmail(submittedEmail);
     setEmailChangePassword(submittedPassword);
     if (!beginAction("email")) return;
+    const lifetime = actionLifetime.current;
     setNewEmailError("");
     setEmailChangePasswordError("");
     try {
@@ -280,12 +365,14 @@ export function AccountSettings({
         current_password: submittedPassword,
         new_email: submittedEmail,
       });
+      if (lifetime !== actionLifetime.current) return;
       setEmailChangePassword("");
       setEmailFeedback({
         error: false,
         text: "Check the new email address for a confirmation link. Your current address remains active until you confirm it.",
       });
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       const emailFieldError = fieldValidationMessage(caught, "new_email");
       const passwordFieldError = fieldValidationMessage(caught, "current_password");
       setNewEmailError(emailFieldError ?? "");
@@ -298,14 +385,16 @@ export function AccountSettings({
         setEmailFeedback({ error: true, text: errorMessage(caught) });
       }
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
   async function revokeSession(session: SessionMetadata) {
     if (pending || !beginAction(`session-${session.id}`)) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.revokeSession(session.id);
+      if (lifetime !== actionLifetime.current) return;
       if (session.current) {
         clearAllEditorRecovery();
         clearAllProgressRecovery();
@@ -326,32 +415,40 @@ export function AccountSettings({
       );
       setMessage("Session signed out.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
   async function updatePreference(key: keyof NotificationPreferences, value: boolean) {
     if (!preferences || pending || !beginAction(`preference-${key}`)) return;
+    const lifetime = actionLifetime.current;
     const previous = preferences;
     setPreferences({ ...preferences, [key]: value });
     try {
-      setPreferences(await api.profiles.updateNotificationPreferences({ [key]: value }));
+      const updated = await api.profiles.updateNotificationPreferences({ [key]: value });
+      if (lifetime !== actionLifetime.current) return;
+      setPreferences(updated);
       setMessage("Notification preferences saved.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setPreferences(previous);
       setError(errorMessage(caught));
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
   async function requestExport() {
     if (pending || !beginAction("export")) return;
+    const lifetime = actionLifetime.current;
     try {
       const requested = await api.auth.requestAccountExport();
+      if (lifetime !== actionLifetime.current) return;
       let job = await api.exports.get(requested.job_id);
+      if (lifetime !== actionLifetime.current) return;
       setExportJob(job);
       for (
         let attempt = 0;
@@ -359,7 +456,9 @@ export function AccountSettings({
         attempt += 1
       ) {
         await new Promise((resolve) => window.setTimeout(resolve, 1_000));
+        if (lifetime !== actionLifetime.current) return;
         job = await api.exports.get(requested.job_id);
+        if (lifetime !== actionLifetime.current) return;
         setExportJob(job);
       }
       if (job.status === "ready") {
@@ -370,9 +469,10 @@ export function AccountSettings({
         setMessage("Your export is still processing. Check this page again shortly.");
       }
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
@@ -390,8 +490,10 @@ export function AccountSettings({
     );
     setDeletionPassword(submittedPassword);
     if (!beginAction("deletion")) return;
+    const lifetime = actionLifetime.current;
     try {
       const scheduled = await api.auth.scheduleAccountDeletion(submittedPassword);
+      if (lifetime !== actionLifetime.current) return;
       clearAllEditorRecovery();
       clearAllProgressRecovery();
       clearProfileEdits();
@@ -401,30 +503,36 @@ export function AccountSettings({
       router.replace("/login?next=%2Fprofile&reason=deletion-scheduled");
       router.refresh();
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
   async function cancelDeletion() {
     if (pending || !beginAction("deletion")) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.cancelAccountDeletion();
+      if (lifetime !== actionLifetime.current) return;
       setDeletionScheduledFor(null);
       setUser((current) => (current ? { ...current, deletion_scheduled_for: null } : current));
       setMessage("Account deletion cancelled.");
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
     } finally {
-      finishAction();
+      finishAction(lifetime);
     }
   }
 
   async function logout() {
     if (pending || !beginAction("logout")) return;
+    const lifetime = actionLifetime.current;
     try {
       await api.auth.logout();
+      if (lifetime !== actionLifetime.current) return;
       clearAllEditorRecovery();
       clearAllProgressRecovery();
       clearProfileEdits();
@@ -432,8 +540,9 @@ export function AccountSettings({
       router.replace("/login");
       router.refresh();
     } catch (caught) {
+      if (lifetime !== actionLifetime.current) return;
       setError(errorMessage(caught));
-      finishAction();
+      finishAction(lifetime);
     }
   }
 

@@ -97,7 +97,7 @@ viewer/action corrections pass 281 frontend tests and nine engine cases locally;
 their `438a452` gate failed one avatar keyboard assertion (91 live passes, one
 failure, one not run; other seven jobs and 200 smoke plus 12 skips without
 retries passed). The keyboard scenario now waits for loaded profile activity
-before testing its tab order; a held response reproduced the dependency. These
+before testing its tab order; a held response reproduced the dependency. Keyboard/activity source `4b5e8e4` then passed all nine jobs (243 backend, 281 frontend, 200 smoke plus 12 skips without retries, 93 live). Account action ownership now passes 293 frontend tests, build/format and 12 real-stack/browser cases locally; accepted avatar/export responses cannot continue old UI work after departure. Account/session error timing also has focused unit evidence. Its new source requires its own CI. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
