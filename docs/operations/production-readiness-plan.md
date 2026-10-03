@@ -93,8 +93,11 @@ functional/image/foundation jobs (243 backend, 273 frontend, 200 smoke plus
 test-password findings. Generated test passwords and two exact historical
 exemptions then passed all nine jobs on `eca815d` (243 backend, 273 frontend,
 200 smoke plus 12 skips without retries, 90 live). Subsequent profile loading/
-viewer/action corrections pass 281 frontend tests and nine engine cases locally
-and require their own gate. These
+viewer/action corrections pass 281 frontend tests and nine engine cases locally;
+their `438a452` gate failed one avatar keyboard assertion (91 live passes, one
+failure, one not run; other seven jobs and 200 smoke plus 12 skips without
+retries passed). The keyboard scenario now waits for loaded profile activity
+before testing its tab order; a held response reproduced the dependency. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the

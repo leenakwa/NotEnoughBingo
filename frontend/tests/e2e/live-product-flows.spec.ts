@@ -4076,6 +4076,10 @@ test.describe("live full-stack product flows", () => {
     page.on("pageerror", (error) => errors.push(error.message));
     async function openChooser(name: string) {
       const input = page.getByLabel(name, { exact: true });
+      // Loaded activity inserts links before the avatar in the tab order.
+      if (name === "Upload avatar") {
+        await expect(page.getByRole("tabpanel")).toHaveAttribute("aria-busy", "false");
+      }
       await input.focus();
       await page.keyboard.press("Shift+Tab");
       await page.keyboard.press("Tab");

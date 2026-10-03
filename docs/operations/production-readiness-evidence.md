@@ -3974,3 +3974,40 @@ observed results and their limits. Do not include credentials or session data.
   transaction/joined/load and target operations remain. Section counts stay
   55 verified / 43 partial / six N/A / one deployment-only; section 4 is partial.
   User UI changes are retained. This new source requires its own CI.
+
+### 2026-10-03 — profile gate failure and keyboard-test readiness
+
+- Source `438a452208c97437988df3f509b73179d5d4df72` failed its full-stack
+  and Release jobs: 91 live passes, one avatar keyboard assertion failure and
+  one not run. Other seven jobs passed: 243 backend, 281 frontend/37 files,
+  200 smoke passes plus 12 intentional skips without retries, foundation,
+  secret scan and both images. Run:
+  https://github.com/leenakwa/NotEnoughBingo/actions/runs/37097226581.
+  Last fully successful source remains `eca815d`; its pass is not inherited.
+- Private trace metadata places completion of the profile activity request
+  between Shift+Tab and Tab. A controlled real-response hold reproduced the
+  failure: the predecessor was the Created tab, then newly inserted card links
+  received Tab. This is the correct changed DOM order, not lost avatar focus
+  during an account action. Log:
+  `/tmp/neb-avatar-focus-delayed-baseline-oct03.log`.
+- The keyboard scenario now waits for the activity tabpanel's `aria-busy=false`
+  before focusing the avatar and checking the adjacent Shift+Tab/Tab cycle.
+  Focus, 3px outline, Enter and the native chooser assertions are unchanged.
+  No sleeps, retries, product tab-order changes or error filtering were added.
+  The same held actual response passes with this state gate at both 320/1710 px:
+  `/tmp/neb-avatar-focus-delayed-fixed-oct03.log`. Three unmodified baseline
+  repetitions had passed locally, explaining why simple repeats missed the
+  request-order dependency. The controlled diagnostic was removed after use.
+- User confirmation that all changes are intentional remains authoritative;
+  catalog/search language pickers stay removed. Section counts remain
+  55 verified / 43 partial / six N/A / one deployment-only.
+- Final lint/types and formatting passed for the keyboard-test change. The
+  unchanged focus/outline/Enter/native-chooser flow passes at 320/1710 px in
+  Chromium and Firefox. Expanded mobile and desktop WebKit attempts fail the
+  background chooser's adjacent Shift+Tab/Tab assertion before reaching the
+  avatar; those attempts are recorded as failures, not cross-engine proof.
+  Logs: `/tmp/neb-avatar-focus-browsers-oct03.log`,
+  `/tmp/neb-avatar-focus-desktop-webkit-oct03.log`,
+  `/tmp/neb-avatar-focus-types-oct03.log`. Their keyboard traversal remains an
+  open browser-specific investigation. The configured CI chooser flow uses
+  Chromium. This correction requires its own source CI.
