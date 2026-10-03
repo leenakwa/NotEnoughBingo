@@ -3568,3 +3568,86 @@ observed results and their limits. Do not include credentials or session data.
   catalog/player read changes, not the later editor mutation changes. Full
   redacted local history scan covered 86 commits with no leaks. No workflow was
   restarted, image promoted, PR merged or public deployment performed.
+
+
+### 2026-10-03 — Editor source gate failure and corrected lifecycle paths (sections 4, 7, 58)
+
+- Exact source `6bcc3ef46f7922839a279f44b560749d4a2f453e` failed its
+  [CI gate](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37090903842).
+  Backend 240 tests, frontend 248 tests, smoke 200 passes plus 12 intentional
+  skips without retries, foundation, history and both image jobs passed.
+  Live flows had 39 passes, two failures and 40 not run; Release gate failed.
+  The failures were the author creation/upload journey timing out waiting for
+  draft PUT, and report authentication recovery's cleanup returning 403 instead
+  of 204. Neither is reclassified as green. Terminal log:
+  `/tmp/neb-ci-6bcc3ef-completed-oct03.log`.
+- The editor lifetime guard incorrectly treated its own newly saved draft URL
+  transition as departure. A user could start an upload after first save but
+  before the Next route commit; that commit then aborted the upload. A new
+  regression reproduced the aborted signal. Meaningful draft-route transitions
+  and unmount still invalidate operations, but assignment of the newly saved
+  board's own ID preserves its lifetime. This correction keeps genuine leave/
+  other-board/logout guards. Editor now has 29 passing cases.
+- Temporary-board cleanup now uses an isolated API context with the author's
+  fixture state, instead of changing the live page's cookies. The observed
+  cleanup 403 is consistent with overlapping page authentication/CSRF responses
+  after cookie replacement; this cause is an inference, not a captured CSRF
+  error body. Isolation removes that shared-cookie dependency and preserves the
+  exact ownership/204 cleanup assertion. No response/auth headers were printed.
+- Seven Chromium flows passed together without retries after these corrections:
+  both departed editor cases, separate blank Create, both queued-player boundary
+  cases, the failed report-recovery/cleanup case and full author create/save/
+  image/edit/publish journey. The upload reached actual storage/backend and its
+  expected draft PUT; report cleanup kept its strict 204 requirement. Log:
+  `/tmp/neb-player-editor-lifecycle-live-oct03.log`. New source still needs CI;
+  no workflow was restarted to hide the failed gate.
+
+### 2026-10-03 — Player queued mutation and stale write protection (sections 4, 58)
+
+- Player save chains could execute queued PUTs after departure or logout. Old
+  progress conflicts could fetch/retry in the next scope, and an old successful
+  save could replace the next board's version. Reset success could read again
+  after departure; late sharing navigated and late likes updated the next board.
+  Added regressions reproduce these behaviors. Two initial next-board tests used
+  a summary title rather than the rendered revision title, so their first failure
+  did not prove the intended assertion. After correcting the fixture title, both
+  fail against the prior source at the actual stale version/stat assertions
+  (next version 8 was replaced by old version 2). Logs:
+  `/tmp/neb-player-mutation-baseline-oct03.log`,
+  `/tmp/neb-player-mutation-next-board-baseline-oct03.log`.
+- A player mutation lifetime now invalidates on load/route cleanup, unmount,
+  sign-in, session end and explicit logout. It detaches the new scope's queue,
+  resets action refs and disables hydration before new actions can proceed.
+  Queued callbacks check it before requests; conflict reads/retries, reset reads,
+  successful versions/recovery updates and errors check it after awaits. Like,
+  follow, management and share callbacks guard state/navigation too. Existing
+  request versions still order newer changes within the same lifetime. Already
+  issued server writes can complete; this is protection against subsequent work
+  and obsolete callbacks, not server cancellation or a new transaction policy.
+- Seven added player cases plus the existing 11 now pass. Unit mocks reset their
+  implementations/one-shot queues between cases and have realistic default save/
+  reset results. The full final frontend check passed lint/types and 256 tests
+  across 34 files, build and formatting. A missing mandatory `code` in the mock
+  conflict payload was caught by types and fixed before the final check. Logs:
+  `/tmp/neb-player-mutation-fixed-oct03.log`,
+  `/tmp/neb-player-mutation-final-check-oct03.log`,
+  `/tmp/neb-player-mutation-final-build-oct03.log`,
+  `/tmp/neb-player-mutation-final-format-oct03.log`.
+- Two real QA flows hold a successful actual first PUT, queue a second mark and
+  then leave or explicitly log out from another tab. The logout flow creates a
+  separate real session so shared fixture sessions remain valid. After the held
+  response is released, no second PUT is sent and direct authenticated backend
+  reads retain exactly one mark. Temporary boards use isolated author cleanup.
+  Both flows passed in Chromium, mobile WebKit and Firefox: six cases without
+  retries and no page errors. Config/log:
+  `/tmp/neb-player-mutation-browser.config.ts`,
+  `/tmp/neb-player-mutation-browsers-oct03.log`. Initial logout test setup used two
+  nonexistent settings paths; it was corrected to the actual `/profile` before
+  successful runs. These are engine/device emulations, not physical-device proof.
+- Generated next-env imports were restored. Backend/API contracts and the user's
+  intentional UI changes are preserved. Broader component states, forms/controls/
+  native-device review, defaults/transactions/API matrices and representative
+  joined/load paths remain. Section 58 still has the explicitly documented case
+  where both cross-tab storage events and BroadcastChannel are unavailable.
+  Section counts remain 55 verified / 43 partial / 6 N/A / 1 deployment-only.
+  New corrections require their own source gate; no merge/promotion/deployment.

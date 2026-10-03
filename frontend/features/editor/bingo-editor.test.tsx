@@ -439,6 +439,26 @@ describe("BingoEditor autosave and safety", () => {
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
+  it("keeps an upload active during its own first saved-draft URL transition", async () => {
+    let uploadSignal: AbortSignal | undefined;
+    vi.mocked(uploadImage).mockImplementationOnce((_file, _kind, options) => {
+      uploadSignal = options?.signal;
+      return new Promise(() => undefined);
+    });
+    const view = render(<BingoEditor />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
+    await advanceAutosave();
+    expect(mocks.replace).toHaveBeenCalledWith(`/create?bingo=${BINGO_ID}`, { scroll: false });
+    fireEvent.change(screen.getByLabelText("Upload background"), {
+      target: { files: [new File(["image"], "board.png", { type: "image/png" })] },
+    });
+    expect(uploadSignal).toBeDefined();
+    view.rerender(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    expect(uploadSignal!.aborted).toBe(false);
+  });
+
   it("queues edits made while a save is in flight and persists them afterward", async () => {
     let resolveCreate!: (value: BingoDraft) => void;
     mocks.createDraft.mockImplementation(

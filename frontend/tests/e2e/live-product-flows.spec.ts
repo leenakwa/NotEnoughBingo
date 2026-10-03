@@ -243,17 +243,100 @@ test("create navigation opens a separate blank board from an existing draft", as
   expect((await unchanged.json()).size).toBe(3);
 });
 
-test.afterEach(async ({ page }) => {
+for (const boundary of ["leave", "cross-tab logout"] as const) {
+  test(`player does not send queued marks after ${boundary}`, async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.name));
+    const board = await createSocialFormBoard(page);
+    if (boundary === "leave") await authenticateAs(page, "player");
+    else {
+      // Use a separate session so logout does not revoke the shared fixture session.
+      await page.context().clearCookies();
+      expect((await page.context().request.get("/api/v1/auth/csrf/")).status()).toBe(200);
+      const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+      expect(csrf).toBeDefined();
+      const login = await page.context().request.post("/api/v1/auth/login/", {
+        headers: { "X-CSRFToken": csrf!.value },
+        data: { email: readLiveFixture().users.player.email, password: E2E_FIXTURE_PASSWORD },
+      });
+      expect(login.status()).toBe(200);
+    }
+    let releaseSave!: () => void;
+    const held = new Promise<void>((resolve) => {
+      releaseSave = resolve;
+    });
+    let persisted = false;
+    let writes = 0;
+    const progressPath = `/api/v1/progress/${board.id}/`;
+    await page.route(`**${progressPath}`, async (route) => {
+      if (route.request().method() !== "PUT") return route.continue();
+      writes += 1;
+      const response = await route.fetch();
+      expect(response.status()).toBe(200);
+      persisted = true;
+      await held;
+      await route.fulfill({ response });
+    });
+    const otherTab = boundary === "cross-tab logout" ? await page.context().newPage() : null;
+    try {
+      if (otherTab) {
+        await otherTab.goto("/profile");
+        await expect(otherTab.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+      }
+      await page.goto(`/bingo/${board.id}`);
+      const cells = page.locator("button.play-cell");
+      await expect(cells.first()).toBeEnabled();
+      await cells.first().click();
+      await expect.poll(() => persisted).toBe(true);
+      await cells.nth(1).click();
+      // Let the second autosave join the chain behind the held first response.
+      await page.waitForTimeout(450);
+      expect(writes).toBe(1);
+      if (otherTab) {
+        await otherTab.getByRole("button", { name: "Log out", exact: true }).click();
+        await expect(page.getByRole("link", { name: "Log in to like", exact: true })).toBeVisible();
+      } else {
+        await page.getByRole("link", { name: "Explore", exact: true }).click();
+        await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+      }
+      const response = page.waitForResponse(
+        (response) =>
+          response.url().endsWith(progressPath) && response.request().method() === "PUT",
+      );
+      releaseSave();
+      await response;
+      await page.waitForTimeout(500);
+      expect(writes).toBe(1);
+      await authenticateAs(page, "player");
+      const progress = await page.context().request.get(progressPath);
+      expect(progress.status()).toBe(200);
+      expect((await progress.json()).selected_cells).toHaveLength(1);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      releaseSave();
+      await otherTab?.close();
+    }
+  });
+}
+
+test.afterEach(async ({ page, playwright }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;
-  await authenticateAs(page, "author");
-  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
-  expect(csrf).toBeDefined();
-  const removed = await page.context().request.delete(`/api/v1/bingos/${id}/`, {
-    headers: { "X-CSRFToken": csrf!.value },
+  const author = await playwright.request.newContext({
+    baseURL: test.info().project.use.baseURL,
+    storageState: authStatePath("author"),
   });
-  expect(removed.status()).toBe(204);
-  socialFormBoards.delete(page);
+  try {
+    const csrf = (await author.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
+    expect(csrf).toBeDefined();
+    const removed = await author.delete(`/api/v1/bingos/${id}/`, {
+      headers: { "X-CSRFToken": csrf!.value },
+    });
+    expect(removed.status()).toBe(204);
+    socialFormBoards.delete(page);
+  } finally {
+    await author.dispose();
+  }
 });
 
 for (const scenario of [

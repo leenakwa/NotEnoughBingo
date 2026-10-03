@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BingoPlayer } from "@/features/play/bingo-player";
 import type { AuthenticatedUser, BingoDetail, PlayProgress } from "@/lib/api/types";
 import { readGuestProgress, writeGuestProgress } from "@/lib/guest-progress";
-import { AUTH_SIGNED_IN_EVENT } from "@/lib/auth-events";
+import { AUTH_SIGNED_IN_EVENT, AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
 import { ApiClientError } from "@/lib/api/client";
 
 const mocks = vi.hoisted(() => ({
@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   getProgress: vi.fn(),
   saveProgress: vi.fn(),
   resetProgress: vi.fn(),
+  createShare: vi.fn(),
+  likeBingo: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
   track: vi.fn(),
@@ -41,7 +43,8 @@ vi.mock("@/features/social/report-dialog", () => ({
 vi.mock("@/lib/api/client", () => ({
   api: {
     auth: { session: mocks.getViewer },
-    bingos: { get: mocks.getBingo },
+    bingos: { get: mocks.getBingo, like: mocks.likeBingo },
+    shares: { create: mocks.createShare },
     profiles: { get: mocks.getProfile },
     progress: {
       get: mocks.getProgress,
@@ -57,6 +60,7 @@ vi.mock("@/lib/api/client", () => ({
     }
   },
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
+  isAuthenticationRequiredError: () => false,
 }));
 
 const viewer: AuthenticatedUser = {
@@ -153,14 +157,177 @@ const progress: PlayProgress = {
 
 describe("BingoPlayer", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     vi.spyOn(window, "confirm").mockReturnValue(true);
     mocks.getBingo.mockResolvedValue(bingo);
     mocks.getViewer.mockResolvedValue(viewer);
     mocks.getProgress.mockResolvedValue(progress);
+    mocks.saveProgress.mockResolvedValue({ ...progress, version: 3 });
+    mocks.resetProgress.mockResolvedValue(undefined);
     mocks.getProfile.mockRejectedValue(new Error("Profile is optional here"));
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it.each(["leave", "logout"])("does not send queued marks after %s", async (boundary) => {
+    let resolveSave!: (value: PlayProgress) => void;
+    mocks.saveProgress.mockReturnValueOnce(
+      new Promise<PlayProgress>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    await act(async () => cell.click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(1));
+    await act(async () => cell.click());
+    await act(() => new Promise((resolve) => window.setTimeout(resolve, 450)));
+    if (boundary === "leave") view.unmount();
+    else {
+      mocks.getViewer.mockResolvedValueOnce(null);
+      act(() => window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT)));
+      await waitFor(() =>
+        expect(screen.getByRole("link", { name: "Log in to like" })).toBeVisible(),
+      );
+    }
+    await act(async () => resolveSave({ ...progress, version: 2 }));
+    expect(mocks.saveProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry an obsolete progress conflict after departure", async () => {
+    let rejectSave!: (error: Error) => void;
+    mocks.saveProgress.mockReturnValueOnce(
+      new Promise<PlayProgress>((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    await act(async () => cell.click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(1));
+    view.unmount();
+    await act(async () =>
+      rejectSave(new ApiClientError(409, { code: "conflict", message: "Old version" })),
+    );
+    expect(mocks.getProgress).toHaveBeenCalledTimes(1);
+    expect(mocks.saveProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not let an old save replace the next board's progress version", async () => {
+    let resolveSave!: (value: PlayProgress) => void;
+    mocks.saveProgress.mockReturnValueOnce(
+      new Promise<PlayProgress>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    await act(async () => cell.click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(1));
+    const next = {
+      ...bingo,
+      id: "next-board",
+      title: "Next board",
+      current_revision: { ...bingo.current_revision!, title: "Next board" },
+    };
+    mocks.getBingo.mockResolvedValueOnce(next);
+    mocks.getProgress.mockResolvedValueOnce({ ...progress, version: 8 });
+    mocks.saveProgress.mockResolvedValueOnce({ ...progress, version: 9 });
+    view.rerender(<BingoPlayer bingoId={next.id} />);
+    await screen.findByRole("heading", { name: "Next board" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+    );
+    await act(async () => resolveSave({ ...progress, version: 2 }));
+    await act(async () => screen.getByRole("button", { name: "Open the board" }).click());
+    await waitFor(() => expect(mocks.saveProgress).toHaveBeenCalledTimes(2));
+    expect(mocks.saveProgress).toHaveBeenLastCalledWith(
+      next.id,
+      bingo.current_revision!.id,
+      [bingo.current_revision!.cells[0]!.id],
+      8,
+    );
+  });
+
+  it("does not reload progress after a departed reset completes", async () => {
+    mocks.getProgress.mockResolvedValueOnce({
+      ...progress,
+      selected_cells: [bingo.current_revision!.cells[0]!.id],
+    });
+    let resolveReset!: () => void;
+    mocks.resetProgress.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveReset = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const reset = await screen.findByRole("button", { name: "Reset" });
+    await waitFor(() => expect(reset).toBeEnabled());
+    await act(async () => reset.click());
+    await waitFor(() => expect(mocks.resetProgress).toHaveBeenCalledTimes(1));
+    view.unmount();
+    await act(async () => resolveReset());
+    expect(mocks.getProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not open a completed share from a departed player", async () => {
+    let resolveShare!: (value: { id: string }) => void;
+    mocks.createShare.mockReturnValueOnce(
+      new Promise<{ id: string }>((resolve) => {
+        resolveShare = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const share = screen.getByRole("button", { name: "Share result" });
+    await waitFor(() => expect(share).toBeEnabled());
+    await act(async () => share.click());
+    await act(async () => screen.getByRole("button", { name: "Create share link" }).click());
+    expect(mocks.createShare).toHaveBeenCalledTimes(1);
+    view.unmount();
+    await act(async () => resolveShare({ id: "old-share" }));
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("does not apply an old like response to the next board", async () => {
+    let resolveLike!: (value: BingoDetail) => void;
+    mocks.likeBingo.mockReturnValueOnce(
+      new Promise<BingoDetail>((resolve) => {
+        resolveLike = resolve;
+      }),
+    );
+    const view = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const like = screen.getByRole("button", { name: "Like · 0" });
+    await waitFor(() => expect(like).toBeEnabled());
+    await act(async () => like.click());
+    const next = {
+      ...bingo,
+      id: "next-board",
+      title: "Next board",
+      current_revision: { ...bingo.current_revision!, title: "Next board" },
+      stats: { ...bingo.stats, likes: 7 },
+    };
+    mocks.getBingo.mockResolvedValueOnce(next);
+    view.rerender(<BingoPlayer bingoId={next.id} />);
+    await screen.findByRole("heading", { name: "Next board" });
+    await act(async () =>
+      resolveLike({ ...bingo, liked_by_me: true, stats: { ...bingo.stats, likes: 15 } }),
+    );
+    expect(screen.getByRole("button", { name: "Like · 7" })).toBeVisible();
+  });
 
   it("does not write progress merely because server state was hydrated", async () => {
     render(<BingoPlayer bingoId={bingo.id} />);

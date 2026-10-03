@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AuthLink } from "@/components/auth/auth-link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -15,7 +15,11 @@ import { CommentsPanel } from "@/features/social/comments-panel";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { trackInteraction } from "@/lib/analytics";
 import { api, ApiClientError, errorMessage, isAuthenticationRequiredError } from "@/lib/api/client";
-import { AUTH_SIGNED_IN_EVENT, AUTH_SESSION_ENDED_EVENT } from "@/lib/auth-events";
+import {
+  AUTH_SIGNED_IN_EVENT,
+  AUTH_SESSION_ENDED_EVENT,
+  AUTH_SIGNED_OUT_EVENT,
+} from "@/lib/auth-events";
 import {
   clearGuestProgress,
   makeIdempotencyKey,
@@ -73,24 +77,39 @@ export function BingoPlayer({
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const initialBingoConsumed = useRef(false);
   const guestSelectionToSync = useRef<string[] | null>(null);
+  const mutationLifetime = useRef(0);
+  const invalidateMutations = useCallback(() => {
+    mutationLifetime.current += 1;
+    requestVersion.current += 1;
+    hydrated.current = false;
+    saveChain.current = Promise.resolve();
+    resetInFlight.current = false;
+    manageInFlight.current = false;
+  }, []);
 
   useEffect(() => {
     const refresh = () => {
+      invalidateMutations();
+      setProgressReady(false);
       if (viewer === "guest" && selected.size > 0) guestSelectionToSync.current = [...selected];
       setLoadVersion((version) => version + 1);
     };
     window.addEventListener(AUTH_SIGNED_IN_EVENT, refresh);
     const sessionEnded = () => {
+      invalidateMutations();
+      setProgressReady(false);
       guestSelectionToSync.current = null;
       setSelected(new Set());
       setLoadVersion((version) => version + 1);
     };
     window.addEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+    window.addEventListener(AUTH_SIGNED_OUT_EVENT, sessionEnded);
     return () => {
       window.removeEventListener(AUTH_SIGNED_IN_EVENT, refresh);
       window.removeEventListener(AUTH_SESSION_ENDED_EVENT, sessionEnded);
+      window.removeEventListener(AUTH_SIGNED_OUT_EVENT, sessionEnded);
     };
-  }, [viewer, selected]);
+  }, [viewer, selected, invalidateMutations]);
 
   useEffect(() => {
     let active = true;
@@ -233,8 +252,16 @@ export function BingoPlayer({
     void load();
     return () => {
       active = false;
+      invalidateMutations();
     };
-  }, [bingoId, initialBingo, initialViewer, initialAuthorProfile, loadVersion]);
+  }, [
+    bingoId,
+    initialBingo,
+    initialViewer,
+    initialAuthorProfile,
+    loadVersion,
+    invalidateMutations,
+  ]);
 
   useEffect(() => {
     const revision = bingo?.current_revision;
@@ -256,33 +283,39 @@ export function BingoPlayer({
     }
 
     const version = ++requestVersion.current;
+    const lifetime = mutationLifetime.current;
+    const isCurrent = () => lifetime === mutationLifetime.current;
     const timeout = window.setTimeout(() => {
       setSaving(true);
       saveChain.current = saveChain.current
         .then(async () => {
+          if (!isCurrent()) return;
           let saved;
           try {
             saved = await api.progress.save(bingoId, revision.id, cells, progressVersion.current);
           } catch (caught) {
+            if (!isCurrent()) return;
             if (!(caught instanceof ApiClientError) || caught.status !== 409) {
               throw caught;
             }
             const latest = await api.progress.get(bingoId);
+            if (!isCurrent()) return;
             progressVersion.current = latest.version;
             saved = await api.progress.save(bingoId, revision.id, cells, latest.version);
           }
+          if (!isCurrent()) return;
           progressVersion.current = saved.version;
           clearProgressRecovery(viewer.id, bingoId);
           if (version === requestVersion.current) setProgressError("");
         })
         .catch((caught) => {
-          if (version === requestVersion.current) {
+          if (isCurrent() && version === requestVersion.current) {
             writeProgressRecovery(viewer.id, bingoId, revision.id, cells);
             setProgressError(errorMessage(caught));
           }
         })
         .finally(() => {
-          if (version === requestVersion.current) setSaving(false);
+          if (isCurrent() && version === requestVersion.current) setSaving(false);
         });
     }, 350);
     return () => window.clearTimeout(timeout);
@@ -323,6 +356,8 @@ export function BingoPlayer({
     if (resetInFlight.current || saving || selected.size === 0) return;
     if (!window.confirm("Clear all marks on this bingo? This cannot be undone.")) return;
     resetInFlight.current = true;
+    const lifetime = mutationLifetime.current;
+    const isCurrent = () => lifetime === mutationLifetime.current;
     const previousCells = [...selected];
     const resetVersion = ++requestVersion.current;
     if (saving) setSaving(false);
@@ -354,8 +389,11 @@ export function BingoPlayer({
     setSaving(true);
     saveChain.current = saveChain.current
       .then(async () => {
+        if (!isCurrent()) return;
         await api.progress.reset(bingoId);
+        if (!isCurrent()) return;
         const latest = await api.progress.get(bingoId);
+        if (!isCurrent()) return;
         progressVersion.current = latest.version;
         if (viewer) clearProgressRecovery(viewer.id, bingoId);
         if (bingo?.current_revision) {
@@ -366,7 +404,7 @@ export function BingoPlayer({
         }
       })
       .catch((caught) => {
-        if (resetVersion !== requestVersion.current) return;
+        if (!isCurrent() || resetVersion !== requestVersion.current) return;
         skipNextSync.current = true;
         setSelected(new Set(previousCells));
         if (viewer && bingo?.current_revision) {
@@ -379,6 +417,7 @@ export function BingoPlayer({
         setProgressError(errorMessage(caught));
       })
       .finally(() => {
+        if (!isCurrent()) return;
         resetInFlight.current = false;
         if (resetVersion === requestVersion.current) setSaving(false);
       });
@@ -387,10 +426,12 @@ export function BingoPlayer({
   async function toggleBingoLike() {
     if (!bingo || !hydrated.current || socialPending) return;
     setSocialPending("like");
+    const lifetime = mutationLifetime.current;
     setProgressError("");
     try {
       if (bingo.liked_by_me) {
         await api.bingos.unlike(bingo.id);
+        if (lifetime !== mutationLifetime.current) return;
         setBingo((current) =>
           current
             ? {
@@ -405,6 +446,7 @@ export function BingoPlayer({
         );
       } else {
         const updated = await api.bingos.like(bingo.id);
+        if (lifetime !== mutationLifetime.current) return;
         setBingo((current) =>
           current
             ? {
@@ -416,15 +458,17 @@ export function BingoPlayer({
         );
       }
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       setProgressError(errorMessage(caught));
     } finally {
-      setSocialPending("");
+      if (lifetime === mutationLifetime.current) setSocialPending("");
     }
   }
 
   async function toggleFollow() {
     if (!authorProfile || !hydrated.current || socialPending) return;
     setSocialPending("follow");
+    const lifetime = mutationLifetime.current;
     setProgressError("");
     try {
       if (authorProfile.is_following) {
@@ -432,6 +476,7 @@ export function BingoPlayer({
       } else {
         await api.follows.follow(authorProfile.id);
       }
+      if (lifetime !== mutationLifetime.current) return;
       setAuthorProfile({
         ...authorProfile,
         is_following: !authorProfile.is_following,
@@ -441,9 +486,10 @@ export function BingoPlayer({
         ),
       });
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       setProgressError(errorMessage(caught));
     } finally {
-      setSocialPending("");
+      if (lifetime === mutationLifetime.current) setSocialPending("");
     }
   }
 
@@ -458,11 +504,13 @@ export function BingoPlayer({
       return;
     }
     manageInFlight.current = true;
+    const lifetime = mutationLifetime.current;
     setSocialPending(action);
     setProgressError("");
     try {
       if (action === "delete") {
         await api.bingos.remove(bingo.id);
+        if (lifetime !== mutationLifetime.current) return;
         router.replace("/profile");
         return;
       }
@@ -470,12 +518,16 @@ export function BingoPlayer({
         action === "archive"
           ? await api.bingos.archive(bingo.id)
           : await api.bingos.restore(bingo.id);
+      if (lifetime !== mutationLifetime.current) return;
       setBingo(updated);
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       setProgressError(errorMessage(caught));
     } finally {
-      manageInFlight.current = false;
-      setSocialPending("");
+      if (lifetime === mutationLifetime.current) {
+        manageInFlight.current = false;
+        setSocialPending("");
+      }
     }
   }
 
@@ -487,6 +539,7 @@ export function BingoPlayer({
       return;
     }
     setSharing(true);
+    const lifetime = mutationLifetime.current;
     setProgressError("");
     try {
       const result = await api.shares.create(
@@ -498,8 +551,10 @@ export function BingoPlayer({
         },
         makeIdempotencyKey(),
       );
+      if (lifetime !== mutationLifetime.current) return;
       router.push(`/share/${bingoId}/${result.id}`);
     } catch (caught) {
+      if (lifetime !== mutationLifetime.current) return;
       setProgressError(errorMessage(caught));
       setSharing(false);
     }

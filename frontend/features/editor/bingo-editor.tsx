@@ -126,7 +126,10 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   }, []);
 
   useEffect(() => {
-    const openedBlank = previousRouteBingoId.current !== undefined && bingoId === undefined;
+    const previousBingoId = previousRouteBingoId.current;
+    const ownCreation = previousBingoId === undefined && bingoId === serverDraft.current.bingoId;
+    if (previousBingoId !== bingoId && !ownCreation) invalidateMutations();
+    const openedBlank = previousBingoId !== undefined && bingoId === undefined;
     previousRouteBingoId.current = bingoId;
     if (openedBlank) {
       const fresh = createEditorState(5);
@@ -154,8 +157,9 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       setStep("board");
       dispatch({ type: "new-document" });
     }
-    return () => invalidateMutations();
   }, [bingoId, invalidateMutations]);
+
+  useEffect(() => () => invalidateMutations(), [invalidateMutations]);
 
   const currentFingerprint = editorDocumentFingerprint(state);
   const dirty = currentFingerprint !== savedFingerprint;

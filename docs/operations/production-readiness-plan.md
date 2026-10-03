@@ -75,8 +75,11 @@ Editor hydration source `371dd1b` then passed all nine jobs (240 backend, 231
 frontend, 200 smoke passes plus 12 intentional skips without retries, 76 live).
 Catalog/player source `6eaaf25` then passed all nine jobs (240 backend, 240
 frontend, 200 smoke passes plus 12 intentional skips without retries, 78 live).
-Subsequent editor mutation corrections have local evidence and need their own
-source gate. These
+Editor mutation source `6bcc3ef` then failed CI: 39 live passes, two failures
+and 40 not run (other quality/image/smoke jobs passed). The own-draft URL/upload
+regression and isolated cleanup correction, together with player lifetime guards,
+now pass 256 frontend tests and seven related Chromium flows locally and need
+their own source gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -120,11 +123,15 @@ only environment-specific smoke and recovery checks after release.
    production-image identity/relabel guards. Partial-settings source `7381042`
    passed all nine jobs. Editor hydration source `371dd1b` passed all nine jobs.
    Catalog/player source `6eaaf25` passed all nine jobs. Editor mutation
-   corrections now have local evidence and need their own gate.
+   source `6bcc3ef` failed two live cases; own-draft upload continuity and isolated
+   cleanup corrections now have local evidence, together with player lifetime
+   guards, and need their own gate.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
-   pending player mutations across route and account changes. The section 4
+   remaining component-state families and per-form/control coverage. Player
+   queued writes/conflict/reset/share/like callbacks now have seven new unit
+   regressions and six related real-stack/browser cases across leave/logout. The section 4
    partial-data sweep now includes catalog hints/results, Discover refresh, player
    author/progress/comments independence and header unread-count failure. Account settings now have
    independent sessions/preferences failure/loading/retry evidence and actual
