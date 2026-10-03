@@ -68,29 +68,70 @@ export function AccountSettings({
   const [initialLoading, setInitialLoading] = useState(true);
   const [initialError, setInitialError] = useState("");
   const [loadVersion, setLoadVersion] = useState(0);
+  const [sessionsVersion, setSessionsVersion] = useState(0);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState("");
+  const [preferencesVersion, setPreferencesVersion] = useState(0);
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+  const [preferencesError, setPreferencesError] = useState("");
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     setInitialLoading(true);
     setInitialError("");
-    Promise.all([api.auth.me(), api.auth.sessions(), api.profiles.notificationPreferences()])
-      .then(([currentUser, activeSessions, notificationPreferences]) => {
-        if (!active) return;
+    api.auth
+      .me(controller.signal)
+      .then((currentUser) => {
+        if (controller.signal.aborted) return;
         setUser(currentUser);
-        setSessions(activeSessions);
-        setPreferences(notificationPreferences);
         setDeletionScheduledFor(currentUser.deletion_scheduled_for);
       })
       .catch((caught) => {
-        if (active) setInitialError(errorMessage(caught));
+        if (!controller.signal.aborted) setInitialError(errorMessage(caught));
       })
       .finally(() => {
-        if (active) setInitialLoading(false);
+        if (!controller.signal.aborted) setInitialLoading(false);
       });
-    return () => {
-      active = false;
-    };
-  }, [loadVersion]);
+    return () => controller.abort();
+  }, [loadVersion, profile.id]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setSessions(null);
+    setSessionsLoading(true);
+    setSessionsError("");
+    api.auth
+      .sessions(controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setSessions(value);
+      })
+      .catch((caught) => {
+        if (!controller.signal.aborted) setSessionsError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSessionsLoading(false);
+      });
+    return () => controller.abort();
+  }, [loadVersion, sessionsVersion, profile.id]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setPreferences(null);
+    setPreferencesLoading(true);
+    setPreferencesError("");
+    api.profiles
+      .notificationPreferences(controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setPreferences(value);
+      })
+      .catch((caught) => {
+        if (!controller.signal.aborted) setPreferencesError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPreferencesLoading(false);
+      });
+    return () => controller.abort();
+  }, [loadVersion, preferencesVersion, profile.id]);
 
   useEffect(() => () => avatarUploadController.current?.abort(), []);
 
@@ -203,7 +244,8 @@ export function AccountSettings({
       setNewPassword("");
       setConfirmPassword("");
       setMessage("Password changed. Other sessions were signed out.");
-      setSessions(await api.auth.sessions());
+      setSessions(null);
+      setSessionsVersion((version) => version + 1);
     } catch (caught) {
       const currentFieldError = fieldValidationMessage(caught, "current_password");
       const newFieldError = fieldValidationMessage(caught, "new_password");
@@ -404,7 +446,7 @@ export function AccountSettings({
     );
   }
 
-  if (initialError || !user || !sessions || !preferences) {
+  if (initialError || !user) {
     return (
       <section className="account-settings" aria-labelledby="account-settings-title">
         <h2 id="account-settings-title">Account settings</h2>
@@ -575,7 +617,14 @@ export function AccountSettings({
 
         <div className="settings-card">
           <h3>Active sessions</h3>
-          {sessions.results.length ? (
+          {sessionsLoading ? <LoadingState label="Loading active sessions…" /> : null}
+          {sessionsError ? (
+            <ErrorState
+              message={sessionsError}
+              onRetry={() => setSessionsVersion((version) => version + 1)}
+            />
+          ) : null}
+          {sessions?.results.length ? (
             <ul className="session-list">
               {sessions.results.map((session) => (
                 <li key={session.id}>
@@ -597,29 +646,38 @@ export function AccountSettings({
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : sessions ? (
             <p>No active sessions were returned.</p>
-          )}
+          ) : null}
           {actionFeedback("session")}
         </div>
 
         <div className="settings-card">
           <h3>Notification preferences</h3>
-          <div className="switch-list">
-            {(
-              Object.entries(preferenceLabels) as Array<[keyof NotificationPreferences, string]>
-            ).map(([key, label]) => (
-              <label key={key}>
-                <input
-                  type="checkbox"
-                  checked={preferences[key]}
-                  disabled={Boolean(pending)}
-                  onChange={(event) => void updatePreference(key, event.target.checked)}
-                />
-                <span>{label}</span>
-              </label>
-            ))}
-          </div>
+          {preferencesLoading ? <LoadingState label="Loading notification preferences…" /> : null}
+          {preferencesError ? (
+            <ErrorState
+              message={preferencesError}
+              onRetry={() => setPreferencesVersion((version) => version + 1)}
+            />
+          ) : null}
+          {preferences ? (
+            <div className="switch-list">
+              {(
+                Object.entries(preferenceLabels) as Array<[keyof NotificationPreferences, string]>
+              ).map(([key, label]) => (
+                <label key={key}>
+                  <input
+                    type="checkbox"
+                    checked={preferences[key]}
+                    disabled={Boolean(pending)}
+                    onChange={(event) => void updatePreference(key, event.target.checked)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          ) : null}
           {actionFeedback("preference")}
         </div>
 

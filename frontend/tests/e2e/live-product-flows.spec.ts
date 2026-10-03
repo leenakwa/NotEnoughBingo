@@ -34,6 +34,84 @@ test.afterEach(async ({ page }) => {
   socialFormBoards.delete(page);
 });
 
+for (const scenario of [
+  {
+    path: "auth/sessions/",
+    heading: "Active sessions",
+    message: "Session details are temporarily unavailable.",
+  },
+  {
+    path: "profiles/notification-preferences/",
+    heading: "Notification preferences",
+    message: "Notification preferences are temporarily unavailable.",
+  },
+]) {
+  test(`account settings remain usable when ${scenario.heading.toLowerCase()} fail`, async ({
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.name));
+    await authenticateAs(page, "author");
+    let unavailable = true;
+    let failedRequests = 0;
+    const requests = { identity: 0, sessions: 0, preferences: 0 };
+    for (const [key, path] of Object.entries({
+      identity: "auth/me/",
+      sessions: "auth/sessions/",
+      preferences: "profiles/notification-preferences/",
+    })) {
+      await page.route(`**/api/v1/${path}`, (route) => {
+        if (route.request().method() !== "GET") return route.continue();
+        requests[key as keyof typeof requests] += 1;
+        if (path === scenario.path && unavailable) {
+          failedRequests += 1;
+          return route.fulfill({
+            status: 503,
+            json: { error: { code: "unavailable", message: scenario.message } },
+          });
+        }
+        return route.continue();
+      });
+    }
+    await page.goto("/profile");
+    const section = page
+      .locator(".settings-card")
+      .filter({ has: page.getByRole("heading", { name: scenario.heading, exact: true }) });
+    await expect(section.getByRole("alert")).toContainText(scenario.message);
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 989 });
+      await expect(
+        page.getByRole("button", { name: "Change password", exact: true }),
+      ).toBeEnabled();
+      await expect(page.getByRole("button", { name: "Log out", exact: true })).toBeEnabled();
+      await expect(page.getByLabel("Display name", { exact: true })).toBeEnabled();
+      await expect(section.getByRole("button", { name: "Try again" })).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    const beforeRetry = { ...requests };
+    unavailable = false;
+    await section.getByRole("button", { name: "Try again" }).click();
+    await expect(section.getByRole("alert")).toHaveCount(0);
+    if (scenario.path === "auth/sessions/") {
+      await expect(section.getByText("This device", { exact: true })).toBeVisible();
+      expect(requests.sessions).toBe(beforeRetry.sessions + 1);
+      expect(requests.preferences).toBe(beforeRetry.preferences);
+    } else {
+      await expect(section.getByLabel("Optional product email")).toBeVisible();
+      expect(requests.preferences).toBe(beforeRetry.preferences + 1);
+      expect(requests.sessions).toBe(beforeRetry.sessions);
+    }
+    expect(requests.identity).toBe(beforeRetry.identity);
+    expect(failedRequests).toBe(
+      beforeRetry[scenario.path === "auth/sessions/" ? "sessions" : "preferences"],
+    );
+    expect(pageErrors).toEqual([]);
+  });
+}
+
 test("unsent comment text survives cancelled navigation and cannot change during posting", async ({
   page,
 }) => {
@@ -2988,10 +3066,31 @@ test.describe("live full-stack product flows", () => {
     await changePassword.getByLabel("Current password", { exact: true }).fill(nextPassword);
     await changePassword.getByLabel("New password", { exact: true }).fill(changedPassword);
     await changePassword.getByLabel("Confirm new password", { exact: true }).fill(changedPassword);
+    const sessions = page.locator(".settings-card").filter({
+      has: page.getByRole("heading", { name: "Active sessions", exact: true }),
+    });
+    await expect(sessions.getByText("This device", { exact: true })).toBeVisible();
+    await page.route("**/api/v1/auth/sessions/", (route) =>
+      route.fulfill({
+        status: 503,
+        json: {
+          error: { code: "unavailable", message: "Session details are temporarily unavailable." },
+        },
+      }),
+    );
     await waitForResponse(page, "/api/v1/auth/password-change/", "POST", () =>
       changePassword.getByRole("button", { name: "Change password", exact: true }).click(),
     );
     await expect(changePassword.getByRole("status")).toContainText("Password changed");
+    await expect(changePassword.getByRole("alert")).toHaveCount(0);
+    await expect(changePassword.getByLabel("Current password", { exact: true })).toHaveValue("");
+    await expect(sessions.getByRole("alert")).toContainText(
+      "Session details are temporarily unavailable.",
+    );
+    await expect(sessions.getByText("This device", { exact: true })).toHaveCount(0);
+    await page.unroute("**/api/v1/auth/sessions/");
+    await sessions.getByRole("button", { name: "Try again" }).click();
+    await expect(sessions.getByText("This device", { exact: true })).toBeVisible();
     expect(
       await page.evaluate(
         async () => (await fetch("/api/v1/auth/me/", { credentials: "same-origin" })).status,

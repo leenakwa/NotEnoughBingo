@@ -67,8 +67,10 @@ The later reply-query correction `8299cbf` passed all nine jobs (220 backend,
 209 frontend, 72 live; smoke 194 passes plus two WebKit retries and 12 skips).
 Email and smoke-readiness source `94ee150` then passed all nine jobs: 235 backend,
 209 frontend, 200 smoke passes plus 12 intentional skips without retries, and
-72 live flows. The subsequent frontend-release correction has local evidence
-and requires its own source gate. These
+72 live flows. Frontend-release source `b5ebaff` then passed all nine jobs (240 backend, 221
+frontend, 200 smoke passes with 12 intentional skips and no retries, 72 live).
+The subsequent partial-settings recovery has local evidence and requires its
+own source gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -107,11 +109,19 @@ only environment-specific smoke and recovery checks after release.
    source `e6858a0` passed all nine CI jobs. The later reply-query correction
    `8299cbf` passed all nine jobs, with two smoke cases passing on retry.
    Email TTL/invalidated-link guards, the real QA SMTP retry drill and
-   smoke-readiness/fallback corrections now have local evidence; their source
-   still needs its own gate.
+   smoke-readiness/fallback source `94ee150` passed all nine jobs. The later
+   frontend-release source `b5ebaff` also passed all nine jobs, including
+   production-image identity/relabel guards. Partial-settings recovery now has
+   local evidence and needs its own source gate.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
+   the remaining section 4 partial-data inventory: editor draft/board metadata
+   hydration, Explore author/tag suggestions, player author/progress/comments
+   independence, and header unread-count failure. Account settings now have
+   independent sessions/preferences failure/loading/retry evidence and actual
+   password success despite an unavailable subsequent sessions refresh. Do not
+   close the whole UI-state section from those account cases alone. Then audit
    remaining dirty forms, autofill/password-manager
    behavior (silent-fill submission is verified; native saved credentials are not),
    remaining per-form/control checks (root/reply/edit and reopened-report

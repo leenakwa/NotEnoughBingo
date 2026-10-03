@@ -360,7 +360,7 @@ function firstValidationDetail(value: unknown, path: string[] = []): string | nu
 export const api = {
   auth: {
     csrf: () => apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true }),
-    me: () => apiRequest<AuthenticatedUser>("auth/me/"),
+    me: (signal?: AbortSignal) => apiRequest<AuthenticatedUser>("auth/me/", { signal }),
     session: async () =>
       (await apiRequest<{ user: AuthenticatedUser | null }>("auth/session/")).user,
     register: (input: { email: string; username: string; password: string }) =>
@@ -400,7 +400,8 @@ export const api = {
         method: "POST",
         body: { token },
       }),
-    sessions: () => apiRequest<Page<SessionMetadata>>("auth/sessions/"),
+    sessions: (signal?: AbortSignal) =>
+      apiRequest<Page<SessionMetadata>>("auth/sessions/", { signal }),
     revokeSession: (sessionId: PublicId) =>
       apiRequest<void>(`auth/sessions/${sessionId}/`, { method: "DELETE" }),
     requestAccountExport: () =>
@@ -559,8 +560,8 @@ export const api = {
         method: "PUT",
         body: input,
       }),
-    notificationPreferences: () =>
-      apiRequest<NotificationPreferences>("profiles/notification-preferences/"),
+    notificationPreferences: (signal?: AbortSignal) =>
+      apiRequest<NotificationPreferences>("profiles/notification-preferences/", { signal }),
     updateNotificationPreferences: (input: Partial<NotificationPreferences>) =>
       apiRequest<NotificationPreferences>("profiles/notification-preferences/", {
         method: "PATCH",

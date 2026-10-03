@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -104,6 +104,81 @@ describe("AccountSettings deletion grace period", () => {
     mocks.sessions.mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
     mocks.notificationPreferences.mockResolvedValue(preferences);
     mocks.cancelAccountDeletion.mockResolvedValue(undefined);
+  });
+
+  it.each([
+    ["Active sessions", "sessions", "Notification preferences"],
+    ["Notification preferences", "notificationPreferences", "Active sessions"],
+  ] as const)(
+    "keeps other settings usable when %s fails and retries only that section",
+    async (heading, request, otherHeading) => {
+      mocks[request].mockRejectedValueOnce(new Error("This section is temporarily unavailable."));
+      const user = userEvent.setup();
+      render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+      expect(await screen.findByRole("button", { name: "Change password" })).toBeEnabled();
+      const section = screen.getByRole("heading", { name: heading }).closest(".settings-card")!;
+      const other = screen.getByRole("heading", { name: otherHeading }).closest(".settings-card")!;
+      expect(within(section as HTMLElement).getByRole("alert")).toHaveTextContent(
+        "This section is temporarily unavailable.",
+      );
+      expect(within(other as HTMLElement).queryByRole("alert")).not.toBeInTheDocument();
+      await user.click(within(section as HTMLElement).getByRole("button", { name: "Try again" }));
+      await waitFor(() => expect(within(section as HTMLElement).queryByRole("alert")).toBeNull());
+      expect(mocks[request]).toHaveBeenCalledTimes(2);
+      expect(mocks.me).toHaveBeenCalledTimes(1);
+      expect(
+        mocks[request === "sessions" ? "notificationPreferences" : "sessions"],
+      ).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("does not wait for a slow preferences request before showing security controls", async () => {
+    let resolve: (value: NotificationPreferences) => void = () => undefined;
+    mocks.notificationPreferences.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    expect(await screen.findByRole("button", { name: "Change password" })).toBeEnabled();
+    expect(screen.getByText("Loading notification preferences…")).toBeVisible();
+    expect(screen.queryByLabelText("Optional product email")).not.toBeInTheDocument();
+    resolve(preferences);
+    expect(await screen.findByLabelText("Optional product email")).not.toBeChecked();
+  });
+
+  it("does not expose account controls when the authenticated identity request fails", async () => {
+    mocks.me.mockRejectedValueOnce(new Error("Your session has expired."));
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your session has expired.");
+    expect(screen.queryByRole("button", { name: "Change password" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Optional product email")).not.toBeInTheDocument();
+  });
+
+  it("keeps successful password feedback when the subsequent sessions refresh fails", async () => {
+    mocks.sessions.mockResolvedValueOnce({ count: 0, next: null, previous: null, results: [] });
+    mocks.sessions.mockRejectedValueOnce(new Error("Sessions temporarily unavailable."));
+    mocks.changePassword.mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const current = await screen.findByLabelText("Current password", { exact: true });
+    await user.type(current, "example value");
+    await user.type(screen.getByLabelText("New password", { exact: true }), "new example value");
+    await user.type(
+      screen.getByLabelText("Confirm new password", { exact: true }),
+      "new example value",
+    );
+    const submit = screen.getByRole("button", { name: "Change password" });
+    await user.click(submit);
+    await waitFor(() => expect(mocks.sessions).toHaveBeenCalledTimes(2));
+    const form = submit.closest("form")!;
+    expect(within(form).getByRole("status")).toHaveTextContent("Password changed.");
+    expect(within(form).queryByRole("alert")).not.toBeInTheDocument();
+    expect(current).toHaveValue("");
+    expect(screen.getByRole("alert").closest(".settings-card")).toHaveTextContent(
+      "Active sessions",
+    );
+    expect(mocks.changePassword).toHaveBeenCalledOnce();
   });
 
   it("restores a pending schedule after re-authentication and lets the user cancel it", async () => {

@@ -3298,3 +3298,65 @@ observed results and their limits. Do not include credentials or session data.
   and alerts; section 103 still requires its other original bullets. Counters
   remain 55 verified / 43 partial / 6 N/A / 1 deployment-only. No merge,
   promotion or deployment occurred; the new source still needs its own CI gate.
+
+
+### 2026-10-03 — Completed frontend-release gate and partial account settings (sections 4/5/7/8)
+
+- Exact source `b5ebaff57dcd73fce6091ce1d33613aa328ab0d0` passed all nine
+  [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37086991543):
+  240 PostgreSQL backend tests, 221 frontend tests, 200 browser smoke passes
+  with 12 intentional skips and no retries, 72 live product journeys, foundation
+  and history scan, both x86_64 production image gates and release gate. The
+  frontend image's embedded-release check and runtime-relabel rejection passed.
+  Full terminal log: `/tmp/neb-ci-b5ebaff-completed-oct03.log`. No run was restarted.
+- AccountSettings previously coupled identity, sessions and notification
+  preferences with Promise.all: one optional request failure or delay hid all
+  controls, including password change and logout. After a successful password
+  change, a failed sessions refresh entered the password error handler and
+  concealed its success. These are concrete partial-data and feedback defects.
+- Identity remains required before rendering account controls. Sessions and
+  notification preferences now load independently in parallel with their own
+  loading/error/retry states. Retrying one section refetches only that resource;
+  preferences have no guessed checkbox defaults before they arrive. Password
+  success clears the credential fields, retains success feedback and triggers
+  a separate sessions refresh. Old session rows are cleared while refreshing.
+  Requests now accept AbortSignal and ignore aborted results during cleanup.
+  The user's intentional layout, dialogs and language-picker removals are retained.
+- Five new settings regressions initially produced four failures and one pass
+  (the required-identity boundary already worked). All 14 settings cases now
+  pass: optional failure/retry isolation, slow preferences without blocking
+  security controls, required-identity failure, password success with failed
+  sessions refresh, and the existing account/deletion/avatar/form cases.
+  Logs: `/tmp/neb-partial-settings-baseline-oct03.log` and
+  `/tmp/neb-partial-settings-fixed-oct03.log`.
+- Full frontend lint/types and 226 tests passed, as did production Next build,
+  targeted formatting/ESLint and final types. Build-only generated next-env
+  route imports were restored. Logs: `/tmp/neb-partial-settings-check-oct03.log`,
+  `/tmp/neb-partial-settings-build-oct03.log`, `/tmp/neb-partial-settings-types-oct03.log`.
+  No backend implementation changed, so its unchanged full suite was not repeated.
+- Two actual QA Chromium journeys returned synthetic 503s only for the chosen
+  optional resource, kept password/logout/profile controls usable at 320 and
+  1710 px, passed Axe with zero violations, and retried into real backend data.
+  Counters confirmed retry did not refetch identity or the other settings section;
+  no page errors or overflow occurred. The initial two runs passed interaction
+  checks but failed an incorrect exact-one initial-request expectation: development
+  Strict Mode had made two initial GETs. The assertion now uses observed pre-retry
+  counts and checks exactly one additional request only for the failed section.
+- The existing real reset journey was extended: reset email and token reuse,
+  login, actual password change, a subsequent sessions-list 503, independent
+  retry, logout and login using the changed password all passed. It checks success
+  feedback and empty credential fields, local section error and absent stale
+  session rows. Together the two section cases and reset journey passed three
+  without retries in `/tmp/neb-partial-settings-live-fixed-oct03.log`.
+- Both optional-failure journeys also passed on actual QA using mobile WebKit,
+  Firefox and mobile Chromium: six cases without retries, with the same Axe,
+  320/1710 layout, control and request-isolation assertions.
+  `/tmp/neb-partial-settings-browsers-oct03.log`; temporary config
+  `/tmp/neb-partial-settings-browser.config.ts`. This is desktop browser/device
+  emulation, not native physical-device testing.
+- Section 4 remains partial for the other component families. The next itemized
+  partial-data sweep is editor draft/metadata hydration, Explore suggestions,
+  player optional author/progress/comments, and header unread counts. Sections
+  5/7/8 still retain their broader open requirements. Counters remain 55 verified,
+  43 partial, 6 N/A, 1 deployment-only. The new source needs its own CI gate;
+  no merge, image promotion or public deployment occurred.
