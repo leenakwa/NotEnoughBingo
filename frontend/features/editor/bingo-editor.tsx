@@ -82,6 +82,10 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const [accountId, setAccountId] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [exportAvailable, setExportAvailable] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState(false);
+  const [exportCheckVersion, setExportCheckVersion] = useState(0);
+  const [draftLoadVersion, setDraftLoadVersion] = useState(0);
   const [saveStatus, setSaveStatus] = useState<EditorSaveStatusValue>("pristine");
   const [saveError, setSaveError] = useState("");
   const [recoveryAvailable, setRecoveryAvailable] = useState(false);
@@ -204,11 +208,10 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     const controller = new AbortController();
     setHydrating(true);
     setError("");
-    Promise.all([
-      api.bingos.getDraft(bingoId, controller.signal),
-      api.bingos.get(bingoId, controller.signal),
-    ])
-      .then(([draft, bingo]) => {
+    api.bingos
+      .getDraft(bingoId, controller.signal)
+      .then((draft) => {
+        if (controller.signal.aborted) return;
         const serverState = editorStateFromDraft(draft);
         const serverFingerprint = editorDocumentFingerprint(serverState);
         serverDraft.current = { bingoId: draft.bingo_id, version: draft.version };
@@ -232,7 +235,6 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         } else if (recovery) {
           clearEditorRecovery(accountId, bingoId);
         }
-        setExportAvailable(Boolean(bingo.current_revision));
       })
       .catch((caught) => {
         if (!controller.signal.aborted) setError(errorMessage(caught));
@@ -241,7 +243,28 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         if (!controller.signal.aborted) setHydrating(false);
       });
     return () => controller.abort();
-  }, [accountId, authState, bingoId, updateSaveStatus]);
+  }, [accountId, authState, bingoId, draftLoadVersion, updateSaveStatus]);
+
+  useEffect(() => {
+    setExportAvailable(false);
+    setExportError(false);
+    setExportLoading(false);
+    if (authState !== "allowed" || !accountId || !bingoId) return;
+    const controller = new AbortController();
+    setExportLoading(true);
+    api.bingos
+      .get(bingoId, controller.signal)
+      .then((bingo) => {
+        if (!controller.signal.aborted) setExportAvailable(Boolean(bingo.current_revision));
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setExportError(true);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setExportLoading(false);
+      });
+    return () => controller.abort();
+  }, [accountId, authState, bingoId, exportCheckVersion]);
 
   function replaceMedia(target: UploadTarget, media: EditorMedia, cellKeys?: string[]) {
     if (target === "board") dispatch({ type: "set-board-background", media });
@@ -739,11 +762,20 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     );
   }
 
-  if (bingoId && error && !state.bingoId) {
+  if (bingoId && error && state.bingoId !== bingoId) {
     return (
       <main id="main-content" className="create-shell">
         <h1 className="sr-only">Edit bingo</h1>
-        <ErrorState message={error} />
+        <ErrorState message={error} onRetry={() => setDraftLoadVersion((version) => version + 1)} />
+      </main>
+    );
+  }
+
+  if (bingoId && state.bingoId !== bingoId) {
+    return (
+      <main id="main-content" className="create-shell">
+        <h1 className="sr-only">Edit bingo</h1>
+        <LoadingState label="Loading draft…" />
       </main>
     );
   }
@@ -765,6 +797,16 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           onPublish={() => void publish()}
           onExport={(format) => void exportBoard(format)}
           exportAvailable={exportAvailable}
+          exportStatus={
+            exportLoading ? (
+              <LoadingState label="Checking published downloads…" />
+            ) : exportError ? (
+              <ErrorState
+                message="Published downloads could not be checked. Your draft is still editable."
+                onRetry={() => setExportCheckVersion((version) => version + 1)}
+              />
+            ) : null
+          }
           saveStatus={saveStatusView}
         />
         {uploading ? <UploadStatus phase={uploadPhase} onCancel={cancelUpload} /> : null}

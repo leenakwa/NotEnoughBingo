@@ -3360,3 +3360,67 @@ observed results and their limits. Do not include credentials or session data.
   5/7/8 still retain their broader open requirements. Counters remain 55 verified,
   43 partial, 6 N/A, 1 deployment-only. The new source needs its own CI gate;
   no merge, image promotion or public deployment occurred.
+
+
+### 2026-10-03 — Completed partial-settings source gate
+
+- Exact source `73810423ad68d197ae9717e282fa54c617257286` passed all nine
+  [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37087884457):
+  240 PostgreSQL backend tests, 226 frontend tests, 200 browser smoke passes
+  with 12 intentional skips and no retries, 74 live product journeys, foundation
+  and history scan, both production image scans/SBOMs and release gate.
+  Terminal log: `/tmp/neb-ci-7381042-completed-oct03.log`. This gate covers the
+  settings changes, not the later editor changes. No workflow was restarted;
+  no image was promoted or deployed.
+
+### 2026-10-03 — Independent editor draft/export hydration and obsolete read protection (section 4)
+
+- The editor coupled its required draft with a board-detail read used only to
+  check published-download availability. A slow/failed optional read blocked
+  opening the valid draft. Its required-draft success callback also lacked an
+  abort check: a delayed response could hydrate the previous board after the
+  component had moved to another one. A failed next-board load could leave
+  the prior board visible because the error condition checked only for any
+  loaded board ID, rather than the requested ID.
+- Draft and published-download checks now start independently, preserving
+  parallel requests. The required draft must match the requested board before
+  editable controls are shown. Failed draft loads expose Retry for that read
+  only. Optional download loading/failure appears beside the download controls,
+  permits continued editing/saving, and has a separate retry without rehydrating
+  the draft or discarding text. Unknown availability no longer misleadingly
+  says that an already published board must be published. Both read callbacks
+  ignore aborted responses. This covers initial reads; pending mutation/route
+  transitions remain a separate part of the full editor lifecycle audit.
+- Four added regression cases initially failed, with the existing 15 editor
+  cases passing. They cover failed/slow optional data, independent retries,
+  required draft failure and late old-board responses. A fifth added regression
+  proves a failed next-board load hides the already loaded previous board and
+  triggers no autosave of it. All 20 editor cases plus one details case now pass;
+  full frontend lint/types and 231 tests, formatting and production build passed.
+  Logs: `/tmp/neb-editor-partial-baseline-oct03.log`,
+  `/tmp/neb-editor-partial-final-tests-oct03.log`,
+  `/tmp/neb-editor-partial-final-check-oct03.log`,
+  `/tmp/neb-editor-partial-build-oct03.log`. Generated build-only next-env imports
+  were restored. Backend implementation and API payload contracts are unchanged.
+- Two real QA Chromium flows use separate temporary authored boards: a synthetic
+  503 for the optional board read leaves the draft editable; retry does not
+  refetch the draft or alter its typed title. Saving is verified by reading the
+  actual backend draft. The other flow returns a draft 503, confirms zero grid
+  cells/edit controls, and retries into the real nine-cell draft without another
+  board-detail read. Temporary boards are removed by the existing guarded cleanup.
+  The first initial run selected both the intended alert and Next's route
+  announcer, causing a strict-selector failure. It was corrected to the details
+  panel's alert; both flows then passed without retries, with no page errors.
+  `/tmp/neb-editor-partial-live-fixed-oct03.log`.
+- Both flows also passed in mobile WebKit and Firefox, four cases without retries.
+  The optional-data case checks 320/1710 px layout, editable preserved text,
+  no horizontal overflow and Axe with zero violations. Logs/config:
+  `/tmp/neb-editor-partial-browsers-oct03.log`,
+  `/tmp/neb-editor-partial-browser.config.ts`. These are browser/device emulations,
+  not physical-device evidence. No private tokens or auth state were printed.
+- Section 4 stays partial for other component families. Remaining immediate
+  partial-data paths are Explore suggestions, player optional author/progress/
+  comments, and header unread counts; pending editor mutations/route transitions
+  also need their own evidence. Counters remain 55 verified / 43 partial / 6 N/A /
+  1 deployment-only. The editor changes still require their own exact-source CI.
+  No merge, promotion or public deployment occurred.

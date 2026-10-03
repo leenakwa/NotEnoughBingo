@@ -356,6 +356,109 @@ describe("BingoEditor autosave and safety", () => {
     );
   });
 
+  it("keeps a loaded draft editable when published-download lookup fails and retries it independently", async () => {
+    mocks.getBingo.mockRejectedValueOnce(new Error("Published downloads are unavailable."));
+    await openEditor(BINGO_ID);
+    expect(screen.getByRole("heading", { name: "Edit bingo" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    expect(screen.getByLabelText("Title")).toHaveValue("Draft title");
+    expect(screen.queryByText("Download published version")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Your draft is still editable.");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await settle();
+    expect(screen.getByText("Download published version")).toBeVisible();
+    expect(mocks.getDraft).toHaveBeenCalledTimes(1);
+    expect(mocks.getBingo).toHaveBeenCalledTimes(2);
+    expect(screen.getByLabelText("Title")).toHaveValue("Draft title");
+    await advanceAutosave();
+    expect(mocks.updateDraft).toHaveBeenCalledWith(
+      BINGO_ID,
+      expect.objectContaining({ size: 4 }),
+      2,
+    );
+  });
+
+  it("opens and preserves edits before a slow published-download lookup finishes", async () => {
+    let resolve: (value: BingoDetail) => void = () => undefined;
+    mocks.getBingo.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: { value: "Unsaved current title" },
+    });
+    expect(screen.getByText("Checking published downloads…")).toBeVisible();
+    await act(async () => resolve(bingo));
+    expect(screen.getByText("Download published version")).toBeVisible();
+    expect(screen.getByLabelText("Title")).toHaveValue("Unsaved current title");
+    expect(mocks.getDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires the draft itself and lets a failed draft load be retried", async () => {
+    mocks.getDraft.mockRejectedValueOnce(new Error("Draft is temporarily unavailable."));
+    await openEditor(BINGO_ID);
+    expect(screen.getByRole("alert")).toHaveTextContent("Draft is temporarily unavailable.");
+    expect(screen.queryByRole("button", { name: "Finish creating →" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await settle();
+    expect(screen.getByRole("button", { name: "Finish creating →" })).toBeEnabled();
+    expect(mocks.getDraft).toHaveBeenCalledTimes(2);
+    expect(mocks.getBingo).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not replace the current draft or download state with late responses from another board", async () => {
+    let resolveOldDraft: (value: BingoDraft) => void = () => undefined;
+    let resolveOldBingo: (value: BingoDetail) => void = () => undefined;
+    const currentId = "33333333-3333-4333-8333-333333333333";
+    mocks.getDraft.mockReturnValueOnce(
+      new Promise((done) => {
+        resolveOldDraft = done;
+      }),
+    );
+    mocks.getDraft.mockResolvedValueOnce(
+      draft({ bingo_id: currentId, title: "Current draft", size: 4 }),
+    );
+    mocks.getBingo.mockReturnValueOnce(
+      new Promise((done) => {
+        resolveOldBingo = done;
+      }),
+    );
+    mocks.getBingo.mockResolvedValueOnce({ ...bingo, id: currentId, current_revision: null });
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    view.rerender(<BingoEditor bingoId={currentId} />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    expect(screen.getByLabelText("Title")).toHaveValue("Current draft");
+    await act(async () => {
+      resolveOldDraft(draft({ title: "Obsolete draft" }));
+      resolveOldBingo(bingo);
+    });
+    expect(screen.getByLabelText("Title")).toHaveValue("Current draft");
+    expect(screen.queryByText("Download published version")).not.toBeInTheDocument();
+    await advanceAutosave(1600);
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+  });
+
+  it("hides the previous board if loading the next draft fails", async () => {
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    await settle();
+    expect(screen.getByRole("button", { name: "Finish creating →" })).toBeEnabled();
+    mocks.getDraft.mockRejectedValueOnce(new Error("Next draft is temporarily unavailable."));
+    view.rerender(<BingoEditor bingoId="33333333-3333-4333-8333-333333333333" />);
+    await settle();
+    expect(screen.getByRole("alert")).toHaveTextContent("Next draft is temporarily unavailable.");
+    expect(screen.queryByRole("button", { name: "Finish creating →" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("gridcell")).not.toBeInTheDocument();
+    await advanceAutosave(1600);
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+  });
+
   it("preserves local edits on a version conflict and overwrites only after explicit choice", async () => {
     const conflict = new ApiClientError(412, {
       code: "draft_version_conflict",

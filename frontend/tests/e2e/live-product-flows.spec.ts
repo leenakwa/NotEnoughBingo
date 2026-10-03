@@ -160,6 +160,92 @@ test("unsent comment text survives cancelled navigation and cannot change during
   expect(warnings).toHaveLength(1);
 });
 
+test("editor keeps a draft usable when published downloads cannot be checked", async ({ page }) => {
+  const board = await createSocialFormBoard(page);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  let unavailable = true;
+  let draftReads = 0;
+  await page.route(`**/api/v1/bingos/${board.id}/draft/`, (route) => {
+    if (route.request().method() === "GET") draftReads += 1;
+    return route.continue();
+  });
+  await page.route(`**/api/v1/bingos/${board.id}/`, (route) => {
+    if (unavailable && route.request().method() === "GET") {
+      return route.fulfill({
+        status: 503,
+        json: { error: { code: "unavailable", message: "Downloads are temporarily unavailable." } },
+      });
+    }
+    return route.continue();
+  });
+  await page.goto(`/create?bingo=${board.id}`);
+  await expect(page.getByRole("heading", { name: "Edit bingo", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Finish creating →" }).click();
+  const title = page.getByLabel("Title", { exact: true });
+  const text = "Draft remains editable 🎲";
+  await title.fill(text);
+  await expect(page.locator(".details-panel").getByRole("alert")).toContainText(
+    "Your draft is still editable.",
+  );
+  await expect(page.getByText("Download after publishing", { exact: true })).toHaveCount(0);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    await expect(title).toHaveValue(text);
+    await expect(title).toBeEnabled();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  const readsBeforeRetry = draftReads;
+  unavailable = false;
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(page.getByText("Download published version", { exact: true })).toBeVisible();
+  await expect(title).toHaveValue(text);
+  expect(draftReads).toBe(readsBeforeRetry);
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  const saved = await page.context().request.get(`/api/v1/bingos/${board.id}/draft/`);
+  expect(saved.ok()).toBe(true);
+  expect((await saved.json()).title).toBe(text);
+  expect(pageErrors).toEqual([]);
+});
+
+test("editor retries a failed draft load without rendering another board", async ({ page }) => {
+  const board = await createSocialFormBoard(page);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  let unavailable = true;
+  let metadataReads = 0;
+  await page.route(`**/api/v1/bingos/${board.id}/draft/`, (route) => {
+    if (unavailable && route.request().method() === "GET") {
+      return route.fulfill({
+        status: 503,
+        json: { error: { code: "unavailable", message: "Draft is temporarily unavailable." } },
+      });
+    }
+    return route.continue();
+  });
+  await page.route(`**/api/v1/bingos/${board.id}/`, (route) => {
+    if (route.request().method() === "GET") metadataReads += 1;
+    return route.continue();
+  });
+  await page.goto(`/create?bingo=${board.id}`);
+  await expect(page.locator("main").getByRole("alert")).toContainText(
+    "Draft is temporarily unavailable.",
+  );
+  await expect(page.getByRole("gridcell")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Finish creating →" })).toHaveCount(0);
+  const readsBeforeRetry = metadataReads;
+  unavailable = false;
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Edit bingo", exact: true })).toBeVisible();
+  await expect(page.getByRole("gridcell")).toHaveCount(9);
+  expect(metadataReads).toBe(readsBeforeRetry);
+  expect(pageErrors).toEqual([]);
+});
+
 test("reply, edit and report forms retain context when discard is cancelled", async ({
   page,
 }, testInfo) => {

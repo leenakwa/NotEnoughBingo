@@ -22,6 +22,7 @@ export function BingoDetails({
   onPublish,
   onExport,
   exportAvailable,
+  exportStatus,
   saveStatus,
 }: {
   state: EditorState;
@@ -37,6 +38,7 @@ export function BingoDetails({
   onPublish: () => void;
   onExport: (format: BingoExportFormat) => void;
   exportAvailable: boolean;
+  exportStatus?: ReactNode;
   saveStatus: ReactNode;
 }) {
   const [tagInput, setTagInput] = useState("");
@@ -301,7 +303,7 @@ export function BingoDetails({
               </button>
             </div>
           </details>
-        ) : (
+        ) : exportStatus ? null : (
           <button
             type="button"
             className="button button--secondary"
@@ -312,6 +314,7 @@ export function BingoDetails({
           </button>
         )}
       </div>
+      {exportStatus}
       {exportAvailable ? (
         <p className="export-explanation">
           Downloads use the currently published revision. Draft edits are included only after you
