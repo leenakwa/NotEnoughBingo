@@ -11,6 +11,7 @@ import type {
   BingoSummary,
   ClientInteraction,
   Comment,
+  CommentContext,
   ExportJob,
   MediaAsset,
   Notification,
@@ -612,6 +613,8 @@ export const api = {
     unreadCount: () => apiRequest<{ count: number }>("notifications/unread-count/"),
   },
   comments: {
+    context: (commentId: PublicId, signal?: AbortSignal) =>
+      apiRequest<CommentContext>(`comments/${commentId}/context/`, { signal }),
     list: (bingoId: PublicId, page = 1, signal?: AbortSignal) =>
       apiRequest<Page<Comment>>(`bingos/${bingoId}/comments/`, {
         query: { page },

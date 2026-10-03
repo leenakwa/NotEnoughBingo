@@ -4,8 +4,10 @@ import {
   clearSocialDrafts,
   readCommentDraft,
   readReportDraft,
+  readInlineCommentDraft,
   rememberCommentDraft,
   rememberReportDraft,
+  rememberInlineCommentDraft,
 } from "@/features/social/social-draft-cache";
 import {
   AUTH_SESSION_ENDED_EVENT,
@@ -132,5 +134,52 @@ describe("comment draft privacy and lifetime", () => {
     notifySignedOut();
     rememberReportDraft("owner", "bingo", "board", draft, saved.generation);
     expect(readReportDraft("owner", "bingo", "board").restored).toBe(false);
+  });
+
+  it("preserves inline targets and empty dirty edits independently from replies", () => {
+    const saved = readInlineCommentDraft("owner", "board", "reply");
+    rememberInlineCommentDraft(
+      "owner",
+      "board",
+      "reply",
+      { kind: "reply", targetId: "parent", body: "Reply 🎲\n<literal>", page: 3 },
+      saved.generation,
+    );
+    rememberInlineCommentDraft(
+      "owner",
+      "board",
+      "edit",
+      { kind: "edit", targetId: "child", body: "", originalBody: "Existing text", page: 3 },
+      saved.generation,
+    );
+    expect(readInlineCommentDraft("owner", "board", "reply").draft).toMatchObject({
+      targetId: "parent",
+      body: "Reply 🎲\n<literal>",
+      page: 3,
+    });
+    expect(readInlineCommentDraft("owner", "board", "edit").draft).toMatchObject({
+      targetId: "child",
+      body: "",
+      originalBody: "Existing text",
+    });
+    expect(readInlineCommentDraft("owner", "another-board", "reply").draft).toBeUndefined();
+    expect(readCommentDraft("owner", "board").body).toBe("");
+    rememberInlineCommentDraft("owner", "board", "reply", null, saved.generation);
+    expect(readInlineCommentDraft("owner", "board", "reply").draft).toBeUndefined();
+    expect(readInlineCommentDraft("owner", "board", "edit").draft).toBeDefined();
+  });
+
+  it("clears both inline drafts on owner change and rejects late writes", () => {
+    const saved = readInlineCommentDraft("owner", "board", "reply");
+    const draft = {
+      kind: "reply" as const,
+      targetId: "parent",
+      body: "Old private reply",
+      page: 1,
+    };
+    rememberInlineCommentDraft("owner", "board", "reply", draft, saved.generation);
+    readReportDraft("another-owner", "profile", "profile");
+    rememberInlineCommentDraft("owner", "board", "reply", draft, saved.generation);
+    expect(readInlineCommentDraft("owner", "board", "reply").draft).toBeUndefined();
   });
 });

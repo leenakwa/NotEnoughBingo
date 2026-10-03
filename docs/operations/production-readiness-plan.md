@@ -55,8 +55,13 @@ The silent-autofill source `1f4a773` passed all nine CI jobs, including
 retry. Later social-validation source `eca9298` failed the live/release gate
 because its post-password-change test API request omitted the session cookie.
 The corrected browser assertion, hydration wait and root-comment recovery now
-have local evidence (192 frontend tests and targeted live journeys); a new
-source gate is required. These
+passed all nine CI jobs on `8a5d31a`: 206 backend tests, 192 frontend tests,
+196 smoke checks (12 skips) and 64 live flows. The later report-recovery source
+`a9b3cc4` passed local checks (198 frontend tests and eight related live flows);
+its source gate failed: four report fixture-order failures and one WebKit
+diagnostic request during old-document departure. The corrected ordering,
+diagnostic lifecycle and reply/edit recovery now pass 209 frontend tests and
+all 72 local live flows; a new source gate is required. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -88,15 +93,18 @@ only environment-specific smoke and recovery checks after release.
    scan exemption. No image was promoted or deployed. The subsequent social
    form changes on `b466456` passed all nine CI jobs. The later silent-autofill
    correction on `1f4a773` passed all nine jobs. The later `eca9298` gate failed
-   and the corrected browser-session assertion plus comment recovery need their
-   own final-source run.
+   and the corrected browser-session assertion plus comment recovery then passed
+   all nine jobs on `8a5d31a`. Report recovery on `a9b3cc4` has local evidence
+   and its source gate failed. Its fixture-order and document-lifecycle
+   corrections now have full local evidence, together with reply/edit recovery;
+   the new source still needs its own gate.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
    remaining dirty forms, autofill/password-manager
    behavior (silent-fill submission is verified; native saved credentials are not),
-   reply/edit draft recovery through Back/session expiry (root comments and
-   reopened reports now have local recovery/cleanup evidence), native zoom/ARIA/UI contrast,
+   remaining per-form/control checks (root/reply/edit and reopened-report
+   recovery now have full local navigation/auth/cleanup evidence), native zoom/ARIA/UI contrast,
    endpoint-by-endpoint contracts,
    database indexes/migration scale and notification/email failure paths.
    Record explicit N/A or target-only limits for each original bullet.

@@ -776,6 +776,418 @@ async function emailChangeLink(request: APIRequestContext, email: string): Promi
   throw new Error(`No email-change confirmation for ${email} arrived in Mailpit.`);
 }
 
+// These flows use the initial player session. Destructive account flows run later.
+test("unsent report restores after client history navigation and clears after sending", async ({
+  page,
+}, testInfo) => {
+  const bingo = await createSocialFormBoard(page);
+  await authenticateAs(page, "player");
+  await page.goto(`/bingo/${bingo.id}`);
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  const trigger = page
+    .locator(".play-actions")
+    .getByRole("button", { name: "Report", exact: true });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Report bingo" });
+  const reason = dialog.getByLabel("Reason", { exact: true });
+  const context = dialog.getByLabel("Additional context (optional)", { exact: true });
+  const text = "Recover this private report 🎲\n<literal> & context";
+  await reason.selectOption("other");
+  await context.fill(text);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await trigger.click();
+  await expect(context).toHaveValue(text);
+  await expect(reason).toHaveValue("other");
+  await expect(dialog.getByRole("status")).toContainText("Unsent report restored");
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    expect(
+      (await new AxeBuilder({ page }).include("dialog.report-dialog").analyze()).violations,
+    ).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`restored-report-${width}.png`) });
+  }
+  const sent = await waitForResponse(page, "/api/v1/reports/", "POST", () =>
+    dialog.getByRole("button", { name: "Send report", exact: true }).click(),
+  );
+  expect(sent.status()).toBe(201);
+  expect(sent.request().postDataJSON()).toMatchObject({
+    target_type: "bingo",
+    target_id: bingo.id,
+    reason: "other",
+    description: text,
+  });
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
+  await trigger.click();
+  await expect(context).toHaveValue("");
+  await expect(reason).toHaveValue("spam");
+  await expect(dialog.getByRole("status")).toHaveCount(0);
+  await reason.selectOption("harassment");
+  page.once("dialog", (confirmation) => confirmation.accept());
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await trigger.click();
+  await expect(reason).toHaveValue("spam");
+});
+
+test("unsent report returns after same-account authentication recovery", async ({ page }) => {
+  const bingo = await createSocialFormBoard(page);
+  await authenticateAs(page, "player");
+  await page.goto(`/bingo/${bingo.id}`);
+  const trigger = page
+    .locator(".play-actions")
+    .getByRole("button", { name: "Report", exact: true });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Report bingo" });
+  const context = dialog.getByLabel("Additional context (optional)", { exact: true });
+  const text = "Keep report through authentication 🎲\n<literal> & context";
+  await dialog.getByLabel("Reason", { exact: true }).selectOption("other");
+  await context.fill(text);
+  await page.context().clearCookies();
+  const expiredPromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/reports/") && response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: "Send report", exact: true }).click();
+  const expired = await expiredPromise;
+  expect(expired.status()).toBe(401);
+  const login = page.getByRole("dialog", { name: "Log in", exact: true });
+  await expect(login).toBeVisible();
+  await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.player.email);
+  await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+  await login.getByRole("button", { name: "Log in", exact: true }).click();
+  await expect(login).toHaveCount(0);
+  await trigger.click();
+  await expect(context).toHaveValue(text);
+  await expect(dialog.getByLabel("Reason", { exact: true })).toHaveValue("other");
+  await expect(dialog.getByRole("status")).toContainText("Unsent report restored");
+});
+
+test("report rejection for an archived target keeps context and destination", async ({
+  page,
+  playwright,
+}) => {
+  const bingo = await createSocialFormBoard(page);
+  await authenticateAs(page, "player");
+  await page.goto(`/bingo/${bingo.id}`);
+  await page.locator(".play-actions").getByRole("button", { name: "Report", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Report bingo" });
+  const context = dialog.getByLabel("Additional context (optional)", { exact: true });
+  const text = "Keep context when target becomes unavailable 🎲";
+  await context.fill(text);
+  const authorState = JSON.parse(readFileSync(authStatePath("author"), "utf8")) as {
+    cookies: Array<{ name: string; value: string }>;
+  };
+  const csrf = authorState.cookies.find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const author = await playwright.request.newContext({
+    baseURL: test.info().project.use.baseURL,
+    storageState: authStatePath("author"),
+  });
+  try {
+    const archived = await author.post(`/api/v1/bingos/${bingo.id}/archive/`, {
+      headers: { "X-CSRFToken": csrf!.value },
+    });
+    expect(archived.status()).toBe(200);
+    const rejectedPromise = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/v1/reports/") && response.request().method() === "POST",
+    );
+    await dialog.getByRole("button", { name: "Send report", exact: true }).click();
+    const rejected = await rejectedPromise;
+    expect(rejected.status()).toBe(400);
+    expect(rejected.request().postDataJSON()).toMatchObject({
+      target_type: "bingo",
+      target_id: bingo.id,
+      description: text,
+    });
+    await expect(context).toHaveValue(text);
+    await expect(context).toBeEnabled();
+    await expect(dialog.getByRole("alert")).toContainText("unavailable");
+    await expect(dialog.getByRole("button", { name: "Send report", exact: true })).toBeEnabled();
+  } finally {
+    await author.dispose();
+  }
+});
+
+test("explicit cross-tab logout clears a retained report before same-account login", async ({
+  page,
+}) => {
+  const bingo = await createSocialFormBoard(page);
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.player.email);
+  await page.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+  await page.getByRole("button", { name: "Log in", exact: true }).click();
+  await expect(page).toHaveURL(/\/discover$/);
+  await page.goto(`/bingo/${bingo.id}`);
+  const trigger = page
+    .locator(".play-actions")
+    .getByRole("button", { name: "Report", exact: true });
+  await trigger.click();
+  const report = page.getByRole("dialog", { name: "Report bingo" });
+  await report.getByLabel("Reason", { exact: true }).selectOption("other");
+  await report
+    .getByLabel("Additional context (optional)", { exact: true })
+    .fill("Remove this private report on explicit logout 🎲");
+  const settings = await page.context().newPage();
+  try {
+    await settings.goto("/profile");
+    await settings.getByRole("button", { name: "Log out", exact: true }).click();
+    const login = page.getByRole("dialog", { name: "Log in", exact: true });
+    await expect(login).toBeVisible();
+    await expect(report).toHaveCount(0);
+    await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.player.email);
+    await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+    await login.getByRole("button", { name: "Log in", exact: true }).click();
+    await expect(login).toHaveCount(0);
+    await trigger.click();
+    await expect(report.getByLabel("Reason", { exact: true })).toHaveValue("spam");
+    await expect(report.getByLabel("Additional context (optional)", { exact: true })).toHaveValue(
+      "",
+    );
+    await expect(report.getByRole("status")).toHaveCount(0);
+  } finally {
+    await settings.close();
+  }
+});
+
+test("reply and nested edit restore after their conversation moves to another list page", async ({
+  page,
+}, testInfo) => {
+  const fixture = readLiveFixture();
+  const bingo = fixture.bingos.social;
+  const context = fixture.social_context;
+  await authenticateAs(page, "player");
+  await page.goto(`/bingo/${bingo.id}`);
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  const root = page.locator(`#comment-${context.root_id}`);
+  await root.getByRole("button", { name: "View all 6 replies", exact: true }).click();
+  const nested = page.locator(`#comment-${context.reply_id}`);
+  await nested.getByRole("button", { name: "Edit", exact: true }).click();
+  const edit = nested.getByLabel("Edit comment", { exact: true });
+  const editedText = "Recovered nested changes 🎲\n<literal> & context";
+  await edit.fill(editedText);
+  await root.getByRole("button", { name: "Reply", exact: true }).click();
+  const reply = root.getByLabel("Reply", { exact: true });
+  const replyText = "Recovered exact reply 🎲\n<literal> & context";
+  await reply.fill(replyText);
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const shifted = await page.context().request.post(`/api/v1/bingos/${bingo.id}/comments/`, {
+    headers: { "X-CSRFToken": csrf!.value },
+    data: { body: "A newer comment moves the original conversation to page two" },
+  });
+  expect(shifted.status()).toBe(201);
+  const firstPage = await page.context().request.get(`/api/v1/bingos/${bingo.id}/comments/`);
+  expect(firstPage.status()).toBe(200);
+  expect(
+    ((await firstPage.json()) as { results: Array<{ id: string }> }).results.map(
+      (comment) => comment.id,
+    ),
+  ).not.toContain(context.root_id);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(reply).toHaveValue(replyText);
+  await expect(edit).toHaveValue(editedText);
+  await expect(root).toContainText("Original recovery conversation");
+  await expect(root.getByRole("status").filter({ hasText: "Unsent reply restored" })).toBeVisible();
+  await expect(
+    nested.getByRole("status").filter({ hasText: "Unsaved comment changes restored" }),
+  ).toBeVisible();
+  await expect(page.locator(`#comment-${context.root_id}`)).toHaveCount(1);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    await reply.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    expect(
+      (await new AxeBuilder({ page }).include(".comments-panel").analyze()).violations,
+    ).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`restored-inline-${width}.png`) });
+  }
+  const saved = await waitForResponse(page, `/api/v1/comments/${context.reply_id}/`, "PATCH", () =>
+    nested.getByRole("button", { name: "Save", exact: true }).click(),
+  );
+  expect((await saved.json()).body).toBe(editedText);
+  await expect(nested.locator(".comment__body")).toContainText(editedText);
+  const posted = await waitForResponse(
+    page,
+    `/api/v1/comments/${context.root_id}/replies/`,
+    "POST",
+    () => root.getByRole("button", { name: "Post reply", exact: true }).click(),
+  );
+  const created = (await posted.json()) as { id: string; body: string };
+  expect(created.body).toBe(replyText);
+  await expect(page.locator(`#comment-${created.id}`)).toContainText(replyText);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await expect(page.getByLabel("Reply", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Edit comment", { exact: true })).toHaveCount(0);
+});
+
+test("reply and edit return after same-account login and clear on cross-tab logout", async ({
+  page,
+}) => {
+  const bingo = await createSocialFormBoard(page);
+  await page.goto(`/bingo/${bingo.id}`);
+  await page.getByLabel("Add a comment", { exact: true }).fill("Authentication recovery parent");
+  const posted = await waitForResponse(page, `/api/v1/bingos/${bingo.id}/comments/`, "POST", () =>
+    page.getByRole("button", { name: "Post comment", exact: true }).click(),
+  );
+  const parent = (await posted.json()) as { id: string };
+  const root = page.locator(`#comment-${parent.id}`);
+  await root.getByRole("button", { name: "Edit", exact: true }).click();
+  await root
+    .getByLabel("Edit comment", { exact: true })
+    .fill("Retained changes through login 🎲\n<literal> & context");
+  await root.getByRole("button", { name: "Reply", exact: true }).click();
+  await root
+    .getByLabel("Reply", { exact: true })
+    .fill("Retained reply through login 🎲\n<literal> & context");
+  await page.context().clearCookies();
+  const expired = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/v1/comments/${parent.id}/`) &&
+      response.request().method() === "PATCH",
+  );
+  await root.getByRole("button", { name: "Save", exact: true }).click();
+  expect((await expired).status()).toBe(401);
+  const login = page.getByRole("dialog", { name: "Log in", exact: true });
+  await expect(login).toBeVisible();
+  await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+  await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+  await login.getByRole("button", { name: "Log in", exact: true }).click();
+  await expect(login).toHaveCount(0);
+  await expect(root.getByLabel("Edit comment", { exact: true })).toHaveValue(
+    "Retained changes through login 🎲\n<literal> & context",
+  );
+  await expect(root.getByLabel("Reply", { exact: true })).toHaveValue(
+    "Retained reply through login 🎲\n<literal> & context",
+  );
+  const settings = await page.context().newPage();
+  try {
+    await settings.goto("/profile");
+    await settings.getByRole("button", { name: "Log out", exact: true }).click();
+    await expect(login).toBeVisible();
+    await expect(page.getByLabel("Edit comment", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Reply", { exact: true })).toHaveCount(0);
+    await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+    await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+    await login.getByRole("button", { name: "Log in", exact: true }).click();
+    await expect(login).toHaveCount(0);
+    await expect(page.getByLabel("Edit comment", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Reply", { exact: true })).toHaveCount(0);
+  } finally {
+    await settings.close();
+  }
+});
+
+test("deleted recovery targets keep copyable reply and edit text without enabling submission", async ({
+  page,
+}, testInfo) => {
+  const bingo = await createSocialFormBoard(page);
+  await page.goto(`/bingo/${bingo.id}`);
+  await expect(page.getByLabel("Add a comment", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await page
+    .getByLabel("Add a comment", { exact: true })
+    .fill("Parent deleted while drafts are open");
+  const posted = await waitForResponse(page, `/api/v1/bingos/${bingo.id}/comments/`, "POST", () =>
+    page.getByRole("button", { name: "Post comment", exact: true }).click(),
+  );
+  const parent = (await posted.json()) as { id: string };
+  const root = page.locator(`#comment-${parent.id}`);
+  await root.getByRole("button", { name: "Edit", exact: true }).click();
+  const editText = "Copy these unsaved changes 🎲\n<literal> & context";
+  const replyText = "Copy this unsent reply 🎲\n<literal> & context";
+  await root.getByLabel("Edit comment", { exact: true }).fill(editText);
+  await root.getByRole("button", { name: "Reply", exact: true }).click();
+  await root.getByLabel("Reply", { exact: true }).fill(replyText);
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const removed = await page
+    .context()
+    .request.delete(`/api/v1/comments/${parent.id}/`, { headers: { "X-CSRFToken": csrf!.value } });
+  expect(removed.status()).toBe(204);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await expect(root.getByLabel("Edit comment", { exact: true })).toHaveValue(editText);
+  await expect(root.getByLabel("Reply", { exact: true })).toHaveValue(replyText);
+  await expect(root.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
+  await expect(root.getByRole("button", { name: "Post reply", exact: true })).toBeDisabled();
+  await expect(root.getByRole("alert")).toHaveCount(2);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    await root.getByLabel("Reply", { exact: true }).scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    expect(
+      (await new AxeBuilder({ page }).include(".comments-panel").analyze()).violations,
+    ).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`deleted-inline-${width}.png`) });
+  }
+});
+
+test("failed context recovery retains inline text and retries the original conversation", async ({
+  page,
+}) => {
+  const bingo = await createSocialFormBoard(page);
+  await page.goto(`/bingo/${bingo.id}`);
+  await expect(page.getByLabel("Add a comment", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await page.getByLabel("Add a comment", { exact: true }).fill("Recovery network parent");
+  const posted = await waitForResponse(page, `/api/v1/bingos/${bingo.id}/comments/`, "POST", () =>
+    page.getByRole("button", { name: "Post comment", exact: true }).click(),
+  );
+  const parent = (await posted.json()) as { id: string };
+  const root = page.locator(`#comment-${parent.id}`);
+  await root.getByRole("button", { name: "Edit", exact: true }).click();
+  const text = "Keep exact text when context fails 🎲\n<literal> & context";
+  await root.getByLabel("Edit comment", { exact: true }).fill(text);
+  const path = `**/api/v1/comments/${parent.id}/context/`;
+  await page.route(path, (route) => route.abort("failed"));
+  await page.goForward();
+  await expect(page).toHaveURL(/\/explore$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
+  await expect(page.getByLabel("Recovered comment changes", { exact: true })).toHaveValue(text);
+  await expect(page.locator(".comment-recovery").getByRole("alert")).toContainText(
+    "Your draft is retained",
+  );
+  await expect(root.getByRole("button", { name: "Save", exact: true })).toHaveCount(0);
+  await page.unroute(path);
+  await page
+    .locator(".comment-recovery")
+    .getByRole("button", { name: "Try again", exact: true })
+    .click();
+  await expect(root.getByLabel("Edit comment", { exact: true })).toHaveValue(text);
+  await expect(root.getByRole("button", { name: "Save", exact: true })).toBeEnabled();
+  await expect(page.getByLabel("Recovered comment changes", { exact: true })).toHaveCount(0);
+});
+
 test.describe("live full-stack product flows", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -2866,188 +3278,6 @@ test("explicit logout from another tab clears comment recovery even when storage
     await expect(
       page.getByRole("status").filter({ hasText: "Unsent comment restored" }),
     ).toHaveCount(0);
-  } finally {
-    await settings.close();
-  }
-});
-
-test("unsent report restores after client history navigation and clears after sending", async ({
-  page,
-}, testInfo) => {
-  const bingo = await createSocialFormBoard(page);
-  await authenticateAs(page, "player");
-  await page.goto(`/bingo/${bingo.id}`);
-  await page.getByRole("link", { name: "Explore", exact: true }).click();
-  await expect(page).toHaveURL(/\/explore$/);
-  await page.goBack();
-  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
-  const trigger = page
-    .locator(".play-actions")
-    .getByRole("button", { name: "Report", exact: true });
-  await trigger.click();
-  const dialog = page.getByRole("dialog", { name: "Report bingo" });
-  const reason = dialog.getByLabel("Reason", { exact: true });
-  const context = dialog.getByLabel("Additional context (optional)", { exact: true });
-  const text = "Recover this private report 🎲\n<literal> & context";
-  await reason.selectOption("other");
-  await context.fill(text);
-  await page.goForward();
-  await expect(page).toHaveURL(/\/explore$/);
-  await page.goBack();
-  await expect(page).toHaveURL(new RegExp(`/bingo/${bingo.id}$`));
-  await trigger.click();
-  await expect(context).toHaveValue(text);
-  await expect(reason).toHaveValue("other");
-  await expect(dialog.getByRole("status")).toContainText("Unsent report restored");
-  for (const width of [320, 1710]) {
-    await page.setViewportSize({ width, height: 989 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-      width,
-    );
-    expect(
-      (await new AxeBuilder({ page }).include("dialog.report-dialog").analyze()).violations,
-    ).toEqual([]);
-    await page.screenshot({ path: testInfo.outputPath(`restored-report-${width}.png`) });
-  }
-  const sent = await waitForResponse(page, "/api/v1/reports/", "POST", () =>
-    dialog.getByRole("button", { name: "Send report", exact: true }).click(),
-  );
-  expect(sent.status()).toBe(201);
-  expect(sent.request().postDataJSON()).toMatchObject({
-    target_type: "bingo",
-    target_id: bingo.id,
-    reason: "other",
-    description: text,
-  });
-  await dialog.getByRole("button", { name: "Done", exact: true }).click();
-  await trigger.click();
-  await expect(context).toHaveValue("");
-  await expect(reason).toHaveValue("spam");
-  await expect(dialog.getByRole("status")).toHaveCount(0);
-  await reason.selectOption("harassment");
-  page.once("dialog", (confirmation) => confirmation.accept());
-  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
-  await trigger.click();
-  await expect(reason).toHaveValue("spam");
-});
-
-test("unsent report returns after same-account authentication recovery", async ({ page }) => {
-  const bingo = await createSocialFormBoard(page);
-  await authenticateAs(page, "player");
-  await page.goto(`/bingo/${bingo.id}`);
-  const trigger = page
-    .locator(".play-actions")
-    .getByRole("button", { name: "Report", exact: true });
-  await trigger.click();
-  const dialog = page.getByRole("dialog", { name: "Report bingo" });
-  const context = dialog.getByLabel("Additional context (optional)", { exact: true });
-  const text = "Keep report through authentication 🎲\n<literal> & context";
-  await dialog.getByLabel("Reason", { exact: true }).selectOption("other");
-  await context.fill(text);
-  await page.context().clearCookies();
-  const expiredPromise = page.waitForResponse(
-    (response) =>
-      response.url().endsWith("/api/v1/reports/") && response.request().method() === "POST",
-  );
-  await dialog.getByRole("button", { name: "Send report", exact: true }).click();
-  const expired = await expiredPromise;
-  expect(expired.status()).toBe(401);
-  const login = page.getByRole("dialog", { name: "Log in", exact: true });
-  await expect(login).toBeVisible();
-  await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.player.email);
-  await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
-  await login.getByRole("button", { name: "Log in", exact: true }).click();
-  await expect(login).toHaveCount(0);
-  await trigger.click();
-  await expect(context).toHaveValue(text);
-  await expect(dialog.getByLabel("Reason", { exact: true })).toHaveValue("other");
-  await expect(dialog.getByRole("status")).toContainText("Unsent report restored");
-});
-
-test("report rejection for an archived target keeps context and destination", async ({
-  page,
-  playwright,
-}) => {
-  const bingo = await createSocialFormBoard(page);
-  await authenticateAs(page, "player");
-  await page.goto(`/bingo/${bingo.id}`);
-  await page.locator(".play-actions").getByRole("button", { name: "Report", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Report bingo" });
-  const context = dialog.getByLabel("Additional context (optional)", { exact: true });
-  const text = "Keep context when target becomes unavailable 🎲";
-  await context.fill(text);
-  const authorState = JSON.parse(readFileSync(authStatePath("author"), "utf8")) as {
-    cookies: Array<{ name: string; value: string }>;
-  };
-  const csrf = authorState.cookies.find((cookie) => cookie.name === "neb_csrf");
-  expect(csrf).toBeDefined();
-  const author = await playwright.request.newContext({
-    baseURL: test.info().project.use.baseURL,
-    storageState: authStatePath("author"),
-  });
-  try {
-    const archived = await author.post(`/api/v1/bingos/${bingo.id}/archive/`, {
-      headers: { "X-CSRFToken": csrf!.value },
-    });
-    expect(archived.status()).toBe(200);
-    const rejectedPromise = page.waitForResponse(
-      (response) =>
-        response.url().endsWith("/api/v1/reports/") && response.request().method() === "POST",
-    );
-    await dialog.getByRole("button", { name: "Send report", exact: true }).click();
-    const rejected = await rejectedPromise;
-    expect(rejected.status()).toBe(400);
-    expect(rejected.request().postDataJSON()).toMatchObject({
-      target_type: "bingo",
-      target_id: bingo.id,
-      description: text,
-    });
-    await expect(context).toHaveValue(text);
-    await expect(context).toBeEnabled();
-    await expect(dialog.getByRole("alert")).toContainText("unavailable");
-    await expect(dialog.getByRole("button", { name: "Send report", exact: true })).toBeEnabled();
-  } finally {
-    await author.dispose();
-  }
-});
-
-test("explicit cross-tab logout clears a retained report before same-account login", async ({
-  page,
-}) => {
-  const bingo = await createSocialFormBoard(page);
-  await page.context().clearCookies();
-  await page.goto("/login");
-  await page.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.player.email);
-  await page.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
-  await page.getByRole("button", { name: "Log in", exact: true }).click();
-  await expect(page).toHaveURL(/\/discover$/);
-  await page.goto(`/bingo/${bingo.id}`);
-  const trigger = page
-    .locator(".play-actions")
-    .getByRole("button", { name: "Report", exact: true });
-  await trigger.click();
-  const report = page.getByRole("dialog", { name: "Report bingo" });
-  await report.getByLabel("Reason", { exact: true }).selectOption("other");
-  await report
-    .getByLabel("Additional context (optional)", { exact: true })
-    .fill("Remove this private report on explicit logout 🎲");
-  const settings = await page.context().newPage();
-  try {
-    await settings.goto("/profile");
-    await settings.getByRole("button", { name: "Log out", exact: true }).click();
-    const login = page.getByRole("dialog", { name: "Log in", exact: true });
-    await expect(login).toBeVisible();
-    await expect(report).toHaveCount(0);
-    await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.player.email);
-    await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
-    await login.getByRole("button", { name: "Log in", exact: true }).click();
-    await expect(login).toHaveCount(0);
-    await trigger.click();
-    await expect(report.getByLabel("Reason", { exact: true })).toHaveValue("spam");
-    await expect(report.getByLabel("Additional context (optional)", { exact: true })).toHaveValue(
-      "",
-    );
-    await expect(report.getByRole("status")).toHaveCount(0);
   } finally {
     await settings.close();
   }

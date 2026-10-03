@@ -518,6 +518,22 @@ export interface paths {
         patch: operations["comments_partial_update"];
         trace?: never;
     };
+    "/api/v1/comments/{comment_id}/context/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["comments_context_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/comments/{comment_id}/like/": {
         parameters: {
             query?: never;
@@ -1440,6 +1456,12 @@ export interface components {
             deleted_at?: string | null;
             /** Format: date-time */
             readonly created_at: string;
+        };
+        CommentContext: {
+            /** Format: uuid */
+            bingo_id: string;
+            comment: components["schemas"]["Comment"];
+            parent: components["schemas"]["Comment"] | null;
         };
         CommentCreateRequest: {
             body: string;
@@ -3271,6 +3293,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Comment"];
+                };
+            };
+        };
+    };
+    comments_context_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentContext"];
                 };
             };
         };

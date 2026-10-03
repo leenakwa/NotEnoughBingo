@@ -306,6 +306,12 @@ class Command(BaseCommand):
                     "Clean sheets",
                 ),
             },
+            "social": {
+                "title": "E2E Comment Recovery Board",
+                "visibility": Bingo.Visibility.UNLISTED,
+                "marking_style": Bingo.MarkingStyle.CHECKMARK,
+                "cells": tuple(f"Recovery cell {number}" for number in range(1, 10)),
+            },
         }
         bingos: dict[str, dict[str, Any]] = {}
         bingo_rows: dict[str, Bingo] = {}
@@ -338,6 +344,29 @@ class Command(BaseCommand):
             }
 
         revision_bingo = bingo_rows["revision"]
+        social_bingo = bingo_rows["social"]
+        social_root = Comment.objects.create(
+            bingo=social_bingo, author=player, body="Original recovery conversation", reply_count=6
+        )
+        Comment.objects.bulk_create(
+            [
+                Comment(bingo=social_bingo, author=author, body=f"Newer conversation {number}")
+                for number in range(1, 24)
+            ]
+        )
+        social_replies = Comment.objects.bulk_create(
+            [
+                Comment(
+                    bingo=social_bingo,
+                    author=player,
+                    parent=social_root,
+                    body=f"Original nested reply {number}",
+                )
+                for number in range(1, 7)
+            ]
+        )
+        social_bingo.comment_count = 30
+        social_bingo.save(update_fields=["comment_count", "updated_at"])
         revision = revision_bingo.current_revision
         assert revision is not None
         snapshot = create_shared_result(
@@ -351,6 +380,11 @@ class Command(BaseCommand):
 
         manifest = {
             "schema_version": 1,
+            "social_context": {
+                "bingo_id": str(social_bingo.public_id),
+                "root_id": str(social_root.public_id),
+                "reply_id": str(social_replies[-1].public_id),
+            },
             "users": {
                 "author": {
                     "id": str(author.public_id),

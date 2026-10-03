@@ -11,6 +11,7 @@ from django.test import override_settings
 from apps.accounts.models import User
 from apps.bingos.models import Bingo, BingoRevision
 from apps.plays.models import SharedResult
+from apps.social.models import Comment
 
 pytestmark = pytest.mark.django_db
 
@@ -62,15 +63,20 @@ def test_seed_e2e_can_be_rerun_without_duplicate_fixture_state(monkeypatch) -> N
                 "bingos": Bingo.objects.filter(title__startswith="E2E ").count(),
                 "revisions": BingoRevision.objects.filter(title__startswith="E2E ").count(),
                 "shares": SharedResult.objects.filter(bingo__title__startswith="E2E ").count(),
+                "comments": Comment.objects.filter(bingo__title__startswith="E2E ").count(),
             }
         )
 
     assert database_counts == [
-        {"users": 3, "bingos": 4, "revisions": 4, "shares": 1},
-        {"users": 3, "bingos": 4, "revisions": 4, "shares": 1},
+        {"users": 3, "bingos": 5, "revisions": 5, "shares": 1, "comments": 30},
+        {"users": 3, "bingos": 5, "revisions": 5, "shares": 1, "comments": 30},
     ]
     assert [manifest["schema_version"] for manifest in manifests] == [1, 1]
-    assert set(manifests[1]["bingos"]) == {"public", "unlisted", "private", "revision"}
+    assert set(manifests[1]["bingos"]) == {"public", "unlisted", "private", "revision", "social"}
+    assert (
+        Comment.objects.get(public_id=manifests[1]["social_context"]["reply_id"]).parent.public_id
+        == Comment.objects.get(public_id=manifests[1]["social_context"]["root_id"]).public_id
+    )
     assert manifests[1]["bingos"]["public"]["cell_texts"] == [
         "Morning stretch",
         "Made the bed",

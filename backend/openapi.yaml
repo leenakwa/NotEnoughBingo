@@ -987,6 +987,27 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/comments/{comment_id}/context/:
+    get:
+      operationId: comments_context_retrieve
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - comments
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentContext'
+          description: ''
   /api/v1/comments/{comment_id}/like/:
     post:
       operationId: comments_like_create
@@ -3261,6 +3282,22 @@ components:
       - is_liked
       - parent_id
       - replies
+    CommentContext:
+      type: object
+      properties:
+        bingo_id:
+          type: string
+          format: uuid
+        comment:
+          $ref: '#/components/schemas/Comment'
+        parent:
+          allOf:
+          - $ref: '#/components/schemas/Comment'
+          nullable: true
+      required:
+      - bingo_id
+      - comment
+      - parent
     CommentCreateRequest:
       type: object
       properties:

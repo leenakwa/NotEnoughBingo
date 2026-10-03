@@ -5,14 +5,40 @@ import { AuthLink } from "@/components/auth/auth-link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
-import { readCommentDraft, rememberCommentDraft } from "@/features/social/social-draft-cache";
+import {
+  readCommentDraft,
+  readInlineCommentDraft,
+  rememberCommentDraft,
+  rememberInlineCommentDraft,
+} from "@/features/social/social-draft-cache";
 import { ReportDialog } from "@/features/social/report-dialog";
 import { api, errorMessage, fieldValidationMessage } from "@/lib/api/client";
-import type { AuthenticatedUser, Comment, Page, PublicId } from "@/lib/api/types";
+import type { AuthenticatedUser, Comment, CommentContext, Page, PublicId } from "@/lib/api/types";
 import { formatLocalDateTime } from "@/lib/date-time";
 import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
 
 type Viewer = AuthenticatedUser | "guest";
+type RecoveredContext =
+  | { status: "loading" }
+  | { status: "ready"; value: CommentContext }
+  | { status: "error"; message: string };
+
+function includeRecoveredContext(comments: Comment[], context: CommentContext): Comment[] {
+  const root = context.parent ?? context.comment;
+  if (!comments.some((comment) => comment.id === root.id)) {
+    const replies =
+      context.parent && !root.replies.some((reply) => reply.id === context.comment.id)
+        ? [...root.replies, context.comment]
+        : root.replies;
+    return [{ ...root, replies }, ...comments];
+  }
+  if (!context.parent) return comments;
+  return comments.map((comment) =>
+    comment.id === root.id && !comment.replies.some((reply) => reply.id === context.comment.id)
+      ? { ...comment, replies: [...comment.replies, context.comment] }
+      : comment,
+  );
+}
 
 function updateCommentTree(
   comments: Comment[],
@@ -43,7 +69,13 @@ export function CommentsPanel({ bingoId, viewer }: { bingoId: PublicId; viewer: 
 
 function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer }) {
   const [result, setResult] = useState<Page<Comment> | null>(null);
-  const [page, setPage] = useState(1);
+  const [replyRecovery] = useState(() =>
+    viewer === "guest" ? null : readInlineCommentDraft(viewer.id, bingoId, "reply"),
+  );
+  const [editRecovery] = useState(() =>
+    viewer === "guest" ? null : readInlineCommentDraft(viewer.id, bingoId, "edit"),
+  );
+  const [page, setPage] = useState(replyRecovery?.draft?.page ?? editRecovery?.draft?.page ?? 1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [recovery] = useState(() =>
@@ -54,11 +86,26 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
   const [bodyErrors, setBodyErrors] = useState<Partial<Record<"root" | "reply" | "edit", string>>>(
     {},
   );
-  const [replyingTo, setReplyingTo] = useState<PublicId | null>(null);
-  const [replyBody, setReplyBody] = useState("");
-  const [editing, setEditing] = useState<PublicId | null>(null);
-  const [editBody, setEditBody] = useState("");
-  const [originalEditBody, setOriginalEditBody] = useState("");
+  const [replyingTo, setReplyingTo] = useState<PublicId | null>(
+    replyRecovery?.draft?.targetId ?? null,
+  );
+  const [replyBody, setReplyBody] = useState(replyRecovery?.draft?.body ?? "");
+  const [editing, setEditing] = useState<PublicId | null>(editRecovery?.draft?.targetId ?? null);
+  const [editBody, setEditBody] = useState(editRecovery?.draft?.body ?? "");
+  const [originalEditBody, setOriginalEditBody] = useState(
+    editRecovery?.draft?.kind === "edit" ? editRecovery.draft.originalBody : "",
+  );
+  const [contexts, setContexts] = useState<Partial<Record<"reply" | "edit", RecoveredContext>>>(
+    () => ({
+      ...(replyRecovery?.draft ? { reply: { status: "loading" as const } } : {}),
+      ...(editRecovery?.draft ? { edit: { status: "loading" as const } } : {}),
+    }),
+  );
+  const [contextVersion, setContextVersion] = useState(0);
+  const [restoreTargets, setRestoreTargets] = useState(() => ({
+    reply: replyRecovery?.draft?.targetId,
+    edit: editRecovery?.draft?.targetId,
+  }));
   const [pendingAction, setPendingAction] = useState("");
   const actionInFlight = useRef(false);
   const validationFocus = useRef<HTMLTextAreaElement | null>(null);
@@ -82,6 +129,88 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
       rememberCommentDraft(viewer.id, bingoId, newBody, recovery.generation);
     }
   }, [bingoId, newBody, recovery, viewer]);
+
+  useEffect(() => {
+    if (viewer === "guest") return;
+    if (replyRecovery)
+      rememberInlineCommentDraft(
+        viewer.id,
+        bingoId,
+        "reply",
+        replyingTo ? { kind: "reply", targetId: replyingTo, body: replyBody, page } : null,
+        replyRecovery.generation,
+      );
+    if (editRecovery)
+      rememberInlineCommentDraft(
+        viewer.id,
+        bingoId,
+        "edit",
+        editing
+          ? {
+              kind: "edit",
+              targetId: editing,
+              body: editBody,
+              originalBody: originalEditBody,
+              page,
+            }
+          : null,
+        editRecovery.generation,
+      );
+  }, [
+    bingoId,
+    viewer,
+    replyRecovery,
+    editRecovery,
+    replyingTo,
+    replyBody,
+    editing,
+    editBody,
+    originalEditBody,
+    page,
+  ]);
+
+  useEffect(() => {
+    if (viewer === "guest") return;
+    const controller = new AbortController();
+    for (const [kind, saved] of [
+      ["reply", replyRecovery],
+      ["edit", editRecovery],
+    ] as const) {
+      if (!saved?.draft || restoreTargets[kind] !== saved.draft.targetId) continue;
+      void api.comments
+        .context(saved.draft.targetId, controller.signal)
+        .then((value) => {
+          if (controller.signal.aborted) return;
+          if (
+            value.bingo_id !== bingoId ||
+            (kind === "reply" && value.comment.parent_id) ||
+            (kind === "edit" && value.comment.author.id !== viewer.id)
+          ) {
+            throw new Error("This conversation is no longer available.");
+          }
+          setContexts((current) => ({ ...current, [kind]: { status: "ready", value } }));
+        })
+        .catch((caught) => {
+          if (!controller.signal.aborted)
+            setContexts((current) => ({
+              ...current,
+              [kind]: { status: "error", message: errorMessage(caught) },
+            }));
+        });
+    }
+    return () => controller.abort();
+  }, [bingoId, viewer, replyRecovery, editRecovery, contextVersion, restoreTargets]);
+
+  function contextReady(kind: "reply" | "edit", targetId: string) {
+    return restoreTargets[kind] !== targetId || contexts[kind]?.status === "ready";
+  }
+
+  let displayedComments = result?.results ?? [];
+  for (const kind of ["reply", "edit"] as const) {
+    const context = contexts[kind];
+    if (context?.status === "ready")
+      displayedComments = includeRecoveredContext(displayedComments, context.value);
+  }
 
   function beginAction(action: string) {
     if (actionInFlight.current) return false;
@@ -123,6 +252,10 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
       } catch (caught) {
         if (!signal?.aborted) {
           setResult(null);
+          if (page > 1 && caught instanceof Error && "status" in caught && caught.status === 404) {
+            setPage(1);
+            return;
+          }
           setError(errorMessage(caught));
         }
       } finally {
@@ -139,6 +272,29 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
   }, [load]);
 
   function updateComment(commentId: PublicId, update: (comment: Comment) => Comment) {
+    setContexts((current) =>
+      Object.fromEntries(
+        Object.entries(current).map(([kind, context]) => [
+          kind,
+          context?.status === "ready"
+            ? {
+                ...context,
+                value: {
+                  ...context.value,
+                  comment:
+                    context.value.comment.id === commentId
+                      ? update(context.value.comment)
+                      : context.value.comment,
+                  parent:
+                    context.value.parent?.id === commentId
+                      ? update(context.value.parent)
+                      : context.value.parent,
+                },
+              }
+            : context,
+        ]),
+      ),
+    );
     setResult((current) =>
       current
         ? {
@@ -202,6 +358,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
       }));
       setReplyBody("");
       setReplyingTo(null);
+      setRestoreTargets((current) => ({ ...current, reply: undefined }));
       restoreActionFocus(parentId, "reply");
     } catch (caught) {
       showBodyError(caught, "reply", form);
@@ -248,6 +405,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
       }));
       setEditing(null);
       setEditBody("");
+      setRestoreTargets((current) => ({ ...current, edit: undefined }));
       restoreActionFocus(commentId, "edit");
     } catch (caught) {
       showBodyError(caught, "edit", form);
@@ -303,7 +461,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
 
   function renderComment(comment: Comment, reply = false) {
     const own = signedIn && viewer.id === comment.author.id;
-    const isEditing = editing === comment.id;
+    const isEditing = editing === comment.id && contextReady("edit", comment.id);
     return (
       <article
         key={comment.id}
@@ -319,6 +477,21 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
         </header>
         {isEditing ? (
           <form className="comment-form" onSubmit={(event) => void saveEdit(event, comment.id)}>
+            {restoreTargets.edit === comment.id ? (
+              <p role="status" className="form-message">
+                Unsaved comment changes restored in this tab.
+              </p>
+            ) : null}
+            {comment.deleted_at ? (
+              <p className="form-message--error" role="alert">
+                This comment was deleted. Copy your draft or discard it.
+              </p>
+            ) : comment.body !== originalEditBody ? (
+              <p className="form-message" role="status">
+                This comment changed while you were editing. Review the latest text before saving:{" "}
+                {comment.body}
+              </p>
+            ) : null}
             <label className="field">
               <span id={`edit-comment-label-${comment.id}`} className="sr-only">
                 Edit comment
@@ -367,6 +540,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
                   if (actionInFlight.current || !discardEdit()) return;
                   setEditing(null);
                   setEditBody("");
+                  setRestoreTargets((current) => ({ ...current, edit: undefined }));
                   restoreActionFocus(comment.id, "edit");
                 }}
               >
@@ -375,7 +549,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
               <button
                 type="submit"
                 className="button button--primary"
-                disabled={Boolean(pendingAction) || !editBody.trim()}
+                disabled={Boolean(pendingAction) || !editBody.trim() || Boolean(comment.deleted_at)}
               >
                 {pendingAction === `edit-${comment.id}` ? "Saving…" : "Save"}
               </button>
@@ -412,6 +586,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
                 setBodyErrors((current) => ({ ...current, reply: undefined }));
                 setReplyingTo(comment.id);
                 setReplyBody("");
+                setRestoreTargets((current) => ({ ...current, reply: undefined }));
               }}
             >
               Reply
@@ -430,6 +605,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
                   setEditing(comment.id);
                   setEditBody(comment.body);
                   setOriginalEditBody(comment.body);
+                  setRestoreTargets((current) => ({ ...current, edit: undefined }));
                 }}
               >
                 Edit
@@ -450,11 +626,21 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
             </button>
           ) : null}
         </div>
-        {!reply && replyingTo === comment.id ? (
+        {!reply && replyingTo === comment.id && contextReady("reply", comment.id) ? (
           <form
             className="comment-form comment-form--reply"
             onSubmit={(event) => void createReply(event, comment.id)}
           >
+            {restoreTargets.reply === comment.id ? (
+              <p role="status" className="form-message">
+                Unsent reply restored in this tab.
+              </p>
+            ) : null}
+            {comment.deleted_at ? (
+              <p className="form-message--error" role="alert">
+                This comment was deleted. Copy your reply or discard it.
+              </p>
+            ) : null}
             <label className="field">
               <span id={`reply-label-${comment.id}`}>Reply</span>
               <textarea
@@ -499,6 +685,7 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
                   if (actionInFlight.current || !discardReply()) return;
                   setReplyingTo(null);
                   setReplyBody("");
+                  setRestoreTargets((current) => ({ ...current, reply: undefined }));
                   restoreActionFocus(comment.id, "reply");
                 }}
               >
@@ -507,7 +694,9 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
               <button
                 type="submit"
                 className="button button--primary"
-                disabled={Boolean(pendingAction) || !replyBody.trim()}
+                disabled={
+                  Boolean(pendingAction) || !replyBody.trim() || Boolean(comment.deleted_at)
+                }
               >
                 {pendingAction === `reply-${comment.id}` ? "Posting reply…" : "Post reply"}
               </button>
@@ -607,15 +796,87 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
 
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {loading && !result ? <LoadingState label="Loading comments…" /> : null}
-      {!loading && !error && result?.results.length === 0 ? (
+      {!loading && !error && result && displayedComments.length === 0 ? (
         <EmptyState
           title="No comments yet"
           description="Start a useful, respectful conversation about this bingo."
         />
       ) : null}
-      {result?.results.length ? (
-        <div className="comment-list">{result.results.map((item) => renderComment(item))}</div>
+      {displayedComments.length ? (
+        <div className="comment-list">{displayedComments.map((item) => renderComment(item))}</div>
       ) : null}
+      {(["reply", "edit"] as const).map((kind) => {
+        const targetId = kind === "reply" ? replyingTo : editing;
+        const context = contexts[kind];
+        if (!targetId || restoreTargets[kind] !== targetId || context?.status === "ready")
+          return null;
+        return (
+          <div key={kind} className="comment-form comment-recovery">
+            <p
+              id={`${kind}-recovery-message-${bingoId}`}
+              role={context?.status === "error" ? "alert" : "status"}
+              className="form-message"
+            >
+              {context?.status === "error"
+                ? `${context.message} Your draft is retained. You can copy it, try again, or discard it.`
+                : "Restoring the original conversation… Your draft is retained below."}
+            </p>
+            <label className="field">
+              <span id={`${kind}-recovery-label-${bingoId}`}>
+                {kind === "reply" ? "Recovered reply" : "Recovered comment changes"}
+              </span>
+              <textarea
+                aria-labelledby={`${kind}-recovery-label-${bingoId}`}
+                aria-describedby={`${kind}-recovery-message-${bingoId}`}
+                rows={3}
+                maxLength={2000}
+                readOnly
+                value={kind === "reply" ? replyBody : editBody}
+              />
+            </label>
+            <div className="inline-actions">
+              {context?.status === "error" ? (
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  onClick={() => {
+                    setContexts((current) => ({ ...current, [kind]: { status: "loading" } }));
+                    setContextVersion((value) => value + 1);
+                  }}
+                >
+                  Try again
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="button button--secondary"
+                disabled={Boolean(pendingAction)}
+                onClick={() => {
+                  if (kind === "reply") {
+                    if (!discardReply()) return;
+                    setReplyingTo(null);
+                    setReplyBody("");
+                  } else {
+                    if (!discardEdit()) return;
+                    setEditing(null);
+                    setEditBody("");
+                  }
+                  setRestoreTargets((current) => ({ ...current, [kind]: undefined }));
+                  window.setTimeout(
+                    () =>
+                      document
+                        .querySelector<HTMLTextAreaElement>(".comment-form--root textarea")
+                        ?.focus(),
+                    0,
+                  );
+                }}
+              >
+                Discard draft
+              </button>
+            </div>
+          </div>
+        );
+      })}
       {result && (result.previous || result.next) ? (
         <nav className="pagination" aria-label="Comment pages">
           <button
@@ -628,6 +889,8 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
               setReplyBody("");
               setEditing(null);
               setEditBody("");
+              setContexts({});
+              setRestoreTargets({ reply: undefined, edit: undefined });
               setResult(null);
               setPage((value) => Math.max(1, value - 1));
             }}
@@ -645,6 +908,8 @@ function CommentThread({ bingoId, viewer }: { bingoId: PublicId; viewer: Viewer 
               setReplyBody("");
               setEditing(null);
               setEditBody("");
+              setContexts({});
+              setRestoreTargets({ reply: undefined, edit: undefined });
               setResult(null);
               setPage((value) => value + 1);
             }}

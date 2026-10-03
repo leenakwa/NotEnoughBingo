@@ -34,6 +34,15 @@ const authRoutes = new Set([
 const seenErrors = new WeakSet<object>();
 let recent: { key: string; time: number }[] = [];
 const csrfCookieName = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME ?? "neb_csrf";
+let documentLeaving = false;
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => {
+    documentLeaving = true;
+  });
+  window.addEventListener("pageshow", () => {
+    documentLeaving = false;
+  });
+}
 
 function surface(): string {
   const route = window.location.pathname.split("/")[1] ?? "";
@@ -87,6 +96,7 @@ function framesFor(error: unknown): Frame[] {
 }
 
 async function sendReport(report: object): Promise<void> {
+  if (documentLeaving) return;
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 8_000);
   try {
@@ -100,6 +110,7 @@ async function sendReport(report: object): Promise<void> {
         credentials: "same-origin",
         cache: "no-store",
         signal: controller.signal,
+        keepalive: true,
       });
       if (!response.ok) return;
       const data: unknown = await response.json();
@@ -107,13 +118,14 @@ async function sendReport(report: object): Promise<void> {
         csrf = data.csrf;
       }
     }
-    if (!csrf) return;
+    if (!csrf || documentLeaving) return;
     await fetch("/api/v1/client-errors/", {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
       body: JSON.stringify(report),
       signal: controller.signal,
+      keepalive: true,
     });
   } catch {
     // Reporting is best effort and must never trigger another error report.
@@ -127,7 +139,7 @@ export function reportBrowserError(
   kind: ErrorKind = "exception",
   status?: number,
 ): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || documentLeaving) return;
   try {
     if (error && typeof error === "object") {
       if (seenErrors.has(error)) return;

@@ -3022,3 +3022,107 @@ observed results and their limits. Do not include credentials or session data.
   context handling for deleted/moved comment targets, native credential managers
   and the remaining form sweep stay open. Simultaneous loss of both cross-tab
   signals remains unverified. This later source still requires its own CI gate.
+
+
+### 2026-10-03 — Root-comment exact-source gate completed
+
+- [CI run 37079164214](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37079164214)
+  on `8a5d31a1378a60e2946f36324ba3d499f88dcc86` passed all nine jobs:
+  206 backend tests, 192 frontend tests, 196 browser smoke checks (12 intentional
+  skips), 64 live product flows and both x86_64 production image gates. Smoke
+  output reports no retry/flaky cases. The corrected password-session assertion,
+  hydration wait and root-comment recovery are covered by this source gate.
+- The later report-recovery source `a9b3cc47a270a663621765f928e24b7c05bf0784`
+  passed the local checks above and a full redacted 79-commit history scan. Its
+  [own CI run 37080041237](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37080041237)
+  subsequently failed as recorded below; it does not inherit the preceding
+  source's green verdict. No merge,
+  image promotion or public deployment occurred.
+
+
+### 2026-10-03 — Later report gate failed; fixture ordering and departing-document diagnostics
+
+- [CI run 37080041237](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37080041237)
+  on `a9b3cc47a270a663621765f928e24b7c05bf0784` finished with failure:
+  seven implementation jobs passed; full-stack/release failed with 63 live cases
+  passed and five failed. The report source must not be described as green.
+- Four new report cases ran after the existing destructive player-password
+  scenario, which changes that fixture's password and revokes its original
+  session. Their failures were absent authenticated Report controls (three
+  cases) and rejection of the original password during fresh login (one case).
+  These independent initial-session cases now run before the destructive account
+  phase; fixture credentials are not restored or forged to hide the behavior.
+- The fifth failure was a WebKit page error from the diagnostic collector's CSRF
+  request. Its trace locates `sendReport` called by an old-page request failure
+  during `clearCookies` followed immediately by navigation. Cookie values and
+  trace bodies were never printed. The collector now avoids starting/reporting
+  after `pagehide`, resumes on `pageshow`, and uses keepalive for already-started
+  bounded requests. A bootstrap completed after departure cannot send a report.
+- Two lifecycle regressions exercise suppression, resumption and a delayed
+  bootstrap. Three consecutive live WebKit browse/search/play/share/editor
+  journeys then passed with their existing empty-page-error assertion unchanged.
+  No new exception filter or retry was added. The new source needs its own gate.
+
+
+### 2026-10-03 — Reply/edit recovery with original conversation context (section 7)
+
+- Root, reply, edit and report drafts now share bounded account-scoped tab memory
+  (64 records, 24 hours, no persistent text). Reply/edit records retain the exact
+  target, text and saved list page; edits also retain their original comparison
+  text. Empty dirty edits are preserved. Sending, explicit discard and sign-out
+  clear recovery; owner/generation checks reject late writes after account changes.
+- The authenticated `GET /api/v1/comments/{id}/context/` returns the target, its
+  parent when nested, and the board ID, without a list-page dependency. It uses
+  the existing board-access policy, excludes moderated targets/parents and
+  returns only tombstones for deleted text. Mutation authorization is unchanged.
+  Ten API regressions cover pagination-independent nested context and viewer
+  like state, guest/private/archived/draft/deleted/hidden board boundaries, private
+  owner access, moderated parents/targets and deleted-text suppression. The
+  21-test social suite passed; the full PostgreSQL/test-settings suite passed
+  215 with one backend-container-only Nginx skip, covered by CI infrastructure.
+- Restored conversations are included once when outside the current list page,
+  including a reply outside the first five prefetched replies. Successful save
+  or reply stays visible and clears recovery. A missing saved page returns to
+  page one while retaining work. Changed server text is shown with a review
+  warning before saving; that stale-edit warning has component evidence here.
+- Deleted targets retain editable/copyable text with disabled sending; failed
+  context loads keep a labeled read-only recovery textarea with its error
+  description, retry and confirmed discard. Failed lookup never converts the
+  text to a root comment or changes its target. Different-board context is
+  rejected. Discard from fallback returns focus to the root composer.
+- Two cache regressions and seven component regressions cover inline isolation,
+  empty dirty edits, owner changes/late writes, nested/moved context, completion
+  removal, deleted/unavailable/wrong-board targets, retry and vanished list pages.
+  Together with two diagnostic lifecycle cases, `npm run check` passed all 209
+  frontend tests, lint and TypeScript. Changed-file formatting passed.
+- The guarded fixture command now seeds a separate unlisted social board with
+  24 root comments and six replies, emitting no comment-service notifications.
+  Its repeatability test verifies five boards/30 comments and correct parent
+  links. Production/debug/explicit-opt-in guards are unchanged; all three fixture
+  tests passed. This is test setup; subsequent mutations use the real browser/API.
+- The full local five-project Playwright run passed all 72 live journeys without
+  retries on isolated `nebqa`: Chromium, mobile WebKit, Firefox, desktop WebKit
+  and Android emulation. Four new Chromium cases verify a real new comment
+  moving the original conversation to page two while a sixth nested reply is
+  being edited; real save/post and removal; forced missing credentials yielding
+  401 then same-owner login; two-tab explicit logout; real comment deletion with
+  retained text and disabled sending; and an injected context-request failure
+  followed by retry to the original target. The four reordered report cases
+  and the later destructive password/session flow also passed in this full run.
+- Restored and deleted-target inline layouts were inspected at 320/1710 px and
+  passed the comments-panel Axe and overflow checks. Early navigation tests
+  pressed Back before Explore entered history and returned to the initial blank
+  page; they now await the actual route, without sleeps. The fallback uses
+  explicit label/error associations for consistent browser label lookup. The
+  edited-body assertion includes the visible edited indicator.
+- Limits: full reload/tab close still clears memory; this is not a server draft.
+  Simultaneous loss of both cross-tab sign-out mechanisms, native saved
+  credentials/password-manager extensions and the remaining all-form/control
+  inventory stay open. The 105-section tracker remains partial for forms/storage.
+  Current source still requires an exact-source CI gate; no deployment occurred.
+
+- Final production `npm run build` also completed successfully for this packet
+  after the accessibility labels and privacy copy were finalized. Generated
+  Next.js route imports were restored to the committed development declaration
+  paths. The final 320/1710 px screenshots were visually reviewed; recovery
+  text, warnings and disabled controls remain readable within the viewport.

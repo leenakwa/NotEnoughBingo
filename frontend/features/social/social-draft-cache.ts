@@ -4,8 +4,14 @@ import { AUTH_SIGNED_OUT_EVENT, AUTH_SYNC_KEY } from "@/lib/auth-events";
 
 import type { ReportReason, ReportTargetType } from "@/lib/api/types";
 
+export type InlineCommentDraft =
+  | { kind: "reply"; targetId: string; body: string; page: number }
+  | { kind: "edit"; targetId: string; body: string; originalBody: string; page: number };
+
 type SocialDraft =
-  { kind: "comment"; body: string } | { kind: "report"; reason: ReportReason; description: string };
+  | { kind: "comment"; body: string }
+  | { kind: "report"; reason: ReportReason; description: string }
+  | InlineCommentDraft;
 
 const maxDrafts = 64;
 const retentionMs = 24 * 60 * 60 * 1_000;
@@ -114,6 +120,33 @@ export function rememberReportDraft(
     draft && (draft.reason !== "spam" || draft.description.trim())
       ? { kind: "report", ...draft }
       : null,
+    expectedGeneration,
+  );
+}
+
+export function readInlineCommentDraft(accountId: string, bingoId: string, kind: "reply" | "edit") {
+  const saved = readDraft(accountId, `${kind}:${accountId}:${bingoId}`);
+  return {
+    draft: saved.draft?.kind === kind ? (saved.draft as InlineCommentDraft) : undefined,
+    generation: saved.generation,
+  };
+}
+
+export function rememberInlineCommentDraft(
+  accountId: string,
+  bingoId: string,
+  kind: "reply" | "edit",
+  draft: InlineCommentDraft | null,
+  expectedGeneration: number,
+): void {
+  const dirty =
+    draft &&
+    draft.kind === kind &&
+    (draft.kind === "edit" ? draft.body !== draft.originalBody : Boolean(draft.body.trim()));
+  rememberDraft(
+    accountId,
+    `${kind}:${accountId}:${bingoId}`,
+    dirty ? draft : null,
     expectedGeneration,
   );
 }

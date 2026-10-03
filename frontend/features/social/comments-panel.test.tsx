@@ -2,12 +2,18 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearSocialDrafts, readCommentDraft } from "@/features/social/social-draft-cache";
+import {
+  clearSocialDrafts,
+  readCommentDraft,
+  readInlineCommentDraft,
+  rememberInlineCommentDraft,
+} from "@/features/social/social-draft-cache";
 import { CommentsPanel } from "@/features/social/comments-panel";
 import type { AuthenticatedUser, Comment, Page } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
+  context: vi.fn(),
   create: vi.fn(),
   replies: vi.fn(),
   reply: vi.fn(),
@@ -68,6 +74,7 @@ describe("CommentsPanel", () => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
     mocks.list.mockResolvedValue(emptyPage);
+    mocks.context.mockReset();
   });
 
   it("lets guests read the thread but directs them to login to comment", async () => {
@@ -79,6 +86,198 @@ describe("CommentsPanel", () => {
       expect.stringContaining("/login?next="),
     );
     expect(screen.queryByLabelText("Add a comment")).not.toBeInTheDocument();
+  });
+
+  it("restores a reply outside the list page and clears recovery after successful posting", async () => {
+    const user = userEvent.setup();
+    const bingoId = "33333333-3333-4333-8333-333333333333";
+    const parent = comment("Original conversation");
+    const saved = readInlineCommentDraft(viewer.id, bingoId, "reply");
+    const body = "Reply 🎲\n<literal> & context";
+    rememberInlineCommentDraft(
+      viewer.id,
+      bingoId,
+      "reply",
+      { kind: "reply", targetId: parent.id, body, page: 2 },
+      saved.generation,
+    );
+    mocks.context.mockResolvedValue({ bingo_id: bingoId, comment: parent, parent: null });
+    const created = {
+      ...comment(body),
+      id: "44444444-4444-4444-8444-444444444444",
+      parent_id: parent.id,
+    };
+    mocks.reply.mockResolvedValue(created);
+    render(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    const input = await screen.findByLabelText("Reply", { exact: true });
+    expect(input).toHaveValue(body);
+    expect(screen.getByText("Original conversation")).toBeVisible();
+    expect(mocks.list).toHaveBeenCalledWith(bingoId, 2, expect.any(AbortSignal));
+    await user.click(screen.getByRole("button", { name: "Post reply" }));
+    expect(mocks.reply).toHaveBeenCalledWith(parent.id, body);
+    await waitFor(() =>
+      expect(document.getElementById(`comment-${created.id}`)).toHaveTextContent(
+        body.replaceAll("\n", " "),
+      ),
+    );
+    await waitFor(() =>
+      expect(readInlineCommentDraft(viewer.id, bingoId, "reply").draft).toBeUndefined(),
+    );
+  });
+
+  it("recovers an edited nested reply with its parent and current server text", async () => {
+    const user = userEvent.setup();
+    const bingoId = "33333333-3333-4333-8333-333333333333";
+    const parent = comment("Original parent context");
+    const target = {
+      ...comment("Newer text from another tab"),
+      id: "44444444-4444-4444-8444-444444444444",
+      parent_id: parent.id,
+    };
+    const saved = readInlineCommentDraft(viewer.id, bingoId, "edit");
+    const body = "Unfinished edit 🎲\n<literal> & context";
+    rememberInlineCommentDraft(
+      viewer.id,
+      bingoId,
+      "edit",
+      { kind: "edit", targetId: target.id, body, originalBody: "Older original text", page: 1 },
+      saved.generation,
+    );
+    mocks.context.mockResolvedValue({ bingo_id: bingoId, comment: target, parent });
+    mocks.update.mockResolvedValue({ ...target, body });
+    render(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    expect(await screen.findByLabelText("Edit comment", { exact: true })).toHaveValue(body);
+    expect(screen.getByText("Original parent context")).toBeVisible();
+    expect(screen.getByText(/This comment changed while you were editing/)).toHaveTextContent(
+      target.body,
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(mocks.update).toHaveBeenCalledWith(target.id, body);
+    await waitFor(() =>
+      expect(document.getElementById(`comment-${target.id}`)).toHaveTextContent(
+        body.replaceAll("\n", " "),
+      ),
+    );
+    await waitFor(() =>
+      expect(readInlineCommentDraft(viewer.id, bingoId, "edit").draft).toBeUndefined(),
+    );
+  });
+
+  it("retains copyable text when recovery fails and retries without changing its target", async () => {
+    const user = userEvent.setup();
+    const bingoId = "33333333-3333-4333-8333-333333333333";
+    const parent = comment("Recovered original target");
+    const saved = readInlineCommentDraft(viewer.id, bingoId, "reply");
+    rememberInlineCommentDraft(
+      viewer.id,
+      bingoId,
+      "reply",
+      { kind: "reply", targetId: parent.id, body: "Keep my reply", page: 1 },
+      saved.generation,
+    );
+    mocks.context.mockRejectedValueOnce(new Error("This conversation is unavailable."));
+    render(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    expect(await screen.findByLabelText("Recovered reply")).toHaveValue("Keep my reply");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your draft is retained");
+    expect(screen.queryByRole("button", { name: "Post reply" })).not.toBeInTheDocument();
+    mocks.context.mockResolvedValueOnce({ bingo_id: bingoId, comment: parent, parent: null });
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByLabelText("Reply", { exact: true })).toHaveValue("Keep my reply");
+    expect(mocks.context).toHaveBeenLastCalledWith(parent.id, expect.any(AbortSignal));
+    expect(mocks.reply).not.toHaveBeenCalled();
+  });
+
+  it.each(["reply", "edit"] as const)(
+    "retains %s text for a deleted comment and disables sending",
+    async (kind) => {
+      const user = userEvent.setup();
+      const bingoId = "33333333-3333-4333-8333-333333333333";
+      const target = { ...comment("[deleted]"), deleted_at: "2026-10-03T00:00:00Z" };
+      const saved = readInlineCommentDraft(viewer.id, bingoId, kind);
+      rememberInlineCommentDraft(
+        viewer.id,
+        bingoId,
+        kind,
+        kind === "reply"
+          ? { kind, targetId: target.id, body: "Retain this private text", page: 1 }
+          : {
+              kind,
+              targetId: target.id,
+              body: "Retain this private text",
+              originalBody: "Original text",
+              page: 1,
+            },
+        saved.generation,
+      );
+      mocks.context.mockResolvedValue({ bingo_id: bingoId, comment: target, parent: null });
+      render(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+      expect(
+        await screen.findByLabelText(kind === "reply" ? "Reply" : "Edit comment", { exact: true }),
+      ).toHaveValue("Retain this private text");
+      expect(
+        screen.getByRole("button", { name: kind === "reply" ? "Post reply" : "Save" }),
+      ).toBeDisabled();
+      expect(screen.getByRole("alert")).toHaveTextContent("This comment was deleted");
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(readInlineCommentDraft(viewer.id, bingoId, kind).draft).toBeUndefined();
+    },
+  );
+
+  it("rejects a context from a different board instead of presenting its contents", async () => {
+    const bingoId = "33333333-3333-4333-8333-333333333333";
+    const target = comment("Do not show wrong-board context");
+    const saved = readInlineCommentDraft(viewer.id, bingoId, "edit");
+    rememberInlineCommentDraft(
+      viewer.id,
+      bingoId,
+      "edit",
+      {
+        kind: "edit",
+        targetId: target.id,
+        body: "Retained own text",
+        originalBody: "Original",
+        page: 1,
+      },
+      saved.generation,
+    );
+    mocks.context.mockResolvedValue({ bingo_id: "another-board", comment: target, parent: null });
+    render(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("no longer available");
+    expect(screen.getByLabelText("Recovered comment changes")).toHaveValue("Retained own text");
+    expect(screen.queryByText(target.body)).not.toBeInTheDocument();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("returns to the first comment page when a saved page no longer exists without losing the draft", async () => {
+    const bingoId = "33333333-3333-4333-8333-333333333333";
+    const target = comment("Original text");
+    const saved = readInlineCommentDraft(viewer.id, bingoId, "edit");
+    rememberInlineCommentDraft(
+      viewer.id,
+      bingoId,
+      "edit",
+      {
+        kind: "edit",
+        targetId: target.id,
+        body: "Keep this edit",
+        originalBody: target.body,
+        page: 9,
+      },
+      saved.generation,
+    );
+    mocks.list
+      .mockRejectedValueOnce(Object.assign(new Error("Page no longer exists."), { status: 404 }))
+      .mockResolvedValue(emptyPage);
+    mocks.context.mockResolvedValue({ bingo_id: bingoId, comment: target, parent: null });
+    render(<CommentsPanel bingoId={bingoId} viewer={viewer} />);
+    await waitFor(() =>
+      expect(mocks.list).toHaveBeenCalledWith(bingoId, 1, expect.any(AbortSignal)),
+    );
+    expect(await screen.findByLabelText("Edit comment", { exact: true })).toHaveValue(
+      "Keep this edit",
+    );
+    expect(screen.queryByText("No comments yet")).not.toBeInTheDocument();
   });
 
   it("posts a signed-in user's root comment through the social API", async () => {

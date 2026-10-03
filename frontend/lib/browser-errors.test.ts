@@ -13,6 +13,36 @@ afterEach(() => {
 });
 
 describe("browser diagnostics", () => {
+  it("does not start reporting in a departing document and resumes after pageshow", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { reportBrowserError } = await import("@/lib/browser-errors");
+    window.dispatchEvent(new Event("pagehide"));
+    reportBrowserError(new TypeError("Cancelled old-document request"), "api", 0);
+    expect(fetchMock).not.toHaveBeenCalled();
+    window.dispatchEvent(new Event("pageshow"));
+    reportBrowserError(new Error("Fresh document error"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not send a report if its CSRF bootstrap finishes after pagehide", async () => {
+    vi.useFakeTimers();
+    document.cookie = "neb_csrf=; Max-Age=0; path=/";
+    let resolve: (response: Response) => void = () => undefined;
+    const fetchMock = vi.fn().mockReturnValue(
+      new Promise<Response>((done) => {
+        resolve = done;
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { reportBrowserError } = await import("@/lib/browser-errors");
+    reportBrowserError(new Error("Old document error"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event("pagehide"));
+    resolve(new Response(JSON.stringify({ csrf: "synthetic-token" }), { status: 200 }));
+    await vi.waitFor(() => expect(vi.getTimerCount()).toBe(0));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("sends only chunk positions and enums, omitting error content and foreign URLs", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);

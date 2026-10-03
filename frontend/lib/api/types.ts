@@ -235,6 +235,12 @@ export interface Comment {
   created_at: string;
 }
 
+export interface CommentContext {
+  bingo_id: PublicId;
+  comment: Comment;
+  parent: Comment | null;
+}
+
 export type NotificationKind =
   "bingo_comment" | "comment_reply" | "bingo_like" | "comment_like" | "new_follower";
 

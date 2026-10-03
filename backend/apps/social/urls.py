@@ -20,6 +20,11 @@ urlpatterns = [
         name="comment-detail",
     ),
     path(
+        "comments/<uuid:comment_id>/context/",
+        views.CommentContextView.as_view(),
+        name="comment-context",
+    ),
+    path(
         "comments/<uuid:comment_id>/replies/",
         views.CommentReplyListCreateView.as_view(),
         name="comment-replies",
