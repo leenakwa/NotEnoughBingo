@@ -4077,3 +4077,48 @@ observed results and their limits. Do not include credentials or session data.
   target-operations inventory remain open. Section counts stay 55 verified /
   43 partial / six N/A / one deployment-only. This new account source requires
   its own CI; it does not inherit `4b5e8e4`'s pass.
+
+### 2026-10-03 — player social duplicate requests and management boundaries
+
+- Three corrected baseline regressions fail: synchronous duplicate like/follow
+  clicks send two requests, and starting a like does not synchronously lock a
+  follow. Five new follow/management boundary controls already pass on the
+  existing source, confirming its lifetime guards. Initial tests incorrectly
+  changed only the board title while the player displays the revision title;
+  fixtures were corrected before the three-case defect baseline. Logs:
+  `/tmp/neb-player-social-baseline-oct03.log`,
+  `/tmp/neb-player-social-baseline-corrected-oct03.log`,
+  `/tmp/neb-player-social-baseline-final-oct03.log`.
+- The existing synchronous management lock now covers like and follow too.
+  All three handlers acquire it before dispatching a request and release it
+  only within the owning lifetime. Board/session changes reset it; obsolete
+  cleanup cannot unlock a new board's action. Existing progress guards,
+  confirmation, author permissions, pending UI and error recovery remain.
+- All 27 player tests and the full 302 frontend tests/37 files pass with lint
+  and types. Dedicated controls verify late follow success/failure on another
+  board and archive/restore/delete completion on another board, one management
+  request for duplicate clicks, and failure/retry/follow/unfollow unlocking.
+  Production build and formatting also pass. Logs:
+  `/tmp/neb-player-social-check-oct03.log`,
+  `/tmp/neb-player-social-types-oct03.log`,
+  `/tmp/neb-player-social-build-oct03.log`,
+  `/tmp/neb-player-social-format-oct03.log`. Generated next-env restored.
+- Three real browser flows each pass in Chromium, mobile WebKit, desktop
+  WebKit and Firefox: 12 cases without retries/page errors. A held actual
+  follow/unfollow success or synthetic 503 completes after leaving for Explore;
+  one request is dispatched and actual following state is checked through an
+  isolated player API context, then restored. Archive forwards an actual
+  accepted 200, preserves the destination after release and verifies archived
+  server state. Temporary boards use existing isolated author cleanup.
+  Chromium also passes normal archive/reload/restore/public-availability and
+  the combined like/comment/reply/follow/report flow. Logs/config:
+  `/tmp/neb-player-social-live-oct03.log`,
+  `/tmp/neb-player-social-browser.config.ts`,
+  `/tmp/neb-player-social-browsers-oct03.log`.
+- Restore/delete delayed timing is unit evidence; archive and follow have the
+  described real browser departure checks. This packet does not establish
+  physical-device behavior or every account/form/control/API/load condition.
+  Section counts remain 55 verified / 43 partial / six N/A / one deployment-only.
+  Sections 4/5 remain open for the remaining component/state/control inventory;
+  section 58 still needs simultaneous cross-tab storage/BroadcastChannel
+  unavailability evidence. New player source needs its own CI.

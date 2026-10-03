@@ -877,6 +877,159 @@ for (const action of ["avatar", "export"] as const) {
   });
 }
 
+for (const outcome of ["success", "failure"] as const) {
+  test(`departed player ignores a delayed author follow ${outcome}`, async ({
+    page,
+    playwright,
+  }) => {
+    const board = await createSocialFormBoard(page);
+    await authenticateAs(page, "player");
+    const fixture = readLiveFixture();
+    const playerApi = await playwright.request.newContext({
+      baseURL: test.info().project.use.baseURL,
+      storageState: authStatePath("player"),
+    });
+    const originalResponse = await playerApi.get(
+      `/api/v1/profiles/${fixture.users.author.username}/`,
+    );
+    expect(originalResponse.status()).toBe(200);
+    const original = await originalResponse.json();
+    const csrf = (await playerApi.storageState()).cookies.find(
+      (cookie) => cookie.name === "neb_csrf",
+    );
+    expect(csrf).toBeDefined();
+    const path = `/api/v1/users/${fixture.users.author.id}/followers/`;
+    const method = original.is_following ? "DELETE" : "POST";
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let accepted = false;
+    let writes = 0;
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.name));
+    await page.route(`**${path}`, async (route) => {
+      if (route.request().method() !== method) return route.continue();
+      writes += 1;
+      if (outcome === "success") {
+        const response = await route.fetch();
+        expect(response.ok()).toBe(true);
+        accepted = true;
+        await held;
+        await route.fulfill({ response });
+      } else {
+        accepted = true;
+        await held;
+        await route.fulfill({ status: 503, json: { detail: "Delayed author follow failed." } });
+      }
+    });
+    try {
+      await page.goto(`/bingo/${board.id}`);
+      const follow = page.getByRole("button", {
+        name: original.is_following ? "Following" : "Follow author",
+        exact: true,
+      });
+      await expect(follow).toBeEnabled();
+      await follow.evaluate((button: HTMLButtonElement) => {
+        button.click();
+        button.click();
+      });
+      await expect.poll(() => accepted).toBe(true);
+      expect(writes).toBe(1);
+      await expect(follow).toBeDisabled();
+      await page.getByRole("link", { name: "Explore", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+      const delivered = page.waitForResponse(
+        (response) => response.url().endsWith(path) && response.request().method() === method,
+      );
+      release();
+      await (await delivered).finished();
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      await expect(page).toHaveURL(/\/explore$/);
+      await expect(page.getByText("Delayed author follow failed.", { exact: true })).toHaveCount(0);
+      const saved = await playerApi.get(`/api/v1/profiles/${fixture.users.author.username}/`);
+      expect(saved.status()).toBe(200);
+      expect((await saved.json()).is_following).toBe(
+        outcome === "success" ? !original.is_following : original.is_following,
+      );
+      expect(writes).toBe(1);
+      expect(errors).toEqual([]);
+    } finally {
+      release();
+      const restored = original.is_following
+        ? await playerApi.post(path, { headers: { "X-CSRFToken": csrf!.value } })
+        : await playerApi.delete(path, { headers: { "X-CSRFToken": csrf!.value } });
+      expect(restored.ok()).toBe(true);
+      await playerApi.dispose();
+    }
+  });
+}
+
+test("departed player ignores a delayed archive success", async ({ page, playwright }) => {
+  const board = await createSocialFormBoard(page);
+  const authorApi = await playwright.request.newContext({
+    baseURL: test.info().project.use.baseURL,
+    storageState: authStatePath("author"),
+  });
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let accepted = false;
+  let writes = 0;
+  const path = `/api/v1/bingos/${board.id}/archive/`;
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.name));
+  await page.route(`**${path}`, async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    writes += 1;
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
+    accepted = true;
+    await held;
+    await route.fulfill({ response });
+  });
+  try {
+    await page.goto(`/bingo/${board.id}`);
+    const archive = page.getByRole("button", { name: "Archive", exact: true });
+    await expect(archive).toBeEnabled();
+    await archive.evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    });
+    await expect.poll(() => accepted).toBe(true);
+    expect(writes).toBe(1);
+    await page.getByRole("link", { name: "Explore", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+    const delivered = page.waitForResponse((response) => response.url().endsWith(path));
+    release();
+    await (await delivered).finished();
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    await expect(page).toHaveURL(/\/explore$/);
+    await expect(
+      page.getByText("This bingo is archived and shown read-only to its author.", { exact: true }),
+    ).toHaveCount(0);
+    const saved = await authorApi.get(`/api/v1/bingos/${board.id}/`);
+    expect(saved.status()).toBe(200);
+    expect((await saved.json()).status).toBe("archived");
+    expect(writes).toBe(1);
+    expect(errors).toEqual([]);
+  } finally {
+    release();
+    await authorApi.dispose();
+  }
+});
+
 test.afterEach(async ({ page, playwright }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;

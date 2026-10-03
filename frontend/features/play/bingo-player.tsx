@@ -72,7 +72,7 @@ export function BingoPlayer({
   const saveChain = useRef<Promise<void>>(Promise.resolve());
   const skipNextSync = useRef(false);
   const resetInFlight = useRef(false);
-  const manageInFlight = useRef(false);
+  const socialActionInFlight = useRef(false);
   const completedRevision = useRef<string | null>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const initialBingoConsumed = useRef(false);
@@ -84,7 +84,7 @@ export function BingoPlayer({
     hydrated.current = false;
     saveChain.current = Promise.resolve();
     resetInFlight.current = false;
-    manageInFlight.current = false;
+    socialActionInFlight.current = false;
   }, []);
 
   useEffect(() => {
@@ -424,7 +424,8 @@ export function BingoPlayer({
   }
 
   async function toggleBingoLike() {
-    if (!bingo || !hydrated.current || socialPending) return;
+    if (!bingo || !hydrated.current || socialPending || socialActionInFlight.current) return;
+    socialActionInFlight.current = true;
     setSocialPending("like");
     const lifetime = mutationLifetime.current;
     setProgressError("");
@@ -461,12 +462,17 @@ export function BingoPlayer({
       if (lifetime !== mutationLifetime.current) return;
       setProgressError(errorMessage(caught));
     } finally {
-      if (lifetime === mutationLifetime.current) setSocialPending("");
+      if (lifetime === mutationLifetime.current) {
+        socialActionInFlight.current = false;
+        setSocialPending("");
+      }
     }
   }
 
   async function toggleFollow() {
-    if (!authorProfile || !hydrated.current || socialPending) return;
+    if (!authorProfile || !hydrated.current || socialPending || socialActionInFlight.current)
+      return;
+    socialActionInFlight.current = true;
     setSocialPending("follow");
     const lifetime = mutationLifetime.current;
     setProgressError("");
@@ -489,12 +495,15 @@ export function BingoPlayer({
       if (lifetime !== mutationLifetime.current) return;
       setProgressError(errorMessage(caught));
     } finally {
-      if (lifetime === mutationLifetime.current) setSocialPending("");
+      if (lifetime === mutationLifetime.current) {
+        socialActionInFlight.current = false;
+        setSocialPending("");
+      }
     }
   }
 
   async function manageBingo(action: "archive" | "restore" | "delete") {
-    if (!bingo || !hydrated.current || socialPending || manageInFlight.current) return;
+    if (!bingo || !hydrated.current || socialPending || socialActionInFlight.current) return;
     if (
       action === "delete" &&
       !window.confirm(
@@ -503,7 +512,7 @@ export function BingoPlayer({
     ) {
       return;
     }
-    manageInFlight.current = true;
+    socialActionInFlight.current = true;
     const lifetime = mutationLifetime.current;
     setSocialPending(action);
     setProgressError("");
@@ -525,7 +534,7 @@ export function BingoPlayer({
       setProgressError(errorMessage(caught));
     } finally {
       if (lifetime === mutationLifetime.current) {
-        manageInFlight.current = false;
+        socialActionInFlight.current = false;
         setSocialPending("");
       }
     }

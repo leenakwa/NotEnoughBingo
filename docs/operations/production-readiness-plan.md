@@ -163,18 +163,20 @@ only environment-specific smoke and recovery checks after release.
    stale-response protection with real-stack evidence; editor mutation guards now stop obsolete saves/publications/exports across
    departure/draft-route/session boundaries, with eight new unit cases and seven
    real-stack/browser cases including separate blank Create navigation. Player
-   queued mutations now have bounded-lifetime evidence; follow/management and
-   broader account/device timing still need case-by-case evidence. Shared-result
+   queued mutations now have bounded-lifetime evidence; dedicated follow/management now has nine unit cases and 12 engine cases.
+   Broader account/device/error timing still needs case-by-case evidence. Shared-result
    required reads now clear old snapshots and ignore aborted success, with four
    unit cases and two normal live journeys. Card likes now have three new
    unit regressions and six related engine cases across delayed success/denial,
    duplicate clicks and departure. Repeated active profile tab selection is
-   corrected with unit and browser evidence. Remaining component mutation states
-   include account upload/security/preferences/export/deletion, including callbacks into
-   the profile parent. Profile required-load failure, independent viewer retry/
+   corrected with unit and browser evidence. Account upload/security/preferences/export/deletion callbacks now own their
+   lifetimes, with ten new regressions, active export/identity controls and 12
+   avatar/export/keyboard engine cases. Additional negative account/browser
+   timings remain. Profile required-load failure, independent viewer retry/
    pending controls and save/privacy/language/follow lifetimes now have eight
-   unit cases and nine related engine cases. Dedicated player follow/management
-   boundaries remain. Notification read actions and shared-result copy/
+   unit cases and nine related engine cases. Player social duplicates are now synchronously blocked; follow/management
+   boundaries have dedicated unit and real browser evidence. Remaining
+   component/form/control states still need inventory-based review. Notification read actions and shared-result copy/
    native-share completion now have regression and engine evidence; actual
    physical-device OS dialogs/permissions remain. Then audit
    remaining dirty forms, autofill/password-manager

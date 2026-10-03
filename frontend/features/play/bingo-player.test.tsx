@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
-import type { AuthenticatedUser, BingoDetail, PlayProgress } from "@/lib/api/types";
+import type { AuthenticatedUser, BingoDetail, PlayProgress, UserProfile } from "@/lib/api/types";
 import { readGuestProgress, writeGuestProgress } from "@/lib/guest-progress";
 import { AUTH_SIGNED_IN_EVENT, AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
 import { ApiClientError } from "@/lib/api/client";
@@ -16,6 +16,11 @@ const mocks = vi.hoisted(() => ({
   resetProgress: vi.fn(),
   createShare: vi.fn(),
   likeBingo: vi.fn(),
+  follow: vi.fn(),
+  unfollow: vi.fn(),
+  archive: vi.fn(),
+  restore: vi.fn(),
+  remove: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
   track: vi.fn(),
@@ -43,7 +48,14 @@ vi.mock("@/features/social/report-dialog", () => ({
 vi.mock("@/lib/api/client", () => ({
   api: {
     auth: { session: mocks.getViewer },
-    bingos: { get: mocks.getBingo, like: mocks.likeBingo },
+    bingos: {
+      get: mocks.getBingo,
+      like: mocks.likeBingo,
+      archive: mocks.archive,
+      restore: mocks.restore,
+      remove: mocks.remove,
+    },
+    follows: { follow: mocks.follow, unfollow: mocks.unfollow },
     shares: { create: mocks.createShare },
     profiles: { get: mocks.getProfile },
     progress: {
@@ -139,6 +151,22 @@ const bingo: BingoDetail = {
     can_comment: true,
     can_like: true,
     can_report: true,
+  },
+};
+
+const authorProfile: UserProfile = {
+  ...bingo.author,
+  bio: "",
+  follower_count: 0,
+  following_count: 0,
+  is_following: false,
+  privacy: {
+    show_bio: true,
+    show_created_bingos: true,
+    show_play_history: true,
+    show_shared_results: true,
+    show_followers: true,
+    show_following: true,
   },
 };
 
@@ -524,5 +552,175 @@ describe("BingoPlayer", () => {
     expect(cell).toHaveAttribute("aria-pressed", "true");
     expect(mocks.track).not.toHaveBeenCalledWith("reset", expect.anything());
     window.localStorage.clear();
+  });
+
+  it.each(["like", "follow"] as const)(
+    "sends one %s request for synchronous duplicate clicks",
+    async (action) => {
+      mocks.getProfile.mockResolvedValue(authorProfile);
+      mocks.likeBingo.mockReturnValue(new Promise(() => {}));
+      mocks.follow.mockReturnValue(new Promise(() => {}));
+      render(
+        <BingoPlayer
+          bingoId={bingo.id}
+          initialBingo={bingo}
+          initialViewer={viewer}
+          initialAuthorProfile={authorProfile}
+        />,
+      );
+      const button = screen.getByRole("button", {
+        name: action === "like" ? "Like · 0" : "Follow author",
+      });
+      await waitFor(() => expect(button).toBeEnabled());
+      await act(async () => {
+        button.click();
+        button.click();
+      });
+      expect(action === "like" ? mocks.likeBingo : mocks.follow).toHaveBeenCalledOnce();
+      expect(button).toBeDisabled();
+    },
+  );
+
+  it("locks other social actions immediately while a like is starting", async () => {
+    mocks.getProfile.mockResolvedValue(authorProfile);
+    mocks.likeBingo.mockReturnValue(new Promise(() => {}));
+    mocks.follow.mockReturnValue(new Promise(() => {}));
+    render(
+      <BingoPlayer
+        bingoId={bingo.id}
+        initialBingo={bingo}
+        initialViewer={viewer}
+        initialAuthorProfile={authorProfile}
+      />,
+    );
+    const like = screen.getByRole("button", { name: "Like · 0" });
+    const follow = screen.getByRole("button", { name: "Follow author" });
+    await waitFor(() => expect(like).toBeEnabled());
+    await act(async () => {
+      like.click();
+      follow.click();
+    });
+    expect(mocks.likeBingo).toHaveBeenCalledOnce();
+    expect(mocks.follow).not.toHaveBeenCalled();
+  });
+
+  it.each(["success", "failure"] as const)(
+    "ignores a previous author's follow %s on the next board",
+    async (outcome) => {
+      let resolveFollow!: () => void;
+      let rejectFollow!: (error: Error) => void;
+      mocks.follow.mockReturnValue(
+        new Promise<void>((resolve, reject) => {
+          resolveFollow = resolve;
+          rejectFollow = reject;
+        }),
+      );
+      mocks.getProfile.mockResolvedValue(authorProfile);
+      const view = render(
+        <BingoPlayer
+          bingoId={bingo.id}
+          initialBingo={bingo}
+          initialViewer={viewer}
+          initialAuthorProfile={authorProfile}
+        />,
+      );
+      const follow = screen.getByRole("button", { name: "Follow author" });
+      await waitFor(() => expect(follow).toBeEnabled());
+      await act(async () => follow.click());
+      const next = {
+        ...bingo,
+        id: "next-board",
+        title: "Next board",
+        current_revision: { ...bingo.current_revision!, title: "Next board" },
+        author: { ...bingo.author, id: "next-author", username: "next-author" },
+      };
+      mocks.getBingo.mockResolvedValue(next);
+      mocks.getProfile.mockResolvedValue({ ...authorProfile, ...next.author });
+      view.rerender(<BingoPlayer bingoId={next.id} />);
+      await screen.findByRole("heading", { name: "Next board" });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Follow author" })).toBeEnabled(),
+      );
+      await act(async () => {
+        if (outcome === "success") resolveFollow();
+        else rejectFollow(new Error("Old follow failed"));
+      });
+      expect(screen.getByRole("button", { name: "Follow author" })).toBeEnabled();
+      expect(screen.queryByText("Old follow failed")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Following" })).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(["archive", "restore", "delete"] as const)(
+    "ignores an old %s completion after loading the next board",
+    async (action) => {
+      let resolveManage!: (value?: unknown) => void;
+      const request =
+        action === "archive" ? mocks.archive : action === "restore" ? mocks.restore : mocks.remove;
+      request.mockReturnValue(
+        new Promise((resolve) => {
+          resolveManage = resolve;
+        }),
+      );
+      const editable: BingoDetail = {
+        ...bingo,
+        status: action === "restore" ? "archived" : "published",
+        permissions: { ...bingo.permissions, can_edit: true },
+      };
+      const view = render(
+        <BingoPlayer bingoId={editable.id} initialBingo={editable} initialViewer={viewer} />,
+      );
+      const manage = screen.getByRole("button", {
+        name: action === "archive" ? "Archive" : action === "restore" ? "Restore" : "Delete",
+      });
+      await waitFor(() => expect(manage).toBeEnabled());
+      await act(async () => {
+        manage.click();
+        manage.click();
+      });
+      expect(request).toHaveBeenCalledOnce();
+      const next = {
+        ...bingo,
+        id: "next-board",
+        title: "Next board",
+        current_revision: { ...bingo.current_revision!, title: "Next board" },
+      };
+      mocks.getBingo.mockResolvedValue(next);
+      view.rerender(<BingoPlayer bingoId={next.id} />);
+      await screen.findByRole("heading", { name: "Next board" });
+      await act(async () =>
+        resolveManage({ ...editable, status: action === "archive" ? "archived" : "published" }),
+      );
+      expect(screen.getByRole("heading", { name: "Next board" })).toBeVisible();
+      expect(mocks.replace).not.toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: "Restore" })).not.toBeInTheDocument();
+    },
+  );
+
+  it("unlocks follow after a failure and supports follow then unfollow", async () => {
+    mocks.getProfile.mockResolvedValue(authorProfile);
+    mocks.follow.mockRejectedValueOnce(new Error("Follow is temporarily unavailable"));
+    mocks.follow.mockResolvedValueOnce(undefined);
+    mocks.unfollow.mockResolvedValue(undefined);
+    render(
+      <BingoPlayer
+        bingoId={bingo.id}
+        initialBingo={bingo}
+        initialViewer={viewer}
+        initialAuthorProfile={authorProfile}
+      />,
+    );
+    const follow = screen.getByRole("button", { name: "Follow author" });
+    await waitFor(() => expect(follow).toBeEnabled());
+    await act(async () => follow.click());
+    expect(screen.getByText("Follow is temporarily unavailable")).toBeVisible();
+    expect(follow).toBeEnabled();
+    await act(async () => follow.click());
+    const following = screen.getByRole("button", { name: "Following" });
+    expect(following).toBeEnabled();
+    await act(async () => following.click());
+    expect(screen.getByRole("button", { name: "Follow author" })).toBeEnabled();
+    expect(mocks.follow).toHaveBeenCalledTimes(2);
+    expect(mocks.unfollow).toHaveBeenCalledOnce();
   });
 });
