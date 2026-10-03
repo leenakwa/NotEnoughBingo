@@ -45,7 +45,7 @@ of work; it does not reduce the checklist.
 Stage 1's complete source/checklist inventory is recorded. Stages 2–3 remain
 open for itemized review: the 2026-10-03 tracker has 55 verified sections,
 43 partial, six N/A and one deployment-only after reopening storage cleanup
-for the new comment cache's remaining cross-tab fallback condition. The latest exact-source CI on
+for the new comment cache's remaining cross-tab fallback condition. An earlier exact-source CI on
 `29ac99b` passed all nine jobs: 206 backend tests, 166 frontend tests,
 179 browser smoke checks and 57 live flows, plus both production image gates.
 The social-form source `b466456` also passed all nine CI jobs: 206 backend
@@ -61,7 +61,12 @@ passed all nine CI jobs on `8a5d31a`: 206 backend tests, 192 frontend tests,
 its source gate failed: four report fixture-order failures and one WebKit
 diagnostic request during old-document departure. The corrected ordering,
 diagnostic lifecycle and reply/edit recovery now pass 209 frontend tests and
-all 72 local live flows; a new source gate is required. These
+all 72 local live flows. Source `e6858a0` then passed all nine CI jobs:
+216 backend tests, 209 frontend tests, 196 smoke checks (12 skips) and 72 live flows.
+The later reply-query correction `8299cbf` passed all nine jobs (220 backend,
+209 frontend, 72 live; smoke 194 passes plus two WebKit retries and 12 skips).
+The subsequent email and smoke-readiness corrections have local evidence and
+require a new source gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -97,7 +102,11 @@ only environment-specific smoke and recovery checks after release.
    all nine jobs on `8a5d31a`. Report recovery on `a9b3cc4` has local evidence
    and its source gate failed. Its fixture-order and document-lifecycle
    corrections now have full local evidence, together with reply/edit recovery;
-   the new source still needs its own gate.
+   source `e6858a0` passed all nine CI jobs. The later reply-query correction
+   `8299cbf` passed all nine jobs, with two smoke cases passing on retry.
+   Email TTL/invalidated-link guards, the real QA SMTP retry drill and
+   smoke-readiness/fallback corrections now have local evidence; their source
+   still needs its own gate.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
@@ -106,7 +115,10 @@ only environment-specific smoke and recovery checks after release.
    remaining per-form/control checks (root/reply/edit and reopened-report
    recovery now have full local navigation/auth/cleanup evidence), native zoom/ARIA/UI contrast,
    endpoint-by-endpoint contracts,
-   database indexes/migration scale and notification/email failure paths.
+   database defaults/transactions and remaining notification/email failure paths.
+   Verification expiration and stale reset mail are corrected; four mail tasks
+   have retry/exhaustion evidence, and a real QA SMTP outage recovered through
+   worker delivery and a successful reset. Provider delivery/alerts remain.
    Record explicit N/A or target-only limits for each original bullet.
    The 2026-10-03 structural and scale drills now cover installed indexes,
    constraints, foreign keys/nullability and a 180,000-cell migration; the

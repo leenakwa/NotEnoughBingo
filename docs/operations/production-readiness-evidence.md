@@ -3153,3 +3153,91 @@ observed results and their limits. Do not include credentials or session data.
   history scan passed. Its exact-source CI is tracked independently at
   https://github.com/leenakwa/NotEnoughBingo/actions/runs/37083192633 .
   This later query correction requires its own source gate. No deployment occurred.
+
+
+### 2026-10-03 — Inline recovery source gate completed
+
+- [CI run 37083192633](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37083192633)
+  on `e6858a0604cdf64b89cc9697a9263381f923988e` passed all nine jobs:
+  216 PostgreSQL backend tests, 209 frontend tests, 196 browser smoke checks
+  with 12 intentional skips, all 72 live product journeys and both x86_64
+  production image gates. Smoke output reports no flaky/retry cases.
+- This gate includes the reordered report journeys, departing-document
+  diagnostics and root/reply/edit/report recovery; it supersedes the failed
+  report candidate's verdict only for this source. No merge or deployment occurred.
+- The later reply-query correction `8299cbf894609995042d9a6ebc312f6c30e1e442`
+  passed its four query regressions plus 21 social tests, the real expanded-reply
+  browser journey and a redacted 81-commit history scan. It was pushed after
+  the previous run finished; its own gate is tracked at
+  https://github.com/leenakwa/NotEnoughBingo/actions/runs/37084030161 .
+  Subsequent changes do not inherit this gate.
+
+
+### 2026-10-03 — Reply-query candidate gate completed, with two smoke retries
+
+- [CI run 37084030161](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37084030161)
+  on `8299cbf894609995042d9a6ebc312f6c30e1e442` passed all nine jobs:
+  220 PostgreSQL backend tests, 209 frontend tests, all 72 live journeys
+  and both production image gates. Smoke reported 194 passes, two WebKit
+  cases passing on retry and 12 intentional skips; do not describe it as a
+  retry-free 196-pass run.
+- The dialog trace shows an early header Log in click navigating to the
+  standalone login page before the editor's guest entry had rendered. The
+  modal test now selects the editor's `main` Log in action, which appears
+  after its session check. The Axe failure occurred during evaluation of
+  the early login shell; that loaded-form audit now waits for its Email input.
+- A new scenario deliberately holds client scripts, clicks the server-rendered
+  header link, then releases scripts and verifies the standalone login form is
+  usable. It checks the native fallback instead of suppressing its navigation.
+  The two corrected checks and this scenario passed three consecutive WebKit
+  repetitions (nine checks) and all four smoke browser projects (12 checks),
+  each with retries disabled. The delayed-script case then gained an explicit
+  assertion that at least one script request is held; that final version passed
+  in all four projects too (four checks). No sleep, new retry or console-error exception
+  was added to these checks. The next candidate needs its own full gate.
+
+
+### 2026-10-03 — Email expiration and delivery failure recovery (sections 12/42/45/69)
+
+- Verification and email-change messages now show the stored expiration as an
+  explicit UTC date/time, including custom TTLs and time already spent queued.
+  The previous fixed 24-hour statement could be incorrect. Queued password
+  resets now check the token against the current account before sending, so
+  expired or password-invalidated links are skipped. API/token schemas, retry
+  policy and recipients are unchanged. The origin regression now uses an
+  actually valid generated token and UID.
+- A corrected baseline had eight transport-retry cases passing and four
+  expiration/invalidated-link cases failing. Fifteen new PostgreSQL regressions
+  now pass: each of four installed Celery retry wrappers recovers after two
+  SMTP disconnects with one message, or raises after six attempts with none;
+  recipients and non-silent sending are checked. Additional cases cover timed
+  reset expiry, password changes, actual verification/change-email expiration
+  and used/expired/missing verification records. Wrapper tests do not wait on
+  countdowns or contact a real provider. The initial eager-recursion harness
+  was corrected to exercise explicit task request contexts.
+- All 46 email/account cases passed. The full local backend suite passed
+  234 with the documented infrastructure-file skip; full Ruff lint and format
+  passed (167 files), and `mypy apps` passed on 71 source files.
+- A separate guarded drill checked the exact `nebqa` project and development
+  origin, created one disposable verified account, stopped only its Mailpit,
+  and requested a reset through the actual CSRF-protected API (202). Worker
+  logs recorded a real retry. After Mailpit restart the message arrived, its
+  link matched the configured QA origin, the real confirmation API returned
+  204, and the same task logged SUCCESS. No cookies, credentials, tokens or
+  mail bodies were printed. `finally` restored Mailpit and removed the account;
+  a subsequent database count confirmed zero drill accounts. The local script
+  is `/tmp/neb-mail-outage-drill-oct03.py`, with metadata-only output in
+  `/tmp/neb-mail-outage-drill-oct03.log`. Two initial harness calls used incorrect
+  endpoint/field names (404/400); both restored the service/account, and the
+  corrected complete drill exited 0.
+- The real registration/verification/login, reset/outage/session/reuse, and
+  email-change/old-and-new-inbox journeys passed together (three cases). An
+  initial reused-QA-mailbox run selected an old reset link from a previous
+  fixture incarnation. The test now snapshots existing message IDs before
+  requesting a new reset and waits for a new matching message, without deleting
+  old mail or weakening token checks. Frontend lint/types and 209 tests passed;
+  the later smoke helper edits passed targeted ESLint, TypeScript and formatting.
+- Limits: the real failure drill covers local SMTP and the QA queue. It does
+  not prove external sender verification, SPF/DKIM/DMARC, provider limits or
+  delivery, real-device inbox rendering, or production alerts. The original
+  checklist retains those requirements. No merge, promotion or deployment occurred.

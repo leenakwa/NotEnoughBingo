@@ -126,6 +126,7 @@ test("authentication and editor entry states pass the accessibility gate", async
 }, testInfo) => {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
+  await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
   await expectNoViolations(page);
 
   await page.goto("/register");

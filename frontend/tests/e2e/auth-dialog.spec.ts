@@ -116,7 +116,7 @@ test("login refreshes the editor in place and errors allow retry", async ({ page
     return route.fulfill({ json: { user } });
   });
   await page.goto("/create?from=modal");
-  await page.getByRole("link", { name: "Log in", exact: true }).last().click();
+  await page.locator("main").getByRole("link", { name: "Log in", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Email").fill(user.email);
   await dialog.getByLabel("Password").fill("long-safe-password");
@@ -128,6 +128,33 @@ test("login refreshes the editor in place and errors allow retry", async ({ page
   await expect(page).toHaveURL(/\/create\?from=modal$/);
   await expect(page.getByRole("heading", { name: "Create bingo", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Profile for Player" })).toBeVisible();
+});
+
+test("account links open a usable page while client scripts are delayed", async ({ page }) => {
+  let resumeScripts!: () => void;
+  let delayedScripts = 0;
+  const scriptsReady = new Promise<void>((resolve) => {
+    resumeScripts = resolve;
+  });
+  await page.route("**/_next/static/**/*.js", async (route) => {
+    delayedScripts += 1;
+    await scriptsReady;
+    await route.continue();
+  });
+  try {
+    await page.goto("/create", { waitUntil: "commit" });
+    await expect.poll(() => delayedScripts).toBeGreaterThan(0);
+    const navigation = page.waitForURL(/\/login(?:\?|$)/, { waitUntil: "commit" });
+    await page.locator("header").getByRole("link", { name: "Log in", exact: true }).click({
+      noWaitAfter: true,
+    });
+    await navigation;
+  } finally {
+    resumeScripts();
+  }
+  await page.waitForLoadState("load");
+  await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeEnabled();
 });
 
 test("pending requests keep the dialog open and prevent duplicate submission", async ({ page }) => {

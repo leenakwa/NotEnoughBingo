@@ -686,10 +686,12 @@ def test_password_reset_changes_password_and_revokes_every_active_session(
 @override_settings(FRONTEND_URL="https://bingo.example.test")
 def test_password_reset_email_uses_the_configured_public_origin(user_factory) -> None:
     user = user_factory()
-    send_password_reset_email(user.pk, "example-uid", "example-token")
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    send_password_reset_email(user.pk, uid, token)
 
     assert len(mail.outbox) == 1
-    assert "https://bingo.example.test/reset-password?uid=example-uid&token=example-token" in (
+    assert f"https://bingo.example.test/reset-password?uid={uid}&token={token}" in (
         mail.outbox[0].body
     )
     assert "https://bingo.example.test/support" in mail.outbox[0].body

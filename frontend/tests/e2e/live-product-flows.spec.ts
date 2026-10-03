@@ -712,7 +712,11 @@ async function verificationLink(request: APIRequestContext, email: string): Prom
   throw new Error(`No verification email for ${email} arrived in Mailpit.`);
 }
 
-async function passwordResetLink(request: APIRequestContext, email: string): Promise<string> {
+async function passwordResetLink(
+  request: APIRequestContext,
+  email: string,
+  previousMessageIds: ReadonlySet<string>,
+): Promise<string> {
   const deadline = Date.now() + 45_000;
   while (Date.now() < deadline) {
     const listResponse = await request.get(`${mailpitBaseURL}/api/v1/messages?limit=100`);
@@ -720,7 +724,10 @@ async function passwordResetLink(request: APIRequestContext, email: string): Pro
       const rows = messageRows(await listResponse.json());
       const matching = rows.find((row) => {
         const text = JSON.stringify(row).toLowerCase();
+        const messageId = row.ID ?? row.Id ?? row.id;
         return (
+          typeof messageId === "string" &&
+          !previousMessageIds.has(messageId) &&
           text.includes(email.toLowerCase()) &&
           text.includes("reset your not enough bingo password")
         );
@@ -2920,12 +2927,21 @@ test.describe("live full-stack product flows", () => {
     await expect(page.getByLabel("Email")).toHaveValue(email);
     await page.unroute("**/api/v1/auth/password-reset/");
 
+    // A reused QA mailbox can contain links from before the fixture was reseeded.
+    const existingMessages = await request.get(`${mailpitBaseURL}/api/v1/messages?limit=100`);
+    expect(existingMessages.ok()).toBeTruthy();
+    const previousMessageIds = new Set(
+      messageRows(await existingMessages.json()).flatMap((row) => {
+        const id = row.ID ?? row.Id ?? row.id;
+        return typeof id === "string" ? [id] : [];
+      }),
+    );
     await waitForResponse(page, "/api/v1/auth/password-reset/", "POST", () =>
       page.getByRole("button", { name: "Send reset link" }).click(),
     );
     await expect(page.getByRole("status")).toContainText("If an account exists");
 
-    const link = new URL(await passwordResetLink(request, email));
+    const link = new URL(await passwordResetLink(request, email, previousMessageIds));
     await page.goto(`${link.pathname}${link.search}`);
     await expect(page.getByRole("heading", { name: "Choose a new password" })).toBeVisible();
     await page.getByLabel("New password", { exact: true }).fill(nextPassword);

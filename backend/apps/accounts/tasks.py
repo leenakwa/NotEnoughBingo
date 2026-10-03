@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import UTC, timedelta
 
 from celery import shared_task
 from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sessions.models import Session
 from django.core.mail import send_mail
 from django.db import transaction
@@ -55,10 +56,11 @@ def send_verification_email(verification_id: int, raw_token: str) -> None:
         else f"A Not Enough Bingo registration{requested_identity} requested this address. "
         "Only continue if you made that request.\n\n"
     )
+    expires_at = verification.expires_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC")
     send_mail(
         subject,
         body
-        + f"The link expires in 24 hours:\n\n{url}\n\n"
+        + f"This link expires at {expires_at}:\n\n{url}\n\n"
         + f"Support: {settings.FRONTEND_URL}/support",
         settings.DEFAULT_FROM_EMAIL,
         [verification.email],
@@ -94,7 +96,7 @@ def send_email_change_notice(old_email: str) -> None:
 )
 def send_password_reset_email(user_id: int, uid: str, token: str) -> None:
     user = User.objects.filter(pk=user_id, is_active=True).first()
-    if not user:
+    if not user or not default_token_generator.check_token(user, token):
         return
     url = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
     send_mail(
