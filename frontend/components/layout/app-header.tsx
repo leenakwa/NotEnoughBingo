@@ -249,14 +249,20 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   }, [pathname, refreshUser]);
 
   useEffect(() => {
+    let active = true;
+    setUnreadCount(0);
     if (!user) {
-      setUnreadCount(0);
       return;
     }
     api.notifications
       .unreadCount()
-      .then(({ count }) => setUnreadCount(count))
+      .then(({ count }) => {
+        if (active) setUnreadCount(count);
+      })
       .catch(() => undefined);
+    return () => {
+      active = false;
+    };
   }, [pathname, user]);
 
   useEffect(() => {

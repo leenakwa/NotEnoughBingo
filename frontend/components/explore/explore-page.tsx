@@ -51,22 +51,21 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
       setLoading(true);
       setError("");
       try {
-        setResult(
-          await api.bingos.explore(
-            {
-              search: appliedSearch,
-              author: appliedAuthor,
-              tags: appliedTags
-                .split(",")
-                .map((tag) => tag.trim())
-                .filter(Boolean),
-              languages: appliedLanguages,
-              ordering: appliedOrdering,
-              page,
-            },
-            signal,
-          ),
+        const data = await api.bingos.explore(
+          {
+            search: appliedSearch,
+            author: appliedAuthor,
+            tags: appliedTags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean),
+            languages: appliedLanguages,
+            ordering: appliedOrdering,
+            page,
+          },
+          signal,
         );
+        if (!signal.aborted) setResult(data);
       } catch (caught) {
         if (!signal.aborted) {
           setResult(null);
@@ -99,15 +98,17 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
 
   useEffect(() => {
     const query = author.trim();
+    setAuthorSuggestions([]);
     if (!query) {
-      setAuthorSuggestions([]);
       return;
     }
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       api.authors
         .list(query, 1, controller.signal)
-        .then((page) => setAuthorSuggestions(page.results.slice(0, 10)))
+        .then((page) => {
+          if (!controller.signal.aborted) setAuthorSuggestions(page.results.slice(0, 10));
+        })
         .catch(() => {
           if (!controller.signal.aborted) setAuthorSuggestions([]);
         });
@@ -120,15 +121,17 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
 
   useEffect(() => {
     const query = tags.split(",").at(-1)?.trim() ?? "";
+    setTagSuggestions([]);
     if (!query) {
-      setTagSuggestions([]);
       return;
     }
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       api.tags
         .list(query, 1, controller.signal)
-        .then((page) => setTagSuggestions(page.results.slice(0, 10)))
+        .then((page) => {
+          if (!controller.signal.aborted) setTagSuggestions(page.results.slice(0, 10));
+        })
         .catch(() => {
           if (!controller.signal.aborted) setTagSuggestions([]);
         });

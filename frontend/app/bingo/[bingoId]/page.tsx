@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
-import { getServerProfile, getServerSession, lookupServerBingo } from "@/lib/api/server";
+import { getServerSession, lookupServerBingo } from "@/lib/api/server";
 import { absoluteSiteUrl, isPublicProduction, shortDescription } from "@/lib/site";
 
 type BingoPageProps = { params: Promise<{ bingoId: string }> };
@@ -62,19 +62,5 @@ export default async function BingoPage({ params }: BingoPageProps) {
     getServerSession(cookieHeader),
   ]);
   if (lookup.notFound) notFound();
-  const initialAuthorProfile =
-    lookup.data &&
-    initialViewer &&
-    initialViewer !== "guest" &&
-    initialViewer.id !== lookup.data.author.id
-      ? await getServerProfile(lookup.data.author.username, cookieHeader)
-      : null;
-  return (
-    <BingoPlayer
-      bingoId={bingoId}
-      initialBingo={lookup.data}
-      initialViewer={initialViewer}
-      initialAuthorProfile={initialAuthorProfile}
-    />
-  );
+  return <BingoPlayer bingoId={bingoId} initialBingo={lookup.data} initialViewer={initialViewer} />;
 }

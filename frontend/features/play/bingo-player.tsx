@@ -51,6 +51,7 @@ export function BingoPlayer({
   const [progressReady, setProgressReady] = useState(false);
   const [error, setError] = useState("");
   const [progressError, setProgressError] = useState("");
+  const [progressLoadFailed, setProgressLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [nickname, setNickname] = useState("");
@@ -103,6 +104,7 @@ export function BingoPlayer({
       setLoading(!canUseInitial);
       setError("");
       setProgressError("");
+      setProgressLoadFailed(false);
       if (!canUseInitial) setBingo(null);
       setViewer(canUseInitial ? (initialViewer ?? null) : null);
       setSelected(new Set());
@@ -147,7 +149,7 @@ export function BingoPlayer({
           try {
             user = (await api.auth.session()) ?? "guest";
           } catch (caught) {
-            if (!isAuthenticationRequiredError(caught)) {
+            if (active && !isAuthenticationRequiredError(caught)) {
               setProgressError("Progress sync is unavailable; guest progress will be used.");
             }
           }
@@ -160,13 +162,14 @@ export function BingoPlayer({
           user.id !== detail.author.id &&
           (!canUseInitial || !initialAuthorProfile)
         ) {
-          try {
-            const profile = await api.profiles.get(detail.author.username);
-            if (!active) return;
-            setAuthorProfile(profile);
-          } catch {
-            // The board still works when an optional author profile is unavailable.
-          }
+          void api.profiles
+            .get(detail.author.username)
+            .then((profile) => {
+              if (active) setAuthorProfile(profile);
+            })
+            .catch(() => {
+              // Optional follow details cannot delay loading the player's marks.
+            });
         }
 
         if (detail.status !== "published") {
@@ -184,6 +187,7 @@ export function BingoPlayer({
         } else {
           try {
             const progress = await api.progress.get(bingoId);
+            if (!active) return;
             progressVersion.current = progress.version;
             if (active && progress.revision_id === detail.current_revision.id) {
               setSelected(new Set(progress.selected_cells));
@@ -193,7 +197,11 @@ export function BingoPlayer({
             }
           } catch (caught) {
             if (!(caught instanceof ApiClientError) || caught.status !== 404) {
-              if (active) setProgressError(errorMessage(caught));
+              if (active) {
+                setProgressError(errorMessage(caught));
+                setProgressLoadFailed(true);
+              }
+              return;
             }
           }
           if (!active) return;
@@ -699,14 +707,27 @@ export function BingoPlayer({
 
       <p className="progress-status" aria-live="polite">
         {playable
-          ? !progressReady
-            ? "Loading your progress…"
-            : saving
-              ? "Saving progress…"
-              : `${selected.size} of ${revision.cells.length} selected`
+          ? progressLoadFailed
+            ? "Saved progress is unavailable."
+            : !progressReady
+              ? "Loading your progress…"
+              : saving
+                ? "Saving progress…"
+                : `${selected.size} of ${revision.cells.length} selected`
           : "This bingo is archived and shown read-only to its author."}
       </p>
-      {progressError ? (
+      {progressLoadFailed ? (
+        <div className="form-message form-message--error" role="alert">
+          <p>Your saved progress could not be loaded. Your existing marks have not been changed.</p>
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => setLoadVersion((version) => version + 1)}
+          >
+            Retry loading progress
+          </button>
+        </div>
+      ) : progressError ? (
         <p className="form-message form-message--error" role="alert">
           {progressError}
         </p>

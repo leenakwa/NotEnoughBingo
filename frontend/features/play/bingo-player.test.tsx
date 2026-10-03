@@ -5,6 +5,7 @@ import { BingoPlayer } from "@/features/play/bingo-player";
 import type { AuthenticatedUser, BingoDetail, PlayProgress } from "@/lib/api/types";
 import { readGuestProgress, writeGuestProgress } from "@/lib/guest-progress";
 import { AUTH_SIGNED_IN_EVENT } from "@/lib/auth-events";
+import { ApiClientError } from "@/lib/api/client";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -49,7 +50,11 @@ vi.mock("@/lib/api/client", () => ({
     },
   },
   ApiClientError: class extends Error {
-    status = 500;
+    readonly status: number;
+    constructor(status: number, payload: { message: string }) {
+      super(payload.message);
+      this.status = status;
+    }
   },
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
 }));
@@ -174,6 +179,55 @@ describe("BingoPlayer", () => {
     expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
     await act(() => Promise.resolve());
     expect(mocks.getViewer).not.toHaveBeenCalled();
+  });
+
+  it("does not wait for the optional author profile before loading progress and enabling play", async () => {
+    mocks.getProfile.mockReturnValueOnce(new Promise(() => undefined));
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    await waitFor(() => expect(cell).toBeEnabled());
+    expect(mocks.getProgress).toHaveBeenCalledWith(bingo.id);
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("does not allow empty marks to overwrite progress after an initial read failure and supports retry", async () => {
+    const cellId = bingo.current_revision!.cells[0]!.id!;
+    mocks.getProgress.mockRejectedValueOnce(
+      new Error("Saved progress is temporarily unavailable."),
+    );
+    mocks.getProgress.mockResolvedValueOnce({ ...progress, selected_cells: [cellId] });
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    await screen.findByRole("alert");
+    const cell = screen.getByRole("button", { name: "Open the board" });
+    expect(cell).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Share result" })).toBeDisabled();
+    expect(screen.queryByText("Loading your progress…")).not.toBeInTheDocument();
+    await act(async () => cell.click());
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
+    await act(async () => screen.getByRole("button", { name: "Retry loading progress" }).click());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board, selected" })).toBeEnabled(),
+    );
+    expect(mocks.getProgress).toHaveBeenCalledTimes(2);
+    await act(() => new Promise((resolve) => window.setTimeout(resolve, 450)));
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("allows a first play when no saved progress exists", async () => {
+    mocks.getProgress.mockRejectedValueOnce(
+      new ApiClientError(404, {
+        code: "not_found",
+        message: "No saved progress.",
+      }),
+    );
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Retry loading progress" }),
+    ).not.toBeInTheDocument();
+    expect(mocks.saveProgress).not.toHaveBeenCalled();
   });
 
   it("keeps saved guest cells while the server-rendered viewer hydrates", async () => {

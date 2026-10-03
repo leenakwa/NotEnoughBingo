@@ -3424,3 +3424,71 @@ observed results and their limits. Do not include credentials or session data.
   also need their own evidence. Counters remain 55 verified / 43 partial / 6 N/A /
   1 deployment-only. The editor changes still require their own exact-source CI.
   No merge, promotion or public deployment occurred.
+
+
+### 2026-10-03 — Completed editor source gate
+
+- Exact source `371dd1b7b8f058fd5a5c1eb7eb84db01fec3cd6f` passed all nine
+  [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37088753125):
+  240 PostgreSQL backend tests, 231 frontend tests, 200 browser smoke passes
+  with 12 intentional skips and no retries, 76 live product journeys, foundation
+  and history scan, both production image scans/SBOMs and release gate.
+  Terminal log: `/tmp/neb-ci-371dd1b-completed-oct03.log`. This gate covers the
+  editor hydration changes, not the subsequent catalog/player changes.
+  No workflow was restarted; no image was promoted or deployed.
+
+### 2026-10-03 — Catalog/read lifetime and independent player data (sections 4, 17, 58)
+
+- Explore's success callbacks could restore obsolete catalog results or author/tag
+  suggestions after filters changed or cleared. Discover had the same late-response
+  issue after a sign-in refresh. Both now ignore aborted successful responses;
+  changing a suggestion field clears its previous options immediately, including
+  the debounce interval. Header unread counts reset on account/path changes and
+  ignore late results from the previous account. Optional badge failure leaves
+  navigation available. The user's intentional removal of visible catalog/search
+  language pickers is preserved; no picker was reintroduced.
+- Player loading awaited optional author/follow details before reading marks.
+  An initial progress failure then enabled empty marks, allowing subsequent play
+  to replace saved progress. Author details now load independently. Unknown saved
+  progress keeps cells/sharing disabled and offers an explicit retry. Retry
+  reloads board/session/progress through the existing loading path, rather than
+  being a progress-only request. A genuine 404 means no previous progress and
+  still allows first play. Obsolete progress success is checked before updating
+  its shared version. Optional author lookup was also removed from the server
+  page's awaited HTML path (source inspection; no server latency measurement).
+  Pending writes across routes/accounts remain a separate lifecycle audit.
+- Player/header baseline: three new cases failed while 17 passed. Explore's three
+  new cases and Discover's one new case also failed against the prior callbacks.
+  Fixes plus the added no-progress-404 regression pass in the complete frontend
+  check: lint/types and 240 tests across 34 files. Production build passed.
+  Logs: `/tmp/neb-player-partial-baseline-oct03.log`,
+  `/tmp/neb-explore-partial-baseline-oct03.log`,
+  `/tmp/neb-feed-lifetime-baseline-oct03.log`,
+  `/tmp/neb-catalog-player-check-oct03.log`,
+  `/tmp/neb-catalog-player-build-oct03.log`. Two test assertions initially used a
+  Playwright-only option in Testing Library; types caught it and it was removed
+  before the successful full check. No backend/API contract changes were made.
+- Two real QA Chromium flows passed without retries. Synthetic browser 503s for
+  author/tag hints and unread counts are observed by counters, while a real
+  combined-filter search still finds the fixture board and Notifications opens.
+  At 320/1710 px fields remain enabled, with no overflow and zero Axe violations.
+  The first run scanned during a Next navigation and saw a transient empty title;
+  the test now waits for URL, metadata title and the main loading state to finish
+  before Axe. That run had one pass and one failure; corrected run has two passes.
+- The player flow creates/removes a separate temporary board, writes one mark to
+  the actual backend and then returns a synthetic progress GET 503. Cells/share
+  remain disabled and no PUT occurs; direct backend reads retain the exact saved
+  mark. Retry restores it while author details are held and comments return 503.
+  A second user mark then persists to the real backend. Both 320/1710 px layouts
+  have no overflow and both flows have no page errors. Log:
+  `/tmp/neb-catalog-player-live-fixed-oct03.log`.
+- Both new flows also passed in mobile WebKit and Firefox (four cases without
+  retries). Logs/config: `/tmp/neb-catalog-player-browsers-oct03.log`,
+  `/tmp/neb-catalog-player-browser.config.ts`. These are browser emulations,
+  not physical-device evidence. Generated next-env imports were restored.
+- Section 4 remains partial for the remaining component/state requirements.
+  Immediate follow-up is pending editor/player mutations across route and account
+  changes. Broader forms, control accessibility and target-environment items
+  remain. Counts stay 55 verified / 43 partial / 6 N/A / 1 deployment-only.
+  These changes need their own exact-source CI; no merge, promotion or deployment
+  occurred. Provider-independent local evidence does not establish production.

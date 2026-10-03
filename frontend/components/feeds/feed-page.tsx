@@ -39,7 +39,7 @@ export function FeedPage({
           kind === "discover"
             ? await api.feeds.discover(page, signal)
             : await api.feeds.trending(page, signal);
-        setResult(data);
+        if (!signal.aborted) setResult(data);
       } catch (caught) {
         if (!signal.aborted) {
           setResult(null);

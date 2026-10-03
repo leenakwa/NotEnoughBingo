@@ -21,6 +21,126 @@ const cellImagePng = Buffer.from(
 let moderationReportId = "";
 const socialFormBoards = new WeakMap<Page, string>();
 
+test("catalog stays usable when suggestions and unread counts fail", async ({ page }) => {
+  const fixture = readLiveFixture();
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  await authenticateAs(page, "player");
+  const failures = { authors: 0, tags: 0, unread: 0 };
+  for (const [resource, path] of [
+    ["authors", "authors/"],
+    ["tags", "tags/"],
+    ["unread", "notifications/unread-count/"],
+  ] as const) {
+    await page.route(`**/api/v1/${path}**`, async (route) => {
+      failures[resource] += 1;
+      await route.fulfill({ status: 503, json: { detail: "Temporarily unavailable." } });
+    });
+  }
+  await page.goto("/explore");
+  await page.getByLabel("Search by title", { exact: true }).fill(fixture.bingos.public.title);
+  await page.getByLabel("Author", { exact: true }).fill(fixture.users.author.username);
+  await page.getByLabel("Tags", { exact: true }).fill("e2e, public");
+  await expect
+    .poll(() => failures.authors > 0 && failures.tags > 0 && failures.unread > 0)
+    .toBe(true);
+  await page.getByLabel("Search by title", { exact: true }).press("Enter");
+  await expect(page).toHaveURL(/\/explore\?search=/);
+  await expect(page).toHaveTitle(/Explore/);
+  await expect(page.locator("#main-content")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator(".bingo-grid")).toContainText(fixture.bingos.public.title);
+  await expect(page.locator("datalist option")).toHaveCount(0);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    await expect(page.getByLabel("Search by title", { exact: true })).toBeEnabled();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("link", { name: "Notifications", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Notifications", exact: true })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
+test("player protects saved marks during progress outage and loads without author details", async ({
+  page,
+}) => {
+  const board = await createSocialFormBoard(page);
+  const fixture = readLiveFixture();
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.name));
+  await authenticateAs(page, "player");
+  const progressPath = `/api/v1/progress/${board.id}/`;
+  await page.goto(`/bingo/${board.id}`);
+  const cells = page.locator("button.play-cell");
+  await expect(cells.first()).toBeEnabled();
+  await cells.first().click();
+  async function savedMarks() {
+    const response = await page.context().request.get(progressPath);
+    expect(response.status()).toBe(200);
+    return ((await response.json()) as { selected_cells: string[] }).selected_cells;
+  }
+  await expect.poll(async () => (await savedMarks()).length).toBe(1);
+  const originalMarks = await savedMarks();
+  let authorRequests = 0;
+  let commentFailures = 0;
+  let progressWrites = 0;
+  let releaseAuthor!: () => void;
+  const authorHeld = new Promise<void>((resolve) => {
+    releaseAuthor = resolve;
+  });
+  page.on("request", (request) => {
+    if (request.url().endsWith(progressPath) && request.method() === "PUT") progressWrites += 1;
+  });
+  await page.route(`**/api/v1/profiles/${fixture.users.author.username}/`, async (route) => {
+    authorRequests += 1;
+    await authorHeld;
+    await route.continue();
+  });
+  await page.route(`**/api/v1/bingos/${board.id}/comments/**`, async (route) => {
+    commentFailures += 1;
+    await route.fulfill({ status: 503, json: { detail: "Comments are temporarily unavailable." } });
+  });
+  await page.route(`**${progressPath}`, async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({
+        status: 503,
+        json: { detail: "Progress is temporarily unavailable." },
+      });
+    } else await route.continue();
+  });
+  try {
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Retry loading progress", exact: true }),
+    ).toBeVisible();
+    await expect(cells.first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Share result", exact: true })).toBeDisabled();
+    await cells.first().evaluate((node: HTMLButtonElement) => node.click());
+    expect(await savedMarks()).toEqual(originalMarks);
+    expect(progressWrites).toBe(0);
+    await page.unroute(`**${progressPath}`);
+    await page.getByRole("button", { name: "Retry loading progress", exact: true }).click();
+    await expect(cells.first()).toBeEnabled();
+    await expect(cells.first()).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => authorRequests > 0 && commentFailures > 0).toBe(true);
+    await expect(page.locator(".comments-panel [role=alert]")).toBeVisible();
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 989 });
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+    expect(progressWrites).toBe(0);
+    await cells.nth(1).click();
+    await expect.poll(async () => (await savedMarks()).length).toBe(2);
+    expect(pageErrors).toEqual([]);
+  } finally {
+    releaseAuthor();
+  }
+});
+
 test.afterEach(async ({ page }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;

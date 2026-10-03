@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppHeader } from "@/components/layout/app-header";
-import { AUTH_DIALOG_EVENT } from "@/lib/auth-events";
+import { AUTH_CHANGED_EVENT, AUTH_DIALOG_EVENT } from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
@@ -124,6 +124,41 @@ describe("AppHeader session expiry", () => {
     window.history.replaceState({}, "", "/bingo/test");
     mocks.session.mockResolvedValue(user);
     mocks.unreadCount.mockResolvedValue({ count: 0 });
+  });
+
+  it("keeps navigation and account access usable if unread counts are unavailable", async () => {
+    mocks.unreadCount.mockRejectedValueOnce(new Error("Optional count unavailable"));
+    render(<AppHeader />);
+    expect(await screen.findByRole("link", { name: "Profile for Test Player" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute(
+      "href",
+      "/notifications",
+    );
+    expect(screen.getByRole("link", { name: "Explore" })).toHaveAttribute("href", "/explore");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("does not apply a late unread count from the previous account", async () => {
+    let resolveOld: (value: { count: number }) => void = () => undefined;
+    mocks.unreadCount.mockReturnValueOnce(
+      new Promise((done) => {
+        resolveOld = done;
+      }),
+    );
+    render(<AppHeader />);
+    await screen.findByRole("link", { name: "Profile for Test Player" });
+    mocks.session.mockResolvedValueOnce({
+      ...user,
+      id: "other-user-id",
+      display_name: "Other Player",
+    });
+    act(() => window.dispatchEvent(new Event(AUTH_CHANGED_EVENT)));
+    await screen.findByRole("link", { name: "Profile for Other Player" });
+    await act(async () => resolveOld({ count: 19 }));
+    expect(screen.getByRole("link", { name: "Notifications" })).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "Notifications, 19 unread" }),
+    ).not.toBeInTheDocument();
   });
 
   it("checks the session once for simultaneous authentication failures", async () => {
