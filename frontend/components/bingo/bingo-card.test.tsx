@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoCard } from "@/components/bingo/bingo-card";
+import { AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
 import type { BingoSummary, MediaAsset, RevisionCell } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
@@ -97,7 +98,7 @@ const image: MediaAsset = {
 
 describe("BingoCard", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mocks.unlike.mockResolvedValue(undefined);
   });
 
@@ -184,5 +185,45 @@ describe("BingoCard", () => {
       `/login?next=${encodeURIComponent(`/bingo/${bingo.id}`)}`,
     );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("does not redirect a departed page when its pending like rejects authentication", async () => {
+    let rejectUnlike!: (error: { status: number }) => void;
+    mocks.unlike.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        rejectUnlike = reject;
+      }),
+    );
+    const view = render(<BingoCard bingo={bingo} />);
+    fireEvent.click(screen.getByRole("button", { name: `Unlike ${bingo.title}` }));
+    view.unmount();
+    await act(async () => rejectUnlike({ status: 403 }));
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("does not apply a previous account's unlike response after logout", async () => {
+    let resolveUnlike!: () => void;
+    mocks.unlike.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveUnlike = resolve;
+      }),
+    );
+    const view = render(<BingoCard bingo={bingo} />);
+    fireEvent.click(screen.getByRole("button", { name: `Unlike ${bingo.title}` }));
+    act(() => window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT)));
+    view.rerender(<BingoCard bingo={{ ...bingo, liked_by_me: false }} />);
+    await act(async () => resolveUnlike());
+    expect(screen.getByRole("button", { name: `Like ${bingo.title}` })).toHaveTextContent("4");
+  });
+
+  it("starts only one write for simultaneous like clicks", async () => {
+    mocks.unlike.mockReturnValueOnce(new Promise(() => undefined));
+    render(<BingoCard bingo={bingo} />);
+    const button = screen.getByRole("button", { name: `Unlike ${bingo.title}` });
+    act(() => {
+      button.click();
+      button.click();
+    });
+    expect(mocks.unlike).toHaveBeenCalledTimes(1);
   });
 });

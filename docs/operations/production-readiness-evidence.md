@@ -3651,3 +3651,112 @@ observed results and their limits. Do not include credentials or session data.
   where both cross-tab storage events and BroadcastChannel are unavailable.
   Section counts remain 55 verified / 43 partial / 6 N/A / 1 deployment-only.
   New corrections require their own source gate; no merge/promotion/deployment.
+
+
+### 2026-10-03 — Shared-result required read lifetime (section 4)
+
+- A shared-result component could display the previous snapshot while opening
+  another link, and its unguarded success callback could replace the new result
+  after the old request was aborted. Two new regressions initially failed with
+  both existing play/copy/native-share unit cases passing. Required reads now
+  clear the previous result and feedback, expose the existing loading/error/Retry
+  states, and ignore successful aborted responses. Server-provided initial
+  snapshots retain their existing fast path. Snapshot content and sharing APIs
+  are unchanged; clipboard/native-share pending completion is a separate scope.
+- Four shared-result cases pass, including failed next-link retry and late
+  previous-link resolution. Full frontend lint/types and 258 tests across 34
+  files, build and formatting passed. Logs:
+  `/tmp/neb-share-read-lifetime-baseline-oct03.log`,
+  `/tmp/neb-share-read-lifetime-check-oct03.log`,
+  `/tmp/neb-share-read-lifetime-build-oct03.log`,
+  `/tmp/neb-share-read-lifetime-format-oct03.log`.
+- Two existing real Chromium journeys passed without retries on this local
+  source: guest mark/reset/replay/share/read-only result, and a saved private
+  draft whose already shared revision remains immutable through later editing
+  and publishing. They use actual API/storage and verify disabled read-only
+  cells. Log: `/tmp/neb-share-read-lifetime-live-oct03.log`. They verify normal
+  journeys, while the new same-component link-transition/late-response states
+  are unit-controlled evidence, not browser/network timing measurements.
+  No layout/CSS or backend/API contracts changed. Generated next-env imports
+  were restored. No new dedicated browser viewport claim is made.
+- Remaining component-state/mutation inventory includes card like actions,
+  notifications mark-read/mark-all, profile mutations, account upload/security/
+  export/delete actions and clipboard/native-share completion scope. Existing
+  happy-path evidence does not prove all their pending route/account boundaries.
+  Section 4 remains partial; counts stay 55 verified / 43 partial / 6 N/A /
+  1 deployment-only. This correction needs its own exact-source CI. No merge,
+  promotion or public deployment occurred.
+
+
+### 2026-10-03 — Failed player-source CI and editor native URL correction
+
+- Exact-source gate for `07d3e41a41b06fd1831108ba44c68c6ede95db06`
+  [run 37091894214](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37091894214)
+  completed FAILED. Backend 240, frontend 256, smoke 200 passes plus 12
+  intentional skips without retries, history/foundation and both image gates
+  passed. Live had 82 passes and one failure; the release gate failed. Both
+  previously failed `6bcc3ef` upload/report-cleanup cases passed here. The single
+  live-WebKit compatibility journey collected uncaught `TypeError: Load failed`
+  at its final page-error assertion. This was not filtered or accepted. Logs:
+  `/tmp/neb-ci-07d3e41-completed-oct03.log`,
+  `/tmp/neb-ci-07d3e41-live-failed-oct03.log`.
+- Private trace inspection found the final reload overlapping the editor's
+  own-draft RSC navigation; the request had received HTTP 200 shortly before
+  reload. This is correlation, not proof of response-body cancellation. The
+  editor performed native history replacement and redundant `router.replace`
+  for the same newly saved draft. A new real browser regression fails on prior
+  source (one RSC navigation versus expected zero). Removed the redundant
+  navigation and made the route wrapper read `useSearchParams` under Suspense,
+  so native history, direct reload and subsequent Create navigation stay in
+  sync. Installed Next app-router source confirms native-history query sync.
+  No generic page-error filter, retry count or backend contract was changed.
+- Existing first-save unit assertions now check the native URL and absence of
+  router replacement; departed creation assertions also check that the URL
+  remains untouched. Five related Chromium editor flows passed, including
+  delayed creation/departure, separate blank Create and the full image/save/
+  publish journey. The previously failed WebKit compatibility journey passed
+  three repetitions without retries. Logs:
+  `/tmp/neb-editor-native-route-baseline-oct03.log`,
+  `/tmp/neb-editor-native-route-live-oct03.log`,
+  `/tmp/neb-editor-native-route-webkit-oct03.log`.
+
+### 2026-10-03 — Card action lifetime, active profile tab and combined verification
+
+- Card likes/unlikes now use a synchronous in-flight guard and an operation
+  lifetime invalidated by card change, unmount and account/session events.
+  Old successful callbacks cannot overwrite the next scope's count; obsolete
+  authentication failure cannot navigate a departed page to Login. Already
+  accepted server writes may finish. Three new regressions failed on prior
+  source and pass with the existing six card tests. Log:
+  `/tmp/neb-card-lifetime-baseline-oct03.log`.
+- Two live cases hold actual successful like responses or a synthetic 403,
+  double-click, leave for Explore, then release the response. Each sends exactly
+  one write, retains Explore with no page errors, and verifies actual backend
+  counts (one for success, zero for denial). They use temporary unlisted boards
+  and strict isolated author cleanup. Chromium passed both initially. Log:
+  `/tmp/neb-card-lifetime-live-oct03.log`.
+- The first nine-case engine run had six passes and three failures: clicking an
+  already selected Created tab could clear its loaded collection without a new
+  request. The existing handler now returns early for the active tab. A focused
+  unit regression failed before correction and now passes; browser tests keep
+  the actual tab click. Logs:
+  `/tmp/neb-card-native-route-browsers-oct03.log`,
+  `/tmp/neb-profile-active-tab-baseline-oct03.log`.
+- Final combined source passed lint/types, 262 frontend tests across 35 files,
+  production build and formatting. Nine cases passed without retries across
+  Chromium, mobile WebKit and Firefox: first save/native URL/reload/new Create
+  and both delayed card outcomes. The editor case checks preserved text and no
+  horizontal overflow at 320 and 1710 px. Config/logs:
+  `/tmp/neb-card-native-route-browser.config.ts`,
+  `/tmp/neb-card-native-route-browsers-fixed-oct03.log`,
+  `/tmp/neb-card-share-native-profile-check-oct03.log`,
+  `/tmp/neb-card-share-native-profile-build-oct03.log`,
+  `/tmp/neb-card-share-native-profile-format-oct03.log`.
+- This is engine/device emulation, not physical-device evidence. Shared-result
+  link timing is unit-controlled; its two normal live journeys are recorded
+  above. Notification read actions, profile mutations/optional viewer state,
+  account upload/security/export/delete and clipboard/native-share pending
+  completion remain in the component inventory. Player follow/management
+  boundaries need dedicated cases. Counts remain 55 verified / 43 partial /
+  six N/A / one deployment-only; section 4 stays partial. User UI changes are
+  preserved. New source requires its own CI; no merge/promotion/deployment.

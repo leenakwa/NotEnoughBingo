@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SharedResultView } from "@/features/play/shared-result-view";
+import { api } from "@/lib/api/client";
 import type { SharedResult } from "@/lib/api/types";
 
 vi.mock("@/lib/api/client", () => ({
@@ -52,6 +53,7 @@ const result: SharedResult = {
 describe("SharedResultView", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.mocked(api.shares.get).mockReset();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -88,5 +90,51 @@ describe("SharedResultView", () => {
       ),
     );
     expect(await screen.findByText("Shared.")).toBeInTheDocument();
+  });
+
+  it("hides the previous result while the next shared link loads and supports retry", async () => {
+    let rejectNext!: (error: Error) => void;
+    vi.mocked(api.shares.get).mockReturnValueOnce(
+      new Promise<SharedResult>((_resolve, reject) => {
+        rejectNext = reject;
+      }),
+    );
+    const next = {
+      ...result,
+      id: "share-2",
+      revision: { ...result.revision, title: "Next shared result" },
+    };
+    vi.mocked(api.shares.get).mockResolvedValueOnce(next);
+    const view = render(
+      <SharedResultView bingoId="bingo-1" shareId="share-1" initialResult={result} />,
+    );
+    view.rerender(<SharedResultView bingoId="bingo-1" shareId="share-2" />);
+    expect(screen.queryByRole("heading", { name: "Movie Night Bingo" })).not.toBeInTheDocument();
+    expect(screen.getByText("Opening shared result…")).toBeVisible();
+    await act(async () => rejectNext(new Error("Unavailable")));
+    expect(screen.getByRole("alert")).toHaveTextContent("Unable to load result.");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("heading", { name: "Next shared result" })).toBeVisible();
+  });
+
+  it("does not replace the current share with a late previous-link response", async () => {
+    let resolveOld!: (value: SharedResult) => void;
+    vi.mocked(api.shares.get).mockReturnValueOnce(
+      new Promise<SharedResult>((resolve) => {
+        resolveOld = resolve;
+      }),
+    );
+    const next = {
+      ...result,
+      id: "share-2",
+      revision: { ...result.revision, title: "Next shared result" },
+    };
+    vi.mocked(api.shares.get).mockResolvedValueOnce(next);
+    const view = render(<SharedResultView bingoId="bingo-1" shareId="share-1" />);
+    view.rerender(<SharedResultView bingoId="bingo-1" shareId="share-2" />);
+    await screen.findByRole("heading", { name: "Next shared result" });
+    await act(async () => resolveOld(result));
+    expect(screen.getByRole("heading", { name: "Next shared result" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Movie Night Bingo" })).not.toBeInTheDocument();
   });
 });

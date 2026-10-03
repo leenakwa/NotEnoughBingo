@@ -31,9 +31,13 @@ export function SharedResultView({
     initialResultConsumed.current = true;
     const controller = new AbortController();
     setError("");
+    setResult(null);
+    setShareStatus("");
     api.shares
       .get(bingoId, shareId, controller.signal)
-      .then(setResult)
+      .then((data) => {
+        if (!controller.signal.aborted) setResult(data);
+      })
       .catch((caught) => {
         if (!controller.signal.aborted) setError(errorMessage(caught));
       });

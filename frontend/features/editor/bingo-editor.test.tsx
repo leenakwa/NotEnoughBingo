@@ -171,6 +171,7 @@ describe("BingoEditor autosave and safety", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    window.history.replaceState(null, "", "/create");
     window.localStorage.clear();
     vi.spyOn(window, "confirm").mockReturnValue(true);
     mocks.session.mockResolvedValue({
@@ -292,7 +293,8 @@ describe("BingoEditor autosave and safety", () => {
     await act(async () => resolveCreate(draft({ size: 7, cells: cells(7), version: 1 })));
     await settle();
     expect(screen.getByText("Saved")).toBeVisible();
-    expect(mocks.replace).toHaveBeenCalledWith(`/create?bingo=${BINGO_ID}`, { scroll: false });
+    expect(window.location.search).toBe(`?bingo=${BINGO_ID}`);
+    expect(mocks.replace).not.toHaveBeenCalled();
   });
 
   it.each(["leave", "session ends"])("stops a pending creation after %s", async (boundary) => {
@@ -316,6 +318,7 @@ describe("BingoEditor autosave and safety", () => {
     await act(async () => resolveCreate(draft({ size: 6, cells: cells(6), version: 1 })));
     await advanceAutosave(1600);
     expect(mocks.replace).not.toHaveBeenCalled();
+    expect(window.location.search).toBe("");
     expect(mocks.updateDraft).not.toHaveBeenCalled();
   });
 
@@ -449,7 +452,8 @@ describe("BingoEditor autosave and safety", () => {
     await settle();
     fireEvent.click(screen.getByRole("button", { name: "Increase bingo size" }));
     await advanceAutosave();
-    expect(mocks.replace).toHaveBeenCalledWith(`/create?bingo=${BINGO_ID}`, { scroll: false });
+    expect(window.location.search).toBe(`?bingo=${BINGO_ID}`);
+    expect(mocks.replace).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText("Upload background"), {
       target: { files: [new File(["image"], "board.png", { type: "image/png" })] },
     });

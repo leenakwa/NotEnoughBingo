@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
@@ -61,6 +61,11 @@ function isDraftConflict(error: unknown): error is ApiClientError {
       error.code === "draft_version_conflict" ||
       error.code === "conflict")
   );
+}
+
+export function BingoEditorRoute() {
+  const searchParams = useSearchParams();
+  return <BingoEditor bingoId={searchParams.get("bingo") ?? undefined} />;
 }
 
 export function BingoEditor({ bingoId }: { bingoId?: string }) {
@@ -442,7 +447,6 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           clearEditorRecovery(accountId, previousBingoId);
           const draftUrl = `/create?bingo=${draft.bingo_id}`;
           window.history.replaceState(null, "", draftUrl);
-          router.replace(draftUrl, { scroll: false });
         }
         if (clean) {
           preserveRecovery.current = false;
@@ -481,7 +485,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       },
     );
     return operation;
-  }, [accountId, router, updateSaveStatus]);
+  }, [accountId, updateSaveStatus]);
 
   useEffect(() => {
     if (authState !== "allowed" || !accountId || hydrating) return;

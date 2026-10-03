@@ -319,6 +319,113 @@ for (const boundary of ["leave", "cross-tab logout"] as const) {
   });
 }
 
+test("first draft save updates its URL without a server navigation", async ({ page }) => {
+  await authenticateAs(page, "author");
+  let serverNavigations = 0;
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (
+      request.method() === "GET" &&
+      url.pathname === "/create" &&
+      url.searchParams.has("bingo") &&
+      request.headers()["rsc"] === "1"
+    )
+      serverNavigations += 1;
+  });
+  await page.goto("/create");
+  await page.getByRole("gridcell").first().click();
+  await page
+    .getByRole("textbox", { name: "Text for row 1, column 1", exact: true })
+    .fill("Save without server navigation");
+  await expect(page).toHaveURL(/\/create\?bingo=[0-9a-f-]+$/);
+  const id = new URL(page.url()).searchParams.get("bingo")!;
+  socialFormBoards.set(page, id);
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 989 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await expect(
+      page.getByRole("textbox", { name: "Text for row 1, column 1", exact: true }),
+    ).toHaveValue("Save without server navigation");
+  }
+  await page.waitForTimeout(500);
+  expect(serverNavigations).toBe(0);
+  const persisted = await page.context().request.get(`/api/v1/bingos/${id}/draft/`);
+  expect(persisted.status()).toBe(200);
+  expect((await persisted.json()).cells[0].text).toBe("Save without server navigation");
+  await page.reload();
+  await expect(
+    page.getByRole("gridcell", { name: /Save without server navigation/ }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Create", exact: true }).click();
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByRole("heading", { name: "Create bingo", exact: true })).toBeVisible();
+  await expect(page.getByRole("gridcell").first()).not.toContainText(
+    "Save without server navigation",
+  );
+});
+
+for (const outcome of ["success", "authentication failure"] as const) {
+  test(`departed card ignores a delayed like ${outcome} and prevents duplicate writes`, async ({
+    page,
+  }) => {
+    const board = await createSocialFormBoard(page);
+    const path = `/api/v1/bingos/${board.id}/likes/`;
+    let writes = 0;
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.name));
+    await page.route(`**${path}`, async (route) => {
+      writes += 1;
+      if (outcome === "success") {
+        const response = await route.fetch();
+        expect(response.ok()).toBe(true);
+        await held;
+        await route.fulfill({ response });
+      } else {
+        await held;
+        await route.fulfill({
+          status: 403,
+          json: { error: { code: "not_authenticated", message: "Login required." } },
+        });
+      }
+    });
+    try {
+      await page.goto("/profile");
+      await page.getByRole("tab", { name: "Created", exact: true }).click();
+      const card = page
+        .locator(".bingo-card")
+        .filter({ has: page.locator(`a.bingo-card__main[href="/bingo/${board.id}"]`) });
+      const like = card.getByRole("button", { name: /^Like / });
+      await expect(like).toBeEnabled();
+      await like.evaluate((button: HTMLButtonElement) => {
+        button.click();
+        button.click();
+      });
+      await expect.poll(() => writes).toBe(1);
+      await page.getByRole("link", { name: "Explore", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+      const response = page.waitForResponse((response) => response.url().endsWith(path));
+      release();
+      await response;
+      await page.waitForTimeout(500);
+      expect(writes).toBe(1);
+      await expect(page).toHaveURL(/\/explore$/);
+      const saved = await page.context().request.get(`/api/v1/bingos/${board.id}/`);
+      expect(saved.status()).toBe(200);
+      expect((await saved.json()).stats.likes).toBe(outcome === "success" ? 1 : 0);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      release();
+    }
+  });
+}
+
 test.afterEach(async ({ page, playwright }) => {
   const id = socialFormBoards.get(page);
   if (!id) return;

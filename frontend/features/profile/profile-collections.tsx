@@ -126,6 +126,7 @@ export function ProfileCollections({
   const page = collection?.page;
 
   function activateTab(nextTab: ProfileTab) {
+    if (nextTab === tab) return;
     setTab(nextTab);
     setPageNumber(1);
     setCollection(null);

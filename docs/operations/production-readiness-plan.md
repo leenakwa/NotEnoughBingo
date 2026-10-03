@@ -78,8 +78,11 @@ frontend, 200 smoke passes plus 12 intentional skips without retries, 78 live).
 Editor mutation source `6bcc3ef` then failed CI: 39 live passes, two failures
 and 40 not run (other quality/image/smoke jobs passed). The own-draft URL/upload
 regression and isolated cleanup correction, together with player lifetime guards,
-now pass 256 frontend tests and seven related Chromium flows locally and need
-their own source gate. These
+passed locally; their `07d3e41` gate then failed with 82 live passes and one
+uncaught WebKit Load failed error (other checks/images passed). Native editor
+URL/query sync, card action lifetime and active-profile-tab corrections now
+pass 262 frontend tests, nine engine cases, three WebKit journey repetitions
+and related editor/shared-result flows locally; this source needs its own gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -125,7 +128,9 @@ only environment-specific smoke and recovery checks after release.
    Catalog/player source `6eaaf25` passed all nine jobs. Editor mutation
    source `6bcc3ef` failed two live cases; own-draft upload continuity and isolated
    cleanup corrections now have local evidence, together with player lifetime
-   guards, and need their own gate.
+   guards. Source `07d3e41` then failed one live WebKit page-error assertion;
+   native URL/query sync, card lifetime and profile-tab corrections now have
+   local evidence and require their own gate.
    Keep the draft PR open while remaining local checklist items are audited.
 2. Complete remaining repository-specific work in sections 4–5, 7–8, 21,
    24–25, 34/36, 42/45, 61–63, 67, 72, 76, 82 and 105. Prioritize
@@ -141,7 +146,15 @@ only environment-specific smoke and recovery checks after release.
    stale-response protection with real-stack evidence; editor mutation guards now stop obsolete saves/publications/exports across
    departure/draft-route/session boundaries, with eight new unit cases and seven
    real-stack/browser cases including separate blank Create navigation. Player
-   mutations and broader account/device timing still need their own audit. Then audit
+   queued mutations now have bounded-lifetime evidence; follow/management and
+   broader account/device timing still need case-by-case evidence. Shared-result
+   required reads now clear old snapshots and ignore aborted success, with four
+   unit cases and two normal live journeys. Card likes now have three new
+   unit regressions and six related engine cases across delayed success/denial,
+   duplicate clicks and departure. Repeated active profile tab selection is
+   corrected with unit and browser evidence. Remaining component mutation states
+   include notification read actions, profile changes/optional viewer state, account upload/
+   security/export/deletion and clipboard/native-share completion. Then audit
    remaining dirty forms, autofill/password-manager
    behavior (silent-fill submission is verified; native saved credentials are not),
    remaining per-form/control checks (root/reply/edit and reopened-report
