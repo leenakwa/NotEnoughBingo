@@ -3126,3 +3126,30 @@ observed results and their limits. Do not include credentials or session data.
   Next.js route imports were restored to the committed development declaration
   paths. The final 320/1710 px screenshots were visually reviewed; recovery
   text, warnings and disabled controls remain readable within the viewport.
+
+
+### 2026-10-03 — Bounded reply-list queries with real serializer relations (sections 34/82)
+
+- A new PostgreSQL API regression compared one item with a full 24-item page,
+  using distinct authors, profile avatars and thumbnail derivatives, likes,
+  and six replies per root. Both guest and authenticated list responses are
+  checked, including the five-reply preview cap and parent/like/thumbnail fields.
+- Before the fix, both reply-list cases failed: SQL count grew from 7 for one
+  reply to 30 for 24 replies. Serialization read each reply's parent public ID
+  through a separate query. The root-list cases already passed.
+- The reply list now includes `parent` in its existing `select_related` query.
+  After the fix, root pages use 8 queries and reply pages 6 queries at both
+  sizes, for guests and signed-in viewers. All four growth/absolute-budget
+  regressions and the existing 21 social tests passed together (25 total).
+  Ruff lint and formatting passed for both changed backend files.
+- The real Chromium moved-conversation journey also passed after the fix:
+  expand all six replies, edit the sixth, navigate back, recover original
+  targets, save/post, and verify removal of sent drafts. No response schema,
+  permission, pagination or preview limit changed.
+- These measured local query counts cover social list joins and serialization;
+  they do not establish public hosting latency, cold I/O, total catalog scale
+  or concurrent-load budgets. Sections 34/42/82 retain their remaining scope.
+- Recovery candidate `e6858a0` was pushed after the full redacted 80-commit
+  history scan passed. Its exact-source CI is tracked independently at
+  https://github.com/leenakwa/NotEnoughBingo/actions/runs/37083192633 .
+  This later query correction requires its own source gate. No deployment occurred.

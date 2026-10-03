@@ -112,7 +112,10 @@ only environment-specific smoke and recovery checks after release.
    constraints, foreign keys/nullability and a 180,000-cell migration; the
    remaining database queue is defaults/transactions and target operational
    compatibility, with representative joined/API/concurrent-load measurements
-   still belonging to the performance audit.
+   still belonging to the performance audit. Social list serialization now has
+   four guest/authenticated query-growth regressions with distinct authors,
+   avatars, likes and nested previews; a reply-parent N+1 was fixed (8 root-page
+   and 6 reply-page queries at one and 24 items). Other joined/API/load paths remain.
 3. Prepare provider-independent release/rollback and monitoring artifacts;
    browser exception/rejection/API failure capture is now locally exercised.
    Section 63 still needs actual provider delivery/grouping, private source maps,

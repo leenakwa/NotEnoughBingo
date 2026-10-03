@@ -180,7 +180,7 @@ class CommentReplyListCreateView(CommentListCreateView):
             return Comment.objects.none()
         return _with_like_state(
             Comment.objects.filter(parent=self.get_parent())
-            .select_related("author", "author__profile")
+            .select_related("parent", "author", "author__profile")
             .prefetch_related("author__profile__avatar__derivatives")
             .order_by("created_at"),
             self.request,
