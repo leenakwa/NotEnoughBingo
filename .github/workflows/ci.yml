@@ -247,6 +247,7 @@ jobs:
       CI: "true"
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_API_BASE_URL: /api/v1
+      NEXT_PUBLIC_APP_RELEASE: ${{ github.sha }}
       NEXT_PUBLIC_CSRF_COOKIE_NAME: neb_csrf
       API_BASE_URL: http://127.0.0.1:8000/api/v1
     steps:
@@ -285,6 +286,8 @@ jobs:
     env:
       CI: "true"
       E2E_LIVE: "1"
+      APP_RELEASE: ${{ github.sha }}
+      NEXT_PUBLIC_APP_RELEASE: ${{ github.sha }}
       COMPOSE_FILE: compose.yml:compose.s3-emulator.yml
       PLAYWRIGHT_BASE_URL: http://localhost:8080
       MAILPIT_BASE_URL: http://localhost:8025
@@ -383,6 +386,7 @@ jobs:
             context: frontend
             build_args: |
               NEXT_PUBLIC_APP_URL=https://ci.not-enough-bingo.invalid
+              NEXT_PUBLIC_APP_RELEASE=${{ github.sha }}
               NEXT_PUBLIC_API_BASE_URL=/api/v1
               NEXT_PUBLIC_CSRF_COOKIE_NAME=neb_csrf
               NEXT_PUBLIC_SUPPORT_EMAIL=support@example.test
@@ -419,6 +423,19 @@ jobs:
               exit 1
               ;;
           esac
+
+      - name: Verify embedded frontend release and reject runtime relabeling
+        if: ${{ matrix.name == 'frontend' }}
+        env:
+          IMAGE_REF: not-enough-bingo-${{ matrix.name }}:${{ github.sha }}
+        run: |
+          docker run --rm --entrypoint node "$IMAGE_REF" scripts/validate-production-env.mjs
+          if docker run --rm --entrypoint node \
+            -e NEXT_PUBLIC_APP_RELEASE=0000000000000000000000000000000000000000 \
+            "$IMAGE_REF" scripts/validate-production-env.mjs; then
+            echo 'Frontend image accepted a release different from its embedded build' >&2
+            exit 1
+          fi
 
       - name: Reject public source maps and sensitive files
         if: ${{ matrix.name == 'frontend' }}

@@ -34,6 +34,9 @@ const authRoutes = new Set([
 const seenErrors = new WeakSet<object>();
 let recent: { key: string; time: number }[] = [];
 const csrfCookieName = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME ?? "neb_csrf";
+// Next embeds this value in the loaded bundle; a later backend rollout cannot relabel it.
+const buildRelease = process.env.NEXT_PUBLIC_APP_RELEASE ?? "";
+const clientRelease = /^[a-f0-9]{40}$/.test(buildRelease) ? buildRelease : null;
 let documentLeaving = false;
 if (typeof window !== "undefined") {
   window.addEventListener("pagehide", () => {
@@ -122,7 +125,11 @@ async function sendReport(report: object): Promise<void> {
     await fetch("/api/v1/client-errors/", {
       method: "POST",
       credentials: "same-origin",
-      headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrf,
+        ...(clientRelease ? { "X-NEB-Client-Release": clientRelease } : {}),
+      },
       body: JSON.stringify(report),
       signal: controller.signal,
       keepalive: true,

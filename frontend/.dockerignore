@@ -14,6 +14,7 @@
 **/*.p12
 **/*.pfx
 .built-origin
+.built-release
 node_modules
 .next
 out

@@ -4,6 +4,7 @@ test("browser exceptions, rejections and API failures are reported without priva
   page,
 }) => {
   const reports: Record<string, unknown>[] = [];
+  const releases: (string | undefined)[] = [];
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.route("**/api/v1/auth/session/", (route) => route.fulfill({ json: { user: null } }));
@@ -13,6 +14,7 @@ test("browser exceptions, rejections and API failures are reported without priva
   await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204 }));
   await page.route("**/api/v1/client-errors/", (route) => {
     reports.push(route.request().postDataJSON());
+    releases.push(route.request().headers()["x-neb-client-release"]);
     return route.fulfill({ status: 204 });
   });
   await page.route("**/api/v1/auth/login/", (route) => route.fulfill({ status: 503 }));
@@ -52,6 +54,7 @@ test("browser exceptions, rejections and API failures are reported without priva
     .poll(() => reports.some((report) => report.kind === "api" && report.status_code === 503))
     .toBe(true);
   expect(reports).toHaveLength(3);
+  expect(releases).toEqual(Array(3).fill(process.env.NEXT_PUBLIC_APP_RELEASE ?? "a".repeat(40)));
   expect(reports.every((report) => report.surface === "support")).toBe(true);
   expect(JSON.stringify(reports)).not.toMatch(
     /private-marker|synthetic-password|synthetic@example/,

@@ -1204,8 +1204,8 @@ The data should allow the team to understand:
 Verify a production error-monitoring system if one is expected:
 
 - [ ] production environment;
-- [ ] release/version tagging;
-- [ ] source maps configured appropriately;
+- [x] release/version tagging;
+- [x] source maps configured appropriately;
 - [x] PII filtering;
 - [x] frontend errors;
 - [x] backend errors;

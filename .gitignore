@@ -30,6 +30,8 @@ backend/db.sqlite3
 # Node / Next.js
 node_modules/
 .next/
+.built-origin
+.built-release
 out/
 coverage/
 *.tsbuildinfo

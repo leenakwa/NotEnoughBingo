@@ -20,7 +20,20 @@ REPORT = {
 }
 
 
-def test_client_report_reaches_installed_sdk_without_request_or_user_data(csrf_request, caplog):
+@pytest.mark.parametrize(
+    ("client_release", "expected_release"),
+    [
+        ("a" * 40, "frontend-" + "a" * 40),
+        ("b" * 40, "frontend-" + "b" * 40),
+        (None, "frontend-unknown"),
+        ("private-marker", "frontend-unknown"),
+        ("a" * 41, "frontend-unknown"),
+        ("A" * 40, "frontend-unknown"),
+    ],
+)
+def test_client_report_reaches_installed_sdk_without_request_or_user_data(
+    csrf_request, caplog, client_release, expected_release
+):
     delivered = []
 
     class MemoryTransport(Transport):
@@ -41,6 +54,8 @@ def test_client_report_reaches_installed_sdk_without_request_or_user_data(csrf_r
             scope.set_user({"email": "private-marker"})
             scope.set_extra("request_body", "private-marker")
             request = csrf_request("post", "/api/v1/client-errors/", REPORT)
+            if client_release is not None:
+                request.META["HTTP_X_NEB_CLIENT_RELEASE"] = client_release
             with caplog.at_level(logging.INFO, logger="app.browser"):
                 response = ClientErrorView.as_view()(request)
         assert response.status_code == 204
@@ -49,7 +64,7 @@ def test_client_report_reaches_installed_sdk_without_request_or_user_data(csrf_r
         assert "private-marker" not in json.dumps(event)
         assert "request" not in event
         assert "user" not in event
-        assert event["release"] == "synthetic-release"
+        assert event["release"] == expected_release
         assert event["environment"] == "readiness-qa"
         assert event["platform"] == "javascript"
         assert event["contexts"]["browser_error"] == {"kind": "exception", "surface": "create"}

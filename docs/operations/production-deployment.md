@@ -54,6 +54,14 @@ Provide secrets from a secret manager and configure at least:
   non-deployable `.invalid` origin only to check build integrity. At startup,
   the image compares its embedded build origin with the runtime value and
   rejects CI/test origins when `APP_ENVIRONMENT=production`.
+- the full lowercase Git commit SHA of the actual built frontend source as
+  `NEXT_PUBLIC_APP_RELEASE` at image build and runtime. The image rejects a
+  missing/malformed identity or a runtime override that differs from its build.
+  Browser diagnostics send this embedded public SHA in an optional header,
+  preserving the existing report body for older backends. Events use
+  `frontend-<sha>` even when an older tab reports to a newer backend; legacy
+  clients without a valid identity use `frontend-unknown`. This is diagnostic
+  metadata supplied by the client, not a trusted attestation.
 - `APP_ENVIRONMENT=production` on the public frontend at runtime. The
   production image defaults to `staging`: preview pages then emit
   `noindex, nofollow`, `robots.txt` disallows crawling, and the sitemap is

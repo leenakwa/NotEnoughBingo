@@ -3231,7 +3231,10 @@ export interface operations {
     client_errors_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Full lowercase Git SHA embedded in the loaded frontend bundle. Absent or malformed values are recorded as frontend-unknown. Untrusted diagnostic metadata; never used for authorization. */
+                "X-NEB-Client-Release"?: string;
+            };
             path?: never;
             cookie?: never;
         };

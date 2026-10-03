@@ -409,6 +409,11 @@ test("browser error diagnostics reach the CSRF-protected backend with no private
   });
   expect(response.request().postData()).not.toContain("private-marker");
   expect(response.request().headers()["x-csrftoken"]).toBeTruthy();
+  if (process.env.NEXT_PUBLIC_APP_RELEASE) {
+    expect(response.request().headers()["x-neb-client-release"]).toBe(
+      process.env.NEXT_PUBLIC_APP_RELEASE,
+    );
+  }
   await page.getByRole("button", { name: "Close account dialog" }).click();
   await expect(page.getByRole("heading", { name: "Support & Moderation" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(

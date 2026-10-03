@@ -65,8 +65,10 @@ all 72 local live flows. Source `e6858a0` then passed all nine CI jobs:
 216 backend tests, 209 frontend tests, 196 smoke checks (12 skips) and 72 live flows.
 The later reply-query correction `8299cbf` passed all nine jobs (220 backend,
 209 frontend, 72 live; smoke 194 passes plus two WebKit retries and 12 skips).
-The subsequent email and smoke-readiness corrections have local evidence and
-require a new source gate. These
+Email and smoke-readiness source `94ee150` then passed all nine jobs: 235 backend,
+209 frontend, 200 smoke passes plus 12 intentional skips without retries, and
+72 live flows. The subsequent frontend-release correction has local evidence
+and requires its own source gate. These
 counts do not close unreviewed requirements. Stage 4 is in progress: source `f0588c4`
 passed all nine CI jobs, including backend/frontend quality, both x86_64
 production images, browser smoke and 53 full-stack flows. It includes the
@@ -130,8 +132,10 @@ only environment-specific smoke and recovery checks after release.
    and 6 reply-page queries at one and 24 items). Other joined/API/load paths remain.
 3. Prepare provider-independent release/rollback and monitoring artifacts;
    browser exception/rejection/API failure capture is now locally exercised.
-   Section 63 still needs actual provider delivery/grouping, private source maps,
-   release correlation for old open tabs and alert delivery.
+   Section 63 still needs actual provider delivery/grouping, target configuration
+   and alert delivery. Old-tab frontend release correlation is now locally
+   verified. Private source maps follow the explicit section 81/runbook policy:
+   public maps disabled, provider upload not configured or required for launch.
    Preserve configuration contracts, keep demo identities out of a production
    database and retain previous images/configuration. External inputs stay
    separately listed; do not stop local work merely because providers are absent.

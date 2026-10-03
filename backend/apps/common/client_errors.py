@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+import re
 
 import sentry_sdk
 from django.core.exceptions import RequestDataTooBig
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import permissions, serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -53,7 +54,23 @@ class ClientErrorView(APIView):
     throttle_classes = [ScopedRateThrottle, AnonRateThrottle, UserRateThrottle]
     throttle_scope = "client_errors"
 
-    @extend_schema(request=BrowserErrorSerializer, responses={204: None})
+    @extend_schema(
+        request=BrowserErrorSerializer,
+        responses={204: None},
+        parameters=[
+            OpenApiParameter(
+                name="X-NEB-Client-Release",
+                type=str,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description=(
+                    "Full lowercase Git SHA embedded in the loaded frontend bundle. "
+                    "Absent or malformed values are recorded as frontend-unknown. "
+                    "Untrusted diagnostic metadata; never used for authorization."
+                ),
+            )
+        ],
+    )
     def post(self, request):
         length = request.META.get("CONTENT_LENGTH", "")
         if length.isdecimal() and (len(length) > 10 or int(length) > 4096):
@@ -66,6 +83,14 @@ class ClientErrorView(APIView):
         serializer = BrowserErrorSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         report = serializer.validated_data
+        # Treat client metadata as untrusted. Legacy tabs have no known release;
+        # they must not inherit the version of the backend receiving the report.
+        client_release = request.headers.get("X-NEB-Client-Release", "")
+        release = (
+            f"frontend-{client_release}"
+            if re.fullmatch(r"[a-f0-9]{40}", client_release)
+            else "frontend-unknown"
+        )
         logger.info(
             "browser.error",
             extra={
@@ -81,6 +106,7 @@ class ClientErrorView(APIView):
                 "platform": "javascript",  # type: ignore[typeddict-item]
                 "level": "error",
                 "logger": "app.browser",
+                "release": release,
                 "contexts": {
                     "browser_error": {
                         key: report[key]

@@ -3241,3 +3241,60 @@ observed results and their limits. Do not include credentials or session data.
   not prove external sender verification, SPF/DKIM/DMARC, provider limits or
   delivery, real-device inbox rendering, or production alerts. The original
   checklist retains those requirements. No merge, promotion or deployment occurred.
+
+
+### 2026-10-03 — Completed email/smoke source gate and frontend release identity (sections 63/81/103)
+
+- Exact source `94ee15009aae17b50ffbef9f1d0cf76acd69ab35` passed all nine
+  [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37085971270):
+  235 PostgreSQL backend tests, 209 frontend tests, 200 smoke passes with 12
+  intentional skips and no retries, 72 live product journeys, foundation and
+  history secret scan, both x86_64 production image scans/SBOMs, and release gate.
+  Completed output is `/tmp/neb-ci-94ee150-completed-oct03.log`. The earlier
+  watch command ended on a GitHub network EOF while the run remained active;
+  no workflow was restarted. Terminal state was checked with the run API/log.
+- Browser errors previously inherited the receiving backend's SDK release,
+  which misidentified an older open tab after a backend rollout. Frontend
+  diagnostics now send the loaded bundle's embedded `NEXT_PUBLIC_APP_RELEASE`
+  as the optional `X-NEB-Client-Release` header. The closed JSON body is unchanged,
+  so older collectors can ignore this new header. The current collector accepts
+  only a full lowercase 40-character Git SHA, sets `frontend-<sha>`, and explicitly
+  sets `frontend-unknown` for legacy/malformed values. This public client metadata
+  is untrusted and has no effect on authentication or authorization.
+- Production Docker builds require the actual source SHA, record `.built-release`,
+  and reject runtime relabeling. Compose uses `APP_RELEASE` for the development
+  frontend. CI supplies its actual checkout SHA to smoke/live/image builds and
+  adds a production-image validator/mismatched-release regression. OpenAPI's
+  optional-header contract and generated TypeScript declarations match.
+- All 17 collector cases passed, including six real installed-SDK transport
+  variants with a different synthetic backend release: two frontend identities,
+  absent, arbitrary private marker, oversized and uppercase metadata. Filtering
+  retained no request/user/extra content. Frontend tests prove a loaded module
+  keeps its initial identity after the test environment changes, omits invalid
+  identities, and rejects missing/mutable/runtime-mismatched production values.
+  Full frontend lint/types and 221 tests passed; focused diagnostics/config had
+  28 passes. Full backend had 239 passes plus the documented infrastructure-file
+  skip; Ruff lint/format and `mypy apps` (71 files) passed.
+- The diagnostics journey passed without retries in Chromium, mobile Chromium,
+  Firefox and WebKit, checking release headers alongside the unchanged sanitized
+  bodies and recovery after collector failure. A temporary local production image
+  built successfully and its validator accepted the built identity and rejected
+  a runtime override. Its served production bundles passed the same journey at
+  1710×989 Chromium and 320×800 WebKit, proving build-time substitution rather
+  than only a mocked module environment. The test image deliberately used the
+  previous source SHA as a synthetic identity for the current working tree; it
+  is not a release artifact. Logs: `/tmp/neb-release-image-build-oct03.log`,
+  `/tmp/neb-release-smoke-oct03.log`, `/tmp/neb-release-production-browser-oct03.log`.
+- A separate real `nebqa` Chromium journey accepted the report with real CSRF
+  and HTTP 204 at 320 px, preserved support/dialog use and leaked no private
+  marker. Its existing development frontend has no release set (legacy case).
+  `/tmp/neb-release-live-oct03.log`. No external monitoring provider was contacted.
+- Section 63's release/version tagging and appropriate source-map policy bullets
+  are now checked. The source-map decision already recorded under section 81
+  and the deployment runbook is unchanged: no public maps; provider upload is
+  not configured or required for launch. Older evidence listing upload as a
+  mandatory open gap is superseded by this explicit policy. Section 63 remains
+  partial for actual provider delivery/grouping, target environment/configuration
+  and alerts; section 103 still requires its other original bullets. Counters
+  remain 55 verified / 43 partial / 6 N/A / 1 deployment-only. No merge,
+  promotion or deployment occurred; the new source still needs its own CI gate.

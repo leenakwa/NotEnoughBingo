@@ -1,5 +1,19 @@
 import { existsSync, readFileSync } from "node:fs";
 
+const release = process.env.NEXT_PUBLIC_APP_RELEASE ?? "";
+if (!/^[a-f0-9]{40}$/.test(release)) {
+  console.error(
+    "NEXT_PUBLIC_APP_RELEASE must identify the built source with a full Git commit SHA.",
+  );
+  process.exit(1);
+}
+if (existsSync(".built-release") && readFileSync(".built-release", "utf8").trim() !== release) {
+  console.error(
+    "NEXT_PUBLIC_APP_RELEASE must match the release embedded when this image was built.",
+  );
+  process.exit(1);
+}
+
 const rawOrigin = process.env.NEXT_PUBLIC_APP_URL;
 let origin;
 const isNonProductionHost = (hostname) =>

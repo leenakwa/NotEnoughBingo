@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 beforeEach(() => {
   vi.resetModules();
+  vi.stubEnv("NEXT_PUBLIC_APP_RELEASE", "a".repeat(40));
   document.cookie = "neb_csrf=synthetic-csrf; path=/";
   document.head.innerHTML = '<script src="/_next/static/chunks/app-abc.js"></script>';
   window.history.replaceState({}, "", "/create?private-marker#private-marker");
@@ -10,9 +11,33 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("browser diagnostics", () => {
+  it("retains the loaded bundle release after the environment changes", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { reportBrowserError } = await import("@/lib/browser-errors");
+    vi.stubEnv("NEXT_PUBLIC_APP_RELEASE", "b".repeat(40));
+    reportBrowserError(new TypeError("private-marker"));
+    expect(fetchMock.mock.calls[0]![1].headers["X-NEB-Client-Release"]).toBe("a".repeat(40));
+    expect(fetchMock.mock.calls[0]![1].body).not.toContain("release");
+  });
+
+  it.each([undefined, "", "private-marker", "a".repeat(41)])(
+    "omits absent or malformed release metadata: %s",
+    async (release) => {
+      vi.stubEnv("NEXT_PUBLIC_APP_RELEASE", release);
+      const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      vi.stubGlobal("fetch", fetchMock);
+      const { reportBrowserError } = await import("@/lib/browser-errors");
+      reportBrowserError(new Error("private-marker"));
+      expect(fetchMock.mock.calls[0]![1].headers).not.toHaveProperty("X-NEB-Client-Release");
+      expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("private-marker");
+    },
+  );
+
   it("does not start reporting in a departing document and resumes after pageshow", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);

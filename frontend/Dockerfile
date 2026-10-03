@@ -25,12 +25,14 @@ CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
 FROM dependencies AS builder
 
 ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_APP_RELEASE
 ARG NEXT_PUBLIC_API_BASE_URL=/api/v1
 ARG NEXT_PUBLIC_CSRF_COOKIE_NAME=neb_csrf
 ARG NEXT_PUBLIC_SUPPORT_EMAIL=
 ARG API_BASE_URL=http://backend:8000/api/v1
 
 ENV NODE_ENV=production \
+    NEXT_PUBLIC_APP_RELEASE=${NEXT_PUBLIC_APP_RELEASE} \
     NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
     NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL} \
     NEXT_PUBLIC_CSRF_COOKIE_NAME=${NEXT_PUBLIC_CSRF_COOKIE_NAME} \
@@ -41,6 +43,7 @@ COPY . .
 RUN node scripts/validate-production-env.mjs \
     && mkdir -p public \
     && printf '%s\n' "$NEXT_PUBLIC_APP_URL" > .built-origin \
+    && printf '%s\n' "$NEXT_PUBLIC_APP_RELEASE" > .built-release \
     && npm run build
 
 FROM dependencies AS production-dependencies
@@ -50,8 +53,10 @@ RUN npm prune --omit=dev --no-audit
 FROM base AS production
 
 ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_APP_RELEASE
 ARG NEXT_PUBLIC_SUPPORT_EMAIL
 ENV NODE_ENV=production \
+    NEXT_PUBLIC_APP_RELEASE=${NEXT_PUBLIC_APP_RELEASE} \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
     NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
@@ -72,6 +77,7 @@ RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack 
 COPY --from=production-dependencies --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/.built-origin ./.built-origin
+COPY --from=builder --chown=nextjs:nodejs /app/.built-release ./.built-release
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/validate-production-env.mjs ./scripts/validate-production-env.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts

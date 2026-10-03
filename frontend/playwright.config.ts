@@ -27,6 +27,7 @@ export default defineConfig({
         timeout: 120_000,
         env: {
           AGENTATION_ENABLED: "false",
+          NEXT_PUBLIC_APP_RELEASE: process.env.NEXT_PUBLIC_APP_RELEASE ?? "a".repeat(40),
           // Static scenarios mock browser requests; server rendering must not
           // accidentally read an unrelated developer API on port 8000.
           API_BASE_URL: "http://127.0.0.1:1/api/v1",

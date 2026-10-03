@@ -925,6 +925,14 @@ paths:
       operationId: client_errors_create
       description: Accept bounded diagnostics; never accept messages, URLs or user
         content.
+      parameters:
+      - in: header
+        name: X-NEB-Client-Release
+        schema:
+          type: string
+        description: Full lowercase Git SHA embedded in the loaded frontend bundle.
+          Absent or malformed values are recorded as frontend-unknown. Untrusted diagnostic
+          metadata; never used for authorization.
       tags:
       - client-errors
       requestBody:
