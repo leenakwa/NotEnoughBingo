@@ -4321,3 +4321,25 @@ observed results and their limits. Do not include credentials or session data.
   native zoom/contrast, mixed versions/rollback and real operator/provider/device
   evidence remain open. This source still requires its own exact-SHA CI; the last
   green `1a671eb` gate cannot be reused for it.
+
+
+### 2026-10-08 — exact-source CI dependency gate correction
+
+- Session/form source `62386140d2a3bbee519e188441797ba0472d8176` was pushed.
+  [CI 37697147428](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37697147428)
+  failed frontend quality at production npm audit; backend/foundation/secret jobs
+  passed and downstream browser/image jobs did not run. This is a failed gate.
+- The reviewed [source-map-js advisory](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)
+  was updated on October 5 and identifies 1.2.2 as patched. The lock pinned 1.2.1
+  through Next's PostCSS and development tools. Only that resolved package is
+  changed to 1.2.2 within its existing semver constraints; package.json, direct
+  dependencies and audit thresholds remain unchanged. Lock-only production
+  audit now reports zero vulnerabilities. The complete development audit still
+  reports six high-severity dependency findings and is being assessed separately;
+  no claim that the entire dependency tree has zero findings is made.
+- Logs: `/tmp/neb-ci-6238614-frontend-job-oct08.log`,
+  `/tmp/neb-source-map-lock-update-oct08.log`,
+  `/tmp/neb-source-map-production-audit-oct08.log`,
+  `/tmp/neb-all-dependency-audit-oct08.json`. Fresh install/build/test and the new
+  source CI remain required. Current workers' subsequent changes are not included
+  in this dependency-only correction.

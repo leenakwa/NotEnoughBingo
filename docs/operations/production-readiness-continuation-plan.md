@@ -54,9 +54,12 @@ authorization. Commits/pushes to the existing work branch are authorized.
 
 ## Current checkpoint — 2026-10-08
 
-Preservation commit `92c480a`; integrated session/feed/profile/account changes
-are reviewed and locally verified, awaiting commit/push/exact-source CI. All
-9 original PR gate jobs must pass for the new commit before using it as a gate.
+Preservation commit `92c480a`; integrated session/feed/profile/account commit
+`62386140d2a3bbee519e188441797ba0472d8176` is pushed. Its CI
+[37697147428](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37697147428)
+failed on frontend production npm audit (source-map-js1.2.1); backend,
+foundation and secret checks passed, dependent jobs skipped. Targeted lock update
+to1.2.2 yields zero production audit findings, awaiting fresh-source CI. All nine PR jobs must pass for the final source.
 Existing draft PR: https://github.com/leenakwa/NotEnoughBingo/pull/18.
 No merge or deployment is authorized. User-local `.codex/config.toml` is preserved
 and excluded from project commits; generated next-env build changes are restored.
@@ -66,7 +69,7 @@ and excluded from project commits; generated next-env build changes are restored
   format, mypy 76 source files and migration drift checks pass.
 - Strict four-engine live packet: 36 pass, retries zero; full page errors kept.
 - Configured optimized build/start: two production route/layout probes pass.
-  Temporary local production server must be stopped after the probe.
+  Temporary local production server was stopped after the probe.
 - Full dated evidence and unsuccessful-run distinctions are in the evidence log;
   persisted pageshow is simulated and native autofill/BFCache remain unverified.
 
@@ -90,6 +93,12 @@ blindly in an SQL transaction. Sitemap >10,000 and remaining forms follow.
 - `session_review` reviewer: found/corrected initial identity and pageshow gaps;
   final code review passes. Read-only DB/API remainder inventory complete.
 - `session_coverage` test analyst: final scoped coverage review passes.
+- Active next packet: `agentation_fix` owns backend profile atomicity/default
+  tests; `profile_forms` owns profile/account language/privacy/notification
+  controls; `session_review` completed credential failure/concurrency inventory
+  and now reviews profile/default coverage; `sitemap_scale` owns scalable backend/XML
+  sitemap and metadata tests; `credential_transactions` owns fresh user locks,
+  atomic credential/session/audit changes and durable security-email intent. Avoid simultaneous pytest database recreation.
 - Root owns commits, docs, shared QA/browser/database runs, builds and CI.
 
 ## Resume instructions
