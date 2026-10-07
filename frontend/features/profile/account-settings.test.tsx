@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   getExport: vi.fn(),
   logout: vi.fn(),
   revokeSession: vi.fn(),
+  fieldValidationMessage: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -67,7 +68,7 @@ vi.mock("@/lib/api/client", () => ({
     },
   },
   errorMessage: (error: unknown) => (error instanceof Error ? error.message : "Request failed"),
-  fieldValidationMessage: () => null,
+  fieldValidationMessage: mocks.fieldValidationMessage,
 }));
 
 const currentUser: AuthenticatedUser = {
@@ -108,17 +109,160 @@ const preferences: NotificationPreferences = {
   marketing_email: false,
 };
 
+const credentialForms = {
+  email: {
+    request: "requestEmailChange",
+    fields: [
+      ["New email address", "next@example.test"],
+      ["Current password for email change", "synthetic current password"],
+    ],
+  },
+  password: {
+    request: "changePassword",
+    fields: [
+      ["Current password", "synthetic current password"],
+      ["New password", "synthetic new password"],
+      ["Confirm new password", "synthetic new password"],
+    ],
+  },
+  deletion: {
+    request: "scheduleAccountDeletion",
+    fields: [["Confirm with your password", "synthetic current password"]],
+  },
+} as const;
+
+function fillCredentialForm(action: keyof typeof credentialForms) {
+  const fields = credentialForms[action].fields.map(([label, value]) => {
+    const input = screen.getByLabelText(label, { exact: true });
+    fireEvent.change(input, { target: { value } });
+    return { input, value };
+  });
+  const form = fields[0]?.input.closest("form");
+  if (!form) throw new Error("The credential fields must belong to a form.");
+  return { fields, form };
+}
+
 describe("AccountSettings deletion grace period", () => {
   beforeEach(() => {
     clearProfileEdits();
     vi.restoreAllMocks();
     vi.clearAllMocks();
+    mocks.fieldValidationMessage.mockReset().mockReturnValue(null);
     vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.mocked(uploadImage).mockReset();
     mocks.me.mockResolvedValue(currentUser);
     mocks.sessions.mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
     mocks.notificationPreferences.mockResolvedValue(preferences);
     mocks.cancelAccountDeletion.mockResolvedValue(undefined);
+  });
+
+  it.each(["email", "password", "deletion"] as const)(
+    "locks the %s form while saving so late typing cannot be discarded by success",
+    async (action) => {
+      let resolveSave!: (value?: unknown) => void;
+      const request = mocks[credentialForms[action].request];
+      request.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        }),
+      );
+      const user = userEvent.setup();
+      render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+      await screen.findByRole("button", { name: "Change password" });
+      const { fields, form } = fillCredentialForm(action);
+      const toggles = within(form).getAllByRole("button", { name: "Show" });
+      fireEvent.submit(form);
+
+      for (const { input, value } of fields) {
+        expect(input).toBeDisabled();
+        await user.type(input, "late typing");
+        expect(input).toHaveValue(value);
+      }
+      for (const toggle of toggles) {
+        expect(toggle).toBeDisabled();
+        await user.click(toggle);
+      }
+      expect(form.querySelector('input[type="text"]')).toBeNull();
+      expect(screen.getByLabelText("Current password", { exact: true })).toBeDisabled();
+      expect(screen.getByLabelText("New email address")).toBeDisabled();
+      expect(screen.getByLabelText("Confirm with your password")).toBeDisabled();
+      fireEvent.submit(form);
+      expect(request).toHaveBeenCalledOnce();
+
+      await act(async () =>
+        resolveSave(action === "deletion" ? { scheduled_for: "2026-11-01T00:00:00Z" } : undefined),
+      );
+      if (action === "deletion") {
+        expect(screen.queryByLabelText("Confirm with your password")).not.toBeInTheDocument();
+        expect(mocks.replace).toHaveBeenCalledWith(
+          "/login?next=%2Fprofile&reason=deletion-scheduled",
+        );
+      } else {
+        for (const [index, { input }] of fields.entries()) {
+          expect(input).toBeEnabled();
+          expect(input).toHaveValue(action === "email" && index === 0 ? "next@example.test" : "");
+        }
+        expect(within(form).getByRole("status")).toHaveTextContent(
+          action === "email" ? "Check the new email address" : "Password changed.",
+        );
+      }
+    },
+  );
+
+  it.each([
+    ["password", "current_password", "Current password"],
+    ["password", "new_password", "New password"],
+    ["email", "new_email", "New email address"],
+    ["email", "current_password", "Current password for email change"],
+    ["deletion", "password", "Confirm with your password"],
+  ] as const)(
+    "associates the rejected %s %s field and focuses it after the form is enabled",
+    async (action, apiField, label) => {
+      let rejectSave!: (error: Error) => void;
+      const request = mocks[credentialForms[action].request];
+      request.mockReturnValueOnce(
+        new Promise((_resolve, reject) => {
+          rejectSave = reject;
+        }),
+      );
+      const fieldError = "The submitted value is incorrect.";
+      mocks.fieldValidationMessage.mockImplementation((_caught, field) =>
+        field === apiField ? fieldError : null,
+      );
+      render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+      await screen.findByRole("button", { name: "Change password" });
+      const { fields, form } = fillCredentialForm(action);
+      const rejected = screen.getByLabelText(label, { exact: true });
+      (form.querySelector('button[type="submit"]') as HTMLButtonElement).focus();
+      fireEvent.submit(form);
+      expect(rejected).toBeDisabled();
+      await act(async () => rejectSave(new Error("Validation failed")));
+
+      expect(rejected).toBeEnabled();
+      expect(rejected).toHaveFocus();
+      expect(rejected).toHaveAttribute("aria-invalid", "true");
+      expect(rejected).toHaveAccessibleDescription(/The submitted value is incorrect\./);
+      expect(within(form).getByRole("alert")).toHaveTextContent(fieldError);
+      for (const { input, value } of fields) {
+        expect(input).toHaveValue(value);
+      }
+      fireEvent.change(rejected, { target: { value: "corrected synthetic value" } });
+      expect(rejected).not.toHaveAttribute("aria-invalid", "true");
+      expect(within(form).queryByText(fieldError)).not.toBeInTheDocument();
+      expect(mocks.replace).not.toHaveBeenCalled();
+    },
+  );
+
+  it("explains the established password requirements beside the new password", async () => {
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const password = await screen.findByLabelText("New password", { exact: true });
+    expect(password).toHaveAttribute("minlength", "12");
+    expect(password).toHaveAccessibleDescription(
+      "Use at least 12 characters. Avoid common words and your username.",
+    );
+    expect(
+      screen.getByText("Use at least 12 characters. Avoid common words and your username."),
+    ).toBeVisible();
   });
 
   it.each([

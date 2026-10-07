@@ -20,7 +20,7 @@ removed catalog/search language pickers, fixed header and intentional hover/shad
 changes. Preserve existing user edits. Do not merge or deploy without separate
 authorization. Commits/pushes to the existing work branch are authorized.
 
-## Current starting state
+## Historical starting state
 
 - Repository: `/Users/Daniil/Documents/VSCode/NotEnoughBingo`.
 - Branch: `sk/production-readiness`.
@@ -35,13 +35,13 @@ authorization. Commits/pushes to the existing work branch are authorized.
 
 ## Ordered execution plan
 
-1. **In progress:** restore context; read the entire original prompt; reconcile
+1. **Complete:** restore context; read the entire original prompt; reconcile
    current source, 105 sections and 1,142 item statuses. Preserve this checkpoint.
-2. **In progress:** finish Agentation asset isolation; independently review
+2. **Complete locally:** finish Agentation asset isolation; independently review
    logout-event security; run strict related browser cases with retries disabled.
-3. Run appropriate frontend/backend checks and production build; independently
-   review the integrated patch; fix any concrete failures.
-4. Record local evidence, commit/push the reviewed source to the existing branch,
+3. **Complete locally:** frontend/backend checks, configured production build/start,
+   independent correctness/security/coverage reviews and concrete corrections.
+4. **Current:** record local evidence, commit/push the reviewed source to the existing branch,
    wait for CI on that exact SHA, investigate failures and obtain a passing gate.
 5. Work through prioritized remaining local requirements in bounded batches,
    using workers/explorers and relevant independent specialist reviewers. One
@@ -52,16 +52,45 @@ authorization. Commits/pushes to the existing work branch are authorized.
 7. Reconcile final counts, release artifacts, operator dependencies and handoff.
    Complete the goal only when the actual Definition of Done is satisfied.
 
-## Active delegation
+## Current checkpoint — 2026-10-08
 
-- `agentation_fix` (worker): layout/development-feedback only; finish the existing
-  fix, preserve concurrent edits, run focused checks.
-- `logout_security` (security reviewer): independent read-only review of logout
-  cookie/signature/age/session/concurrency behavior.
-- `remaining_queue` (explorer): actionable remaining local requirement batches
-  and genuine external/N/A distinctions, using existing evidence.
-- Root: full requirements/context, durable checkpoint, shared verification,
-  integration, CI, documentation and next assignments.
+Preservation commit `92c480a`; integrated session/feed/profile/account changes
+are reviewed and locally verified, awaiting commit/push/exact-source CI. All
+9 original PR gate jobs must pass for the new commit before using it as a gate.
+Existing draft PR: https://github.com/leenakwa/NotEnoughBingo/pull/18.
+No merge or deployment is authorized. User-local `.codex/config.toml` is preserved
+and excluded from project commits; generated next-env build changes are restored.
+
+- Frontend Node 22 lint/types: 352 tests / 38 files; format pass.
+- Backend explicit test environment: 247 pass / one Nginx-image skip; Ruff,
+  format, mypy 76 source files and migration drift checks pass.
+- Strict four-engine live packet: 36 pass, retries zero; full page errors kept.
+- Configured optimized build/start: two production route/layout probes pass.
+  Temporary local production server must be stopped after the probe.
+- Full dated evidence and unsuccessful-run distinctions are in the evidence log;
+  persisted pageshow is simulated and native autofill/BFCache remain unverified.
+
+Next concrete implementation packet: profile update transaction rollback and
+model-default contracts (§42); remaining API/network inventory (§76/82) should
+reuse current test evidence before adding tests. The independent reviewer found
+User.username saved before UserProfile without atomicity, and no comprehensive
+model-default contracts. Password reset/change failure/concurrent-token handling
+warrants a separate bounded investigation; do not wrap cache/session/broker work
+blindly in an SQL transaction. Sitemap >10,000 and remaining forms follow.
+
+## Delegation record
+
+- `agentation_fix` worker: lazy wrapper, server/client/header session baseline,
+  persisted-page lookup and initial account-change corrections; complete.
+- `feed_lifecycle` worker: pagehide cancellation/pageshow re-fetch; complete.
+- `profile_forms` worker: actual form snapshots, 500-character bio, pending
+  credential guards and post-render focus; complete.
+- `logout_security` security reviewer: signed marker/CSRF/private cache and
+  shared baseline review; no remaining security finding in that scoped patch.
+- `session_review` reviewer: found/corrected initial identity and pageshow gaps;
+  final code review passes. Read-only DB/API remainder inventory complete.
+- `session_coverage` test analyst: final scoped coverage review passes.
+- Root owns commits, docs, shared QA/browser/database runs, builds and CI.
 
 ## Resume instructions
 
@@ -101,8 +130,7 @@ Explicit backend unit environment: `DJANGO_SETTINGS_MODULE=config.settings.test`
 and `USE_S3=false`. Container development settings override pytest's default;
 do not accidentally run the test suite against development S3.
 
-New bounded logout review finding: a failed initial header lookup can leave its
-identity/marker baseline unknown while an SSR-authenticated child has private
-state. Worker is adding a cached server baseline and non-purging guest
-invalidation. Browser variants fail the first header lookup before testing
-both guest-focus and same-account re-login. No success claim yet.
+The initial-header baseline finding is fixed and covered by deterministic unit
+regressions. Request-order-dependent browser bootstrap variants were removed;
+use the final 36-case packet and do not claim the removed harness as final proof.
+Keep failed browser/network/configuration runs visible in the evidence log.

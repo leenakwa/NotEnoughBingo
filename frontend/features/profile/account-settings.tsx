@@ -38,6 +38,14 @@ const preferenceLabels: Record<keyof NotificationPreferences, string> = {
   marketing_email: "Optional product email",
 };
 
+type AccountField =
+  | "current_password"
+  | "new_password"
+  | "confirm-new-password"
+  | "new_email"
+  | "email-change-password"
+  | "deletion_password";
+
 export function AccountSettings({
   profile,
   onProfileChange,
@@ -61,6 +69,7 @@ export function AccountSettings({
   const [currentPasswordError, setCurrentPasswordError] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
   const [deletionPassword, setDeletionPassword] = useState("");
+  const [deletionPasswordError, setDeletionPasswordError] = useState("");
   const [deletionScheduledFor, setDeletionScheduledFor] = useState<string | null>(null);
   const [exportJob, setExportJob] = useState<ExportJob | null>(null);
   const [pending, setPending] = useState("");
@@ -69,6 +78,8 @@ export function AccountSettings({
   const avatarUploadController = useRef<AbortController | null>(null);
   const actionInFlight = useRef(false);
   const actionLifetime = useRef(0);
+  const accountSettingsRef = useRef<HTMLElement>(null);
+  const [invalidFieldToFocus, setInvalidFieldToFocus] = useState<AccountField | null>(null);
   const [feedbackAction, setFeedbackAction] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -81,6 +92,14 @@ export function AccountSettings({
   const [preferencesVersion, setPreferencesVersion] = useState(0);
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [preferencesError, setPreferencesError] = useState("");
+
+  useEffect(() => {
+    if (pending || !invalidFieldToFocus) return;
+    accountSettingsRef.current
+      ?.querySelector<HTMLInputElement>(`input[name="${invalidFieldToFocus}"]`)
+      ?.focus();
+    setInvalidFieldToFocus(null);
+  }, [pending, invalidFieldToFocus]);
 
   useEffect(() => {
     const reset = () => {
@@ -109,6 +128,8 @@ export function AccountSettings({
       setConfirmPasswordError("");
       setNewEmailError("");
       setEmailChangePasswordError("");
+      setDeletionPasswordError("");
+      setInvalidFieldToFocus(null);
     };
     reset();
     const refresh = () => {
@@ -213,6 +234,7 @@ export function AccountSettings({
     setMessage("");
     setError("");
     setEmailFeedback(null);
+    setInvalidFieldToFocus(null);
     return true;
   }
 
@@ -309,7 +331,7 @@ export function AccountSettings({
       setError("");
       setMessage("");
       setConfirmPasswordError("The new passwords do not match.");
-      form.querySelector<HTMLInputElement>('input[name="confirm-new-password"]')?.focus();
+      setInvalidFieldToFocus("confirm-new-password");
       return;
     }
     setConfirmPasswordError("");
@@ -336,9 +358,9 @@ export function AccountSettings({
       setCurrentPasswordError(currentFieldError ?? "");
       setNewPasswordError(newFieldError ?? "");
       if (currentFieldError) {
-        form.querySelector<HTMLInputElement>('input[name="current_password"]')?.focus();
+        setInvalidFieldToFocus("current_password");
       } else if (newFieldError) {
-        form.querySelector<HTMLInputElement>('input[name="new_password"]')?.focus();
+        setInvalidFieldToFocus("new_password");
       } else {
         setError(errorMessage(caught));
       }
@@ -378,9 +400,9 @@ export function AccountSettings({
       setNewEmailError(emailFieldError ?? "");
       setEmailChangePasswordError(passwordFieldError ?? "");
       if (emailFieldError) {
-        form.querySelector<HTMLInputElement>('input[name="new_email"]')?.focus();
+        setInvalidFieldToFocus("new_email");
       } else if (passwordFieldError) {
-        form.querySelector<HTMLInputElement>('input[name="email-change-password"]')?.focus();
+        setInvalidFieldToFocus("email-change-password");
       } else {
         setEmailFeedback({ error: true, text: errorMessage(caught) });
       }
@@ -489,6 +511,7 @@ export function AccountSettings({
       new FormData(event.currentTarget).get("deletion_password") ?? "",
     );
     setDeletionPassword(submittedPassword);
+    setDeletionPasswordError("");
     if (!beginAction("deletion")) return;
     const lifetime = actionLifetime.current;
     try {
@@ -504,7 +527,10 @@ export function AccountSettings({
       router.refresh();
     } catch (caught) {
       if (lifetime !== actionLifetime.current) return;
-      setError(errorMessage(caught));
+      const passwordFieldError = fieldValidationMessage(caught, "password");
+      setDeletionPasswordError(passwordFieldError ?? "");
+      if (passwordFieldError) setInvalidFieldToFocus("deletion_password");
+      else setError(errorMessage(caught));
     } finally {
       finishAction(lifetime);
     }
@@ -568,7 +594,11 @@ export function AccountSettings({
   }
 
   return (
-    <section className="account-settings" aria-labelledby="account-settings-title">
+    <section
+      ref={accountSettingsRef}
+      className="account-settings"
+      aria-labelledby="account-settings-title"
+    >
       <div className="section-heading">
         <p className="eyebrow">Security and data</p>
         <h2 id="account-settings-title">Account settings</h2>
@@ -638,6 +668,7 @@ export function AccountSettings({
               autoCapitalize="none"
               spellCheck={false}
               required
+              disabled={Boolean(pending)}
               value={newEmail}
               aria-invalid={Boolean(newEmailError)}
               aria-describedby={newEmailError ? "new-email-error" : undefined}
@@ -657,6 +688,7 @@ export function AccountSettings({
             label="Current password for email change"
             name="email-change-password"
             autoComplete="current-password"
+            disabled={Boolean(pending)}
             value={emailChangePassword}
             onChange={(event) => {
               setEmailChangePassword(event.target.value);
@@ -684,6 +716,7 @@ export function AccountSettings({
             label="Current password"
             name="current_password"
             autoComplete="current-password"
+            disabled={Boolean(pending)}
             value={currentPassword}
             onChange={(event) => {
               setCurrentPassword(event.target.value);
@@ -696,6 +729,8 @@ export function AccountSettings({
             name="new_password"
             autoComplete="new-password"
             minLength={12}
+            hint="Use at least 12 characters. Avoid common words and your username."
+            disabled={Boolean(pending)}
             value={newPassword}
             onChange={(event) => {
               setNewPassword(event.target.value);
@@ -708,6 +743,7 @@ export function AccountSettings({
             name="confirm-new-password"
             autoComplete="new-password"
             minLength={12}
+            disabled={Boolean(pending)}
             value={confirmPassword}
             onChange={(event) => {
               setConfirmPassword(event.target.value);
@@ -839,8 +875,13 @@ export function AccountSettings({
                 label="Confirm with your password"
                 name="deletion_password"
                 autoComplete="current-password"
+                disabled={Boolean(pending)}
                 value={deletionPassword}
-                onChange={(event) => setDeletionPassword(event.target.value)}
+                onChange={(event) => {
+                  setDeletionPassword(event.target.value);
+                  setDeletionPasswordError("");
+                }}
+                error={deletionPasswordError}
               />
               <button type="submit" className="button button--danger" disabled={Boolean(pending)}>
                 {pending === "deletion" ? "Scheduling…" : "Schedule account deletion"}

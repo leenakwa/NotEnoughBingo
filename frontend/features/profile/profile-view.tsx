@@ -36,6 +36,7 @@ const privacyLabels: Record<keyof UserPrivacySettings, string> = {
 };
 
 type ProfileField = "username" | "display_name" | "bio";
+const bioMaxLength = 500;
 
 export function ProfileView({
   username,
@@ -216,8 +217,22 @@ export function ProfileView({
     };
   }, [ownProfile, loadVersion, viewerVersion]);
 
-  async function saveProfile() {
+  function captureProfileForm(form: HTMLFormElement) {
+    const data = new FormData(form);
+    const values = {
+      username: String(data.get("username") ?? "").trim(),
+      display_name: String(data.get("display_name") ?? ""),
+      bio: String(data.get("bio") ?? ""),
+    };
+    setUsernameValue(values.username);
+    setDisplayName(values.display_name);
+    setBio(values.bio);
+    return values;
+  }
+
+  async function saveProfile(form: HTMLFormElement) {
     if (!profile || actionInFlight.current) return;
+    const submittedValues = captureProfileForm(form);
     actionInFlight.current = true;
     const lifetime = actionLifetime.current;
     setFeedbackAction("profile");
@@ -226,11 +241,7 @@ export function ProfileView({
     setMessage("");
     setFieldErrors({});
     try {
-      const updated = await api.profiles.update({
-        username: usernameValue.trim(),
-        display_name: displayName,
-        bio,
-      });
+      const updated = await api.profiles.update(submittedValues);
       if (lifetime !== actionLifetime.current) return;
       setProfile(updated);
       setUsernameValue(updated.username);
@@ -462,7 +473,7 @@ export function ProfileView({
             className="settings-card"
             onSubmit={(event) => {
               event.preventDefault();
-              void saveProfile();
+              void saveProfile(event.currentTarget);
             }}
           >
             <h2 id="profile-settings-title">Profile details</h2>
@@ -490,7 +501,10 @@ export function ProfileView({
                   setUsernameValue(event.target.value);
                   setFieldErrors((current) => ({ ...current, username: undefined }));
                 }}
-                onBlur={(event) => setUsernameValue(event.target.value.trim())}
+                onBlur={(event) => {
+                  const form = event.currentTarget.form;
+                  if (form && !actionInFlight.current) captureProfileForm(form);
+                }}
               />
               <small id="profile-username-hint">
                 3–30 characters. Letters, numbers, and underscores.
@@ -536,7 +550,7 @@ export function ProfileView({
                 autoComplete="off"
                 disabled={pending}
                 rows={4}
-                maxLength={280}
+                maxLength={bioMaxLength}
                 aria-invalid={Boolean(fieldErrors.bio)}
                 aria-describedby={
                   fieldErrors.bio ? "profile-bio-hint profile-bio-error" : "profile-bio-hint"
@@ -547,7 +561,7 @@ export function ProfileView({
                   setFieldErrors((current) => ({ ...current, bio: undefined }));
                 }}
               />
-              <small id="profile-bio-hint">Optional. Up to 280 characters.</small>
+              <small id="profile-bio-hint">Optional. Up to {bioMaxLength} characters.</small>
               {fieldErrors.bio ? (
                 <small id="profile-bio-error" className="form-message--error" role="alert">
                   {fieldErrors.bio}

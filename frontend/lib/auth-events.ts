@@ -6,7 +6,13 @@ export const AUTH_SYNC_KEY = "neb:auth-sync";
 export const AUTH_DIALOG_EVENT = "neb:auth-dialog";
 export const AUTH_SIGNED_IN_EVENT = "neb:auth-signed-in";
 export const AUTH_SESSION_ENDED_EVENT = "neb:auth-session-ended";
+export const AUTH_SESSION_OBSERVED_EVENT = "neb:auth-session-observed";
 export const AUTH_SIGNED_OUT_EVENT = "neb:auth-signed-out";
+
+export interface AuthSessionObservation {
+  userId: string | null;
+  logoutEvent: string | null;
+}
 
 export type AuthDialogMode = "login" | "register" | "forgot-password" | "language-preferences";
 export interface AuthDialogRequest {

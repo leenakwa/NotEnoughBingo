@@ -53,13 +53,25 @@ export function FeedPage({
   );
 
   useEffect(() => {
+    let controller: AbortController | undefined;
     if (skipInitialRequest.current) {
       skipInitialRequest.current = false;
-      return;
+    } else {
+      controller = new AbortController();
+      void load(controller.signal);
     }
-    const controller = new AbortController();
-    void load(controller.signal);
-    return () => controller.abort();
+
+    const cancel = () => controller?.abort();
+    const restore = (event: PageTransitionEvent) => {
+      if (event.persisted) setRequestVersion((value) => value + 1);
+    };
+    window.addEventListener("pagehide", cancel);
+    window.addEventListener("pageshow", restore);
+    return () => {
+      cancel();
+      window.removeEventListener("pagehide", cancel);
+      window.removeEventListener("pageshow", restore);
+    };
   }, [load, requestVersion]);
 
   useEffect(() => {

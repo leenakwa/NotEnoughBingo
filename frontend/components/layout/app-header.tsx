@@ -13,8 +13,10 @@ import {
   AUTH_REQUIRED_EVENT,
   AUTH_SYNC_KEY,
   AUTH_SESSION_ENDED_EVENT,
+  AUTH_SESSION_OBSERVED_EVENT,
   AUTH_SIGNED_OUT_EVENT,
   openAuthDialog,
+  type AuthSessionObservation,
 } from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
 
@@ -35,6 +37,8 @@ interface HeaderViewProps {
 
 interface AppHeaderProps {
   variant?: "classic" | "modern";
+  initialUserId?: string | null;
+  initialLogoutEvent?: string | null;
 }
 
 function NavigationLinks({ pathname }: Pick<HeaderViewProps, "pathname">) {
@@ -173,16 +177,20 @@ export function ModernAppHeader({
   );
 }
 
-export function AppHeader({ variant = "classic" }: AppHeaderProps) {
+export function AppHeader({
+  variant = "classic",
+  initialUserId,
+  initialLogoutEvent,
+}: AppHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasScrolled, setHasScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
-  const currentUserId = useRef<string | null | undefined>(undefined);
+  const currentUserId = useRef<string | null | undefined>(initialUserId);
   const refreshVersion = useRef(0);
-  const lastLogoutEvent = useRef<string | null | undefined>(undefined);
+  const lastLogoutEvent = useRef<string | null | undefined>(initialLogoutEvent);
   const authenticationCheckInFlight = useRef(false);
   const avatarUrl = user?.avatar?.thumbnail_url ?? user?.avatar?.url ?? undefined;
 
@@ -224,11 +232,29 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
         if (version !== refreshVersion.current) return;
         const previousId = currentUserId.current;
         const nextId = next?.id ?? null;
+        const accountChanged =
+          previousId !== undefined &&
+          previousId !== null &&
+          nextId !== null &&
+          previousId !== nextId;
         currentUserId.current = nextId;
         setUser(next);
-        if (redirectIfChanged && previousId !== undefined && previousId !== nextId) {
+        if (
+          accountChanged ||
+          (nextId === null &&
+            previousId !== null &&
+            (previousId !== undefined || redirectIfChanged))
+        ) {
+          // Children can authenticate independently, including during server rendering.
+          // A guest or changed account must invalidate their previous authenticated state.
+          window.dispatchEvent(new Event(AUTH_SESSION_ENDED_EVENT));
+        }
+        if (
+          (redirectIfChanged || accountChanged) &&
+          previousId !== undefined &&
+          previousId !== nextId
+        ) {
           if (nextId === null) {
-            window.dispatchEvent(new Event(AUTH_SESSION_ENDED_EVENT));
             openAuthDialog({ mode: "login", reason: "session-expired" });
           } else {
             router.replace("/trending");
@@ -276,6 +302,15 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
   useEffect(() => {
     const handleCurrentTabChange = () => void refreshUser();
     const handleFocus = () => void refreshUser(true);
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void refreshUser(true);
+    };
+    const handleSessionObserved = (event: Event) => {
+      if (currentUserId.current !== undefined || lastLogoutEvent.current !== undefined) return;
+      const observed = (event as CustomEvent<AuthSessionObservation>).detail;
+      currentUserId.current = observed.userId;
+      lastLogoutEvent.current = observed.logoutEvent;
+    };
     const handleAuthenticationRequired = () => {
       if (!currentUserId.current || authenticationCheckInFlight.current) return;
       authenticationCheckInFlight.current = true;
@@ -299,13 +334,17 @@ export function AppHeader({ variant = "classic" }: AppHeaderProps) {
     }
     window.addEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
     window.addEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
+    window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, handleSessionObserved);
     window.addEventListener("focus", handleFocus);
+    window.addEventListener("pageshow", handlePageShow);
     window.addEventListener("storage", handleStorage);
     return () => {
       signOutChannel?.close();
       window.removeEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
       window.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
+      window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, handleSessionObserved);
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pageshow", handlePageShow);
       window.removeEventListener("storage", handleStorage);
     };
   }, [refreshUser]);

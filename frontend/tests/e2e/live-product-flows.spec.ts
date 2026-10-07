@@ -4543,89 +4543,314 @@ test("explicit logout from another tab clears comment recovery even when storage
   }
 });
 
-for (const reauthenticateElsewhere of [false, true]) {
-  test(`focus fallback clears comment recovery when both auth sync channels are unavailable (${reauthenticateElsewhere ? "after" : "before"} re-login)`, async ({
+test("disabled feedback tool assets stay out of normal account routes", async ({ page }) => {
+  await authenticateAs(page, "author");
+  const feedbackLoads: string[] = [];
+  const errors: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith("/_next/static/chunks/") && path.includes("agentation"))
+      feedbackLoads.push(path);
+  });
+  page.on("pageerror", (error) => errors.push(error.name));
+  await page.goto("/explore");
+  await page.getByRole("link", { name: /^Profile for/ }).click();
+  await expect(page.getByLabel("Display name", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Explore", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Explore", exact: true })).toBeVisible();
+  expect(feedbackLoads).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+for (const revalidation of ["focus", "pageshow"] as const) {
+  for (const reauthenticateElsewhere of [false, true]) {
+    test(`${revalidation} fallback clears comment recovery when both auth sync channels are unavailable (${reauthenticateElsewhere ? "after" : "before"} re-login)`, async ({
+      page,
+    }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+      await page.context().addInitScript(() => {
+        Object.defineProperty(window, "BroadcastChannel", { value: undefined, configurable: true });
+        const setItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+          if (key === "neb:auth-sync") throw new Error("Auth storage unavailable in QA");
+          return setItem.call(this, key, value);
+        };
+      });
+      const bingo = await createSocialFormBoard(page);
+      // Use a fresh session; fixture cookies must stay valid for later scenarios.
+      await page.context().clearCookies();
+      await page.goto("/login");
+      await page.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
+      await page.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+      await page.getByRole("button", { name: "Log in", exact: true }).click();
+      await expect(page).toHaveURL(/\/discover$/);
+      await page.goto(`/bingo/${bingo.id}`);
+      const input = page.getByLabel("Add a comment", { exact: true });
+      await expect(input).toBeVisible();
+      await input.fill("Private draft cleared by explicit sign-out 🎲");
+      const settings = await page.context().newPage();
+      settings.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+      try {
+        await settings.goto("/profile");
+        await settings.getByRole("button", { name: "Log out", exact: true }).click();
+        await expect(settings).toHaveURL(/\/login$/);
+        const marker = (await page.context().cookies()).find(
+          (cookie) => cookie.name === "neb_logout_event",
+        );
+        expect(marker?.httpOnly).toBe(true);
+        expect(
+          await page.evaluate(() =>
+            document.cookie
+              .split(";")
+              .some((cookie) => cookie.trim().startsWith("neb_logout_event=")),
+          ),
+        ).toBe(false);
+        if (reauthenticateElsewhere) {
+          await settings
+            .getByLabel("Email", { exact: true })
+            .fill(readLiveFixture().users.author.email);
+          await settings.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+          await settings.getByRole("button", { name: "Log in", exact: true }).click();
+          await expect(settings).toHaveURL(/\/discover$/);
+        }
+        const focusCheck = page.waitForResponse((response) =>
+          response.url().endsWith("/api/v1/auth/session/"),
+        );
+        if (revalidation === "focus") {
+          await page.bringToFront();
+          await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+        } else {
+          await page.evaluate(() =>
+            window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })),
+          );
+        }
+        expect((await focusCheck).status()).toBe(200);
+        expect(await page.evaluate(() => typeof window.BroadcastChannel)).toBe("undefined");
+        expect(
+          await page.evaluate(() => {
+            try {
+              window.localStorage.setItem("neb:auth-sync", "probe");
+              return false;
+            } catch {
+              return true;
+            }
+          }),
+        ).toBe(true);
+        const login = page.getByRole("dialog", { name: "Log in", exact: true });
+        if (!reauthenticateElsewhere) {
+          await expect(login).toBeVisible();
+          await expect(input).toHaveCount(0);
+          await login
+            .getByLabel("Email", { exact: true })
+            .fill(readLiveFixture().users.author.email);
+          await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
+          await login.getByRole("button", { name: "Log in", exact: true }).click();
+        }
+        await expect(login).toHaveCount(0);
+        await expect(input).toHaveValue("");
+        await expect(
+          page.getByRole("status").filter({ hasText: "Unsent comment restored" }),
+        ).toHaveCount(0);
+        expect(errors).toEqual([]);
+      } finally {
+        await settings.close();
+      }
+    });
+  }
+}
+
+test("profile saves silent filled values and retains them through field rejection", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+  await authenticateAs(page, "author");
+  const originalResponse = await page.request.get("/api/v1/profiles/me/");
+  expect(originalResponse.status()).toBe(200);
+  const original = (await originalResponse.json()) as {
+    username: string;
+    display_name: string;
+    bio: string;
+  };
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const filled = { display_name: "Тихое заполнение 🎲 <>&", bio: "界".repeat(495) + "\n🎲<&" };
+  let reject = true;
+  let writes = 0;
+  await page.route("**/api/v1/profiles/me/", async (route) => {
+    if (route.request().method() !== "PATCH") return route.continue();
+    writes += 1;
+    const body = route.request().postDataJSON() as Record<string, string>;
+    expect(body.display_name).toBe(filled.display_name);
+    expect(body.bio).toBe(filled.bio);
+    if (reject) {
+      await route.fulfill({
+        status: 400,
+        json: {
+          error: {
+            code: "validation_error",
+            message: "Please check the highlighted fields.",
+            details: { username: [{ code: "unique", message: "That username is unavailable." }] },
+          },
+        },
+      });
+    } else await route.continue();
+  });
+  try {
+    await page.goto("/profile");
+    const username = page.getByLabel("Username", { exact: true });
+    const displayName = page.getByLabel("Display name", { exact: true });
+    const bio = page.getByLabel("Bio", { exact: true });
+    await expect(bio).toHaveAttribute("maxlength", "500");
+    await displayName.evaluate((element, value) => {
+      (element as HTMLInputElement).value = value;
+    }, filled.display_name);
+    await bio.evaluate((element, value) => {
+      (element as HTMLTextAreaElement).value = value;
+    }, filled.bio);
+    await displayName.press("Enter");
+    await expect(username).toHaveAttribute("aria-invalid", "true");
+    await expect(username).toBeFocused();
+    await expect(displayName).toHaveValue(filled.display_name);
+    await expect(bio).toHaveValue(filled.bio);
+    expect(writes).toBe(1);
+    reject = false;
+    await page.getByRole("button", { name: "Save profile", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Profile saved." })).toBeVisible();
+    const saved = await page.request.get("/api/v1/profiles/me/");
+    expect(saved.status()).toBe(200);
+    const persisted = (await saved.json()) as { display_name: string; bio: string };
+    expect(persisted.display_name).toBe(filled.display_name);
+    expect(persisted.bio).toBe(filled.bio);
+    expect(writes).toBe(2);
+    expect(errors).toEqual([]);
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 989 });
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+  } finally {
+    await page.unroute("**/api/v1/profiles/me/");
+    const restored = await page.request.patch("/api/v1/profiles/me/", {
+      headers: { "X-CSRFToken": csrf!.value },
+      data: { username: original.username, display_name: original.display_name, bio: original.bio },
+    });
+    expect(restored.status()).toBe(200);
+  }
+});
+
+for (const scenario of [
+  {
+    heading: "Change password",
+    path: "auth/password-change/",
+    field: "Current password",
+    submit: "Change password",
+  },
+  {
+    heading: "Change email",
+    path: "auth/email-change/",
+    field: "Current password for email change",
+    submit: "Send confirmation email",
+  },
+  {
+    heading: "Delete account",
+    path: "auth/account-deletion/",
+    field: "Confirm with your password",
+    submit: "Schedule account deletion",
+  },
+] as const) {
+  test(`account ${scenario.heading.toLowerCase()} protects pending values and focuses rejected password`, async ({
     page,
   }) => {
     const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.name));
-    await page.context().addInitScript(() => {
-      Object.defineProperty(window, "BroadcastChannel", { value: undefined, configurable: true });
-      const setItem = Storage.prototype.setItem;
-      Storage.prototype.setItem = function (key, value) {
-        if (key === "neb:auth-sync") throw new Error("Auth storage unavailable in QA");
-        return setItem.call(this, key, value);
-      };
+    page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+    await authenticateAs(page, "author");
+    await page.goto("/profile");
+    const form = page
+      .locator("form")
+      .filter({ has: page.getByRole("heading", { name: scenario.heading, exact: true }) });
+    const password = form.getByLabel(scenario.field, { exact: true });
+    const rejectedPassword = `Incorrect-${randomUUID()}`;
+    await password.fill(rejectedPassword);
+    if (scenario.heading === "Change password") {
+      const replacement = `NewQa-${randomUUID()}!`;
+      await form.getByLabel("New password", { exact: true }).fill(replacement);
+      await form.getByLabel("Confirm new password", { exact: true }).fill(replacement);
+    } else if (scenario.heading === "Change email") {
+      await form
+        .getByLabel("New email address", { exact: true })
+        .fill(`qa-${randomUUID()}@example.test`);
+    }
+    let writes = 0;
+    let release!: () => void;
+    let received!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
     });
-    const bingo = await createSocialFormBoard(page);
-    // Use a fresh session; fixture cookies must stay valid for later scenarios.
-    await page.context().clearCookies();
-    await page.goto("/login");
-    await page.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
-    await page.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
-    await expect(page).toHaveURL(/\/discover$/);
-    await page.goto(`/bingo/${bingo.id}`);
-    const input = page.getByLabel("Add a comment", { exact: true });
-    await input.fill("Private draft cleared by explicit sign-out 🎲");
-    const settings = await page.context().newPage();
-    settings.on("pageerror", (error) => errors.push(error.name));
+    const responseReady = new Promise<void>((resolve) => {
+      received = resolve;
+    });
+    await page.route(`**/api/v1/${scenario.path}`, async (route) => {
+      writes += 1;
+      if (scenario.heading === "Change email") {
+        // Exercise the UI rejection in each engine without consuming the same
+        // account's three-per-hour real email quota. Backend validation is
+        // covered separately; the other credential cases forward real denials.
+        received();
+        await held;
+        await route.fulfill({
+          status: 400,
+          json: {
+            error: {
+              code: "validation_error",
+              message: "Please check the highlighted fields.",
+              details: {
+                current_password: [
+                  { code: "invalid", message: "The current password is incorrect." },
+                ],
+              },
+            },
+          },
+        });
+      } else {
+        const response = await route.fetch();
+        expect(response.status()).toBe(400);
+        received();
+        await held;
+        await route.fulfill({ response });
+      }
+    });
     try {
-      await settings.goto("/profile");
-      await settings.getByRole("button", { name: "Log out", exact: true }).click();
-      await expect(settings).toHaveURL(/\/login$/);
-      const marker = (await page.context().cookies()).find(
-        (cookie) => cookie.name === "neb_logout_event",
-      );
-      expect(marker?.httpOnly).toBe(true);
-      expect(
-        await page.evaluate(() =>
-          document.cookie
-            .split(";")
-            .some((cookie) => cookie.trim().startsWith("neb_logout_event=")),
-        ),
-      ).toBe(false);
-      if (reauthenticateElsewhere) {
-        await settings
-          .getByLabel("Email", { exact: true })
-          .fill(readLiveFixture().users.author.email);
-        await settings.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
-        await settings.getByRole("button", { name: "Log in", exact: true }).click();
-        await expect(settings).toHaveURL(/\/discover$/);
+      if (scenario.heading === "Delete account") page.once("dialog", (dialog) => dialog.accept());
+      await password.press("Enter");
+      await responseReady;
+      for (const input of await form.locator("input").all()) await expect(input).toBeDisabled();
+      for (const toggle of await form.getByRole("button", { name: /^(Show|Hide)$/ }).all())
+        await expect(toggle).toBeDisabled();
+      await expect(form.locator('button[type="submit"]')).toBeDisabled();
+      expect(writes).toBe(1);
+      release();
+      await expect(password).toBeEnabled();
+      await expect(password).toHaveValue(rejectedPassword);
+      await expect(password).toHaveAttribute("aria-invalid", "true");
+      await expect(password).toHaveAttribute("aria-describedby", /.+/);
+      await expect(password).toBeFocused();
+      if (scenario.heading === "Delete account") {
+        page.once("dialog", (dialog) => dialog.dismiss());
+        await form.getByRole("button", { name: scenario.submit, exact: true }).click();
+        expect(writes).toBe(1);
       }
-      const focusCheck = page.waitForResponse((response) =>
-        response.url().endsWith("/api/v1/auth/session/"),
-      );
-      await page.bringToFront();
-      await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-      expect((await focusCheck).status()).toBe(200);
-      expect(await page.evaluate(() => typeof window.BroadcastChannel)).toBe("undefined");
-      expect(
-        await page.evaluate(() => {
-          try {
-            window.localStorage.setItem("neb:auth-sync", "probe");
-            return false;
-          } catch {
-            return true;
-          }
-        }),
-      ).toBe(true);
-      const login = page.getByRole("dialog", { name: "Log in", exact: true });
-      if (!reauthenticateElsewhere) {
-        await expect(login).toBeVisible();
-        await expect(input).toHaveCount(0);
-        await login.getByLabel("Email", { exact: true }).fill(readLiveFixture().users.author.email);
-        await login.getByLabel("Password", { exact: true }).fill(E2E_FIXTURE_PASSWORD);
-        await login.getByRole("button", { name: "Log in", exact: true }).click();
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 989 });
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        ).toBe(true);
       }
-      await expect(login).toHaveCount(0);
-      await expect(input).toHaveValue("");
-      await expect(
-        page.getByRole("status").filter({ hasText: "Unsent comment restored" }),
-      ).toHaveCount(0);
       expect(errors).toEqual([]);
     } finally {
-      await settings.close();
+      release();
     }
   });
 }

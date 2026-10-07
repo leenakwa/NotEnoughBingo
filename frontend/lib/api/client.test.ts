@@ -7,7 +7,7 @@ import {
   fieldValidationMessage,
   isAuthenticationRequiredError,
 } from "@/lib/api/client";
-import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
+import { AUTH_REQUIRED_EVENT, AUTH_SESSION_OBSERVED_EVENT } from "@/lib/auth-events";
 import { reportBrowserError } from "@/lib/browser-errors";
 
 vi.mock("@/lib/browser-errors", () => ({ reportBrowserError: vi.fn() }));
@@ -301,6 +301,169 @@ describe("API error presentation", () => {
       }
     },
   );
+});
+
+describe("validated child session observations", () => {
+  const user = { id: "validated-account", email: "private@example.test" };
+  const response = (current: typeof user | null, marker: string | null = null) =>
+    new Response(JSON.stringify({ user: current, logout_event: marker }), {
+      headers: { "Content-Type": "application/json" },
+    });
+
+  it.each([user, null])("shares only the validated identity and marker for %s", async (current) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(current, "validated-marker")));
+    const observed = vi.fn();
+    window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    try {
+      expect(await api.auth.session()).toEqual(current);
+      expect(observed).toHaveBeenCalledOnce();
+      expect(observed.mock.calls[0]?.[0].detail).toEqual({
+        userId: current?.id ?? null,
+        logoutEvent: "validated-marker",
+      });
+    } finally {
+      window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    }
+  });
+
+  it("keeps explicit header marker observers separate from child bootstrap events", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(null, "validated-marker")));
+    const marker = vi.fn();
+    const observed = vi.fn();
+    window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    try {
+      expect(await api.auth.session(marker)).toBeNull();
+      expect(marker).toHaveBeenCalledExactlyOnceWith("validated-marker");
+      expect(observed).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    }
+  });
+
+  it("ignores a late child response after a newer successful session lookup", async () => {
+    let finishOld!: (value: Response) => void;
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(
+        new Promise<Response>((resolve) => {
+          finishOld = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(response(null, "new-marker"));
+    vi.stubGlobal("fetch", fetchMock);
+    const observed = vi.fn();
+    window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    try {
+      const old = api.auth.session();
+      await api.auth.session();
+      finishOld(response(user, "old-marker"));
+      await old;
+      expect(observed).toHaveBeenCalledOnce();
+      expect(observed.mock.calls[0]?.[0].detail).toEqual({
+        userId: null,
+        logoutEvent: "new-marker",
+      });
+    } finally {
+      window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    }
+  });
+
+  it("does not publish an obsolete child baseline after a newer explicit header observer", async () => {
+    let finishOld!: (value: Response) => void;
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(
+        new Promise<Response>((resolve) => {
+          finishOld = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(response(null, "new-marker"));
+    vi.stubGlobal("fetch", fetchMock);
+    const observed = vi.fn();
+    const marker = vi.fn();
+    window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    try {
+      const old = api.auth.session();
+      await api.auth.session(marker);
+      finishOld(response(user, "old-marker"));
+      await old;
+      expect(marker).toHaveBeenCalledExactlyOnceWith("new-marker");
+      expect(observed).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    }
+  });
+
+  it("accepts an earlier successful child baseline when the newer header lookup fails", async () => {
+    let finishOld!: (value: Response) => void;
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(
+        new Promise<Response>((resolve) => {
+          finishOld = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const observed = vi.fn();
+    const marker = vi.fn();
+    window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    try {
+      const old = api.auth.session();
+      await expect(api.auth.session(marker)).rejects.toBeInstanceOf(ApiClientError);
+      expect(observed).not.toHaveBeenCalled();
+      expect(marker).not.toHaveBeenCalled();
+      finishOld(response(user, "validated-marker"));
+      await old;
+      expect(observed).toHaveBeenCalledOnce();
+      expect(observed.mock.calls[0]?.[0].detail).toEqual({
+        userId: user.id,
+        logoutEvent: "validated-marker",
+      });
+    } finally {
+      window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    }
+  });
+
+  it("ignores an aborted request without suppressing an earlier successful child baseline", async () => {
+    let finishOld!: (value: Response) => void;
+    let finishAborted!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockReturnValueOnce(
+          new Promise<Response>((resolve) => {
+            finishOld = resolve;
+          }),
+        )
+        .mockReturnValueOnce(
+          new Promise<Response>((resolve) => {
+            finishAborted = resolve;
+          }),
+        ),
+    );
+    const controller = new AbortController();
+    const observed = vi.fn();
+    window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    try {
+      const old = api.auth.session();
+      const pending = api.auth.session(undefined, controller.signal);
+      controller.abort();
+      finishAborted(response(user, "discarded-marker"));
+      await pending;
+      expect(observed).not.toHaveBeenCalled();
+      finishOld(response(user, "valid-marker"));
+      await old;
+      expect(observed).toHaveBeenCalledOnce();
+      expect(observed.mock.calls[0]?.[0].detail).toEqual({
+        userId: user.id,
+        logoutEvent: "valid-marker",
+      });
+    } finally {
+      window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, observed);
+    }
+  });
 });
 
 describe("draft concurrency headers", () => {

@@ -4179,7 +4179,10 @@ observed results and their limits. Do not include credentials or session data.
   `/tmp/neb-logout-event-schema-oct03.log`,
   `/tmp/neb-logout-event-api-types-oct03.log`. Generated next-env restored.
 - Both missed-sign-out cases pass in Chromium, mobile WebKit, desktop WebKit
-  and Firefox: eight final cases without retries/page errors. One returns to
+  and Firefox: eight cases passed without retries before adding the final
+  two-tab page-error assertions. That stricter run passed seven cases and
+  failed mobile WebKit after re-login on two rejected chunk loads; it is not
+  a passing console-error gate. One returns to
   the first tab before same-account re-login; the other reauthenticates in the
   second tab first. Auth-sync writes are denied in both tabs and messaging is
   absent. Focus triggers a real session-status request; the private comment
@@ -4191,7 +4194,7 @@ observed results and their limits. Do not include credentials or session data.
   `/tmp/neb-dual-auth-sync-browsers-oct03.log`,
   `/tmp/neb-dual-auth-sync-final-cookie-browsers-oct03.log`,
   `/tmp/neb-dual-auth-sync-final-errors-browsers-oct03.log` (both tabs assert no
-  page errors). Focus events and
+  page errors; seven passed, one failed). Focus events and
   devices are automated/emulated; physical-device behavior and a real deployed
   cookie domain remain outside this evidence.
 - Section 58's last unchecked bullet now has repository/browser evidence.
@@ -4199,3 +4202,122 @@ observed results and their limits. Do not include credentials or session data.
   deployment-only. Cookie domain/target HTTPS and the remaining native-device/
   form/control/API/default/transaction/joined/load/operations items remain open
   in their respective sections. New logout-event source requires its own CI.
+
+### 2026-10-03 — Disabled feedback assets: correction in progress
+
+- The stricter missed-logout browser run found rejected Agentation/HMR chunk
+  loads in the second profile tab before logout. The logout fix is committed
+  locally as `e4347a5` but has not been pushed; its complete gate is pending.
+- A new account-route regression reproduced an Agentation chunk request even
+  though QA and CI set `AGENTATION_ENABLED=false`. A conditional server import
+  did not remove that request. Moving the tool to a dynamically loaded client
+  wrapper passed the focused Chromium asset/page-error regression (one case).
+  Logs: `/tmp/neb-feedback-assets-baseline-oct03.log`,
+  `/tmp/neb-feedback-assets-fixed-oct03.log`,
+  `/tmp/neb-feedback-assets-client-lazy-oct03.log`.
+- All four browser modes with both logout cases and the new asset case, frontend
+  checks and the subsequent source CI still need to pass. No overall browser
+  error or final-source release success is claimed from the focused result.
+
+
+### 2026-10-08 — durable continuation, session restoration and profile/account forms
+
+- The complete continuation attachment is preserved verbatim in
+  `production-readiness-continuation-request-2026-10-08.md`; its SHA-256 is
+  `965004fb008a7a930c8f4fa34540cd4c113f1a74654fb0e8dd7438c18c2eefe7`.
+  The original 105-section/1,142-item prompt remains unchanged with its recorded
+  SHA-256. The active goal and `production-readiness-continuation-plan.md`
+  preserve scope, authorization, remaining batches and resume instructions.
+  Preservation commit: `92c480a`. There is no merge/deployment authorization.
+- Disabled Agentation is isolated behind a client dynamic import with SSR off
+  and the existing development-only server gate. Enabled development was
+  separately exercised on `/support`: toolbar v3.0.2 visible, two tool chunks
+  returned 200, zero browser console errors/warnings. That temporary server and
+  browser were stopped. Disabled asset checks pass in all four engine modes.
+- Independent security/correctness review found missing initial session
+  baselines, account changes on mount, and persisted-page restoration. A
+  request-cached server session lookup now passes only identity/logout-event
+  metadata to the header. Successful child lookups can seed an unknown baseline;
+  stale/aborted child responses cannot replace a newer successful observation.
+  Known-user-to-guest transitions invalidate child authentication without
+  treating ordinary expiry as explicit logout. Known account A-to-B changes on
+  mount invalidate stale children and refresh through the existing safe route.
+  Persisted `pageshow` revalidates even without focus; unchanged/historical
+  logout markers do not purge recovery again. Focused units include lookup
+  failure, stale observations, expiry, initial account changes and listener
+  cleanup. Independent final correctness/coverage review found no further
+  actionable defects within this packet; no production credentials are passed
+  to the new shared observation event.
+- Feed reads now abort on pagehide and restart the current page on persisted
+  pageshow, including after an SSR initial result. Five regressions cover
+  cancellation, restoration, pagination, SSR skip and cleanup. An earlier
+  desktop-WebKit failure was a Fetch API page error for a departing Discover
+  read before logout; no backend CORS rejection was established. The lifecycle
+  change and the passing integrated packet do not prove that error's root cause.
+- Profile submission snapshots actual FormData, including silently filled DOM
+  values. Username blur captures the whole form before rerendering; failed
+  validation retains these values for retry. Bio's visible/native limit now
+  matches the backend's 500 characters. Pending account actions disable
+  credential fields and show/hide controls. Rejected-field focus runs after
+  reenabling, deletion maps its password validation beside the correct field,
+  and password minimum length has a visible hint. Scoped units and real-stack
+  browser journeys verify pending guards, one write, retained values/focus,
+  silent profile values, retry persistence, multiline/Unicode/emoji/symbols,
+  500-character bio and no overflow at 320/1710 px. Deletion uses a generated
+  wrong password and cancellation, not successful deletion of a shared fixture.
+- Final Node 22.23.1 container frontend lint/types and **352 tests / 38 files**
+  pass, as does format. Backend test settings must explicitly override the
+  development container: `DJANGO_SETTINGS_MODULE=config.settings.test`,
+  `USE_S3=false`. With those settings **247 tests pass / one infrastructure-only
+  Nginx skip**; Ruff/format (170 files), mypy (76 source files), and migration
+  drift checks pass. Logs: `/tmp/neb-frontend-corrected-check-oct08.log`,
+  `/tmp/neb-frontend-format-oct08.log`,
+  `/tmp/neb-backend-tests-correct-env-oct08.log`,
+  `/tmp/neb-backend-mypy-oct08.log`.
+- Strict final browser packet: **36/36 pass, retries zero**, Chromium, mobile
+  WebKit, Firefox and desktop WebKit. Each engine runs disabled feedback assets,
+  missed explicit logout before/after same-account re-login through focus and
+  simulated persisted pageshow, silent profile/rejection/retry, and three
+  pending account forms. Both tabs retain unfiltered page-error assertions.
+  Email rejection is a normalized mocked 400 to avoid consuming the fixture's
+  three/hour real email quota; password/deletion reject through the real backend.
+  These cases establish simulated lifecycle and DOM-fill behavior, not actual
+  native BFCache restoration, physical devices, autofill/password managers or
+  every form/control. Log: `/tmp/neb-session-profile-corrected-browser-oct08.log`.
+  Config: `frontend/.playwright-cli/logout-browser.config.ts`; failures from
+  earlier packets are retained under `.playwright-cli/artifacts`.
+- Optimized build passes. A configured production build/start with
+  `API_BASE_URL=http://localhost:18080/api/v1` and `AGENTATION_ENABLED=true`
+  passes two Chromium profile/account-route walks at 320/1710 px: HTML 200,
+  private/no-store, no overflow, no Agentation requests/toolbar, no console
+  errors/warnings/page errors, no failed required requests/assets. The probe
+  supplies the existing QA trusted Origin because its frontend uses a separate
+  local port; it does not verify target-origin cookie/CSRF configuration. Next
+  navigation cancels background requests carrying `next-router-prefetch: 1`;
+  every captured cancellation is explicitly asserted as that prefetch with
+  `net::ERR_ABORTED`, and all are retained in the log. Original traces also show
+  their HTTP 200 responses; none is a suppressed browser exception. Logs:
+  `/tmp/neb-production-configured-build-oct08.log`,
+  `/tmp/neb-production-configured-start-oct08.log`,
+  `/tmp/neb-production-final-browser-tests-oct08.log`.
+- Unsuccessful runs are not passing evidence: the first backend run inherited
+  development S3 and had four failures; initial frontend checks found six
+  strict test-code TypeScript errors, all corrected; the first 36-browser packet
+  had four malformed mocked-validation failures and one correct email quota
+  rejection (31 passes). Failed bootstrap-browser variants coupled request order
+  to StrictMode, so they were removed in favor of deterministic unit coverage.
+  An earlier 20-case packet contained that removed variant and is not the final
+  current-source packet. The first production start used a build-time default
+  proxy at unavailable port 8000 and generated API 500s; it was rebuilt with the
+  QA API. A CLI browser session closed during a probe. The first strict network
+  probe failed solely on the explicitly traced Next prefetch cancellations;
+  the final probe verifies their headers/error types rather than treating them
+  as broken required assets. No app throttles, browser errors or retries were
+  relaxed to pass. Earlier logs remain in `/tmp/neb-*-oct08.log` and artifacts.
+- All checklist/tracker source-integrity checks pass. Counts remain **56 verified,
+  42 partial, six N/A, one deployment-only; 752 checked / 390 unchecked**.
+  Sections 4/5/7/8 still need the remaining form/control matrix. Sitemap scale,
+  model defaults/transaction fault coverage, API/network/load measurements,
+  native zoom/contrast, mixed versions/rollback and real operator/provider/device
+  evidence remain open. This source still requires its own exact-SHA CI; the last
+  green `1a671eb` gate cannot be reused for it.

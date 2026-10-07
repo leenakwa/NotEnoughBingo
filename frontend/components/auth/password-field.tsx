@@ -11,6 +11,7 @@ export function PasswordField({
   hint,
   name,
   error,
+  disabled = false,
 }: {
   label: string;
   value: string;
@@ -20,6 +21,7 @@ export function PasswordField({
   hint?: string;
   name?: string;
   error?: string;
+  disabled?: boolean;
 }) {
   const id = useId();
   const [visible, setVisible] = useState(false);
@@ -39,6 +41,7 @@ export function PasswordField({
           spellCheck={false}
           required
           minLength={minLength}
+          disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={
             [hint ? `${id}-hint` : "", error ? `${id}-error` : ""].filter(Boolean).join(" ") ||
@@ -51,6 +54,7 @@ export function PasswordField({
           type="button"
           aria-controls={id}
           aria-describedby={`${id}-label`}
+          disabled={disabled}
           onClick={() => setVisible((current) => !current)}
         >
           {visible ? "Hide" : "Show"}

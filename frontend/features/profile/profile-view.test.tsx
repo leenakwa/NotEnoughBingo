@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import { ProfileView } from "@/features/profile/profile-view";
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   follow: vi.fn(),
   unfollow: vi.fn(),
   notify: vi.fn(),
+  fieldValidationMessage: vi.fn(),
 }));
 vi.mock("@/lib/api/client", () => ({
   api: {
@@ -27,7 +29,7 @@ vi.mock("@/lib/api/client", () => ({
     follows: { follow: mocks.follow, unfollow: mocks.unfollow },
   },
   errorMessage: () => "Profile service unavailable.",
-  fieldValidationMessage: () => undefined,
+  fieldValidationMessage: mocks.fieldValidationMessage,
   isAuthenticationRequiredError: (error: { status?: number }) => error.status === 401,
 }));
 vi.mock("@/lib/auth-events", async (importOriginal) => ({
@@ -185,4 +187,90 @@ it("hides previous own-profile content when a session reload is denied", async (
   act(() => window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT)));
   await waitFor(() => expect(screen.getByText("Log in to view your profile")).toBeVisible());
   expect(screen.queryByRole("heading", { name: "First profile" })).not.toBeInTheDocument();
+});
+
+it("submits silently filled profile values and retains them for a failed save and retry", async () => {
+  const submitted = {
+    username: "filled_username",
+    display_name: "填充енное имя 😊",
+    bio: "First line\nВторая строка <>& \" ' 😊",
+  };
+  mocks.update.mockRejectedValueOnce(new Error("Offline"));
+  mocks.update.mockResolvedValueOnce({ ...first, ...submitted });
+  const user = userEvent.setup();
+  render(<ProfileView initialProfile={first} />);
+  const username = screen.getByLabelText("Username") as HTMLInputElement;
+  const name = screen.getByLabelText("Display name") as HTMLInputElement;
+  const bio = screen.getByLabelText("Bio") as HTMLTextAreaElement;
+  username.focus();
+  username.value = `  ${submitted.username}  `;
+  name.value = submitted.display_name;
+  bio.value = submitted.bio;
+  await user.click(screen.getByRole("button", { name: "Save profile" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Profile service unavailable.");
+  expect(mocks.update).toHaveBeenCalledWith(submitted);
+  expect(username).toHaveValue(submitted.username);
+  expect(name).toHaveValue(submitted.display_name);
+  expect(bio).toHaveValue(submitted.bio);
+  fireEvent.submit(username.closest("form")!);
+  expect(await screen.findByText("Profile saved.")).toBeVisible();
+  expect(mocks.update).toHaveBeenCalledTimes(2);
+  expect(mocks.update).toHaveBeenLastCalledWith(submitted);
+  expect(screen.getByRole("heading", { name: submitted.display_name })).toBeVisible();
+});
+
+it("focuses a rejected filled field after enabling the profile form and keeps the other entries", async () => {
+  let rejectSave!: (error: Error) => void;
+  mocks.update.mockReturnValueOnce(
+    new Promise((_resolve, reject) => {
+      rejectSave = reject;
+    }),
+  );
+  mocks.fieldValidationMessage.mockImplementation((_caught, field) =>
+    field === "username" ? "This username is unavailable." : null,
+  );
+  render(<ProfileView initialProfile={first} />);
+  const username = screen.getByLabelText("Username") as HTMLInputElement;
+  const name = screen.getByLabelText("Display name") as HTMLInputElement;
+  const bio = screen.getByLabelText("Bio") as HTMLTextAreaElement;
+  username.value = "taken_username";
+  name.value = "Retained name";
+  bio.value = "Retained Unicode bio 😊";
+  const save = screen.getByRole("button", { name: "Save profile" });
+  save.focus();
+  fireEvent.submit(username.closest("form")!);
+  expect(username).toBeDisabled();
+  await act(async () => rejectSave(new Error("Duplicate username")));
+
+  expect(username).toBeEnabled();
+  expect(username).toHaveFocus();
+  expect(username).toHaveAttribute("aria-invalid", "true");
+  expect(username).toHaveAccessibleDescription(
+    "3–30 characters. Letters, numbers, and underscores. This username is unavailable.",
+  );
+  expect(username).toHaveValue("taken_username");
+  expect(name).toHaveValue("Retained name");
+  expect(bio).toHaveValue("Retained Unicode bio 😊");
+  fireEvent.change(username, { target: { value: "available_username" } });
+  expect(username).toHaveAttribute("aria-invalid", "false");
+  expect(screen.queryByText("This username is unavailable.")).not.toBeInTheDocument();
+});
+
+it("accepts and preserves a bio up to the server's 500-character limit", async () => {
+  const existing = { ...first, bio: "Б".repeat(500) };
+  mocks.update.mockResolvedValueOnce(existing);
+  render(<ProfileView initialProfile={existing} />);
+  const bio = screen.getByLabelText("Bio");
+  expect(bio).toHaveAttribute("maxlength", "500");
+  expect(bio).toHaveAccessibleDescription("Optional. Up to 500 characters.");
+  expect(bio).toHaveValue(existing.bio);
+  fireEvent.submit(bio.closest("form")!);
+  expect(await screen.findByText("Profile saved.")).toBeVisible();
+  expect(mocks.update).toHaveBeenCalledWith({
+    username: existing.username,
+    display_name: existing.display_name,
+    bio: existing.bio,
+  });
+  expect(bio).toHaveValue(existing.bio);
 });

@@ -36,7 +36,11 @@ import type {
   UserPrivacySettings,
   UserProfile,
 } from "@/lib/api/types";
-import { AUTH_REQUIRED_EVENT } from "@/lib/auth-events";
+import {
+  AUTH_REQUIRED_EVENT,
+  AUTH_SESSION_OBSERVED_EVENT,
+  type AuthSessionObservation,
+} from "@/lib/auth-events";
 import { reportBrowserError } from "@/lib/browser-errors";
 
 type QueryValue = string | number | boolean | null | undefined;
@@ -59,6 +63,8 @@ const uploadRequestTimeoutMs = 120_000;
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 let csrfBootstrapInFlight: Promise<string | null> | null = null;
+let sessionRequestVersion = 0;
+let lastSessionResponseVersion = 0;
 
 export class ApiClientError extends Error {
   readonly status: number;
@@ -361,12 +367,28 @@ export const api = {
   auth: {
     csrf: () => apiRequest<void>("auth/csrf/", { skipCsrfBootstrap: true }),
     me: (signal?: AbortSignal) => apiRequest<AuthenticatedUser>("auth/me/", { signal }),
-    session: async (observeLogoutEvent?: (event: string | null) => void) => {
+    session: async (observeLogoutEvent?: (event: string | null) => void, signal?: AbortSignal) => {
+      const version = ++sessionRequestVersion;
       const result = await apiRequest<{
         user: AuthenticatedUser | null;
         logout_event?: string | null;
-      }>("auth/session/");
-      observeLogoutEvent?.(result.logout_event ?? null);
+      }>("auth/session/", { signal });
+      if (!signal?.aborted) {
+        observeLogoutEvent?.(result.logout_event ?? null);
+        if (version > lastSessionResponseVersion) {
+          lastSessionResponseVersion = version;
+          if (!observeLogoutEvent && typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent<AuthSessionObservation>(AUTH_SESSION_OBSERVED_EVENT, {
+                detail: {
+                  userId: result.user?.id ?? null,
+                  logoutEvent: result.logout_event ?? null,
+                },
+              }),
+            );
+          }
+        }
+      }
       return result.user;
     },
     register: (input: { email: string; username: string; password: string }) =>

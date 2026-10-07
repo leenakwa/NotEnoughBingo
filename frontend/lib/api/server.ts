@@ -81,13 +81,24 @@ export const getServerProfile = cache(
     (await lookupServerProfile(username, cookieHeader)).data,
 );
 
-export const getServerSession = cache(async (cookieHeader = "") => {
-  const lookup = await serverLookup<{ user: AuthenticatedUser | null }>(
-    "auth/session/",
-    cookieHeader,
-  );
+interface ServerSessionSnapshot {
+  user: AuthenticatedUser | null;
+  logout_event: string | null;
+}
+
+export const getServerSessionSnapshot = cache(async (cookieHeader = "") => {
+  const lookup = await serverLookup<ServerSessionSnapshot>("auth/session/", cookieHeader);
   if (!lookup.data) return null;
-  return lookup.data.user ?? "guest";
+  return {
+    user: lookup.data.user ?? null,
+    logout_event: lookup.data.logout_event ?? null,
+  };
+});
+
+export const getServerSession = cache(async (cookieHeader = "") => {
+  const snapshot = await getServerSessionSnapshot(cookieHeader);
+  if (!snapshot) return null;
+  return snapshot.user ?? "guest";
 });
 
 export const getServerFeed = cache(
