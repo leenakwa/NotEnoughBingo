@@ -111,6 +111,7 @@ class EmailVerification(PublicIdModel, TimeStampedModel):
     pending_username = models.CharField(max_length=150, blank=True)
     pending_display_name = models.CharField(max_length=80, blank=True)
     pending_password_hash = models.CharField(max_length=128, blank=True)
+    delivery = models.JSONField(default=dict, db_default={}, blank=True)
 
     class Meta:
         indexes = [models.Index(fields=("user", "purpose", "expires_at"))]

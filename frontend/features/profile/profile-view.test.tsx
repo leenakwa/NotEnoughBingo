@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 
@@ -47,22 +47,6 @@ vi.mock("@/features/profile/profile-edit-cache", () => ({
   readProfileEdits: () => undefined,
   rememberProfileEdits: vi.fn(),
 }));
-vi.mock("@/lib/use-unsaved-changes-warning", () => ({ useUnsavedChangesWarning: vi.fn() }));
-vi.mock("@/components/ui/language-picker", () => ({
-  LanguagePicker: ({
-    value,
-    onChange,
-    disabled,
-  }: {
-    value: string[];
-    onChange: (value: string[]) => void;
-    disabled: boolean;
-  }) => (
-    <button disabled={disabled} onClick={() => onChange(["ru"])}>
-      Preferred languages: {value.join(",")}
-    </button>
-  ),
-}));
 const first: OwnUserProfile = {
   id: "account-1",
   username: "first",
@@ -92,6 +76,7 @@ const next = {
   privacy: { ...first.privacy, show_bio: false },
 };
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.resetAllMocks();
   mocks.get.mockResolvedValue(first);
   mocks.me.mockResolvedValue(first);
@@ -150,7 +135,7 @@ it.each(["profile", "privacy", "languages"] as const)(
       fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
     } else if (action === "privacy") fireEvent.click(screen.getByLabelText("Show bio"));
     else {
-      fireEvent.click(screen.getByRole("button", { name: "Preferred languages: en" }));
+      fireEvent.click(screen.getByRole("checkbox", { name: "Russian" }));
       fireEvent.click(screen.getByRole("button", { name: "Save languages" }));
     }
     act(() => window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT)));
@@ -158,7 +143,8 @@ it.each(["profile", "privacy", "languages"] as const)(
     await act(async () => resolveAction(action === "privacy" ? first.privacy : first));
     expect(screen.getByRole("heading", { name: "Next profile" })).toBeVisible();
     expect(screen.getByLabelText("Show bio")).not.toBeChecked();
-    expect(screen.getByRole("button", { name: "Preferred languages: de" })).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: "German" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "German" })).toBeEnabled();
     expect(screen.queryByText(/saved\./)).not.toBeInTheDocument();
     expect(mocks.notify).not.toHaveBeenCalled();
   },
@@ -273,4 +259,145 @@ it("accepts and preserves a bio up to the server's 500-character limit", async (
     bio: existing.bio,
   });
   expect(bio).toHaveValue(existing.bio);
+});
+
+it("shows the supplied own-profile language preferences without an extra required load", () => {
+  render(<ProfileView initialProfile={first} />);
+  expect(screen.getByRole("checkbox", { name: "English" })).toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Russian" })).not.toBeChecked();
+  expect(mocks.me).not.toHaveBeenCalled();
+  const unload = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(unload);
+  expect(unload.defaultPrevented).toBe(false);
+});
+
+it.each(["selected", "all"] as const)(
+  "retains %s language choices after a failed save, protects canceled navigation and retries",
+  async (choice) => {
+    let rejectSave!: (error: Error) => void;
+    const selectedLanguages = choice === "selected" ? ["en", "ru"] : [];
+    mocks.update.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    mocks.update.mockResolvedValueOnce({ ...first, preferred_languages: selectedLanguages });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const user = userEvent.setup();
+    render(
+      <>
+        <ProfileView />
+        <a href="/discover">Discover</a>
+      </>,
+    );
+    await screen.findByRole("heading", { name: "First profile" });
+    const english = screen.getByRole("checkbox", { name: "English" });
+    const russian = screen.getByRole("checkbox", { name: "Russian" });
+    const group = screen.getByRole("group", { name: "Preferred languages" });
+    const card = screen
+      .getByRole("heading", { name: "Bingo languages" })
+      .closest(".settings-card")!;
+    const checkbox = choice === "selected" ? russian : english;
+    checkbox.focus();
+    await user.keyboard(" ");
+    expect(english).toHaveProperty("checked", choice === "selected");
+    expect(russian).toHaveProperty("checked", choice === "selected");
+
+    const lastLanguage = within(group).getAllByRole("checkbox").at(-1);
+    if (!lastLanguage) throw new Error("The language chooser must contain a checkbox.");
+    lastLanguage.focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Save languages" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(within(card as HTMLElement).getByRole("status")).toHaveTextContent("Saving changes…");
+    expect(english).toBeDisabled();
+    expect(russian).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: "German" }));
+    await user.keyboard("{Enter}");
+    expect(mocks.update).toHaveBeenCalledOnce();
+    expect(mocks.update).toHaveBeenCalledWith({ preferred_languages: selectedLanguages });
+
+    await act(async () => rejectSave(new Error("Offline")));
+    expect(within(card as HTMLElement).getByRole("alert")).toHaveTextContent(
+      "Profile service unavailable.",
+    );
+    expect(english).toBeEnabled();
+    expect(english).toHaveProperty("checked", choice === "selected");
+    expect(russian).toHaveProperty("checked", choice === "selected");
+    expect(screen.getByRole("checkbox", { name: "German" })).not.toBeChecked();
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(fireEvent.click(screen.getByRole("link", { name: "Discover" }))).toBe(false);
+    expect(confirm).toHaveBeenCalledWith("Your profile changes have not been saved. Leave anyway?");
+    expect(screen.getByRole("heading", { name: "First profile" })).toBeVisible();
+    const dirtyUnload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(dirtyUnload);
+    expect(dirtyUnload.defaultPrevented).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Save languages" }));
+    expect(within(card as HTMLElement).getByRole("status")).toHaveTextContent(
+      "Bingo languages saved.",
+    );
+    expect(within(card as HTMLElement).queryByRole("alert")).not.toBeInTheDocument();
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+    expect(mocks.update).toHaveBeenLastCalledWith({ preferred_languages: selectedLanguages });
+    const savedUnload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(savedUnload);
+    expect(savedUnload.defaultPrevented).toBe(false);
+  },
+);
+
+it("rolls back a failed keyboard privacy change with scoped feedback and allows retry", async () => {
+  let rejectSave!: (error: Error) => void;
+  const changedPrivacy = { ...first.privacy, show_bio: false };
+  mocks.updatePrivacy.mockReturnValueOnce(
+    new Promise((_resolve, reject) => {
+      rejectSave = reject;
+    }),
+  );
+  mocks.updatePrivacy.mockResolvedValueOnce(changedPrivacy);
+  const user = userEvent.setup();
+  render(
+    <>
+      <ProfileView />
+      <button type="button">After settings</button>
+    </>,
+  );
+  await screen.findByRole("heading", { name: "First profile" });
+  const name = screen.getByLabelText("Display name");
+  fireEvent.change(name, { target: { value: "Unsaved name" } });
+  const checkbox = screen.getByRole("checkbox", { name: "Show bio" });
+  const card = screen.getByRole("heading", { name: "Privacy" }).closest(".settings-card")!;
+  checkbox.focus();
+  await user.keyboard(" ");
+  expect(checkbox).not.toBeChecked();
+  expect(checkbox).toBeDisabled();
+  expect(within(card as HTMLElement).getByRole("status")).toHaveTextContent(
+    "Saving privacy settings…",
+  );
+  expect(screen.getByRole("checkbox", { name: "Show followers" })).toBeDisabled();
+  await user.keyboard(" ");
+  await user.tab();
+  expect(screen.getByRole("button", { name: "After settings" })).toHaveFocus();
+  expect(mocks.updatePrivacy).toHaveBeenCalledOnce();
+  expect(mocks.updatePrivacy).toHaveBeenCalledWith(changedPrivacy);
+
+  await act(async () => rejectSave(new Error("Offline")));
+  expect(checkbox).toBeChecked();
+  expect(checkbox).toBeEnabled();
+  expect(screen.getByRole("checkbox", { name: "Show followers" })).toBeChecked();
+  expect(name).toHaveValue("Unsaved name");
+  expect(within(card as HTMLElement).getByRole("alert")).toHaveTextContent(
+    "Profile service unavailable.",
+  );
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+
+  checkbox.focus();
+  await user.keyboard(" ");
+  expect(await within(card as HTMLElement).findByRole("status")).toHaveTextContent(
+    "Privacy settings saved.",
+  );
+  expect(checkbox).not.toBeChecked();
+  expect(name).toHaveValue("Unsaved name");
+  expect(within(card as HTMLElement).queryByRole("alert")).not.toBeInTheDocument();
+  expect(mocks.updatePrivacy).toHaveBeenCalledTimes(2);
 });

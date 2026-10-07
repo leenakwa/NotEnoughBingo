@@ -16,6 +16,12 @@ from apps.bingos.validators import normalize_draft_document
 from apps.media_assets.models import MediaAsset
 from apps.media_assets.serializers import MediaAssetSerializer
 
+PUBLIC_SITEMAP_BUCKET_SIZE = 10_000
+PUBLIC_SITEMAP_MAX_PK = 2**63 - 1
+PUBLIC_SITEMAP_MAX_PART = (PUBLIC_SITEMAP_MAX_PK - 1) // PUBLIC_SITEMAP_BUCKET_SIZE
+# The root XML index also includes one static sitemap.
+PUBLIC_SITEMAP_MAX_PARTS = 49_999
+
 
 class TagSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(source="public_id", read_only=True)
@@ -55,6 +61,30 @@ class PublicSitemapEntrySerializer(serializers.Serializer):
 class PublicSitemapSerializer(serializers.Serializer):
     results = PublicSitemapEntrySerializer(many=True, read_only=True)
     truncated = serializers.BooleanField(read_only=True)
+
+
+class PublicSitemapQuerySerializer(serializers.Serializer):
+    part = serializers.RegexField(
+        r"^(?:0|[1-9][0-9]{0,14})\Z",
+        required=False,
+        trim_whitespace=False,
+        max_length=15,
+        help_text=(
+            f"Canonical decimal primary-key bucket from 0 through {PUBLIC_SITEMAP_MAX_PART}; "
+            "each bucket spans 10,000 IDs. Omit for the legacy, capped projection."
+        ),
+    )
+
+    def validate_part(self, value: str) -> str:
+        if int(value) > PUBLIC_SITEMAP_MAX_PART:
+            raise serializers.ValidationError("Part exceeds the supported primary-key range.")
+        return value
+
+
+class PublicSitemapIndexSerializer(serializers.Serializer):
+    parts = serializers.ListField(
+        child=serializers.CharField(), max_length=PUBLIC_SITEMAP_MAX_PARTS, read_only=True
+    )
 
 
 class RevisionTagSerializer(serializers.Serializer):

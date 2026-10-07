@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 from datetime import UTC, timedelta
 
@@ -11,7 +12,10 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
+from django.utils.dateparse import parse_datetime
 
+from apps.accounts.email_tokens import recover_verification_token
 from apps.accounts.models import (
     AccountDeletionRequest,
     EmailVerification,
@@ -38,6 +42,14 @@ def send_verification_email(verification_id: int, raw_token: str) -> None:
     )
     if not verification or verification.used_at or verification.expires_at <= timezone.now():
         return
+    if not constant_time_compare(
+        hashlib.sha256(raw_token.encode()).hexdigest(), verification.token_hash
+    ):
+        return
+    _send_verification_mail(verification, raw_token)
+
+
+def _send_verification_mail(verification: EmailVerification, raw_token: str) -> None:
     changing_email = verification.purpose == EmailVerification.Purpose.CHANGE_EMAIL
     route = "confirm-email-change" if changing_email else "verify-email"
     url = f"{settings.FRONTEND_URL}/{route}?token={raw_token}"
@@ -57,7 +69,7 @@ def send_verification_email(verification_id: int, raw_token: str) -> None:
         "Only continue if you made that request.\n\n"
     )
     expires_at = verification.expires_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC")
-    send_mail(
+    sent = send_mail(
         subject,
         body
         + f"This link expires at {expires_at}:\n\n{url}\n\n"
@@ -66,6 +78,83 @@ def send_verification_email(verification_id: int, raw_token: str) -> None:
         [verification.email],
         fail_silently=False,
     )
+    if sent != 1:
+        raise OSError("Verification email was not accepted by the mail transport.")
+
+
+def _delivery_failure(intent: dict, error_code: str) -> dict:
+    attempts = int(intent.get("attempts", 0)) + 1
+    delay = min(60 * 2 ** min(attempts, 6), 3600)
+    return {
+        **intent,
+        "attempts": attempts,
+        "last_error_code": error_code,
+        "next_attempt_at": (timezone.now() + timedelta(seconds=delay)).isoformat(),
+    }
+
+
+def _deliver_verification_notification(verification_id: int) -> bool:
+    with transaction.atomic():
+        verification = (
+            EmailVerification.objects.select_for_update(skip_locked=True)
+            .filter(pk=verification_id, delivery__status="pending")
+            .first()
+        )
+        if verification is None:
+            return False
+        now = timezone.now()
+        intent = dict(verification.delivery)
+        if intent.get("next_attempt_at", "") > now.isoformat():
+            return False
+        # These reads do not lock User while the verification row is held.
+        # Issuers/confirmers serialize invalidation on this verification row.
+        user = User.objects.filter(pk=verification.user_id).first()
+        usable = bool(user and not user.deleted_at and not user.suspended_at)
+        if user and verification.purpose == EmailVerification.Purpose.VERIFY_EMAIL:
+            usable = usable and user.email == verification.email and user.email_verified_at is None
+        elif user and verification.purpose == EmailVerification.Purpose.CHANGE_EMAIL:
+            usable = usable and user.can_create_content
+        else:
+            usable = False
+        if verification.used_at or verification.expires_at <= now or not usable:
+            verification.delivery = {**intent, "status": "cancelled"}
+            verification.save(update_fields=("delivery", "updated_at"))
+            return False
+        token = recover_verification_token(verification)
+        if token is None:
+            # A missing rotation key or legacy digest cannot be reconstructed.
+            # Preserve the original link and report a deferred delivery.
+            verification.delivery = _delivery_failure(intent, "token_key_unavailable")
+            verification.save(update_fields=("delivery", "updated_at"))
+            logger.warning("account.verification_delivery_deferred", extra={"outcome": "pending"})
+            return False
+        _send_verification_mail(verification, token)
+        verification.delivery = {**intent, "status": "sent", "sent_at": now.isoformat()}
+        verification.save(update_fields=("delivery", "updated_at"))
+        return True
+
+
+@shared_task(ignore_result=True)
+def send_verification_notification(verification_id: int) -> bool:
+    try:
+        return _deliver_verification_notification(verification_id)
+    except OSError as exc:
+        with transaction.atomic():
+            verification = (
+                EmailVerification.objects.select_for_update(skip_locked=True)
+                .filter(pk=verification_id, delivery__status="pending")
+                .first()
+            )
+            if verification is not None:
+                verification.delivery = _delivery_failure(
+                    dict(verification.delivery), "mail_transport_failed"
+                )
+                verification.save(update_fields=("delivery", "updated_at"))
+        logger.warning(
+            "account.verification_delivery_failed",
+            extra={"outcome": "pending", "exception_type": type(exc).__name__},
+        )
+        return False
 
 
 @shared_task(
@@ -129,6 +218,214 @@ def send_critical_security_email(user_id: int, subject: str, body: str) -> None:
             [email],
             fail_silently=False,
         )
+
+
+PASSWORD_SECURITY_MESSAGES = {
+    SecurityEvent.EventType.PASSWORD_RESET: (
+        "Your password was reset",
+        "Your Not Enough Bingo password was reset. "
+        "Contact support immediately if this was not you.",
+    ),
+    SecurityEvent.EventType.PASSWORD_CHANGED: (
+        "Your password changed",
+        "Your Not Enough Bingo password changed. Reset it immediately if this was not you.",
+    ),
+}
+
+ACCOUNT_SECURITY_MESSAGES = {
+    **PASSWORD_SECURITY_MESSAGES,
+    SecurityEvent.EventType.EMAIL_CHANGED: (
+        "Your email address changed",
+        "Your Not Enough Bingo email address changed. "
+        "Contact support immediately if this was not you.",
+    ),
+    SecurityEvent.EventType.ACCOUNT_DELETION_REQUESTED: ("Account deletion requested", ""),
+}
+
+
+def _security_notification_message(event: SecurityEvent, intent_key: str, intent: dict):
+    if intent_key == "previous_email_notice":
+        if event.event_type != SecurityEvent.EventType.EMAIL_CHANGED:
+            return None
+        return (
+            "Your Not Enough Bingo email address changed",
+            "The email address on your Not Enough Bingo account changed. "
+            "Contact support immediately if this was not you.",
+        )
+    if event.event_type == SecurityEvent.EventType.ACCOUNT_DELETION_REQUESTED:
+        # No request/user lock is acquired while holding the event row. Cancellation
+        # updates this same event before its transaction commits; completion scrubs it.
+        deadline = parse_datetime(intent.get("scheduled_for", ""))
+        if (
+            not deadline
+            or not AccountDeletionRequest.objects.filter(
+                pk=intent.get("deletion_request_id"),
+                user_id=event.user_id,
+                status=AccountDeletionRequest.Status.SCHEDULED,
+                scheduled_for=deadline,
+            ).exists()
+        ):
+            return None
+        deadline_label = deadline.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC")
+        return (
+            "Account deletion requested",
+            f"Your account is scheduled for deletion at {deadline_label}. "
+            "Sign in and cancel if this was not you.",
+        )
+    return ACCOUNT_SECURITY_MESSAGES.get(event.event_type)
+
+
+def _deliver_security_notification(event_id: int, intent_key: str = "security_email") -> bool:
+    """Serialize normal delivery; a crash after SMTP acceptance may send twice."""
+    with transaction.atomic():
+        event = (
+            SecurityEvent.objects.select_for_update(skip_locked=True)
+            .filter(
+                pk=event_id,
+                event_type__in=ACCOUNT_SECURITY_MESSAGES,
+                **{f"metadata__{intent_key}__status": "pending"},
+            )
+            .first()
+        )
+        if event is None:
+            return False
+        intent = dict(event.metadata[intent_key])
+        now = timezone.now()
+        if intent.get("next_attempt_at", "") > now.isoformat():
+            return False
+        email = intent.get("recipient")
+        message = _security_notification_message(event, intent_key, intent)
+        if not email or message is None:
+            intent["status"] = "cancelled"
+        else:
+            subject, body = message
+            sent = send_mail(
+                subject,
+                f"{body}\n\nSupport: {settings.FRONTEND_URL}/support",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            if sent != 1:
+                raise OSError("Security notification was not accepted by the mail transport.")
+            intent.update(status="sent", sent_at=now.isoformat())
+        event.metadata = {**event.metadata, intent_key: intent}
+        event.save(update_fields=("metadata", "updated_at"))
+        return intent["status"] == "sent"
+
+
+def _attempt_security_notification(event_id: int, intent_key: str) -> bool:
+    try:
+        return _deliver_security_notification(event_id, intent_key)
+    except OSError as exc:
+        with transaction.atomic():
+            event = (
+                SecurityEvent.objects.select_for_update(skip_locked=True)
+                .filter(pk=event_id, **{f"metadata__{intent_key}__status": "pending"})
+                .first()
+            )
+            if event is not None:
+                intent = _delivery_failure(
+                    dict(event.metadata[intent_key]), "mail_transport_failed"
+                )
+                event.metadata = {**event.metadata, intent_key: intent}
+                event.save(update_fields=("metadata", "updated_at"))
+        logger.warning(
+            "credential.security_email_delivery_failed",
+            extra={"outcome": "pending", "exception_type": type(exc).__name__},
+        )
+        return False
+
+
+@shared_task(ignore_result=True)
+def send_password_security_notification(event_id: int) -> bool:
+    return _attempt_security_notification(event_id, "security_email")
+
+
+@shared_task(ignore_result=True)
+def send_account_security_notifications(event_id: int) -> int:
+    delivered = 0
+    for intent_key in ("security_email", "previous_email_notice"):
+        try:
+            delivered += int(_attempt_security_notification(event_id, intent_key))
+        except Exception as exc:
+            # Each recipient has its own commit and retry state. An unavailable
+            # recipient or failed acknowledgement must not suppress the other notice.
+            logger.warning(
+                "account.security_email_delivery_failed",
+                extra={"outcome": "pending", "exception_type": type(exc).__name__},
+            )
+    return delivered
+
+
+@periodic_task
+def recover_account_email_notifications() -> int:
+    now = timezone.now().isoformat()
+    verifications = (
+        EmailVerification.objects.filter(delivery__status="pending")
+        .filter(Q(delivery__next_attempt_at__isnull=True) | Q(delivery__next_attempt_at__lte=now))
+        .order_by("created_at", "pk")
+        .values_list("pk", flat=True)[:10]
+    )
+    due_notices = Q()
+    for intent_key in ("security_email", "previous_email_notice"):
+        due_notices |= Q(**{f"metadata__{intent_key}__status": "pending"}) & (
+            Q(**{f"metadata__{intent_key}__next_attempt_at__isnull": True})
+            | Q(**{f"metadata__{intent_key}__next_attempt_at__lte": now})
+        )
+    events = (
+        SecurityEvent.objects.filter(
+            event_type__in=(
+                SecurityEvent.EventType.EMAIL_CHANGED,
+                SecurityEvent.EventType.ACCOUNT_DELETION_REQUESTED,
+            )
+        )
+        .filter(due_notices)
+        .order_by("created_at", "pk")
+        .values_list("pk", flat=True)[:10]
+    )
+    delivered = 0
+    # At most ten verification rows and ten events (two notices each) per sweep.
+    for ids, sender in (
+        (list(verifications), send_verification_notification),
+        (list(events), send_account_security_notifications),
+    ):
+        for record_id in ids:
+            try:
+                delivered += int(sender.run(record_id))
+            except Exception as exc:
+                logger.warning(
+                    "account.email_recovery_failed",
+                    extra={"outcome": "pending", "exception_type": type(exc).__name__},
+                )
+    return delivered
+
+
+@periodic_task
+def recover_password_security_notifications() -> int:
+    # A sweep cannot exceed 25 transport attempts, each bounded by EMAIL_TIMEOUT.
+    pending = (
+        SecurityEvent.objects.filter(
+            event_type__in=PASSWORD_SECURITY_MESSAGES,
+            metadata__security_email__status="pending",
+        )
+        .filter(
+            Q(metadata__security_email__next_attempt_at__isnull=True)
+            | Q(metadata__security_email__next_attempt_at__lte=timezone.now().isoformat())
+        )
+        .order_by("created_at", "pk")
+        .values_list("pk", flat=True)[:25]
+    )
+    delivered = 0
+    for event_id in list(pending):
+        try:
+            delivered += int(send_password_security_notification.run(event_id))
+        except Exception as exc:
+            logger.warning(
+                "credential.security_email_recovery_failed",
+                extra={"outcome": "pending", "exception_type": type(exc).__name__},
+            )
+    return delivered
 
 
 def _process_account_deletion_request(request_id: int) -> bool:

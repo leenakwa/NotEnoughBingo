@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Prefetch
@@ -48,19 +47,20 @@ from apps.accounts.serializers import (
 from apps.accounts.services import (
     begin_registration,
     cancel_account_deletion,
+    change_password,
     confirm_email_change,
     create_authenticated_session,
     destroy_authenticated_session,
     request_email_change,
     resend_email_verification,
+    reset_password,
     revoke_session,
     schedule_account_deletion,
     validate_account_can_authenticate,
     verify_email,
 )
 from apps.accounts.session_events import read_logout_event
-from apps.accounts.session_management import invalidate_session_keys
-from apps.accounts.tasks import send_critical_security_email, send_password_reset_email
+from apps.accounts.tasks import send_password_reset_email
 from apps.analytics.models import InteractionEvent
 from apps.analytics.services import record_server_event
 from apps.bingos.models import Bingo, DraftMediaAsset
@@ -227,33 +227,17 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         try:
             user_id = force_str(urlsafe_base64_decode(serializer.validated_data["uid"]))
-            user = User.objects.get(pk=user_id, is_active=True)
-        except (ValueError, TypeError, OverflowError, User.DoesNotExist) as exc:
+        except (ValueError, TypeError, OverflowError) as exc:
             raise ValidationError({"token": "The reset link is invalid or expired."}) from exc
-        if not default_token_generator.check_token(user, serializer.validated_data["token"]):
-            raise ValidationError({"token": "The reset link is invalid or expired."})
-        user.set_password(serializer.validated_data["new_password"])
-        user.save(update_fields=("password",))
-        active_session_keys = list(
-            SessionMetadata.objects.filter(
-                user=user,
-                revoked_at__isnull=True,
-            ).values_list("session_key", flat=True)
-        )
-        SessionMetadata.objects.filter(
-            user=user,
-            revoked_at__isnull=True,
-        ).update(revoked_at=timezone.now())
-        invalidate_session_keys(active_session_keys)
-        SecurityEvent.objects.create(user=user, event_type=SecurityEvent.EventType.PASSWORD_RESET)
-        send_critical_security_email.delay(
-            user.pk,
-            "Your password was reset",
-            (
-                "Your Not Enough Bingo password was reset. "
-                "Contact support immediately if this was not you."
-            ),
-        )
+        try:
+            reset_password(
+                user_id=user_id,
+                token=serializer.validated_data["token"],
+                new_password=serializer.validated_data["new_password"],
+                request=request._request,
+            )
+        except DjangoValidationError as exc:
+            raise ValidationError(exc.message_dict) from exc
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -264,36 +248,11 @@ class PasswordChangeView(APIView):
     def post(self, request):
         serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        old_session_key = request.session.session_key
-        request.user.set_password(serializer.validated_data["new_password"])
-        request.user.save(update_fields=("password",))
-        update_session_auth_hash(request, request.user)
-        new_session_key = request.session.session_key
-        if old_session_key and new_session_key and old_session_key != new_session_key:
-            SessionMetadata.objects.filter(
-                user=request.user,
-                session_key=old_session_key,
-            ).update(session_key=new_session_key, last_seen_at=timezone.now())
-        other_session_keys = list(
-            SessionMetadata.objects.filter(
-                user=request.user,
-                revoked_at__isnull=True,
-            )
-            .exclude(session_key=new_session_key)
-            .values_list("session_key", flat=True)
-        )
-        SessionMetadata.objects.filter(user=request.user, revoked_at__isnull=True).exclude(
-            session_key=new_session_key
-        ).update(revoked_at=timezone.now())
-        invalidate_session_keys(other_session_keys)
-        SecurityEvent.objects.create(
-            user=request.user, event_type=SecurityEvent.EventType.PASSWORD_CHANGED
-        )
-        send_critical_security_email.delay(
-            request.user.pk,
-            "Your password changed",
-            "Your Not Enough Bingo password changed. Reset it immediately if this was not you.",
-        )
+        try:
+            change_password(request, **serializer.validated_data)
+        except DjangoValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            raise ValidationError(detail) from exc
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -308,10 +267,15 @@ class EmailChangeRequestView(APIView):
         serializer.is_valid(raise_exception=True)
         try:
             request_email_change(
-                user=request.user, new_email=serializer.validated_data["new_email"]
+                user=request.user,
+                new_email=serializer.validated_data["new_email"],
+                current_password=serializer.validated_data["current_password"],
             )
         except DjangoValidationError as exc:
-            raise ValidationError({"new_email": exc.messages}) from exc
+            detail = (
+                exc.message_dict if hasattr(exc, "message_dict") else {"new_email": exc.messages}
+            )
+            raise ValidationError(detail) from exc
         return Response(status=status.HTTP_202_ACCEPTED)
 
 
@@ -732,7 +696,12 @@ class AccountDeletionView(APIView):
     def post(self, request):
         serializer = AccountDeletionSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        deletion = schedule_account_deletion(request.user)
+        try:
+            deletion = schedule_account_deletion(
+                request.user, password=serializer.validated_data["password"]
+            )
+        except DjangoValidationError as exc:
+            raise ValidationError(exc.message_dict) from exc
         return Response(
             {
                 "request_id": str(deletion.public_id),

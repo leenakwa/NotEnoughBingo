@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import io
 from datetime import timedelta
+from secrets import token_urlsafe
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -21,6 +22,7 @@ from PIL import Image
 from rest_framework.test import APIClient, APIRequestFactory
 from rest_framework.throttling import AnonRateThrottle
 
+from apps.accounts.email_tokens import derive_verification_token
 from apps.accounts.models import (
     AccountDeletionRequest,
     EmailVerification,
@@ -166,18 +168,10 @@ def test_pending_registration_cannot_log_in_and_each_link_owns_its_credentials(
     csrf_request,
 ) -> None:
     email = "pending-owner@example.test"
-    first_token = "first-registration-token-with-at-least-thirty-two-bytes"  # noqa: S105
-    second_token = "second-registration-token-with-at-least-thirty-two-bytes"  # noqa: S105
     first_password = "First-Registration-Password-42"  # noqa: S105
     second_password = "Second-Registration-Password-84"  # noqa: S105
 
-    with (
-        patch(
-            "apps.accounts.services.secrets.token_urlsafe",
-            side_effect=[first_token, second_token],
-        ),
-        patch("apps.accounts.services.send_verification_email.delay"),
-    ):
+    with patch("apps.accounts.services.send_verification_notification.delay"):
         first_registration = RegisterView.as_view()(
             csrf_request(
                 "post",
@@ -190,6 +184,9 @@ def test_pending_registration_cannot_log_in_and_each_link_owns_its_credentials(
                 },
             )
         )
+        first_token = derive_verification_token(
+            EmailVerification.objects.get(pending_username="first_identity")
+        )
         second_registration = RegisterView.as_view()(
             csrf_request(
                 "post",
@@ -201,6 +198,9 @@ def test_pending_registration_cannot_log_in_and_each_link_owns_its_credentials(
                     "password": second_password,
                 },
             )
+        )
+        second_token = derive_verification_token(
+            EmailVerification.objects.get(pending_username="second_identity")
         )
 
     assert first_registration.status_code == second_registration.status_code == 202
@@ -286,7 +286,7 @@ def test_scheduled_deletion_revokes_sessions_blocks_writes_and_scrubs_identity(
         expires_at=timezone.now() + timedelta(days=1),
     )
 
-    deletion = schedule_account_deletion(user)
+    deletion = schedule_account_deletion(user, password=password)
 
     user.refresh_from_db()
     session.refresh_from_db()
@@ -348,9 +348,10 @@ def test_scheduled_deletion_revokes_sessions_blocks_writes_and_scrubs_identity(
 
 
 def test_repeated_account_deletion_request_reuses_schedule(verified_user_factory) -> None:
-    user = verified_user_factory()
-    first = schedule_account_deletion(user)
-    second = schedule_account_deletion(user)
+    password = token_urlsafe(24)
+    user = verified_user_factory(password=password)
+    first = schedule_account_deletion(user, password=password)
+    second = schedule_account_deletion(user, password=password)
 
     assert second.pk == first.pk
     assert second.scheduled_for == first.scheduled_for
@@ -377,7 +378,7 @@ def test_pending_deletion_is_visible_after_reauthentication_and_can_be_cancelled
         email="keep-this-identity@example.test",
         password=password,
     )
-    deletion = schedule_account_deletion(user)
+    deletion = schedule_account_deletion(user, password=password)
     client = _csrf_api_client()
 
     login = client.post(
@@ -425,7 +426,7 @@ def test_account_deletion_cannot_be_cancelled_after_processing_starts(
         email=f"deletion-race-{request_status}@example.test",
         password=password,
     )
-    deletion = schedule_account_deletion(user)
+    deletion = schedule_account_deletion(user, password=password)
     user.refresh_from_db()
     requested_at = user.deletion_requested_at
     scheduled_for = user.deletion_scheduled_for
@@ -456,16 +457,19 @@ def test_account_deletion_cannot_be_cancelled_after_processing_starts(
 def test_deletion_worker_marks_one_failure_safely_and_continues_remaining_requests(
     verified_user_factory,
 ) -> None:
+    password = token_urlsafe(24)
     failed_user = verified_user_factory(
         username="failed_deletion",
         email="failed-deletion@example.test",
+        password=password,
     )
     completed_user = verified_user_factory(
         username="completed_deletion",
         email="completed-deletion@example.test",
+        password=password,
     )
-    failed = schedule_account_deletion(failed_user)
-    completed = schedule_account_deletion(completed_user)
+    failed = schedule_account_deletion(failed_user, password=password)
+    completed = schedule_account_deletion(completed_user, password=password)
     AccountDeletionRequest.objects.filter(pk__in=(failed.pk, completed.pk)).update(
         scheduled_for=timezone.now() - timedelta(seconds=1),
     )

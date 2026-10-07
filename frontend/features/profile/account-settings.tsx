@@ -786,7 +786,7 @@ export function AccountSettings({
                     disabled={Boolean(pending)}
                     onClick={() => void revokeSession(session)}
                   >
-                    Sign out
+                    {pending === `session-${session.id}` ? "Signing out…" : "Sign out"}
                   </button>
                 </li>
               ))}
@@ -794,7 +794,13 @@ export function AccountSettings({
           ) : sessions ? (
             <p>No active sessions were returned.</p>
           ) : null}
-          {actionFeedback("session")}
+          {pending.startsWith("session-") ? (
+            <p className="form-message" role="status">
+              Signing out session…
+            </p>
+          ) : (
+            actionFeedback("session")
+          )}
         </div>
 
         <div className="settings-card">
@@ -823,7 +829,13 @@ export function AccountSettings({
               ))}
             </div>
           ) : null}
-          {actionFeedback("preference")}
+          {pending.startsWith("preference-") ? (
+            <p className="form-message" role="status">
+              Saving notification preferences…
+            </p>
+          ) : (
+            actionFeedback("preference")
+          )}
         </div>
 
         <div className="settings-card">
@@ -866,7 +878,7 @@ export function AccountSettings({
                 disabled={Boolean(pending)}
                 onClick={() => void cancelDeletion()}
               >
-                Cancel deletion
+                {pending === "deletion" ? "Cancelling deletion…" : "Cancel deletion"}
               </button>
             </>
           ) : (
@@ -888,7 +900,13 @@ export function AccountSettings({
               </button>
             </>
           )}
-          {actionFeedback("deletion")}
+          {pending === "deletion" && deletionScheduledFor ? (
+            <p className="form-message" role="status">
+              Cancelling account deletion…
+            </p>
+          ) : (
+            actionFeedback("deletion")
+          )}
         </form>
       </div>
     </section>

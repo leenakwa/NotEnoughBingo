@@ -173,6 +173,10 @@ describe("AccountSettings deletion grace period", () => {
       const toggles = within(form).getAllByRole("button", { name: "Show" });
       fireEvent.submit(form);
 
+      if (action === "deletion") {
+        expect(within(form).getByRole("button", { name: "Scheduling…" })).toBeDisabled();
+        expect(within(form).queryByText("Cancelling account deletion…")).not.toBeInTheDocument();
+      }
       for (const { input, value } of fields) {
         expect(input).toBeDisabled();
         await user.type(input, "late typing");
@@ -353,6 +357,148 @@ describe("AccountSettings deletion grace period", () => {
     await waitFor(() => expect(mocks.cancelAccountDeletion).toHaveBeenCalledOnce());
     expect(screen.getByRole("button", { name: "Schedule account deletion" })).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent("Account deletion cancelled.");
+  });
+
+  it.each([
+    ["another device", false],
+    ["this device", true],
+  ] as const)(
+    "shows scoped progress and allows retry after signing out %s fails",
+    async (_device, current) => {
+      let rejectSignOut!: (reason: unknown) => void;
+      const targetId = "44444444-4444-4444-8444-444444444444";
+      mocks.revokeSession
+        .mockReset()
+        .mockReturnValueOnce(
+          new Promise((_resolve, reject) => {
+            rejectSignOut = reject;
+          }),
+        )
+        .mockResolvedValueOnce(undefined);
+      mocks.sessions.mockResolvedValue({
+        count: 2,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: targetId,
+            current,
+            user_agent: "Target browser",
+            last_seen_at: "2026-10-01T00:00:00Z",
+          },
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            current: !current,
+            user_agent: "Other browser",
+            last_seen_at: "2026-10-01T00:00:00Z",
+          },
+        ],
+      });
+      mocks.me.mockResolvedValue({
+        ...currentUser,
+        deletion_scheduled_for: "2026-11-01T00:00:00Z",
+      });
+      const user = userEvent.setup();
+      render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+      const targetRow = (await screen.findByText("Target browser")).closest("li")!;
+      const otherRow = screen.getByText("Other browser").closest("li")!;
+      const sessionsCard = targetRow.closest(".settings-card");
+      if (!(sessionsCard instanceof HTMLDivElement)) {
+        throw new Error("Active sessions must have their own settings card.");
+      }
+      const cancelDeletion = await screen.findByRole("button", { name: "Cancel deletion" });
+      const deletionForm = cancelDeletion.closest("form")!;
+      const { fields } = fillCredentialForm("email");
+
+      await user.click(within(targetRow).getByRole("button", { name: "Sign out" }));
+
+      const signingOut = within(targetRow).getByRole("button", { name: "Signing out…" });
+      expect(signingOut).toBeDisabled();
+      expect(within(otherRow).getByRole("button", { name: "Sign out" })).toBeDisabled();
+      expect(within(sessionsCard).getByRole("status")).toHaveTextContent("Signing out session…");
+      expect(cancelDeletion).toHaveAccessibleName("Cancel deletion");
+      expect(within(deletionForm).queryByRole("status")).not.toBeInTheDocument();
+      await user.click(signingOut);
+      await user.click(within(otherRow).getByRole("button", { name: "Sign out" }));
+      expect(mocks.revokeSession).toHaveBeenCalledOnce();
+      expect(mocks.revokeSession).toHaveBeenCalledWith(targetId);
+
+      await act(async () => rejectSignOut(new Error("Session could not be signed out.")));
+
+      expect(within(sessionsCard).getByRole("alert")).toHaveTextContent(
+        "Session could not be signed out.",
+      );
+      expect(within(sessionsCard).queryByRole("status")).not.toBeInTheDocument();
+      expect(within(targetRow).getByRole("button", { name: "Sign out" })).toBeEnabled();
+      expect(within(otherRow).getByRole("button", { name: "Sign out" })).toBeEnabled();
+      expect(within(deletionForm).queryByRole("alert")).not.toBeInTheDocument();
+      for (const { input, value } of fields) expect(input).toHaveValue(value);
+      expect(mocks.notifySignedOut).not.toHaveBeenCalled();
+
+      await user.click(within(targetRow).getByRole("button", { name: "Sign out" }));
+
+      expect(mocks.revokeSession).toHaveBeenCalledTimes(2);
+      if (current) {
+        expect(mocks.notifySignedOut).toHaveBeenCalledOnce();
+        expect(mocks.replace).toHaveBeenCalledWith("/login");
+        expect(mocks.refresh).toHaveBeenCalledOnce();
+      } else {
+        expect(screen.queryByText("Target browser")).not.toBeInTheDocument();
+        expect(screen.getByText("Other browser")).toBeVisible();
+        expect(within(sessionsCard).getByRole("status")).toHaveTextContent("Session signed out.");
+        for (const { input, value } of fields) expect(input).toHaveValue(value);
+        expect(mocks.notifySignedOut).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it("shows cancellation progress and keeps the scheduled deletion and other drafts after failure", async () => {
+    let rejectCancellation!: (reason: unknown) => void;
+    const scheduledFor = "2026-11-01T00:00:00Z";
+    mocks.me.mockResolvedValue({ ...currentUser, deletion_scheduled_for: scheduledFor });
+    mocks.cancelAccountDeletion
+      .mockReset()
+      .mockReturnValueOnce(
+        new Promise((_resolve, reject) => {
+          rejectCancellation = reject;
+        }),
+      )
+      .mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+    const cancel = await screen.findByRole("button", { name: "Cancel deletion" });
+    const form = cancel.closest("form")!;
+    const { fields } = fillCredentialForm("email");
+
+    await user.click(cancel);
+
+    const cancelling = within(form).getByRole("button", { name: "Cancelling deletion…" });
+    expect(cancelling).toBeDisabled();
+    expect(within(form).getByRole("status")).toHaveTextContent("Cancelling account deletion…");
+    expect(form.querySelector("time")).toHaveAttribute("dateTime", scheduledFor);
+    await user.click(cancelling);
+    fireEvent.submit(form);
+    expect(mocks.cancelAccountDeletion).toHaveBeenCalledOnce();
+    expect(mocks.scheduleAccountDeletion).not.toHaveBeenCalled();
+    expect(window.confirm).not.toHaveBeenCalled();
+
+    await act(async () => rejectCancellation(new Error("Deletion cancellation failed.")));
+
+    expect(within(form).getByRole("alert")).toHaveTextContent("Deletion cancellation failed.");
+    expect(within(form).queryByRole("status")).not.toBeInTheDocument();
+    expect(form.querySelector("time")).toHaveAttribute("dateTime", scheduledFor);
+    expect(within(form).getByRole("button", { name: "Cancel deletion" })).toBeEnabled();
+    for (const { input, value } of fields) expect(input).toHaveValue(value);
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+
+    await user.click(within(form).getByRole("button", { name: "Cancel deletion" }));
+
+    expect(mocks.cancelAccountDeletion).toHaveBeenCalledTimes(2);
+    expect(form.querySelector("time")).toBeNull();
+    expect(within(form).queryByRole("button", { name: "Cancel deletion" })).not.toBeInTheDocument();
+    expect(within(form).getByRole("button", { name: "Schedule account deletion" })).toBeEnabled();
+    expect(within(form).getByRole("status")).toHaveTextContent("Account deletion cancelled.");
+    for (const { input, value } of fields) expect(input).toHaveValue(value);
   });
 
   it("lets the user cancel an avatar upload without changing the profile", async () => {
@@ -645,6 +791,67 @@ describe("AccountSettings deletion grace period", () => {
     await act(async () => rejectSave(new Error("Old preference failure")));
     expect(screen.getByLabelText("Optional product email")).toBeChecked();
     expect(screen.queryByText("Old preference failure")).not.toBeInTheDocument();
+  });
+
+  it("shows a pending keyboard preference change, rolls an active failure back locally and retries", async () => {
+    let rejectSave!: (error: Error) => void;
+    mocks.updatePreferences.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    mocks.updatePreferences.mockResolvedValueOnce({ ...preferences, marketing_email: true });
+    const user = userEvent.setup();
+    render(
+      <>
+        <AccountSettings profile={profile} onProfileChange={vi.fn()} />
+        <button type="button">After settings</button>
+      </>,
+    );
+    const checkbox = await screen.findByRole("checkbox", {
+      name: "Optional product email",
+    });
+    const previous = screen.getByRole("checkbox", { name: "New followers" });
+    const card = screen
+      .getByRole("heading", { name: "Notification preferences" })
+      .closest(".settings-card")!;
+    checkbox.focus();
+    await user.tab({ shift: true });
+    expect(previous).toHaveFocus();
+    await user.tab();
+    expect(checkbox).toHaveFocus();
+    await user.keyboard(" ");
+    expect(checkbox).toBeChecked();
+    expect(checkbox).toBeDisabled();
+    expect(previous).toBeDisabled();
+    expect(within(card as HTMLElement).getByRole("status")).toHaveTextContent(
+      "Saving notification preferences…",
+    );
+    await user.keyboard(" ");
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Forgot your current password?" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "After settings" })).toHaveFocus();
+    expect(mocks.updatePreferences).toHaveBeenCalledOnce();
+    expect(mocks.updatePreferences).toHaveBeenCalledWith({ marketing_email: true });
+
+    await act(async () => rejectSave(new Error("Preferences temporarily unavailable.")));
+    expect(checkbox).not.toBeChecked();
+    expect(checkbox).toBeEnabled();
+    expect(previous).toBeChecked();
+    expect(within(card as HTMLElement).getByRole("alert")).toHaveTextContent(
+      "Preferences temporarily unavailable.",
+    );
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+
+    checkbox.focus();
+    await user.keyboard(" ");
+    expect(await within(card as HTMLElement).findByRole("status")).toHaveTextContent(
+      "Notification preferences saved.",
+    );
+    expect(checkbox).toBeChecked();
+    expect(within(card as HTMLElement).queryByRole("alert")).not.toBeInTheDocument();
+    expect(mocks.updatePreferences).toHaveBeenCalledTimes(2);
   });
 
   it("keeps new credentials and sessions after an obsolete password success", async () => {

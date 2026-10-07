@@ -3,12 +3,25 @@ from __future__ import annotations
 import re
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q
+from django.db.models import (
+    BigIntegerField,
+    Count,
+    Exists,
+    ExpressionWrapper,
+    F,
+    OuterRef,
+    Prefetch,
+    Q,
+)
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -19,6 +32,9 @@ from apps.bingos.exceptions import DraftPreconditionRequired
 from apps.bingos.languages import requested_languages
 from apps.bingos.models import Bingo, BingoRevision, BingoTag, Draft, Tag
 from apps.bingos.serializers import (
+    PUBLIC_SITEMAP_BUCKET_SIZE,
+    PUBLIC_SITEMAP_MAX_PARTS,
+    PUBLIC_SITEMAP_MAX_PK,
     AuthorSuggestionQuerySerializer,
     AuthorSuggestionSerializer,
     BingoCardSerializer,
@@ -29,6 +45,8 @@ from apps.bingos.serializers import (
     DraftDocumentInputSerializer,
     DraftSerializer,
     DraftWriteSerializer,
+    PublicSitemapIndexSerializer,
+    PublicSitemapQuerySerializer,
     PublicSitemapSerializer,
     TagSerializer,
 )
@@ -44,7 +62,7 @@ from apps.common.pagination import StandardPageNumberPagination
 from apps.common.permissions import IsVerifiedUser
 
 ETAG_PATTERN = re.compile(r'^(?:W/)?"draft-(\d+)"$')
-PUBLIC_SITEMAP_BINGO_LIMIT = 10_000
+PUBLIC_SITEMAP_BINGO_LIMIT = PUBLIC_SITEMAP_BUCKET_SIZE
 
 
 class AuthorSuggestionPagination(StandardPageNumberPagination):
@@ -52,19 +70,67 @@ class AuthorSuggestionPagination(StandardPageNumberPagination):
     max_page_size = 10
 
 
-@method_decorator(cache_page(60 * 60), name="dispatch")
+class PublicSitemapIndexView(APIView):
+    """List only occupied public buckets, including gaps without empty sitemap files."""
+
+    authentication_classes: list = []
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(responses=PublicSitemapIndexSerializer)
+    def get(self, request):
+        if request.query_params:
+            raise ValidationError({"query": "This endpoint does not accept query parameters."})
+        # PostgreSQL divides these bigint/integer operands exactly, without a float
+        # conversion that would lose precision for IDs near BigAutoField's limit.
+        parts = list(
+            Bingo.objects.public_catalog()
+            .annotate(
+                sitemap_part=ExpressionWrapper(
+                    (F("pk") - 1) / PUBLIC_SITEMAP_BUCKET_SIZE,
+                    output_field=BigIntegerField(),
+                )
+            )
+            .order_by("sitemap_part")
+            .values_list("sitemap_part", flat=True)
+            .distinct()[: PUBLIC_SITEMAP_MAX_PARTS + 1]
+        )
+        if len(parts) > PUBLIC_SITEMAP_MAX_PARTS:
+            return Response(
+                {"detail": "Sitemap index capacity exceeded; additional indexes are required."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                headers={"Cache-Control": "no-store", "Retry-After": "300"},
+            )
+        return Response(
+            PublicSitemapIndexSerializer({"parts": [str(part) for part in parts]}).data,
+            headers={"Cache-Control": "no-store"},
+        )
+
+
 class PublicSitemapView(APIView):
     """Expose an index-only public projection without hydrating card revisions."""
 
     authentication_classes: list = []
     permission_classes = [permissions.AllowAny]
 
-    @extend_schema(responses=PublicSitemapSerializer)
+    @extend_schema(parameters=[PublicSitemapQuerySerializer], responses=PublicSitemapSerializer)
     def get(self, request):
+        if set(request.query_params) - {"part"} or len(request.query_params.getlist("part")) > 1:
+            raise ValidationError({"query": "Only one optional part parameter is supported."})
+        # QueryDict uses HTML-form semantics, which skip blank optional fields.
+        # A plain mapping preserves an explicitly blank part for validation.
+        query = PublicSitemapQuerySerializer(data=request.query_params.dict())
+        query.is_valid(raise_exception=True)
+        part = query.validated_data.get("part")
+        queryset = Bingo.objects.public_catalog()
+        if part is None:
+            # Keep the legacy response for frontends deployed before the index API.
+            queryset = queryset.order_by("-last_published_at", "-pk")
+        else:
+            start = int(part) * PUBLIC_SITEMAP_BUCKET_SIZE + 1
+            end = min(start + PUBLIC_SITEMAP_BUCKET_SIZE - 1, PUBLIC_SITEMAP_MAX_PK)
+            queryset = queryset.filter(pk__gte=start, pk__lte=end).order_by("pk")
         rows = list(
-            Bingo.objects.public_catalog()
-            .order_by("-last_published_at", "-pk")
-            .values_list(
+            queryset.values_list(
                 "public_id",
                 "author__username",
                 "last_published_at",
@@ -82,7 +148,16 @@ class PublicSitemapView(APIView):
                 :PUBLIC_SITEMAP_BINGO_LIMIT
             ]
         ]
-        return Response(PublicSitemapSerializer({"results": results, "truncated": truncated}).data)
+        if part is not None and truncated:
+            return Response(
+                {"detail": "Sitemap bucket capacity exceeded."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                headers={"Cache-Control": "no-store", "Retry-After": "300"},
+            )
+        return Response(
+            PublicSitemapSerializer({"results": results, "truncated": truncated}).data,
+            headers={"Cache-Control": "no-store"},
+        )
 
 
 @extend_schema_view(
@@ -367,18 +442,73 @@ class BingoViewSet(
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class DraftListView(APIView):
+class DraftListView(mixins.ListModelMixin, generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = DraftSerializer
+    pagination_class = StandardPageNumberPagination
+    filter_backends: list = []
 
-    @extend_schema(responses=DraftSerializer(many=True))
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Draft.objects.none()
+        return (
+            Draft.objects.filter(
+                bingo__author=self.request.user,
+                bingo__deleted_at__isnull=True,
+            )
+            .select_related("bingo", "based_on_revision")
+            .order_by("-updated_at", "-pk")
+        )
+
+    @extend_schema(
+        responses=DraftSerializer(many=True),
+        parameters=[
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                default=24,
+                description="Requested page size; values above 100 are capped at 100.",
+            )
+        ],
+    )
     def get(self, request):
-        drafts = Draft.objects.filter(
-            bingo__author=request.user,
-            bingo__deleted_at__isnull=True,
-        ).select_related("bingo", "based_on_revision")
-        return Response(DraftSerializer(drafts, many=True).data)
+        return self.list(request)
 
-    @extend_schema(request=BingoDocumentInputSerializer, responses={201: DraftSerializer})
+    @extend_schema(
+        request=BingoDocumentInputSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="Idempotency-Key",
+                location=OpenApiParameter.HEADER,
+                required=True,
+                type={"type": "string", "minLength": 8, "maxLength": 128},
+                pattern=VALID_KEY.pattern,
+                description="Letters, digits, dots, colons, underscores or hyphens.",
+            ),
+            OpenApiParameter(
+                name="Idempotency-Replayed",
+                location=OpenApiParameter.HEADER,
+                type=str,
+                enum=["true"],
+                response=[201],
+                description="Present when an identical request returns its recorded response.",
+            ),
+        ],
+        responses={
+            201: OpenApiResponse(
+                DraftSerializer,
+                description="Created draft, or the recorded draft response for an identical retry.",
+            ),
+            400: OpenApiResponse(
+                OpenApiTypes.OBJECT,
+                description="Invalid document or missing/malformed idempotency key.",
+            ),
+            409: OpenApiResponse(
+                OpenApiTypes.OBJECT,
+                description="Key used for a different request, or original request is processing.",
+            ),
+        },
+    )
     def post(self, request):
         if not request.user.can_create_content:
             raise PermissionDenied("A verified, active account is required.")
@@ -436,7 +566,33 @@ class BingoDraftView(APIView):
 class BingoPublishView(APIView):
     permission_classes = [IsVerifiedUser]
 
-    @extend_schema(request=None, responses={201: BingoDetailSerializer})
+    @extend_schema(
+        request=None,
+        parameters=[
+            OpenApiParameter(
+                name="Idempotency-Key",
+                location=OpenApiParameter.HEADER,
+                required=True,
+                type={"type": "string", "minLength": 8, "maxLength": 128},
+                pattern=VALID_KEY.pattern,
+                description="Letters, digits, dots, colons, underscores or hyphens.",
+            )
+        ],
+        responses={
+            201: OpenApiResponse(
+                BingoDetailSerializer,
+                description="Published board. Reusing the key returns without creating a revision.",
+            ),
+            400: OpenApiResponse(
+                OpenApiTypes.OBJECT,
+                description="Invalid draft or missing/malformed idempotency key.",
+            ),
+            409: OpenApiResponse(
+                OpenApiTypes.OBJECT,
+                description="The existing publication idempotency record conflicts.",
+            ),
+        },
+    )
     def post(self, request, bingo_id):
         bingo = get_object_or_404(
             Bingo.objects.live(),
@@ -472,18 +628,35 @@ class BingoPublishView(APIView):
         )
 
 
-class BingoRevisionListView(APIView):
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                default=24,
+                description="Requested page size; values above 100 are capped at 100.",
+            )
+        ]
+    )
+)
+class BingoRevisionListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = BingoRevisionSerializer
+    pagination_class = StandardPageNumberPagination
+    filter_backends: list = []
 
-    @extend_schema(responses=BingoRevisionSerializer(many=True))
-    def get(self, request, bingo_id):
-        bingo = get_object_or_404(Bingo, public_id=bingo_id)
-        if bingo.author_id != request.user.pk and not request.user.has_perm(
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return BingoRevision.objects.none()
+        bingo = get_object_or_404(Bingo, public_id=self.kwargs["bingo_id"])
+        if bingo.author_id != self.request.user.pk and not self.request.user.has_perm(
             "moderation.view_private_content"
         ):
             raise PermissionDenied()
-        revisions = bingo.revisions.prefetch_related("cells__image", "revision_tags")
-        return Response(BingoRevisionSerializer(revisions, many=True).data)
+        return bingo.revisions.prefetch_related("cells__image", "revision_tags").order_by(
+            "-revision_number", "-pk"
+        )
 
 
 class BingoArchiveView(APIView):

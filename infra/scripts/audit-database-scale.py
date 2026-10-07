@@ -9,17 +9,23 @@ import json
 import os
 import secrets
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import psycopg
-from psycopg import sql
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection, reset_queries
 from django.db.migrations.executor import MigrationExecutor
+from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
+from psycopg import sql
+from rest_framework.test import APIRequestFactory
 
 from apps.accounts.models import User
-from apps.bingos.models import Bingo, BingoRevision, BingoCell
+from apps.bingos.models import Bingo, BingoCell, BingoRevision
+from apps.bingos.serializers import PUBLIC_SITEMAP_BUCKET_SIZE
+from apps.bingos.views import PublicSitemapIndexView, PublicSitemapView
 
 if (
     not settings.DEBUG
@@ -48,15 +54,28 @@ def emit(stage):
     print(json.dumps({"stage": stage}), flush=True)
 
 
-def plan(queryset):
-    data = json.loads(queryset.explain(analyze=True, buffers=True, format="json"))[0]
+def summarize_plan(data):
+    if isinstance(data, str):
+        data = json.loads(data)
+    if isinstance(data, list):
+        data = data[0]
     nodes = []
 
     def walk(node):
         nodes.append(
             {
                 k: node[k]
-                for k in ("Node Type", "Index Name", "Actual Rows")
+                for k in (
+                    "Node Type",
+                    "Index Name",
+                    "Actual Rows",
+                    "Shared Hit Blocks",
+                    "Shared Read Blocks",
+                    "Shared Dirtied Blocks",
+                    "Shared Written Blocks",
+                    "Temp Read Blocks",
+                    "Temp Written Blocks",
+                )
                 if k in node
             }
         )
@@ -68,6 +87,50 @@ def plan(queryset):
         "planning_ms": data["Planning Time"],
         "execution_ms": data["Execution Time"],
         "nodes": nodes,
+    }
+
+
+def plan(queryset):
+    return summarize_plan(
+        queryset.explain(analyze=True, buffers=True, format="json")
+    )
+
+
+def sitemap_response(view, path, query=None):
+    request = APIRequestFactory().get(
+        path,
+        data=query or {},
+        HTTP_ACCEPT="application/json",
+        REMOTE_ADDR="198.51.100.25",
+    )
+    # Migration backfills can fill Django's bounded debug-query log. Reset it
+    # before capture so saturation cannot hide this response's SELECT count.
+    reset_queries()
+    start = time.perf_counter()
+    with CaptureQueriesContext(connection) as queries:
+        response = view.as_view()(request)
+        response.render()
+    duration_ms = round((time.perf_counter() - start) * 1000, 3)
+    assert response.status_code == 200, response.data
+    assert len(queries) == 1, list(queries)
+    # Capture the actual production view's SELECT instead of maintaining a
+    # separate copy of its projection, bucket arithmetic, and limit clauses.
+    statement = queries[0]["sql"]
+    assert statement.lstrip().upper().startswith("SELECT "), statement
+    with connection.cursor() as cursor:
+        cursor.execute(
+            sql.SQL("EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {}").format(
+                sql.SQL(statement)
+            )
+        )
+        explained = cursor.fetchone()[0]
+    return response.data, {
+        "status_code": response.status_code,
+        "query_count": len(queries),
+        "json_bytes": len(response.content),
+        "view_and_render_ms": duration_ms,
+        "sql": statement,
+        "plan": summarize_plan(explained),
     }
 
 
@@ -88,12 +151,12 @@ try:
             User(
                 username=f"scale_{i:04d}",
                 email=f"scale_{i:04d}@example.test",
-                password="!",
+                password=make_password(None),
             )
             for i in range(200)
         ]
     )
-    first_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    first_time = datetime(2026, 1, 1, tzinfo=UTC)
     last_time = first_time + timedelta(days=30)
     start = time.perf_counter()
     for offset in range(0, 10000, 1000):
@@ -205,6 +268,120 @@ try:
             ]
         ),
     }
+    # Keep the migration proof and its original 10,000-board query baseline
+    # intact. Add the sitemap boundary cases only after those assertions.
+    extras = Bingo.objects.bulk_create(
+        [
+            Bingo(
+                author=users[i],
+                title=f"Sitemap boundary {i}",
+                size=3,
+                status="published",
+                visibility="public",
+                language="en",
+                published_at=last_time,
+                last_published_at=last_time,
+            )
+            for i in range(2)
+        ]
+    )
+    extra_revisions = BingoRevision.objects.bulk_create(
+        [
+            BingoRevision(
+                bingo=board,
+                revision_number=1,
+                title=board.title,
+                size=3,
+                visibility="public",
+                marking_style="checkmark",
+                language="en",
+                document_hash="1" * 64,
+                published_by_id=board.author_id,
+                published_at=last_time,
+            )
+            for board in extras
+        ]
+    )
+    for board, revision in zip(extras, extra_revisions, strict=True):
+        board.current_revision_id = revision.pk
+    Bingo.objects.bulk_update(extras, ("current_revision",))
+    expected_ids = {
+        str(public_id) for public_id in Bingo.objects.values_list("public_id", flat=True)
+    }
+    private = Bingo.objects.order_by("pk").first()
+    assert private is not None
+    Bingo.objects.filter(pk=private.pk).update(visibility="private")
+    expected_ids.remove(str(private.public_id))
+    assert len(expected_ids) == 10001
+    assert max(board.pk for board in extras) > PUBLIC_SITEMAP_BUCKET_SIZE
+    with connection.cursor() as cursor:
+        cursor.execute("ANALYZE")
+    # The disposable SQL database must not consume the source stack's Redis
+    # throttle buckets when these real API views run in-process.
+    with override_settings(
+        CACHES={
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": temporary_name,
+            }
+        }
+    ):
+        index, index_measurement = sitemap_response(
+            PublicSitemapIndexView, "/api/v1/sitemap/bingos/index/"
+        )
+        assert index["parts"] == ["0", "1"], index
+        parts = {}
+        discovered = []
+        for part in index["parts"]:
+            payload, measurement = sitemap_response(
+                PublicSitemapView, "/api/v1/sitemap/bingos/", {"part": part}
+            )
+            assert payload["truncated"] is False, {"part": part, "truncated": True}
+            ids = [row["bingo_id"] for row in payload["results"]]
+            start = int(part) * PUBLIC_SITEMAP_BUCKET_SIZE + 1
+            expected_order = [
+                str(public_id)
+                for public_id in Bingo.objects.filter(
+                    pk__gte=start, pk__lt=start + PUBLIC_SITEMAP_BUCKET_SIZE
+                )
+                .exclude(pk=private.pk)
+                .order_by("pk")
+                .values_list("public_id", flat=True)
+            ]
+            assert ids == expected_order
+            assert len(ids) <= PUBLIC_SITEMAP_BUCKET_SIZE
+            discovered.extend(ids)
+            parts[part] = {**measurement, "boards": len(ids)}
+        assert len(discovered) == len(set(discovered)) == len(expected_ids)
+        assert set(discovered) == expected_ids
+        assert str(private.public_id) not in discovered
+        assert all(str(board.public_id) in discovered for board in extras)
+    report["sitemap"] = {
+        "dataset": {
+            "boards": Bingo.objects.count(),
+            "public_boards": len(expected_ids),
+            "private_boards": 1,
+            "revisions": BingoRevision.objects.count(),
+            "cells": BingoCell.objects.count(),
+        },
+        "coverage": {
+            "occupied_parts": len(index["parts"]),
+            "discovered_boards": len(discovered),
+            "unique_boards": len(set(discovered)),
+            "omitted_boards": len(expected_ids - set(discovered)),
+            "private_excluded": str(private.public_id) not in discovered,
+            "extra_boards_discovered": len(extras),
+        },
+        "index": index_measurement,
+        "parts": parts,
+        "measurement_scope": (
+            "One in-process DRF view and JSON-rendering sample per response on the "
+            "disposable database; SQL EXPLAIN ANALYZE repeats its SELECT afterward. "
+            "Excludes middleware, network, Next.js, proxy overhead, concurrent load, "
+            "cold-cache guarantees, and production capacity."
+        ),
+    }
+    emit("sitemap boundary coverage and exact API query plans verified")
     print("RESULT " + json.dumps(report), flush=True)
 finally:
     connection.close()

@@ -10,7 +10,7 @@ from django.test import Client, RequestFactory
 from django.utils.module_loading import import_string
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("preload_session", [False, True])
 def test_old_request_cannot_clear_the_cookie_rotated_by_password_change(
     verified_user_factory, preload_session

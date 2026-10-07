@@ -20,6 +20,7 @@ if env_file.exists() and os.environ.get("DJANGO_SETTINGS_MODULE") != "config.set
     environ.Env.read_env(env_file)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsafe-development-only-change-me")
+SECRET_KEY_FALLBACKS = env.list("DJANGO_SECRET_KEY_FALLBACKS", default=[])
 DEBUG = env.bool("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
@@ -253,6 +254,7 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=1025)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT_SECONDS", default=10)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Not Enough Bingo <noreply@example.test>")
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000").rstrip("/")
 
@@ -278,6 +280,14 @@ if ANALYTICS_RAW_EVENT_RETENTION_DAYS < 7:
         "ANALYTICS_RAW_EVENT_RETENTION_DAYS must retain the seven-day trending window."
     )
 CELERY_BEAT_SCHEDULE = {
+    "recover-account-email-notifications-every-five-minutes": {
+        "task": "apps.accounts.tasks.recover_account_email_notifications",
+        "schedule": timedelta(minutes=5),
+    },
+    "recover-password-security-notifications-every-five-minutes": {
+        "task": "apps.accounts.tasks.recover_password_security_notifications",
+        "schedule": timedelta(minutes=5),
+    },
     "recover-stalled-jobs-every-five-minutes": {
         "task": "apps.common.tasks.recover_stalled_jobs",
         "schedule": timedelta(minutes=5),

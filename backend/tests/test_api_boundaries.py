@@ -441,9 +441,10 @@ def test_bingo_create_publish_and_revision_api_preserves_old_snapshot(
 
     revisions = client.get(f"/api/v1/bingos/{bingo_id}/revisions/")
     assert revisions.status_code == 200
-    assert [item["number"] for item in revisions.data] == [2, 1]
-    assert revisions.data[1]["title"] == "API version one"
-    assert revisions.data[1]["cells"][0]["text"] == "API version one first cell"
+    assert revisions.data["count"] == 2
+    assert [item["number"] for item in revisions.data["results"]] == [2, 1]
+    assert revisions.data["results"][1]["title"] == "API version one"
+    assert revisions.data["results"][1]["cells"][0]["text"] == "API version one first cell"
 
 
 def test_unverified_user_cannot_create_bingo(user_factory) -> None:

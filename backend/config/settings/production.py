@@ -28,15 +28,23 @@ if APP_ENVIRONMENT != "production":
     errors.append("APP_ENVIRONMENT must be production with production settings")
 if _configured_debug:
     errors.append("DEBUG must not be enabled with production settings")
-if (
-    SECRET_KEY
-    in {
-        "unsafe-development-only-change-me",
-        "insecure-local-only-change-before-any-shared-environment",
-    }
-    or len(SECRET_KEY) < 50
-):
+
+
+def _unsafe_secret(value: str) -> bool:
+    return (
+        value
+        in {
+            "unsafe-development-only-change-me",
+            "insecure-local-only-change-before-any-shared-environment",
+        }
+        or len(value) < 50
+    )
+
+
+if _unsafe_secret(SECRET_KEY):
     errors.append("DJANGO_SECRET_KEY must be a unique value of at least 50 characters")
+if any(_unsafe_secret(value) for value in SECRET_KEY_FALLBACKS):
+    errors.append("DJANGO_SECRET_KEY_FALLBACKS must contain only previous strong production keys")
 if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
     errors.append("ALLOWED_HOSTS must be explicit and cannot contain a wildcard")
 if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":

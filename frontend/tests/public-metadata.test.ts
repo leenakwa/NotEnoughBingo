@@ -4,7 +4,6 @@ import { generateMetadata as bingoMetadata } from "@/app/bingo/[bingoId]/page";
 import { generateMetadata as profileMetadata } from "@/app/profile/[username]/page";
 import { generateMetadata as shareMetadata } from "@/app/share/[bingoId]/[shareId]/page";
 import robots from "@/app/robots";
-import sitemap from "@/app/sitemap";
 import type { BingoDetail, SharedResult, UserProfile } from "@/lib/api/types";
 import { absoluteSiteUrl, siteUrl } from "@/lib/site";
 
@@ -12,7 +11,6 @@ const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
   getShare: vi.fn(),
   getProfile: vi.fn(),
-  getSitemap: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -35,7 +33,6 @@ vi.mock("@/lib/api/server", () => ({
     data: await mocks.getProfile(...args),
     notFound: false,
   }),
-  getServerSitemap: mocks.getSitemap,
 }));
 
 const author = {
@@ -220,37 +217,11 @@ describe("public route metadata", () => {
     });
   });
 
-  it("builds public bingo and deduplicated profile URLs from the lightweight index", async () => {
-    mocks.getSitemap.mockResolvedValue({
-      truncated: false,
-      results: [
-        {
-          bingo_id: "11111111-1111-4111-8111-111111111111",
-          author_username: "author",
-          last_modified: "2026-08-07T00:00:00Z",
-        },
-        {
-          bingo_id: "55555555-5555-4555-8555-555555555555",
-          author_username: "author",
-          last_modified: "2026-08-01T00:00:00Z",
-        },
-      ],
-    });
-
-    const result = await sitemap();
-
-    expect(result.filter((entry) => entry.url.includes("/bingo/"))).toHaveLength(2);
-    expect(result.filter((entry) => entry.url.endsWith("/profile/author"))).toHaveLength(1);
-    expect(mocks.getSitemap).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps preview environments out of crawlers and public sitemaps", async () => {
+  it("keeps preview environments out of crawlers and public metadata", async () => {
     process.env.APP_ENVIRONMENT = "staging";
     mocks.getBingo.mockResolvedValue(bingo("public"));
 
     expect(robots()).toEqual({ rules: { userAgent: "*", disallow: "/" } });
-    expect(await sitemap()).toEqual([]);
-    expect(mocks.getSitemap).not.toHaveBeenCalled();
     await expect(
       bingoMetadata({
         params: Promise.resolve({ bingoId: "11111111-1111-4111-8111-111111111111" }),

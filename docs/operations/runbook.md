@@ -164,10 +164,16 @@ migrate --noinput` as the explicit one-shot release command instead.
   with these locks.** Keep exactly one Beat, enable new schedules after all
   workers are compatible, and alert on skipped/failing maintenance.
 - Every five minutes, `recover_stalled_jobs` inspects at most 100 exports and
-  100 uploads whose claim is older than the hard task time limit plus 60 seconds.
+  100 uploads: queued exports/uploaded media become eligible after five minutes;
+  processing claims wait for the hard task time limit plus 60 seconds.
   It rechecks under row locks and requeues after commit. Persistent attempts
   stop repeated crashes after five executions, expose a terminal product error,
-  and emit a structured failure event. Alert on that event and the age of queued
+  and emit a structured failure event. A recoverable broker publication failure
+  keeps the durable job pending, emits a safe task/job-ID record, and does not
+  stop the remaining sweep. A conditional timestamp restore makes the failed
+  publication eligible next sweep without overwriting a concurrent worker claim.
+  Export requests keep their committed job ID and HTTP 202 when publication
+  fails. Alert on recovery failure and the age of queued
   jobs; it is not a substitute for monitoring the broker and worker.
 
 ## Object-storage operations

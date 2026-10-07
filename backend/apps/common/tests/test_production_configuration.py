@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import subprocess
 import sys
 from pathlib import Path
@@ -17,6 +18,7 @@ def _production_environment() -> dict[str, str]:
             "APP_ENVIRONMENT": "production",
             "DEBUG": "false",
             "DJANGO_SECRET_KEY": "production-test-secret-" + "x" * 64,
+            "DJANGO_SECRET_KEY_FALLBACKS": "",
             "ALLOWED_HOSTS": "app.example.test",
             "CSRF_TRUSTED_ORIGINS": "https://app.example.test",
             "CORS_ALLOWED_ORIGINS": "",
@@ -100,6 +102,30 @@ def test_production_rejects_premature_hsts_preload() -> None:
 
     assert result.returncode != 0
     assert "HSTS preload requires includeSubDomains" in result.stderr
+
+
+def test_production_accepts_previous_strong_key_for_rotation() -> None:
+    environment = _production_environment()
+    environment["DJANGO_SECRET_KEY_FALLBACKS"] = secrets.token_urlsafe(48)
+
+    result = _load_production_settings(environment)
+
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    "fallback",
+    ["short-test-key", "insecure-local-only-change-before-any-shared-environment"],
+)
+def test_production_rejects_unsafe_fallback_without_exposing_it(fallback: str) -> None:
+    environment = _production_environment()
+    environment["DJANGO_SECRET_KEY_FALLBACKS"] = fallback
+
+    result = _load_production_settings(environment)
+
+    assert result.returncode != 0
+    assert "DJANGO_SECRET_KEY_FALLBACKS" in result.stderr
+    assert fallback not in result.stderr
 
 
 def test_production_rejects_environment_and_public_origin_mismatch() -> None:

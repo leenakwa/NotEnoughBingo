@@ -151,7 +151,7 @@ def test_password_reset_request_limit_does_not_block_link_confirmation(
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     new_password = f"Unique-Reset-Example-{user.pk}-2026!"
-    with patch("apps.accounts.views.send_critical_security_email.delay"):
+    with patch("apps.accounts.services.send_password_security_notification.delay"):
         confirmed = client.post(
             "/api/v1/auth/password-reset/confirm/",
             {"uid": uid, "token": token, "new_password": new_password},

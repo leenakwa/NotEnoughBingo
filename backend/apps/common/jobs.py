@@ -5,10 +5,24 @@ import logging
 from functools import wraps
 from typing import Any
 
-from celery import shared_task
+from celery import Task, shared_task
 from django.db import OperationalError, connection
+from kombu.exceptions import OperationalError as BrokerOperationalError
 
 logger = logging.getLogger("app.scheduler")
+
+
+def publish_job(task: Task, job_id: int) -> bool:
+    """Keep a committed job pending when its broker is temporarily unavailable."""
+    try:
+        task.delay(job_id)
+    except BrokerOperationalError:
+        logger.warning(
+            "scheduled.job.publish_failed",
+            extra={"task_name": task.name, "job_id": job_id, "outcome": "pending"},
+        )
+        return False
+    return True
 
 
 def job_lock_key(name: str) -> int:

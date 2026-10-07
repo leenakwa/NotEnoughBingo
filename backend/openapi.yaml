@@ -706,6 +706,15 @@ paths:
     post:
       operationId: bingos_exports_create
       parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       - in: path
         name: bingo_id
         schema:
@@ -734,7 +743,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExportJob'
-          description: ''
+          description: Accepted export, or the existing job for an identical retry.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid input, missing/malformed key, or the key was already
+            used for a different board, revision or format.
   /api/v1/bingos/{bingo_id}/like/:
     post:
       operationId: bingos_like_create
@@ -825,6 +842,15 @@ paths:
     post:
       operationId: bingos_publish_create
       parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       - in: path
         name: bingo_id
         schema:
@@ -841,7 +867,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BingoDetail'
-          description: ''
+          description: Published board. Reusing the key returns without creating a
+            revision.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid draft or missing/malformed idempotency key.
+        '409':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: The existing publication idempotency record conflicts.
   /api/v1/bingos/{bingo_id}/restore/:
     post:
       operationId: bingos_restore_create
@@ -873,6 +914,18 @@ paths:
           type: string
           format: uuid
         required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 24
+        description: Requested page size; values above 100 are capped at 100.
       tags:
       - bingos
       security:
@@ -882,14 +935,21 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BingoRevision'
+                $ref: '#/components/schemas/PaginatedBingoRevisionList'
           description: ''
   /api/v1/bingos/{bingo_id}/shares/:
     post:
       operationId: bingos_shares_create
       parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       - in: path
         name: bingo_id
         schema:
@@ -919,7 +979,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SharedResult'
-          description: ''
+          description: Created share, or the existing share for an identical retry.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid share input or missing/malformed key.
+        '409':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: The key was already used for a different share request.
   /api/v1/client-errors/:
     post:
       operationId: client_errors_create
@@ -1171,6 +1245,19 @@ paths:
   /api/v1/drafts/:
     get:
       operationId: drafts_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 24
+        description: Requested page size; values above 100 are capped at 100.
       tags:
       - drafts
       security:
@@ -1180,12 +1267,20 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Draft'
+                $ref: '#/components/schemas/PaginatedDraftList'
           description: ''
     post:
       operationId: drafts_create
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       tags:
       - drafts
       requestBody:
@@ -1203,11 +1298,34 @@ paths:
       - sessionCookie: []
       responses:
         '201':
+          headers:
+            Idempotency-Replayed:
+              schema:
+                type: string
+                enum:
+                - 'true'
+              description: Present when an identical request returns its recorded
+                response.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Draft'
-          description: ''
+          description: Created draft, or the recorded draft response for an identical
+            retry.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid document or missing/malformed idempotency key.
+        '409':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Key used for a different request, or original request is processing.
   /api/v1/exports/{export_id}/:
     get:
       operationId: exports_retrieve
@@ -2153,6 +2271,16 @@ paths:
     get:
       operationId: sitemap_bingos_retrieve
       description: Expose an index-only public projection without hydrating card revisions.
+      parameters:
+      - in: query
+        name: part
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 15
+          pattern: ^(?:0|[1-9][0-9]{0,14})$
+        description: Canonical decimal primary-key bucket from 0 through 922337203685477;
+          each bucket spans 10,000 IDs. Omit for the legacy, capped projection.
       tags:
       - sitemap
       security:
@@ -2163,6 +2291,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicSitemap'
+          description: ''
+  /api/v1/sitemap/bingos/index/:
+    get:
+      operationId: sitemap_bingos_index_retrieve
+      description: List only occupied public buckets, including gaps without empty
+        sitemap files.
+      tags:
+      - sitemap
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSitemapIndex'
           description: ''
   /api/v1/tags/:
     get:
@@ -4327,6 +4471,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BingoCard'
+    PaginatedBingoRevisionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BingoRevision'
     PaginatedCommentList:
       type: object
       required:
@@ -4373,6 +4540,29 @@ components:
       - next
       - previous
       - results
+    PaginatedDraftList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Draft'
     PaginatedNotificationList:
       type: object
       required:
@@ -4854,6 +5044,17 @@ components:
       - author_username
       - bingo_id
       - last_modified
+    PublicSitemapIndex:
+      type: object
+      properties:
+        parts:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          maxItems: 49999
+      required:
+      - parts
     PublicUser:
       type: object
       properties:

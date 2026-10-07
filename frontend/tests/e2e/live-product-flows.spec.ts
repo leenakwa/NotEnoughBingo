@@ -4854,3 +4854,476 @@ for (const scenario of [
     }
   });
 }
+
+for (const selection of ["selected", "all"] as const) {
+  test(`language preference failure retains ${selection} choices and protects dirty navigation`, async ({
+    page,
+  }) => {
+    await authenticateAs(page, "author");
+    const api = page.context().request;
+    const originalResponse = await api.get("/api/v1/profiles/me/");
+    expect(originalResponse.status()).toBe(200);
+    const original = (await originalResponse.json()) as {
+      preferred_languages: string[];
+    };
+    const csrf = (await api.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
+    expect(csrf).toBeDefined();
+    const headers = { "X-CSRFToken": csrf!.value };
+    const path = "/api/v1/profiles/me/";
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let writes = 0;
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+    try {
+      expect((await api.patch(path, { headers, data: { preferred_languages: ["en"] } })).ok()).toBe(
+        true,
+      );
+      await page.route(`**${path}`, async (route) => {
+        if (route.request().method() !== "PATCH") return route.continue();
+        writes += 1;
+        if (writes !== 1) return route.continue();
+        await held;
+        await route.fulfill({
+          status: 503,
+          json: {
+            error: {
+              code: "unavailable",
+              message: "Language preferences temporarily unavailable.",
+            },
+          },
+        });
+      });
+      await page.goto("/profile");
+      const languages = page.getByRole("group", { name: "Preferred languages" });
+      const english = languages.getByRole("checkbox", { name: "English", exact: true });
+      const russian = languages.getByRole("checkbox", { name: "Russian", exact: true });
+      await expect(english).toBeChecked();
+      await (selection === "selected" ? russian : english).press("Space");
+      const save = page.getByRole("button", { name: /^Sav(?:e|ing) languages/ });
+      await save.click();
+      await expect.poll(() => writes).toBe(1);
+      await expect(
+        page.getByRole("button", { name: "Saving languages…", exact: true }),
+      ).toBeDisabled();
+      await expect(english).toBeDisabled();
+      await expect(russian).toBeDisabled();
+      await save.evaluate((button: HTMLButtonElement) => button.click());
+      expect(writes).toBe(1);
+      release();
+      const feedback = page.getByText("Language preferences temporarily unavailable.", {
+        exact: true,
+      });
+      await expect(feedback).toBeVisible();
+      await expect(english).toBeEnabled();
+      if (selection === "selected") {
+        await expect(english).toBeChecked();
+        await expect(russian).toBeChecked();
+      } else {
+        await expect(languages.getByRole("checkbox", { checked: true })).toHaveCount(0);
+      }
+      let canceled = false;
+      page.once("dialog", async (dialog) => {
+        canceled = true;
+        await dialog.dismiss();
+      });
+      await page.getByRole("link", { name: "Discover", exact: true }).click();
+      await expect(page).toHaveURL(/\/profile$/);
+      expect(canceled).toBe(true);
+      await expect(feedback).toBeVisible();
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+      }
+      const saved = await waitForResponse(page, path, "PATCH", () => save.click());
+      expect(saved.status()).toBe(200);
+      await expect(page.getByText("Bingo languages saved.", { exact: true })).toBeVisible();
+      expect(writes).toBe(2);
+      await page.reload();
+      await expect(english).toBeEnabled();
+      if (selection === "selected") {
+        await expect(english).toBeChecked();
+        await expect(russian).toBeChecked();
+      } else {
+        await expect(languages.getByRole("checkbox", { checked: true })).toHaveCount(0);
+      }
+      expect(errors).toEqual([]);
+    } finally {
+      release();
+      expect(
+        (
+          await api.patch(path, {
+            headers,
+            data: { preferred_languages: original.preferred_languages },
+          })
+        ).ok(),
+      ).toBe(true);
+    }
+  });
+}
+
+for (const preference of ["privacy", "notification"] as const) {
+  test(`active ${preference} preference failure rolls back locally and retries without losing profile work`, async ({
+    page,
+  }) => {
+    await authenticateAs(page, "author");
+    const api = page.context().request;
+    const profileResponse = await api.get("/api/v1/profiles/me/");
+    expect(profileResponse.status()).toBe(200);
+    const profile = (await profileResponse.json()) as {
+      display_name: string;
+      privacy: Record<string, boolean>;
+    };
+    const path =
+      preference === "privacy"
+        ? "/api/v1/profiles/me/privacy/"
+        : "/api/v1/profiles/notification-preferences/";
+    const method = preference === "privacy" ? "PUT" : "PATCH";
+    const field = preference === "privacy" ? "show_bio" : "new_comment";
+    const preferencesResponse = await api.get("/api/v1/profiles/notification-preferences/");
+    expect(preferencesResponse.status()).toBe(200);
+    const preferences = (await preferencesResponse.json()) as Record<string, boolean>;
+    const original = preference === "privacy" ? profile.privacy : preferences;
+    const originalValue = original[field];
+    expect(typeof originalValue).toBe("boolean");
+    const csrf = (await api.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
+    expect(csrf).toBeDefined();
+    const headers = { "X-CSRFToken": csrf!.value };
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let writes = 0;
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+    const failureMessage = `${preference} preferences temporarily unavailable.`;
+    await page.route(`**${path}`, async (route) => {
+      if (route.request().method() !== method) return route.continue();
+      writes += 1;
+      if (writes !== 1) return route.continue();
+      await held;
+      await route.fulfill({
+        status: 503,
+        json: { error: { code: "unavailable", message: failureMessage } },
+      });
+    });
+    try {
+      await page.goto("/profile");
+      const displayName = page.getByLabel("Display name", { exact: true });
+      const draft = "Unsaved preference regression draft";
+      await displayName.fill(draft);
+      const label = preference === "privacy" ? "Show bio" : "New comments on my bingos";
+      const control = page.getByRole("checkbox", { name: label, exact: true });
+      await expect(control).toBeEnabled();
+      expect(await control.isChecked()).toBe(originalValue);
+      await control.press("Space");
+      await expect.poll(() => writes).toBe(1);
+      expect(await control.isChecked()).toBe(!originalValue);
+      await expect(control).toBeDisabled();
+      await control.evaluate((checkbox: HTMLInputElement) => checkbox.click());
+      expect(writes).toBe(1);
+      const card = page.locator(".settings-card").filter({
+        has: page.getByRole("heading", {
+          name: preference === "privacy" ? "Privacy" : "Notification preferences",
+          exact: true,
+        }),
+      });
+      await expect(card.getByRole("status")).toHaveText(
+        preference === "privacy" ? "Saving privacy settings…" : "Saving notification preferences…",
+      );
+      release();
+      await expect(card.getByText(failureMessage, { exact: true })).toBeVisible();
+      await expect(control).toBeEnabled();
+      expect(await control.isChecked()).toBe(originalValue);
+      await expect(displayName).toHaveValue(draft);
+      const profileForm = page
+        .locator("form.settings-card")
+        .filter({ has: page.getByRole("heading", { name: "Profile details", exact: true }) });
+      await expect(profileForm).toHaveCount(1);
+      await expect(profileForm.getByText(failureMessage, { exact: true })).toHaveCount(0);
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+      }
+      const saved = await waitForResponse(page, path, method, () => control.press("Space"));
+      expect(saved.status()).toBe(200);
+      expect(await control.isChecked()).toBe(!originalValue);
+      await expect(displayName).toHaveValue(draft);
+      expect(writes).toBe(2);
+      await displayName.fill(profile.display_name);
+      await page.reload();
+      await expect(control).toBeEnabled();
+      expect(await control.isChecked()).toBe(!originalValue);
+      expect(errors).toEqual([]);
+    } finally {
+      release();
+      const restored = await api.fetch(path, { method, headers, data: original });
+      expect(restored.ok()).toBe(true);
+    }
+  });
+}
+
+test("session sign-out shows scoped progress and retries without losing credential work", async ({
+  page,
+  playwright,
+}) => {
+  await authenticateAs(page, "author");
+  const marker = `NEB isolated session ${randomUUID()}`;
+  const secondary = await playwright.request.newContext({
+    baseURL: test.info().project.use.baseURL,
+    userAgent: marker,
+  });
+  let release: () => void = () => undefined;
+  let targetId = "";
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+  try {
+    expect((await secondary.get("/api/v1/auth/csrf/")).ok()).toBe(true);
+    const csrf = (await secondary.storageState()).cookies.find(
+      (cookie) => cookie.name === "neb_csrf",
+    );
+    expect(csrf).toBeDefined();
+    const fixture = readLiveFixture();
+    expect(
+      (
+        await secondary.post("/api/v1/auth/login/", {
+          headers: { "X-CSRFToken": csrf!.value },
+          data: { email: fixture.users.author.email, password: E2E_FIXTURE_PASSWORD },
+        })
+      ).ok(),
+    ).toBe(true);
+    const sessionsResponse = await page.context().request.get("/api/v1/auth/sessions/");
+    expect(sessionsResponse.ok()).toBe(true);
+    const sessions = (await sessionsResponse.json()) as {
+      results: { id: string; user_agent: string; current: boolean }[];
+    };
+    const target = sessions.results.find((item) => item.user_agent === marker);
+    expect(target).toBeDefined();
+    expect(target!.current).toBe(false);
+    targetId = target!.id;
+    const path = `/api/v1/auth/sessions/${targetId}/`;
+    let writes = 0;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`**${path}`, async (route) => {
+      if (route.request().method() !== "DELETE") return route.continue();
+      writes += 1;
+      if (writes !== 1) return route.continue();
+      await held;
+      await route.fulfill({
+        status: 503,
+        json: {
+          error: {
+            code: "unavailable",
+            message: "Session revocation temporarily unavailable.",
+          },
+        },
+      });
+    });
+    await page.goto("/profile");
+    const section = page.locator(".settings-card").filter({
+      has: page.getByRole("heading", { name: "Active sessions", exact: true }),
+    });
+    const row = section.getByRole("listitem").filter({ hasText: marker });
+    await expect(row).toHaveCount(1);
+    const destination = page.getByLabel("New email address", { exact: true });
+    await destination.fill("unsent-session-test@example.test");
+    const signOut = row.getByRole("button", { name: /^Sign(?:ing)? out/ });
+    await signOut.press("Space");
+    await expect.poll(() => writes).toBe(1);
+    await expect(row.getByRole("button", { name: "Signing out…", exact: true })).toBeDisabled();
+    await expect(section.getByRole("status")).toHaveText("Signing out session…");
+    await signOut.evaluate((button: HTMLButtonElement) => button.click());
+    expect(writes).toBe(1);
+    release();
+    await expect(section.getByRole("alert")).toContainText(
+      "Session revocation temporarily unavailable.",
+    );
+    await expect(signOut).toBeEnabled();
+    await expect(destination).toHaveValue("unsent-session-test@example.test");
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+    }
+    const response = await waitForResponse(page, path, "DELETE", () => signOut.press("Enter"));
+    expect(response.status()).toBe(204);
+    await expect(row).toHaveCount(0);
+    await expect(section.getByRole("status")).toHaveText("Session signed out.");
+    await expect(destination).toHaveValue("unsent-session-test@example.test");
+    expect(writes).toBe(2);
+    const revoked = await secondary.get("/api/v1/auth/session/");
+    expect(revoked.status()).toBe(200);
+    expect((await revoked.json()).user).toBeNull();
+    targetId = "";
+    expect(errors).toEqual([]);
+  } finally {
+    release();
+    if (targetId) {
+      const api = page.context().request;
+      const csrf = (await api.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
+      expect(csrf).toBeDefined();
+      const cleaned = await api.delete(`/api/v1/auth/sessions/${targetId}/`, {
+        headers: { "X-CSRFToken": csrf!.value },
+      });
+      expect(cleaned.status()).toBe(204);
+    }
+    await secondary.dispose();
+  }
+});
+
+test("deletion cancellation shows scoped progress and retries for an isolated account", async ({
+  page,
+}) => {
+  const api = page.context().request;
+  const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
+  const email = `e2e-cancel-${nonce}@example.test`;
+  const password = `QA-${randomUUID()}-account`;
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+  async function csrfHeaders() {
+    const csrf = (await api.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
+    expect(csrf).toBeDefined();
+    return { "X-CSRFToken": csrf!.value };
+  }
+  let release: () => void = () => undefined;
+  let scheduled = false;
+  try {
+    expect((await api.get("/api/v1/auth/csrf/")).ok()).toBe(true);
+    const registered = await api.post("/api/v1/auth/register/", {
+      headers: await csrfHeaders(),
+      data: { email, username: `e2e_cancel_${nonce}`, password },
+    });
+    expect(registered.status()).toBe(202);
+    const link = new URL(await verificationLink(api, email));
+    const token = link.searchParams.get("token");
+    expect(token).toBeTruthy();
+    expect(
+      (
+        await api.post("/api/v1/auth/verify-email/", {
+          headers: await csrfHeaders(),
+          data: { token },
+        })
+      ).ok(),
+    ).toBe(true);
+    expect(
+      (
+        await api.post("/api/v1/auth/login/", {
+          headers: await csrfHeaders(),
+          data: { email, password },
+        })
+      ).ok(),
+    ).toBe(true);
+    expect(
+      (
+        await api.patch("/api/v1/profiles/me/", {
+          headers: await csrfHeaders(),
+          data: { preferred_languages: ["en"] },
+        })
+      ).ok(),
+    ).toBe(true);
+    const path = "/api/v1/auth/account-deletion/";
+    expect(
+      (await api.post(path, { headers: await csrfHeaders(), data: { password } })).status(),
+    ).toBe(202);
+    scheduled = true;
+    // Scheduling revokes every session; a new login during the grace period
+    // owns cancellation. This account is separate from shared author fixtures.
+    expect(
+      (
+        await api.post("/api/v1/auth/login/", {
+          headers: await csrfHeaders(),
+          data: { email, password },
+        })
+      ).ok(),
+    ).toBe(true);
+    let writes = 0;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`**${path}`, async (route) => {
+      if (route.request().method() !== "DELETE") return route.continue();
+      writes += 1;
+      if (writes !== 1) return route.continue();
+      await held;
+      await route.fulfill({
+        status: 503,
+        json: {
+          error: {
+            code: "unavailable",
+            message: "Deletion cancellation temporarily unavailable.",
+          },
+        },
+      });
+    });
+    await page.goto("/profile");
+    const section = page.locator("form.settings-card").filter({
+      has: page.getByRole("heading", { name: "Delete account", exact: true }),
+    });
+    const cancel = section.getByRole("button", { name: /^(Cancel|Cancelling) deletion/ });
+    await expect(cancel).toBeEnabled();
+    await page
+      .getByLabel("New email address", { exact: true })
+      .fill("unsent-cancellation@example.test");
+    await cancel.press("Space");
+    await expect.poll(() => writes).toBe(1);
+    await expect(
+      section.getByRole("button", { name: "Cancelling deletion…", exact: true }),
+    ).toBeDisabled();
+    await expect(section.getByRole("status")).toHaveText("Cancelling account deletion…");
+    await cancel.evaluate((button: HTMLButtonElement) => button.click());
+    expect(writes).toBe(1);
+    release();
+    await expect(section.getByRole("alert")).toContainText(
+      "Deletion cancellation temporarily unavailable.",
+    );
+    await expect(cancel).toBeEnabled();
+    await expect(section.locator("time")).toHaveCount(1);
+    await expect(page.getByLabel("New email address", { exact: true })).toHaveValue(
+      "unsent-cancellation@example.test",
+    );
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+    }
+    const canceled = await waitForResponse(page, path, "DELETE", () => cancel.press("Enter"));
+    expect(canceled.status()).toBe(204);
+    scheduled = false;
+    await expect(section.getByRole("status")).toHaveText("Account deletion cancelled.");
+    await expect(section.getByLabel("Confirm with your password", { exact: true })).toBeVisible();
+    expect(writes).toBe(2);
+    await page.reload();
+    await expect(page.getByLabel("Confirm with your password", { exact: true })).toBeVisible();
+    const current = await api.get("/api/v1/auth/me/");
+    expect(current.ok()).toBe(true);
+    expect((await current.json()).deletion_scheduled_for).toBeNull();
+    expect(errors).toEqual([]);
+  } finally {
+    release();
+    if (scheduled) {
+      expect(
+        (
+          await api.post("/api/v1/auth/login/", {
+            headers: await csrfHeaders(),
+            data: { email, password },
+          })
+        ).ok(),
+      ).toBe(true);
+      expect(
+        (
+          await api.delete("/api/v1/auth/account-deletion/", { headers: await csrfHeaders() })
+        ).status(),
+      ).toBe(204);
+    }
+  }
+});

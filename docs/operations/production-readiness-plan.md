@@ -124,6 +124,15 @@ only environment-specific smoke and recovery checks after release.
 
 ## Immediate work queue
 
+The current handoff is the
+[2026-10-08 continuation checkpoint](production-readiness-continuation-plan.md).
+Exact-source CI passes on `c1fc2d7`; the newer SQL/credential/preference/sitemap/
+SSR/mail/export/list packet passes local integrated checks and still needs its
+own gate. Next concrete form defects are token-verification retry and image-only
+publication validation focus; keep their follow-up separate from this stable packet.
+Use the checkpoint for active ownership, commands, unsuccessful runs and next
+tasks; the sequence below preserves earlier evidence.
+
 1. Exact-source CI on `29ac99b` passed all nine jobs, including the database
    audit scripts, browser-error collection and narrow historical documentation
    scan exemption. No image was promoted or deployed. The subsequent social

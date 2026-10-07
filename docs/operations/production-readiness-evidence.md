@@ -4343,3 +4343,232 @@ observed results and their limits. Do not include credentials or session data.
   `/tmp/neb-all-dependency-audit-oct08.json`. Fresh install/build/test and the new
   source CI remain required. Current workers' subsequent changes are not included
   in this dependency-only correction.
+
+## 2026-10-08 — exact-source gate and next local packet
+
+- Commit `c1fc2d7772ce697cb0dcccc528da4ab126040223` passed all nine jobs in
+  [CI 37697846802](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37697846802),
+  including browser smoke, full-stack flows, both image jobs and the release
+  gate. This is evidence for that commit only; the next packet remains dirty.
+- Original prompt and continuation request hashes are unchanged:
+  `7b920f477e1087c2fe456f7bdbafef11e00e7be8ca17bc8ec99f180c274b65d9` and
+  `965004fb008a7a930c8f4fa34540cd4c113f1a74654fb0e8dd7438c18c2eefe7`.
+  The active goal remains incomplete. The continuation plan records source,
+  evidence, remaining tasks and ownership; user-local `.codex/config.toml`
+  remains excluded from project commits.
+- Profile SQL update now commits username/profile/language/avatar changes
+  atomically. Fault tests cover failures before and after profile persistence.
+  Default contracts cover scalar/JSON declarations, inherited user fields,
+  factory independence, UUIDs, persisted values and timestamps. Publish and
+  republish final-idempotency failures roll back their complete SQL graph;
+  export callbacks are discarded on enclosing transaction rollback.
+  Independent scoped review found no remaining defect in that packet. These
+  results do not establish every application's transaction/recovery contract.
+- Password reset/change takes a fresh row lock before token/password policy
+  validation, commits credential/session/audit rows together, and prepares the
+  replacement session before commit. Durable password-notice intent freezes
+  its recipient and survives broker/SMTP failure. Focused PostgreSQL tests
+  include real concurrent reset/change winners. Independent security review
+  passes. Locmem delivery and patched SMTP failures are local evidence;
+  actual broker/Beat/provider and crash-after-SMTP-acceptance remain distinct.
+- Backend integrated run: **297 passed, one infrastructure-only skip**;
+  `mypy .`: **76 sources pass**. The first integrated run had two genuine
+  failures: a legacy password-notice mock path and empty sitemap-part handling.
+  The mock was updated to the changed service path; DRF query validation now
+  distinguishes omitted legacy input from a present empty part and returns
+  400 for the latter. Both fixes retain their assertions.
+  Logs: `/tmp/neb-backend-integrated-final-oct08.log`,
+  `/tmp/neb-backend-all-source-mypy-oct08.log`.
+- Language, privacy and notification controls retain pending/dirty state,
+  report scoped progress, roll back rejected writes and permit real retry.
+  Their first integrated TypeScript run rejected unsupported Testing Library
+  role `exact` options; those options were removed without weakening named
+  role assertions. Frontend before SSR integration: **390 tests / 39 files**,
+  lint/types/format pass. Logs:
+  `/tmp/neb-frontend-next-packet-final-check-oct08.log`,
+  `/tmp/neb-frontend-next-packet-final-format-oct08.log`.
+- New four-engine live preference packet first passed **15/16**, retries zero.
+  Chromium's real all-language retry got gateway 502 at 22:52:44 UTC. Backend
+  source changed at 22:52:43 UTC; proxy records show several upstream failures
+  at that time. Runserver autoreload interference is strongly correlated, but
+  there is no process-log proof. The trace and failure logs are preserved at
+  `frontend/.playwright-cli/artifacts/preference-controls`,
+  `/tmp/neb-preference-controls-browser-oct08.log` and
+  `/tmp/neb-preference-controls-upstream-failure-oct08.log`.
+  The all-language reload assertion also now waits for a loaded, enabled
+  chooser before counting zero selected controls. With stable app sources the
+  separately recorded packet passed **16/16**, retries zero, retaining full
+  page-error assertions and real retry writes:
+  `/tmp/neb-preference-controls-stable-browser-oct08.log`.
+  Mocked 503 responses are deliberate failure injection, not a claim that all
+  browser resource responses were successful.
+- Scalable sitemap index uses occupied integer PK buckets and anonymous
+  projected parts, with no one-hour visibility cache. PostgreSQL regression
+  covers 10,002 boards, sparse huge IDs, immediate public/private/archive
+  changes, capacity and query bounds. Frontend XML verifies canonical origins,
+  escaping, invalid parts, staging emptiness and upstream failure. Independent
+  review passes. This does not measure scaled SQL latency or target crawl load.
+  New backend must precede new frontend; mixed-version controls are documented.
+- SSR previously forwarded only cookies, aggregating guest throttle quotas
+  under the frontend replica. Server-only `SSR_TRUST_PROXY_CLIENT_IP=true`
+  now accepts one valid IPv4/IPv6 address from normalized private ingress.
+  Direct Next defaults off; chains and zone IDs are rejected. Sitemap calls
+  remain anonymous. Independent security review passes within the declared
+  private topology. New PostgreSQL quota tests: **4 pass**; integrated frontend
+  lint/types and **412 tests / 40 files** pass. Logs:
+  `/tmp/neb-ssr-throttle-postgres-oct08.log`,
+  `/tmp/neb-frontend-ssr-integrated-check-oct08.log`.
+  QA frontend was recreated alone with explicit feedback-off/QA-origin flags,
+  and Nginx reloaded its upstream resolution. Target application reachability,
+  controlled-edge trust and IPv4/IPv6 forged-header replacement still need
+  actual ingress evidence; syntax validation alone cannot prove that trust.
+- Fresh Node 22 and host installs succeed. Lock-only brace-expansion patch
+  versions are 1.1.21, 2.1.7 and 5.0.12, following the
+  [primary advisory](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr).
+  Production npm audit reports zero findings. Full development audit retains
+  five affected package nodes from one
+  [braces recursion advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm),
+  which lists no patched version; registry latest is 3.0.3. Installed dependency
+  tracing finds only the development Next ESLint plugin's fast-glob chain.
+  Its root-directory glob comes from trusted ESLint settings; this project
+  supplies no rootDir glob and defaults to context.cwd. No application-request
+  input path or production package is found in that scoped trace. This is a
+  scoped exposure assessment, not removal of the advisory. Do not force the
+  audit-suggested downgrade to eslint-config-next 14.2.35.
+  Logs: `/tmp/neb-frontend-fresh-production-audit-oct08.log`,
+  `/tmp/neb-host-final-source-install-oct08.log`.
+- Optimized build/start with the QA backend and illustrative canonical origin
+  `https://bingo.example.com` passed. A local XML walk returned **2 parts / 10
+  URLs / 1,808 bytes**, validated canonical origins, XML roots, no-store headers
+  and limits, and received 400 for empty/negative/leading-zero/repeated parts.
+  It did not contact or establish ownership/TLS of that illustrative domain.
+  The temporary server was stopped. Logs:
+  `/tmp/neb-final-packet-configured-optimized-build-oct08.log`,
+  `/tmp/neb-final-packet-configured-optimized-start-oct08.log`;
+  index snapshot `/tmp/neb-optimized-sitemap-index-oct08.xml`.
+- Next defects verified statically: non-password verification/email-change/
+  deletion callbacks can lose required email and return 500 after SQL commit.
+  Export jobs already have a durable recovery scanner but their callbacks also
+  misreport 500, and one failed recovery publish can interrupt a sweep.
+  Fixes are in progress; no passing tests or completion claim for those fixes
+  is made here. A verification delivery column needs a persistent SQL default
+  for old writers; new worker tasks require a worker-first rollout before new
+  web producers. Final integrated checks and exact-source CI remain required.
+
+## 2026-10-08 — durable mail/export, locked step-up and final local packet
+
+- The callback defects described above are fixed. Verification rows contain
+  recoverable delivery intent and a versioned HMAC-token contract; only the
+  token digest is persisted. Rotation fallback keys reconstruct existing links
+  without changing expiry/cooldown. Email-change notices freeze both recipients;
+  deletion warning intent is cancelled with its matching deletion request.
+  Security review covers token reconstruction, cancellation ordering, privacy
+  cleanup and migration compatibility. SMTP acceptance followed by a DB failure
+  can still duplicate a message: delivery is at least once.
+- Migration `accounts.0006_emailverification_delivery` has a persistent SQL
+  `{}` default. An actual old-writer INSERT omitting this column succeeds in
+  PostgreSQL; legacy hash-only links remain valid but unreconstructible lost
+  messages need explicit resend. Migration was applied on local QA and worker/
+  Beat restarted. New mail/recovery tasks are registered by the real worker.
+  Deploy migration, replace/drain workers, then new web producers and frontend;
+  retain strong fallback keys for verification lifetime/recovery. Compose now
+  forwards fallback keys and the configurable mail timeout to all three Python
+  services; an explicit placeholder/7-second configuration probe passed.
+- New recovery scanner bounds are ten verification rows and ten account events
+  every five minutes; password notices have their separate 25-event bound.
+  Delivery failures keep safe error codes and exponential next-attempt times.
+  Focused PostgreSQL mail/credential/default/account packet: **105 pass**.
+  Log: `/tmp/neb-account-delivery-postgres-focused-oct08.log`.
+- An isolated Django process used a genuinely closed loopback Redis port:
+  registration returned **202**, the real publish raised OperationalError, and
+  the verification row remained pending. Manually republishing its ID through
+  the normal broker reached the real worker: the same row became sent and
+  Mailpit contained one matching message. This verifies real local transport
+  recovery; it does not prove production SMTP or unattended Beat timing.
+  The first cleanup guard incorrectly expected the unverified account's final
+  username (stored in pending verification until confirmation); delivery checks
+  had passed but that probe exited nonzero. A separate corrected guard matched
+  user ID/email/pending username and removed only the synthetic account.
+  Logs: `/tmp/neb-account-real-broker-failure-oct08.log`,
+  `/tmp/neb-account-real-worker-repair-oct08.log`,
+  `/tmp/neb-account-broker-probe-cleanup-oct08.log`.
+- Export callbacks catch operational broker failure, retain the owned job and
+  HTTP 202, and emit projected task/job/pending logs. Recovery scans at most 100
+  jobs of each type: queued/uploaded after five minutes; processing only after
+  hard-task timeout plus 60 seconds. A failed publish conditionally restores the
+  previous timestamp without overwriting a worker's newer state and does not
+  interrupt other jobs. Per-user locking serializes first account-export
+  creation. Focused real PostgreSQL fault/concurrency packet: **24 pass**;
+  independent correctness review passes. Log:
+  `/tmp/neb-exports-recovery-concurrency-postgres-oct08.log`.
+- Security review found that email-change/deletion serializers checked a cached
+  user before the mutation's fresh lock. A concurrent reset could make that
+  accepted password stale. Services now recheck the submitted password on the
+  locked row before mutations or idempotent deletion return; serializers and
+  step-up services use no-setter hash verification. Nine PostgreSQL regressions
+  include observed blocking on a genuinely uncommitted reset and successful
+  legacy hashes preserving the stored/session auth hash. Deletion still revokes
+  sessions. Final scoped independent security review passes.
+- Draft/revision GET lists now return pagination envelopes (24 default, 100
+  maximum) with deterministic fixed-data ordering and existing access rules.
+  Related rows are hydrated only after pagination. OpenAPI documents actual
+  required idempotency headers and replay/conflict statuses; generated frontend
+  contracts match. Five DB pagination and seven schema cases plus the integrated
+  suite pass; independent review passes. No repository frontend GET caller was
+  found; external array consumers must migrate. Offset pagination does not
+  promise a snapshot while concurrent edits change ordering.
+- Final integrated backend: **363 passed, one infrastructure-only skip**;
+  Ruff/format, mypy (**77 sources**), migration drift and exact OpenAPI comparison
+  pass. Final integrated frontend Node 22: **415 tests / 40 files**, lint/types/
+  format pass; generated API types regenerated successfully. Logs:
+  `/tmp/neb-post-stepup-all-postgres-oct08.log`,
+  `/tmp/neb-post-stepup-all-ruff-oct08.log`,
+  `/tmp/neb-post-stepup-all-python-format-oct08.log`,
+  `/tmp/neb-post-stepup-all-mypy-oct08.log`,
+  `/tmp/neb-frontend-post-contract-final-check-oct08.log`,
+  `/tmp/neb-post-contract-final-frontend-format-oct08.log`.
+- Session sign-out and deletion cancellation show scoped pending status,
+  disable duplicate activation, retain unrelated credential drafts, and retry
+  after a held 503. The cancellation journey registers/verifies a separate
+  account through real Mailpit, schedules deletion, signs in during the grace
+  period, cancels and verifies persisted cancellation. Combined preference/
+  sign-out/cancellation packet: **24/24**, Chromium, mobile WebKit, Firefox and
+  desktop WebKit, **retries zero**, full page-error assertions, 320/1710 overflow
+  checks and real successful retry writes. Log:
+  `/tmp/neb-final-account-preferences-browser-oct08.log`.
+  Native autofill, BFCache, OS file chooser and physical virtual keyboards remain
+  separate unverified capabilities.
+- Disposable scale audit verified **10,002 boards / 10,001 public / one private /
+  20,002 revisions / 180,000 cells**, two occupied sitemap parts, zero public
+  omissions and private exclusion. Each API response used one SELECT. Index:
+  19 JSON bytes, 5.849 ms view/render, 3.808 ms EXPLAIN execution. Part 0: 9,999
+  boards, 1,219,909 JSON bytes, 194.945 ms view/render, 8.745 ms SQL using PK index
+  plus memoized author lookup. Part 1: two boards, 275 bytes, 1.971 ms view/render,
+  0.066 ms SQL. Temporary database cleanup succeeded; source data unchanged.
+  This is one in-process sample, excluding middleware/network/Next/proxy,
+  concurrency, cold-cache guarantees and production capacity. Log:
+  `/tmp/neb-sitemap-scaled-database-audit-oct08.log`.
+- Final configured optimized build/start passes; the new anonymous sitemap
+  walker returns **two parts / ten URLs / 1,808 bytes**. Independent review found
+  three false-pass checks in its first draft (missing static child, encoded part
+  alias and substring cache directive). They are corrected; valid mocked data
+  and 12 malformed cases were independently checked. The real walk enforces
+  canonical index URLs/order/bounds, static route set, XML structure, no-store,
+  document byte/entry limits and per-document duplicate policy. Author URLs can
+  repeat across separate parts by design. Canonical `https://bingo.example.com`
+  is illustrative; no ownership/TLS/provider claim. Temporary server stopped.
+  Logs: `/tmp/neb-final-reviewed-optimized-build-oct08.log`,
+  `/tmp/neb-final-reviewed-optimized-start-oct08.log`,
+  `/tmp/neb-reviewed-sitemap-walker-oct08.log`.
+- The walker additionally rejects DTD/entity declarations before expansion;
+  UTF-8 and UTF-16 adversarial payload checks pass. Its final real-server rerun
+  returns the same two parts / ten URLs / 1,808 bytes. Both infrastructure Python
+  scripts pass scoped Ruff checks; generated scale-fixture passwords are
+  explicitly unusable. Logs: `/tmp/neb-sitemap-xml-hardening-check-oct08.log`,
+  `/tmp/neb-reviewed-sitemap-walker-xmlguard-oct08.log`.
+- Section 42's defaults item is now checked from persisted/factory/timestamp/
+  SQL evidence; total **753 checked / 389 unchecked**, section verdicts unchanged
+  (**56 verified / 42 partial / six N/A / one deployment-only**). Broader
+  transaction mapping, form/control coverage and operations/target requirements
+  remain open. The current dirty packet still requires its own commit and all
+  nine exact-source CI jobs; no production-readiness or deployment claim.

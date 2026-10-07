@@ -46,12 +46,19 @@ export function ProfileView({
   initialProfile?: UserProfile | null;
 }) {
   const ownProfile = !username;
+  const initialLanguages =
+    initialProfile &&
+    "preferred_languages" in initialProfile &&
+    Array.isArray(initialProfile.preferred_languages)
+      ? initialProfile.preferred_languages
+      : [];
   const [profile, setProfile] = useState<UserProfile | null>(initialProfile ?? null);
   const [displayName, setDisplayName] = useState(initialProfile?.display_name ?? "");
   const [usernameValue, setUsernameValue] = useState(initialProfile?.username ?? "");
   const [bio, setBio] = useState(initialProfile?.bio ?? "");
-  const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
-  const [savedPreferredLanguages, setSavedPreferredLanguages] = useState<string[]>([]);
+  const [preferredLanguages, setPreferredLanguages] = useState<string[]>(initialLanguages);
+  const [savedPreferredLanguages, setSavedPreferredLanguages] =
+    useState<string[]>(initialLanguages);
   const [loading, setLoading] = useState(!initialProfile);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -391,13 +398,15 @@ export function ProfileView({
   }
 
   const avatarUrl = profile.avatar?.thumbnail_url ?? profile.avatar?.url;
+  const pendingMessage =
+    feedbackAction === "privacy" ? "Saving privacy settings…" : "Saving changes…";
   const feedback =
     error || message || pending ? (
       <p
         className={error ? "form-message form-message--error" : "form-message"}
         role={error ? "alert" : "status"}
       >
-        {error || (pending ? "Saving changes…" : message)}
+        {error || (pending ? pendingMessage : message)}
       </p>
     ) : null;
   return (

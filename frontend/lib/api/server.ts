@@ -1,7 +1,11 @@
 import "server-only";
 
+import { isIP } from "node:net";
+
+import { headers as requestHeaders } from "next/headers";
 import { cache } from "react";
 
+import type { components as ApiComponents } from "@/lib/api/schema";
 import type {
   AuthenticatedUser,
   BingoDetail,
@@ -24,6 +28,14 @@ function serverUrl(path: string, query?: URLSearchParams): string {
   return query?.size ? `${url}?${query.toString()}` : url;
 }
 
+const trustedProxyClientIp = cache(async (): Promise<string | null> => {
+  // Enable only when Next.js is private and ingress overwrites X-Forwarded-For.
+  if (process.env.SSR_TRUST_PROXY_CLIENT_IP !== "true") return null;
+  const value = (await requestHeaders()).get("x-forwarded-for");
+  if (!value || value.includes(",") || value.includes("%") || isIP(value) === 0) return null;
+  return value;
+});
+
 async function serverLookup<T>(
   path: string,
   cookieHeader = "",
@@ -32,6 +44,8 @@ async function serverLookup<T>(
   try {
     const headers = new Headers({ Accept: "application/json" });
     if (cookieHeader) headers.set("Cookie", cookieHeader);
+    const clientIp = await trustedProxyClientIp();
+    if (clientIp) headers.set("X-Forwarded-For", clientIp);
     const response = await fetch(serverUrl(path, query), {
       headers,
       cache: "no-store",
@@ -117,18 +131,15 @@ export interface ExploreServerQuery {
   page?: number;
 }
 
-export interface PublicSitemapEntry {
-  bingo_id: string;
-  author_username: string;
-  last_modified: string;
-}
+export type PublicSitemapEntry = ApiComponents["schemas"]["PublicSitemapEntry"];
+export type PublicSitemapResponse = ApiComponents["schemas"]["PublicSitemap"];
+export type PublicSitemapIndexResponse = ApiComponents["schemas"]["PublicSitemapIndex"];
 
-export interface PublicSitemapResponse {
-  results: PublicSitemapEntry[];
-  truncated: boolean;
-}
+export const getServerSitemapIndex = () =>
+  serverGet<PublicSitemapIndexResponse>("sitemap/bingos/index/");
 
-export const getServerSitemap = cache(() => serverGet<PublicSitemapResponse>("sitemap/bingos/"));
+export const getServerSitemap = (part: string) =>
+  serverGet<PublicSitemapResponse>("sitemap/bingos/", "", new URLSearchParams({ part }));
 
 export const getServerExplore = cache((input: ExploreServerQuery, cookieHeader = "") => {
   const query = new URLSearchParams();

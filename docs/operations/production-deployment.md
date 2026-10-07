@@ -99,10 +99,23 @@ Nginx and then the applications:
 4. Set `NGINX_FORWARDED_PROTO=https`; Nginx deliberately ignores arbitrary
    inbound `X-Forwarded-Proto`.
 5. Django receives one normalized Nginx hop, so keep `TRUSTED_PROXY_HOPS=1`.
+6. Set the server-only `SSR_TRUST_PROXY_CLIENT_IP=true` on private Next.js
+   replicas. Next forwards Nginx's single validated client IP to Django for SSR
+   reads and anonymous sitemap requests, preserving each visitor's quota rather
+   than aggregating all visitors under a frontend replica. Compose enables this
+   for its private application topology. Outside that topology the flag defaults
+   off; do not enable it on directly exposed Next.js. IP syntax validation does
+   not authenticate the sender. Sitemap lookups never forward a user's cookies.
 
 Do not expose the origin around the controlled edge. If a platform omits this
 Nginx layer, reproduce the same strip/normalize contract at its trusted ingress
 and set Django's hop count only after verifying the exact chain.
+
+Before enabling forwarding at the target, test both IPv4 and IPv6 ingress, prove
+that applications cannot be reached around Nginx, and send forged forwarding
+headers through the public edge. Verify that Nginx replaces them and that browser
+and SSR requests for the same visitor share the expected quota. Local unit tests
+establish identity handling, not target network isolation.
 
 Set `NGINX_ADMIN_ALLOW_CIDR` to the staff VPN or identity-aware proxy egress
 network. Also require SSO with phishing-resistant MFA at that external access
@@ -178,6 +191,70 @@ docker run --rm <backend-image-digest> python manage.py migrate --noinput
 concurrent migration from replicated processes. Prefer additive,
 backwards-compatible migrations; deploy compatible processes after the release
 job succeeds. Rollback changes image digests, not destructive schema changes.
+
+The scalable sitemap release must deploy the backend first: its new
+`/api/v1/sitemap/bingos/index/` endpoint and `?part=<integer>` projection must be
+available before the new frontend. The new backend retains the legacy unpaged
+endpoint for an older frontend. A new frontend with an older backend deliberately
+returns sitemap 503 with `Retry-After: 300`; do not treat an empty or partial XML
+catalog as a successful rollout. Smoke-check the index and every child URL,
+confirm canonical origins and private/deleted-board exclusion, then promote the
+frontend. Record real catalog size, SQL latency and crawl capacity in the target
+rehearsal.
+
+Run the anonymous read-only walker against the selected public HTTPS origin:
+`python3 infra/scripts/verify-sitemap.py "$PUBLIC_ORIGIN"`. It follows the complete
+index without authentication or redirects, verifies static/canonical parts,
+no-store and XML limits, and delays child requests by 0.6 seconds by default.
+Record its result and separately prove public/private catalog coverage; a small
+XML walk does not establish crawl capacity or concurrent-load limits.
+
+Password reset/change stores security-email delivery intent with the SQL audit
+event and freezes the intended recipient. Broker publication happens after
+commit; failure does not undo a successful credential change. The worker retries
+pending intents and Beat scans up to 25 due intents every five minutes. Failed
+delivery backs off from two minutes to one hour. Configure
+`EMAIL_TIMEOUT_SECONDS` (10 seconds by default), verify the scanner with the real
+broker and SMTP provider, and alert on overdue pending delivery. SMTP acceptance
+can precede a failed database acknowledgement; delivery is at least once and a
+duplicate security notice is possible after that failure. Other account emails
+also have durable verification/event delivery state; local checks and the actual
+provider rehearsal are recorded separately.
+
+For this additive account-email migration, deploy in this order:
+
+1. Apply `accounts.0006_emailverification_delivery`. Its persistent empty JSON
+   SQL default permits older web processes to insert legacy rows. Existing
+   hash-only links stay valid; a historically lost legacy raw token requires
+   normal resend because it cannot be reconstructed.
+2. Drain and replace old workers, then verify the new ID-only verification and
+   security-notice tasks are registered. New workers retain the old raw-token
+   task signature for already queued jobs; old workers cannot handle new task
+   names. Enable the new recovery schedule only with compatible workers.
+3. Roll out the new web producers, then the compatible frontend. Verify actual
+   registration, verification, both email-change notices, deletion cancellation
+   and account export through the target broker/provider.
+
+New verification links are reconstructed from a versioned HMAC over immutable
+request fields; the database stores their digest and delivery state, not their
+bearer token. During `DJANGO_SECRET_KEY` rotation, provide previous strong keys
+as the comma-separated `DJANGO_SECRET_KEY_FALLBACKS` on web, worker and Beat.
+Retain them through the verification lifetime and pending recovery window;
+without a matching key a pending delivery remains pending with backoff, and its
+digest/expiry is not silently changed. Production startup rejects short/local
+fallback keys without logging their values. Keep fallback secrets in the secret
+manager. Remove obsolete keys after confirming no valid pending links need them.
+
+Non-password recovery scans up to 10 verification rows and 10 security events
+every five minutes; an email-change event can deliver two independent notices.
+Recipients are frozen per intent, and cancelling deletion cancels its warning
+intent in the same transaction. Verify overdue-delivery alerts at the target;
+at-least-once SMTP acknowledgement semantics also apply to these notices.
+
+Account and bingo export publication preserves the committed HTTP 202/job ID
+through recoverable broker failure. Their existing recovery sweep separates
+five-minute pending eligibility from processing hard-limit expiry and continues
+after individual publication failures; see the runbook for attempt bounds.
 
 ## Release evidence
 

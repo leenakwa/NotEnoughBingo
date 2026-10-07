@@ -843,7 +843,7 @@ Before launch verify:
 - [x] unique constraints;
 - [x] foreign keys;
 - [x] nullable fields;
-- [ ] defaults;
+- [x] defaults;
 - [ ] transactions;
 - [ ] rollback/migration strategy.
 

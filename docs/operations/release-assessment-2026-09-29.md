@@ -5,6 +5,14 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
+Current continuation evidence (2026-10-08): source `c1fc2d7` passed all nine CI
+jobs; the subsequent local packet passes 363 PostgreSQL tests (one infrastructure
+skip), 415 frontend tests, 24 strict four-engine preference/account cases and a
+configured optimized sitemap walk. That packet still needs its own exact-source
+CI gate. Use the [continuation checkpoint](production-readiness-continuation-plan.md)
+and latest [dated evidence](production-readiness-evidence.md) for current work;
+the dated observations below remain historical, including earlier audit counts.
+
 ## Decision
 
 The working tree passes the local code and product-flow checks below. A prior

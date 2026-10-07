@@ -21,11 +21,15 @@ describe("server session bootstrap", () => {
   const fetchMock = vi.fn<typeof fetch>();
 
   beforeEach(() => {
+    vi.stubEnv("SSR_TRUST_PROXY_CLIENT_IP", "false");
     fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
   });
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
 
   it("preserves the authenticated identity and logout marker from one private lookup", async () => {
     fetchMock.mockResolvedValueOnce(

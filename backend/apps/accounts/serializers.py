@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from django.contrib.auth import authenticate, password_validation
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from drf_spectacular.helpers import lazy_serializer
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -204,7 +206,7 @@ class EmailChangeRequestSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         user = self.context["request"].user
-        if not user.check_password(attrs["current_password"]):
+        if not check_password(attrs["current_password"], user.password):
             raise serializers.ValidationError(
                 {"current_password": "The current password is incorrect."}
             )
@@ -234,11 +236,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 class PasswordChangeSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True, trim_whitespace=False)
     new_password = serializers.CharField(write_only=True, trim_whitespace=False)
-
-    def validate_current_password(self, value: str) -> str:
-        if not self.context["request"].user.check_password(value):
-            raise serializers.ValidationError("The current password is incorrect.")
-        return value
 
     def validate_new_password(self, value: str) -> str:
         password_validation.validate_password(value, self.context["request"].user)
@@ -277,6 +274,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer[UserProfile]):
             raise serializers.ValidationError("The avatar asset is unavailable.")
         return value
 
+    @transaction.atomic
     def update(self, instance: UserProfile, validated_data: dict) -> UserProfile:
         user_data = validated_data.pop("user", {})
         avatar_id = validated_data.pop("avatar_id", serializers.empty)
@@ -352,6 +350,6 @@ class AccountDeletionSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_password(self, value: str) -> str:
-        if not self.context["request"].user.check_password(value):
+        if not check_password(value, self.context["request"].user.password):
             raise serializers.ValidationError("The password is incorrect.")
         return value
