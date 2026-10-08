@@ -5,7 +5,14 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
+Latest completed gate: exactc74
+[CI37847289947](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37847289947)
+passes all12 jobs:446 backend,623 frontend,448 smoke/12 skips and125 full-stack
+cases. It covers the logout-channel fix and all four configured browser profiles;
+later working-tree header-prefetch changes require their own gate. See the
+[dated evidence](production-readiness-evidence.md#2026-10-09--completed-exactc74-gate-and-current-public-network-sample).
+
+Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
 finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke
 and12 intentional skips, plus125 full-stack cases; no reported flakes/retries.
 Chromium passes114 smoke cases; each other profile passes110 with four skips.
@@ -25,8 +32,9 @@ typecheck/lint/format and scoped correctness/security/privacy review pass.
 A scoped browser regression passes all four configured profiles using synthetic
 API responses, real mounted account/auth UI and native BroadcastChannel transport
 with storage blocked. Own logout opens no expiry dialog; a separate legacy
-logout witness still does. Exact-source CI and a native current-image rerun remain
-pending; exact5f CI does not cover this later patch. No global checklist item,
+logout witness still does. The bounded native current-frontend rerun below
+subsequently passes; exactc74 CI subsequently passes as recorded above.
+Exact5f CI does not cover this later patch. No global checklist item,
 deployment or broad readiness claim is advanced.
 
 Native Chrome154/macOS200% is observed in an owned Guest window on
@@ -38,12 +46,22 @@ write request is sent. One new owned autosaved draft is undone and guardedly
 soft-deleted; its histories remain. Own logout revokes only its session while
 all ten baseline active-session IDs/profile values remain unchanged, but opens
 an unexpected expiry auth dialog. The subsequent source fix above passes scoped local browser
-regression; exact-source CI and native current-image verification remain pending. Chrome Reset confirms100% and only the owned Guest
+regression; the bounded current-frontend rerun below verifies own logout.
+The earlier cached-image packet remains historical evidence. Chrome Reset
+confirms100% and only the owned Guest
 window closes. Wrapped recovery-link layout and CSRF-copy choices remain
-pending. Report/other-form/other-engine/device zoom, exact CSS viewport and
+pending. Report zoom is subsequently observed within the bounded rerun below;
+other-form/other-engine/device zoom, exact CSS viewport and
 both-theme favicon visibility remain unchecked; global section24 stays partial.
 Support-placeholder delivery remains an operator check. See the dated evidence
 ledger and accessibility matrix for full scope and cleanup limits.
+
+Current frontend native rerun —2026-10-09: Chrome154/macOS at actual200% on
+exactc74 frontend/cachedb6 backend observes report readability/focus wrapping and
+own logout settling on `/login` without an expiry dialog. Owned-session revocation,
+ten-session/profile preservation, Reset100% and owned-window closure are confirmed.
+See the [dated evidence](production-readiness-evidence.md#2026-10-09--current-frontend-native-chrome200-report-and-own-logout)
+for runtime/proof limits; other-flow/device/engine coverage and global24/92 remain open.
 
 Earlier failed gate —2026-10-08: Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
 finishes with ten successful jobs and failed full-stack/Release. All four smoke

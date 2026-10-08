@@ -7775,8 +7775,9 @@ BroadcastChannel objects allowing the logout string to reach the same-document
 header and trigger `refreshUser(true)`; runtime ordering is inferred. A subsequent
 source fix shares one channel per document while preserving the legacy string.
 Its full frontend unit suite, typecheck/lint/format and scoped review pass.
-Local four-profile browser regression now passes as recorded below; exact-source
-CI and native current-image verification remain pending, outside exact5f CI.
+Local four-profile browser regression now passes as recorded below.
+At that checkpoint, exact-source CI and native current-image verification were
+pending, outside exact5f CI; the bounded native rerun is recorded below.
 
 Chrome Reset confirms100%; only the owned Guest window closes to the profile
 picker and no user profile is changed. Screenshots are retained in the tool
@@ -7809,8 +7810,9 @@ typecheck/lint/format and scoped correctness/security/privacy review pass.
 A scoped browser regression passes all four configured profiles using synthetic
 API responses, real mounted account/auth UI and native BroadcastChannel transport
 with storage blocked. Own logout opens no expiry dialog; a separate legacy
-logout witness still does. Exact-source CI and a native current-image rerun remain
-pending; exact5f CI does not cover this later patch. No global checklist item,
+logout witness still does. At that checkpoint, exact-source CI and a native
+current-image rerun were pending; exact5f CI does not cover this later patch.
+The bounded native rerun is recorded below. No global checklist item,
 deployment or broad readiness claim is advanced.
 
 The existing password-reset case90 at `live-product-flows.spec.ts:4947` passes
@@ -7843,8 +7845,142 @@ hashes match the retained provenance. Private archive
 2.32MB, including both baseline traces/videos/screenshots, source/configuration,
 provenance/manifests and the full frontend unit log. Managed preview3191 is stopped.
 
-This establishes scoped local behavior under synthetic API responses. It does
-not rerun the observed defect in a native current frontend image or cover the
-new patch with exact-source CI; both remain pending. The earlier cached-image
+This establishes scoped local behavior under synthetic API responses. At this
+checkpoint, native current-frontend execution and exact-source CI remained
+pending; the bounded native rerun is recorded below. The earlier cached-image
 native bug observation and its cleanup evidence remain valid historical results.
 Counters and global partial verdicts remain unchanged.
+
+
+### 2026-10-09 — Current frontend native Chrome200% report and own logout
+
+The root directly observes native Chrome154/macOS at actual browser-chrome200%
+in an owned Guest window on localhost18584, using exact frontend
+`c74b8607b41dda744c0916cfc117753532db2003`, image
+`sha256:76c660acb1f80d86cdf2daa41c75d332fbcb32b7aeac5a6feba64876b4f4a4fa`,
+and cached backendb6. This is a current frontend run with an older local backend,
+not a full current-application or deployed-image verification.
+
+On another public fixture profile, Report profile opens readable reason/context
+controls with internal vertical scrolling. Tab reaches Send report with a visible
+outline; Tab from the last control wraps to Close, Shift+Tab from Close returns
+to the last control, and Escape restores focus to Report profile. No report
+input or submission occurs. Own Log out settles on standalone `/login`: both
+initial and later accessibility states show Login without an expiry dialog.
+Native HTTP status and UI event history are not instrumented, so this establishes
+the visible result only, alongside the existing synthetic regression evidence.
+
+Database before/after comparison confirms only the owned session is revoked;
+all ten baseline active-session IDs and profile values match exactly. No profile
+settings write occurs. Chrome Reset confirms100% and only the owned Guest window
+closes. Nonsecret observations, before/after snapshots and checksums are retained
+outside the repository under
+`/Users/Daniil/.codex/scratch/not-enough-bingo-production-readiness/evidence-native-c74b860-2026-10-09/`.
+Screenshots remain in the tool conversation; no separate saved-image artifact is
+claimed. The earlier05d native expiry-dialog defect remains historical evidence,
+as does its separate editor draft undo/soft-delete and retained histories; this
+packet does not establish restoration of every fixture or absence of analytics/
+security events.
+
+This supersedes the pending native current-frontend rerun for these bounded
+report/own-logout flows. At this observation checkpoint, exactc74
+[CI37847289947](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37847289947)
+is still live with ten passed jobs and full-stack running; no green gate is
+claimed. Other flows, engines/devices, physical devices, native screen readers,
+exact CSS viewport, all-flow200% and both-theme favicon visibility remain open.
+Recovery-link layout and CSRF-copy decisions are unchanged. Counts remain816
+checked/326 unchecked, including85 N/A and241 applicable; all105 sections and
+1,142 checklist items retain their existing verdicts, including partial24/92.
+
+
+### 2026-10-09 — Completed exactc74 gate and current public-network sample
+
+Exact `c74b8607b41dda744c0916cfc117753532db2003`
+[CI37847289947](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37847289947)
+subsequently finishes successfully with all12 jobs:446 backend,623 frontend/45
+files,448 smoke/12 intentional skips and125 full-stack cases, without reported
+flakes/retries. Chromium passes115 smoke cases; each other configured profile
+passes111 with four skips. The explicit own-broadcast/foreign-expiry regression
+passes all four profiles; live password-reset and session-signout cases pass
+5.8s and3.7s. Tested merge `90d665da38868a954af3c057f3af7ec0c8739188` and
+branchc74 share full tree `1939309668fc1a93b565f3421257b42792880baf`. Original
+logs, all nine artifacts, API metadata and checksums are archived privately under
+`evidence-c74b860-2026-10-09/ci/`; original artifact hashes match GitHub digests
+and root independently rechecks the archived file hashes. This supersedes the
+previous pending exactc74 gate, without covering later working-tree changes.
+
+A separate fresh headless guest on current immutablec74 frontend/cachedb6 backend
+opens Discover and its existing public board successfully, without recorded
+console/page errors. The direct control capture retains25 RSC requests:11 tree
+prefetches,13 ordinary prefetches and one clicked navigation. Twenty-two streams
+abort after receiving200; clicked navigation finishes. Capture reads no response
+bodies and snapshots before teardown. Distinct prefetch phases and native
+framework cancellation paths do not establish actual cancellation causality or
+SSR/backend request amplification. An ordinary Discover prefetch while already
+on Discover is observed; its narrow header correction is separately pending.
+
+Separate public HTTP inventory measures a two-board feed at9,056 decoded/1,574
+gzip bytes and a nine-cell detail at5,356/1,279; Discover HTML36,698/7,841 and
+detail29,296/6,645. This small sample does not measure permitted full pages,
+large/diverse cells, concurrent traffic or production ingress. Evidence and
+independent source/capture review are retained privately under
+`evidence-public-network-c74b860-2026-10-09/`. Browser RSC lacks X-Request-ID
+and current backend success completion logs are unavailable, limiting runtime
+correlation. Section76 duplicate-request/huge-response bullets remain open.
+
+
+### 2026-10-09 — Exact-current header prefetch correction
+
+Header links now disable prefetch only when their destination exactly matches
+the current pathname. Both brand links, public navigation, Create and Notifications
+retain normal clicks; other destinations keep Next's default automatic prefetch.
+Nested-path active styling, AuthLink and shared logout transport are unchanged.
+Forty-eight header tests, typecheck, scoped lint/format and independent source
+review pass. This removes the observed ordinary Discover prefetch while already
+on Discover, without claiming duplicate backend requests or closing section76.
+
+An isolated matched production webpack comparison records that prepatch current-
+Discover request and zero equivalent requests in fixed1440x1000/390x844 captures.
+Other routes still prefetch. Discover→board→header Discover→board→brand home
+reaches expected pages at both widths, with no horizontal overflow or page
+exceptions. Root reviews the narrow board screenshot and transport summaries.
+Default Turbopack rejects the isolated external node_modules symlink; its failed
+build log is retained, and both compared variants use webpack. The ordinary
+prepatch Docker capture remains additional evidence, not the matched comparison.
+
+The clean-console check does not pass: both matched previews produce analytics
+403 because localhost3192/3193 are outside the unchanged backend trusted-origin
+configuration. A separate diagnostic confirms the origin rejection; no CSRF
+protection is disabled and no failures are hidden. This limits the preview's
+clean-flow claim; exact final-source CI and canonical-origin verification remain
+separate. Original failed selector diagnostics and all later captures/provenance
+are retained privately under `evidence-header-prefetch-2026-10-09/`. Both owned
+preview servers and the owned browser close; existing services are preserved.
+
+
+### 2026-10-09 — Isolated full-page maximum-text payload envelope
+
+An owned fresh PostgreSQL16 tmpfs database and trackedc74 backend snapshot
+measure two deterministic sets of24 published10x10 boards, with maximum legal
+text/alt/title/description/tag lengths and no media. Thirty-six APIClient samples
+across Discover, Trending and catalog return200 with24 cards/2,400 cells and
+five SQL queries each. Diverse keyed ASCII produces1,614,989 rendered JSON
+bytes and511,269 offline gzip6 feed bytes (catalog511,315); repeated four-byte
+Unicode produces3,667,709 and114,888 (catalog114,912). Repetition explains why
+the larger decoded example compresses better; neither is an absolute legal
+response maximum. Default local request samples span0.138–0.425s for ASCII
+and0.151–0.322s for Unicode, including SQL capture; these are not production
+latency, concurrency or frontend rendering measurements.
+
+Only24 rows exist, so requested100 samples do not measure a100-card catalog
+or empirically distinguish feed clamping. Input-document512KiB validation is
+separate from response size; required cell previews retain full text/style data.
+No response budget or preview design policy is inferred from these measurements.
+Offline gzip does not prove deployed Content-Encoding. The first fixture script
+incorrectly tries to change a published immutable revision UUID and fails; its
+log/script remain, and the corrected script uses normal generated UUIDs.
+Transactions roll back to zero owned users/boards/cells; the owned database
+container/network are removed and shared services remain untouched.
+Scripts, response/SQL archives, runtime/source provenance and verified hashes
+are retained privately under `evidence-public-payload-envelope-2026-10-09/`.
+This improves the local payload evidence while section76 remains partial.

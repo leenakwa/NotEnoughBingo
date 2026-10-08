@@ -1,9 +1,11 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { BroadcastChannel as NativeBroadcastChannel } from "node:worker_threads";
+import type Link from "next/link";
+import type { ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AppHeader } from "@/components/layout/app-header";
+import { AppHeader, ClassicAppHeader, ModernAppHeader } from "@/components/layout/app-header";
 import {
   AUTH_CHANGED_EVENT,
   AUTH_DIALOG_EVENT,
@@ -22,7 +24,18 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   session: vi.fn(),
   unreadCount: vi.fn(),
+  link: vi.fn(),
 }));
+
+vi.mock("next/link", async (importOriginal) => {
+  const { default: NextLink } = await importOriginal<typeof import("next/link")>();
+  return {
+    default: (props: ComponentProps<typeof Link>) => {
+      mocks.link(props);
+      return <NextLink {...props} />;
+    },
+  };
+});
 
 vi.mock("next/navigation", () => {
   const router = { replace: mocks.replace, refresh: mocks.refresh };
@@ -49,6 +62,47 @@ const user: AuthenticatedUser = {
   email_verified: true,
   deletion_scheduled_for: null,
 };
+
+describe("AppHeader route prefetch", () => {
+  it.each([
+    ["classic", ClassicAppHeader],
+    ["modern", ModernAppHeader],
+  ] as const)("suppresses only the exact current destination in the %s header", (_, Header) => {
+    const { rerender } = render(<Header pathname="/bingo/test" user={user} unreadCount={0} />);
+    for (const pathname of [
+      "/discover",
+      "/trending",
+      "/explore",
+      "/create",
+      "/notifications",
+      "/discover/category",
+      "/bingo/test",
+    ]) {
+      mocks.link.mockClear();
+      rerender(<Header pathname={pathname} user={user} unreadCount={0} />);
+      const links = mocks.link.mock.calls.map(([props]) => props as ComponentProps<typeof Link>);
+      expect(links).toHaveLength(7);
+      for (const href of ["/discover", "/trending", "/explore", "/create", "/notifications"]) {
+        const destinations = links.filter((props) => props.href === href);
+        expect(destinations).toHaveLength(href === "/discover" ? 2 : 1);
+        for (const props of destinations) {
+          expect(props.prefetch).toBe(pathname === href ? false : undefined);
+        }
+      }
+      expect(screen.getByRole("link", { name: "Not Enough Bingo home" })).toHaveAttribute(
+        "href",
+        "/discover",
+      );
+      expect(screen.getByRole("link", { name: "Discover" })).toHaveAttribute("href", "/discover");
+      if (pathname.startsWith("/discover")) {
+        expect(screen.getByRole("link", { name: "Discover" })).toHaveAttribute(
+          "aria-current",
+          "page",
+        );
+      }
+    }
+  });
+});
 
 describe("AppHeader scroll shadow", () => {
   const scrollYDescriptor = Object.getOwnPropertyDescriptor(window, "scrollY")!;

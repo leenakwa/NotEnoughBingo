@@ -53,6 +53,7 @@ function NavigationLinks({ pathname }: Pick<HeaderViewProps, "pathname">) {
       <Link
         key={item.href}
         href={item.href}
+        prefetch={pathname === item.href ? false : undefined}
         className={isActive ? "nav-link is-active" : "nav-link"}
         aria-current={isActive ? "page" : undefined}
       >
@@ -69,6 +70,7 @@ function AccountNavigation({ avatarUrl, pathname, unreadCount, user }: HeaderVie
         <Link
           className="icon-link"
           href="/notifications"
+          prefetch={pathname === "/notifications" ? false : undefined}
           aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
           aria-current={pathname.startsWith("/notifications") ? "page" : undefined}
         >
@@ -108,7 +110,12 @@ export function ClassicAppHeader({
       className={`site-header site-header--classic${hasScrolled ? " is-scrolled" : ""}`}
     >
       <div className="classic-header__left">
-        <Link className="brand-link" href="/discover" aria-label="Not Enough Bingo home">
+        <Link
+          className="brand-link"
+          href="/discover"
+          prefetch={pathname === "/discover" ? false : undefined}
+          aria-label="Not Enough Bingo home"
+        >
           Not Enough Bingo
         </Link>
       </div>
@@ -116,6 +123,7 @@ export function ClassicAppHeader({
       <div className="classic-header__center">
         <Link
           href="/create"
+          prefetch={pathname === "/create" ? false : undefined}
           className={createIsActive ? "classic-header__create is-active" : "classic-header__create"}
           aria-label="Create"
           aria-current={createIsActive ? "page" : undefined}
@@ -155,7 +163,12 @@ export function ModernAppHeader({
       ref={headerRef}
       className={`site-header site-header--modern${hasScrolled ? " is-scrolled" : ""}`}
     >
-      <Link className="brand-link" href="/discover" aria-label="Not Enough Bingo home">
+      <Link
+        className="brand-link"
+        href="/discover"
+        prefetch={pathname === "/discover" ? false : undefined}
+        aria-label="Not Enough Bingo home"
+      >
         Not Enough Bingo
       </Link>
 
@@ -163,6 +176,7 @@ export function ModernAppHeader({
         <NavigationLinks pathname={pathname} />
         <Link
           href="/create"
+          prefetch={pathname === "/create" ? false : undefined}
           className={createIsActive ? "nav-link create-link is-active" : "nav-link create-link"}
           aria-current={createIsActive ? "page" : undefined}
         >

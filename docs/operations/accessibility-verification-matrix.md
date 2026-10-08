@@ -109,14 +109,25 @@ UI equivalence only, not a latest-image run. Own logout revokes the session but
 unexpectedly opens an expiry auth dialog on `/login`; the traced same-document
 logout-channel refresh race has a subsequent source fix passing623 frontend
 units/45 files, typecheck/lint/format, scoped review and four-profile local browser
-regression with synthetic APIs and native channel transport. Exact-source CI and
-a native current-image rerun remain pending; completed exact5f CI does not cover
-that patch. Chrome Reset confirms100% and only the owned Guest window closes. Native screenshots
+regression with synthetic APIs and native channel transport. The bounded native
+current-frontend rerun below subsequently passes; exactc74 CI subsequently passes all12 jobs as recorded in the dated evidence. Completed exact5f CI does not cover that patch.
+Chrome Reset confirms100% and only the owned Guest window closes. Native screenshots
 remain in the tool conversation, without a separate saved-file artifact.
 
-Report/other-form zoom, other engines/devices, native screen readers and
+Other-form zoom, other engines/devices, native screen readers and
 all-flow200% coverage remain unchecked; global section24 remains partial.
 Only dark browser-chrome screenshot evidence exists, so section92's both-theme
 favicon visibility remains unchecked. Viewport or CSS/device-scale changes do
 not establish native zoom. See the evidence ledger's 2026-10-09 authenticated
 native Chrome200% packet for cleanup and pending decisions.
+
+
+## Current frontend native report focus — 2026-10-09
+
+Native Chrome154/macOS at actual200% on exactc74 frontend/cachedb6 backend shows
+readable report reason/context controls and internal vertical scrolling. Send report
+has visible Tab focus; Tab from the last control wraps to Close, Shift+Tab returns
+to the last control, and Escape restores Report profile trigger focus. No report
+input/submission occurs. See the [dated evidence](production-readiness-evidence.md#2026-10-09--current-frontend-native-chrome200-report-and-own-logout)
+for identity and cleanup. Other-form/engine/device/screen-reader coverage, exact
+CSS viewport and both-theme favicon visibility remain open; global24/92 stay partial.
