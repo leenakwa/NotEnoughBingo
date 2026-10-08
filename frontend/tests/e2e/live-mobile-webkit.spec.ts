@@ -57,6 +57,8 @@ test("mobile WebKit catalog and play-mark controls work without overflow", async
   await expect(page.locator(".bingo-card").filter({ hasText: bingo.title })).toBeVisible();
 
   await page.goto(`/bingo/${bingo.id}`);
+  const markStyleDisclosure = page.locator(".play-mark-disclosure > summary");
+  if (await markStyleDisclosure.isVisible()) await markStyleDisclosure.click();
   await page.getByRole("radio", { name: "Cross" }).check();
   await page.getByRole("button", { name: bingo.cell_texts[0], exact: true }).tap();
   await expect(page.locator(".completion-check")).toHaveText("×");

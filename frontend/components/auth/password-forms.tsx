@@ -16,6 +16,7 @@ export function ForgotPasswordForm({
   onPendingChange?: (pending: boolean) => void;
 } = {}) {
   const [email, setEmail] = useState("");
+  const [ready, setReady] = useState(false);
   const [pending, setPending] = useState(false);
   const submissionInFlight = useRef(false);
   const active = useRef(false);
@@ -24,6 +25,7 @@ export function ForgotPasswordForm({
 
   useEffect(() => {
     active.current = true;
+    setReady(true);
     return () => {
       active.current = false;
     };
@@ -72,11 +74,12 @@ export function ForgotPasswordForm({
             autoCapitalize="none"
             spellCheck={false}
             required
+            disabled={!ready}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
-        <button className="button button--primary" type="submit" disabled={pending}>
+        <button className="button button--primary" type="submit" disabled={!ready || pending}>
           {pending ? "Sending…" : "Send reset link"}
         </button>
         {message ? (

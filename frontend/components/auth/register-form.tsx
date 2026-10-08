@@ -22,6 +22,7 @@ export function RegisterForm({
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [ready, setReady] = useState(false);
   const [pending, setPending] = useState(false);
   const submissionInFlight = useRef(false);
   const active = useRef(false);
@@ -31,6 +32,7 @@ export function RegisterForm({
 
   useEffect(() => {
     active.current = true;
+    setReady(true);
     return () => {
       active.current = false;
     };
@@ -99,6 +101,7 @@ export function RegisterForm({
             autoCapitalize="none"
             spellCheck={false}
             required
+            disabled={!ready}
             maxLength={254}
             aria-invalid={Boolean(fieldErrors.email)}
             aria-describedby={fieldErrors.email ? "registration-email-error" : undefined}
@@ -122,6 +125,7 @@ export function RegisterForm({
             autoCapitalize="none"
             spellCheck={false}
             required
+            disabled={!ready}
             minLength={3}
             maxLength={30}
             pattern="\s*[A-Za-z0-9_]+\s*"
@@ -146,6 +150,7 @@ export function RegisterForm({
           name="password"
           autoComplete="new-password"
           minLength={12}
+          disabled={!ready}
           hint="Use at least 12 characters. Avoid common words and your username."
           value={password}
           onChange={(event) => {
@@ -154,7 +159,7 @@ export function RegisterForm({
           }}
           error={fieldErrors.password}
         />
-        <button className="button button--primary" type="submit" disabled={pending}>
+        <button className="button button--primary" type="submit" disabled={!ready || pending}>
           {pending ? "Creating account…" : "Create account"}
         </button>
         {error ? (

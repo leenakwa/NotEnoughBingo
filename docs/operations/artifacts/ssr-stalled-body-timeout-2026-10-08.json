@@ -1,0 +1,40 @@
+{
+  "scope": "Native existing SSR session deadline and stalled body; local pre-deployment proof only",
+  "result": "pass",
+  "observation": {
+    "date": "2026-10-08T05:40:33.539Z",
+    "nodeVersion": "v24.16.0",
+    "vitestVersion": "5.0.2",
+    "sourcePath": "/Users/Daniil/Documents/VSCode/NotEnoughBingo/frontend/lib/api/server.ts",
+    "sourceSha256": "ca567eeb8e3f44fd87adb64c1776c79a3bd0852613f6da0550f8e3e1787a9ff3",
+    "nativeFetchUsed": true,
+    "nativeAbortSignalUsed": true,
+    "artificialTimers": false,
+    "urlRewriteOnly": true,
+    "isolatedEphemeralLoopback": true,
+    "requestMethod": "GET",
+    "requestedPath": "/api/v1/auth/session/",
+    "nativeFetchCalls": 1,
+    "incomingRequests": 1,
+    "cacheMode": "no-store",
+    "responseStatus": 200,
+    "headersObserved": true,
+    "headersElapsedMs": 13.676,
+    "deliberatelyIncompleteJsonBody": true,
+    "responseComplete": false,
+    "elapsedMs": 4004.134,
+    "abortEvents": 1,
+    "signalAborted": true,
+    "abortReasonName": "TimeoutError",
+    "baselineIsNull": true,
+    "baselineIsGuest": false,
+    "noDatabaseOrApplicationMutation": true,
+    "noQaOrDockerServicesTouched": true
+  },
+  "rawResultSha256": "74ef740b23a0d87a06f5c95de56bc85e420f61081e35f961e23d9dda9c902281",
+  "remaining": [
+    "Real production ingress/provider deadlines",
+    "Other client/gateway deadline proof"
+  ],
+  "noSourceChanges": true
+}

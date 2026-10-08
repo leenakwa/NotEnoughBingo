@@ -834,10 +834,10 @@ Never expose secrets in the final report.
 
 Before launch verify:
 
-- [ ] backups;
+- [x] backups;
 - [x] migrations;
 - [x] migrations tested against realistic existing data;
-- [ ] deployment compatibility;
+- [x] deployment compatibility;
 - [x] indexes;
 - [x] constraints;
 - [x] unique constraints;
@@ -845,14 +845,14 @@ Before launch verify:
 - [x] nullable fields;
 - [x] defaults;
 - [x] transactions;
-- [ ] rollback/migration strategy.
+- [x] rollback/migration strategy.
 
 Test:
 
 - [x] existing users survive schema changes;
 - [x] old rows missing new fields;
 - [x] large-table migrations;
-- [ ] deployment/migration order.
+- [x] deployment/migration order.
 
 # 43. DATA INTEGRITY
 
@@ -1424,12 +1424,12 @@ Inspect actual production network traffic.
 
 Look for:
 
-- [ ] 404 assets;
-- [ ] 401s;
-- [ ] 500s;
-- [ ] redirect loops;
-- [ ] localhost requests;
-- [ ] staging requests;
+- [x] 404 assets;
+- [x] 401s;
+- [x] 500s;
+- [x] redirect loops;
+- [x] localhost requests;
+- [x] staging requests;
 - [ ] duplicate requests;
 - [ ] unnecessarily huge responses;
 - [ ] tokens/secrets in URLs;
@@ -1779,8 +1779,8 @@ Verify:
 
 Remember that during rollout users may temporarily have:
 
-- [ ] old frontend + new backend;
-- [ ] new frontend + old backend.
+- [x] old frontend + new backend;
+- [x] new frontend + old backend.
 
 Avoid incompatible migrations/API changes during rollout where possible.
 

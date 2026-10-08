@@ -164,24 +164,102 @@ describe("API error presentation", () => {
     await expect(pending).rejects.toMatchObject({ name: "AbortError" });
   });
 
-  it("does not show a parser exception when a server error has broken JSON", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        headers: new Headers({ "content-type": "application/json" }),
-        json: async () => {
-          throw new SyntaxError("Unexpected token <internal payload>");
-        },
-      }),
-    );
-
-    await expect(api.auth.me()).rejects.toMatchObject({
-      code: "invalid_response",
-      message: "The service is temporarily unavailable.",
+  it.each([
+    new DOMException("The operation was aborted.", "AbortError"),
+    new Error("The caller cancelled the request."),
+  ])("preserves caller cancellation while reading the response body: %s", async (reason) => {
+    const controller = new AbortController();
+    let beginReading!: () => void;
+    const reading = new Promise<void>((resolve) => {
+      beginReading = resolve;
     });
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => ({
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: () =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+            once: true,
+          });
+          beginReading();
+        }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pending = api.feeds.discover(1, controller.signal);
+    const rejection = expect(pending).rejects.toBe(reason);
+    await reading;
+    controller.abort(reason);
+
+    await rejection;
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(reportBrowserError).not.toHaveBeenCalled();
   });
+
+  it("keeps the request deadline active while reading a stalled response body", async () => {
+    vi.useFakeTimers();
+    let beginReading!: () => void;
+    const reading = new Promise<void>((resolve) => {
+      beginReading = resolve;
+    });
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => ({
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: () =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+            once: true,
+          });
+          beginReading();
+        }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pending = api.auth.me();
+    const rejection = expect(pending).rejects.toMatchObject({
+      status: 0,
+      code: "request_timeout",
+      message: "The service took too long to respond. Try again.",
+    });
+    await reading;
+    await vi.advanceTimersByTimeAsync(20_000);
+
+    await rejection;
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(reportBrowserError).toHaveBeenCalledExactlyOnceWith(
+      expect.any(ApiClientError),
+      "api",
+      0,
+    );
+  });
+
+  it.each([
+    { status: 200, message: "The service returned an invalid response. Try again." },
+    { status: 500, message: "The service is temporarily unavailable." },
+  ])(
+    "does not show a parser exception when a $status response has broken JSON",
+    async ({ status, message }) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: status < 400,
+          status,
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => {
+            throw new SyntaxError("Unexpected token <internal payload>");
+          },
+        }),
+      );
+
+      await expect(api.auth.me()).rejects.toMatchObject({
+        status,
+        code: "invalid_response",
+        message,
+      });
+    },
+  );
 
   it("explains a non-JSON gateway rate limit", async () => {
     vi.stubGlobal(

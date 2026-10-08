@@ -18,6 +18,7 @@ import {
 } from "@/lib/auth-events";
 import { LANGUAGE_PREFERENCES_CHANGED_EVENT } from "@/lib/registration-onboarding";
 import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
+import { usePendingInputFocus } from "@/lib/use-pending-input-focus";
 import {
   api,
   errorMessage,
@@ -115,6 +116,7 @@ export function ProfileView({
       actionInFlight.current = false;
     };
   }, [loadVersion, username]);
+  const beginPrivacyFocusRestore = usePendingInputFocus(pending);
   const profileFormRef = useRef<HTMLFormElement>(null);
   const invalidFieldToFocus = useRef<ProfileField | undefined>(undefined);
 
@@ -280,12 +282,16 @@ export function ProfileView({
     }
   }
 
-  async function updatePrivacy(key: keyof UserPrivacySettings, checked: boolean) {
+  async function updatePrivacy(key: keyof UserPrivacySettings, input: HTMLInputElement) {
     if (!profile || actionInFlight.current) return;
     actionInFlight.current = true;
     const lifetime = actionLifetime.current;
+    const finishFocusRestore = beginPrivacyFocusRestore(
+      input,
+      () => lifetime === actionLifetime.current,
+    );
     setFeedbackAction("privacy");
-    const privacy = { ...profile.privacy, [key]: checked };
+    const privacy = { ...profile.privacy, [key]: input.checked };
     setProfile({ ...profile, privacy });
     setPending(true);
     setError("");
@@ -300,6 +306,7 @@ export function ProfileView({
       setProfile((current) => (current ? { ...current, privacy: profile.privacy } : current));
       setError(errorMessage(caught));
     } finally {
+      finishFocusRestore();
       if (lifetime === actionLifetime.current) {
         actionInFlight.current = false;
         setPending(false);
@@ -612,7 +619,7 @@ export function ProfileView({
                     checked={profile.privacy[key as keyof UserPrivacySettings]}
                     disabled={pending}
                     onChange={(event) =>
-                      void updatePrivacy(key as keyof UserPrivacySettings, event.target.checked)
+                      void updatePrivacy(key as keyof UserPrivacySettings, event.currentTarget)
                     }
                   />
                   <span>{label}</span>

@@ -412,6 +412,45 @@ it.each(["selected", "all"] as const)(
   },
 );
 
+it.each(["success", "failure"] as const)(
+  "restores the initiating privacy checkbox after disabled-input focus loss on %s",
+  async (outcome) => {
+    let resolveSave!: (value: OwnUserProfile["privacy"]) => void;
+    let rejectSave!: (error: Error) => void;
+    mocks.updatePrivacy.mockReturnValueOnce(
+      new Promise((resolve, reject) => {
+        resolveSave = resolve;
+        rejectSave = reject;
+      }),
+    );
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<ProfileView />);
+    await screen.findByRole("heading", { name: "First profile" });
+    const checkbox = screen.getByRole("checkbox", { name: "Show bio" });
+    checkbox.focus();
+    await user.keyboard(" ");
+    expect(checkbox).toBeDisabled();
+    // Model Firefox's disabled-input blur; jsdom retains a disabled input's focus.
+    document.body.tabIndex = -1;
+    document.body.focus();
+    document.body.removeAttribute("tabindex");
+    expect(document.body).toHaveFocus();
+
+    await act(async () => {
+      if (outcome === "success") resolveSave({ ...first.privacy, show_bio: false });
+      else rejectSave(new Error("Offline"));
+    });
+    expect(checkbox).toBeEnabled();
+    expect(checkbox).toHaveFocus();
+    if (outcome === "failure") expect(checkbox).toBeChecked();
+    else expect(checkbox).not.toBeChecked();
+    await user.tab();
+    expect(screen.getByRole("checkbox", { name: "Show created bingos" })).toHaveFocus();
+    expect(mocks.updatePrivacy).toHaveBeenCalledOnce();
+  },
+);
+
 it("rolls back a failed keyboard privacy change with scoped feedback and allows retry", async () => {
   let rejectSave!: (error: Error) => void;
   const changedPrivacy = { ...first.privacy, show_bio: false };
@@ -456,6 +495,7 @@ it("rolls back a failed keyboard privacy change with scoped feedback and allows 
     "Profile service unavailable.",
   );
   expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.getByRole("button", { name: "After settings" })).toHaveFocus();
 
   checkbox.focus();
   await user.keyboard(" ");

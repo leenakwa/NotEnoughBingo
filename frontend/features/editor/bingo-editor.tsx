@@ -178,6 +178,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const dirty = currentFingerprint !== savedFingerprint;
 
   const updateSaveStatus = useCallback((status: EditorSaveStatusValue) => {
+    if (saveStatusRef.current === status) return;
     saveStatusRef.current = status;
     setSaveStatus(status);
   }, []);

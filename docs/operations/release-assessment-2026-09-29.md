@@ -5,7 +5,38 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Current continuation evidence (2026-10-08): pushed `606ebb6` passes all nine
+Previous source `e6f6dfc` passes all nine
+[CI37723657862](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37723657862)
+jobs: backend383, frontend564/42 files, full-stack120, smoke303 plusone flaky
+WebKit signup case/12 intentional skips. Actual merge checkout shares HEAD
+tree90b707ea2317e7dcdee4d1341239bcf0fe8286c0. This is not a zero-retry smoke gate.
+The retained trace and deliberate delayed-JS reproduction confirm enabled SSR
+registration accepts input before hydration, then loses username/password on
+email correction. A valid SSR form also attempts native GET with credentials in
+query; dummy-only requests were intercepted before upstream. Independent security
+assessment is Medium; actual recipient/log/history exposure is not established,
+and repository Nginx logging strips queries. Working-tree initial-readiness gates
+for Register/Forgot pass37 auth cases and scoped independent reviews. Combined
+Node22 lint/types and581 tests/43 files pass including approved UI and API cancellation changes. Corrected delayed-JS browser cases
+pass16/16 with zero retries on nebqa development frontend18080. Their exact-source
+CI and configured production image gates remain pending. New editor/preference
+native coverage on606 records27 passes/21 failures; retained diagnoses correct
+native select/link and repeated-dialog assumptions. Request-owned focus restoration
+and the editor dirty-status equality guard are independently reviewed. Actual
+Firefox focus restoration passes all four profiles; all16 corrected editor cases
+pass. The final eight dirty-navigation scenarios pass8/8 on development18080
+with genuine keyboard/dialog assertions, retries zero. Reports across runs cover
+48 relevant cases, not one consolidated final48-case gate. Unchanged606 reproduces
+React185 twice on unpaced501-character input; exact guard-only optimized image
+b39b394 passes the same case. It is an experimental unattached commit, not the full
+current source. User-approved profile wrapping fits full long text at320 and1728;
+mobile board-first layout and width-scaled font are implemented after
+explicit choices. Four controlled layout cases and four actual SSR hydration cases
+pass across four profiles; bounded Chrome700/701 visibility and console checks pass.
+Native caller cancellation now preserves AbortError while reading the response body,
+with four useful regressions and an exact native object-identity confirmation. The full new source/image/CI gate remains pending.
+
+Last strict continuation evidence (2026-10-08): `606ebb6` passes all nine
 [CI37720755955](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955)
 jobs: backend383, frontend564/42 files, smoke264/12 intentional skips with no
 flaky cases or retries, full-stack120, scans, foundation, both images and Release.
@@ -39,20 +70,22 @@ precondition corrects that failure. Profile19 units/32 controlled browser cases
 are included in606. Subsequent working-tree scoped CSS corrects selected-tab
 hover contrast and44px tag-removal targets;16 browser regressions pass. Account
 native constraints/FormData coverage adds24 cases (amended16 plus unchanged8),
-without an account implementation change. This next packet still needs its own CI.
+without an account implementation change. The packet's e6 CI is green with the
+signup flake described above; its optimized-image gate is deferred while the
+confirmed initial-readiness source fix is verified.
 Real CDN, target capacity, native browser zoom/favicon/autofill/device
-evidence and other local requirements remain open. The checklist records775
-checked/367 unchecked;57 verified/41 partial/six N/A/one deployment-only.
+evidence and other local requirements remain open. The checklist records787
+checked/355 unchecked;58 verified/40 partial/six N/A/one deployment-only.
 
-Use the [continuation checkpoint](production-readiness-continuation-plan.md) and
-latest [dated evidence](production-readiness-evidence.md). All observations below
+Use the current tracker and latest [dated evidence](production-readiness-evidence.md). All observations below
 remain historical; the current working tree is not a completed release gate.
 
 ## Decision
 
-Source606 passes its exact-source gate and bounded local image checks. The
-subsequent CSS/account packet needs its own CI and configured image checks
-before promotion. This is **not an authorized
+Source606 passes its strict exact-source gate and bounded local image checks.
+Sourcee6 passes all CI jobs with one flaky smoke case. The subsequent hydration
+fix and editor/preference/browser coverage require their own final checks,
+exact-source CI and configured image verification before promotion. This is **not an authorized
 public
 deployment**. Images have not been promoted to a production registry or tested
 on the target platform.

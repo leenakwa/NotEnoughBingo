@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-10-08: **57 verified**, **41 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-10-08: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -38,18 +38,24 @@ unresolved failures or missing evidence.
 
 ### Latest source gate — 2026-10-08
 
-Current606 passes all nine [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955).
-Actual PR merge tree equals HEAD. Backend383, frontend564/42 files, full-stack120
-and smoke264/12 intentional skips pass with zero smoke retries/flaky cases.620's
-silent-fill failure and b0's one flaky result remain recorded.606 exact configured
-optimized frontend passes53 cases:32 controlled profile native,16 auth silent-fill
-and five real API Blob/CSRF/processing/persistence cases; separate shared QA proves
-MinIO POST progress/cancellation and120 ordered live cases. Next working-tree
-selected-tab contrast/tag-target CSS and16 regressions plus24 account native
-cases still need their own exact-source gate. Section5
-large-upload progress is locally checked;775 checked/367 unchecked, verdicts
-remain57 verified/41 partial/six N/A/one deployment-only. Final exact-source CI
-and remaining local requirements remain required. Details are in dated evidence/checkpoint.
+Pushed e6 passes all nine [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37723657862):
+backend383, frontend564/42 files, full-stack120, smoke303 plusone flaky WebKit
+signup case/12 intentional skips. Actual merge tree equals HEAD. Last strict
+zero-retry CI is606; its exact configured image passes53 bounded cases.
+Current hydration/focus/editor fixes require their own consolidated final gate;
+Node22 hydration packet passes566 units/16 controlled browser cases, and a
+separate optimized isolated one-line editor guard passes the formerly failing
+native fast-input case. Do not describe current source as release ready.
+
+Existing observed evidence now maps12 additional items: database backup/
+migration/rollback contracts, six scoped network-panel inspections and both
+mixed frontend/backend combinations. These are local versioned observations,
+not proof of the target infrastructure or latest working-tree frontend. Section42
+closes locally; §103 remains partial until the current frontend gate. Current
+**787 checked /355 unchecked**, **58 verified /40 partial /six N/A /one deployment-only**.
+Target backup/registry/config/CDN/device checks remain explicit. See the dated
+reconciliation in [evidence](production-readiness-evidence.md) and
+[checkpoint](production-readiness-continuation-plan.md).
 
 ### Current requirements override — 2026-10-03
 
@@ -91,7 +97,7 @@ pending. The follow transaction defect is reproduced/fixed and independently rev
 12 affected engine cases and six late business-graph rollback cases pass.
 Eleven section 82 contract bullets now have mapped local evidence, including
 actual oversized bodies and bounded reads; provider timeout remains open.
-Total **775 checked / 367 unchecked**, section verdict counts unchanged.
+Current total **787 checked / 355 unchecked**; the later reconciliation below the dated evidence closes section42 locally.
 Use the dated evidence and [continuation plan](production-readiness-continuation-plan.md)
 for preserved failures, exact commands and next tasks. Production readiness has
 not been established.
@@ -149,7 +155,7 @@ not been established.
 - [ ] 39. HTTPS / TLS — Partial: smoke script enforces HTTPS; certificate and edge configuration need target-environment evidence.
 - [ ] 40. ENVIRONMENT VARIABLES — Partial: frontend image build/runtime origin contract, Django production origin consistency, and local-env isolation verified; real DB, storage, email, monitoring, and public origin values remain.
 - [x] 41. SECRETS — Verified before deployment: complete-history Gitleaks, tracked-path and ignore rules, Docker build contexts, and client-bundle marker scan found no real secret; OAuth is absent.
-- [ ] 42. DATABASE — Partial: fresh/existing-data migrations and isolated QA dump restore passed. Read-only inspection matched 31 tables, 47 indexes, 37 constraint types, uniqueness, FK targets and nullability. A disposable 10,000-board/20,000-revision/180,000-cell upgrade preserved counts and publication metadata; base query plans were measured. Persisted scalar/JSON/business/callable defaults, independent mutable values, timestamps and old-writer SQL default policy now pass PostgreSQL tests. Profile/publication/credential/export faults and concurrent credential/export writers have scoped evidence; mapped local transaction boundaries now include follow/moderation/share late SQL rollback. An actual c1fc2d7 web → forward schema → a3e1c00 worker/web → old-web rollback rehearsal preserves mail/account/session invariants; concurrent load, managed recovery and actual target deployment/rollback remain.
+- [x] 42. DATABASE — Verified before deployment: PostgreSQL defaults/constraints/transactions, realistic existing-data migration and10,000-board preservation, executed dump/checksum/isolated restore, plus immutable old-web→forward schema→compatible worker/new-web→old-web rollback preserve users, durable records and sessions. Backend tree is unchanged from the rehearsed a3 source. This closes the local contract; managed snapshots/WAL/off-site, online locks/target load and actual provider/registry/deployment remain in sections34/44/103–105.
 - [x] 43. DATA INTEGRITY — Verified before deployment: PostgreSQL concurrent likes/follows, versioned editor/progress conflicts, idempotent draft/publication/export/session/report/notification calls, soft-delete threads, reference-aware media and abandoned-job recovery passed; webhook duplication is N/A.
 - [ ] 44. BACKUPS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 45. EMAILS — Partial: registration verification, password reset, email-change and security notices have production-origin links, branded subjects and plain-text bodies; messages that direct users to support now include the public support page. Local mail flow and expiry checks passed. Messages now show their stored UTC expiration; queued resets skip invalidated tokens. Fifteen new retry/exhaustion/expiry guards, 46 related account cases, all 234 local backend tests (plus one infrastructure-only skip) and three live email journeys passed. A real isolated QA SMTP outage produced a worker retry, delivery after restoration and a successful API reset; the temporary account was removed. Sender-domain authentication, provider delivery/rate limits, a monitored support address and real-device inbox rendering still require the chosen domain and email service.
@@ -183,7 +189,7 @@ not been established.
 - [x] 73. TESTS — Verified before deployment: 191 PostgreSQL tests, 150 frontend tests and 54 live scenarios passed on `cb812e2`, covering auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Exact-head CI is still required for the final artifact.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
-- [ ] 76. NETWORK PANEL — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 76. NETWORK PANEL — Partial:16 actual optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. No unexpected asset404/401/500 or unintended localhost/staging origin in that bounded observation. RSC abort cause/size, credentials in URLs and sensitive payload review remain open; latest frontend fixes need a final exact-image refresh.
 - [x] 77. HTTP STATUS CODES — Verified before deployment: the root's intentional 307 redirect resolves to canonical Discover HTTP 200; direct valid and missing pages return 200/404, trailing-slash normalization returns 308 with the query preserved, a guest on protected API routes receives 401 with a Session challenge, and authenticated forbidden or CSRF-invalid requests still receive 403. Real-domain edge status handling remains for rollout.
 - [ ] 78. REDIRECTS — Partial: login/logout, root, and trailing-slash redirects work with preserved query and no loop; public HTTP→HTTPS, host alias, and legacy URL policy need a domain.
 - [x] 79. STATIC ASSETS — Verified before deployment: production candidate icon/social/static assets, normalized images, protected ZIP downloads, branding and case-sensitive routing were observed; external fonts, PWA manifest and standalone static documents are absent.

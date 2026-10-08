@@ -110,6 +110,69 @@ describe("auth submission safety", () => {
     },
   );
 
+  it("enables registration controls only after initialization", () => {
+    const availability: Array<{
+      email: boolean;
+      username: boolean;
+      password: boolean;
+      visibility: boolean;
+      submit: boolean;
+    }> = [];
+    const onPendingChange = vi.fn();
+    function ObservedRegisterForm() {
+      useLayoutEffect(() => {
+        availability.push({
+          email: (screen.getByLabelText("Email") as HTMLInputElement).disabled,
+          username: (screen.getByRole("textbox", { name: /^Username/ }) as HTMLInputElement)
+            .disabled,
+          password: (screen.getByLabelText("Password") as HTMLInputElement).disabled,
+          visibility: (screen.getByRole("button", { name: "Show" }) as HTMLButtonElement).disabled,
+          submit: (screen.getByRole("button", { name: "Create account" }) as HTMLButtonElement)
+            .disabled,
+        });
+      });
+      return <RegisterForm onPendingChange={onPendingChange} />;
+    }
+
+    render(<ObservedRegisterForm />);
+    expect(availability[0]).toEqual({
+      email: true,
+      username: true,
+      password: true,
+      visibility: true,
+      submit: true,
+    });
+    expect(screen.getByLabelText("Email")).toBeEnabled();
+    expect(screen.getByRole("textbox", { name: /^Username/ })).toBeEnabled();
+    expect(screen.getByLabelText("Password")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Show" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled();
+    expect(mocks.register).not.toHaveBeenCalled();
+    expect(onPendingChange).not.toHaveBeenCalled();
+  });
+
+  it("enables password reset request controls only after initialization", () => {
+    const availability: Array<{ email: boolean; submit: boolean }> = [];
+    const onPendingChange = vi.fn();
+    function ObservedForgotPasswordForm() {
+      useLayoutEffect(() => {
+        availability.push({
+          email: (screen.getByLabelText("Email") as HTMLInputElement).disabled,
+          submit: (screen.getByRole("button", { name: "Send reset link" }) as HTMLButtonElement)
+            .disabled,
+        });
+      });
+      return <ForgotPasswordForm onPendingChange={onPendingChange} />;
+    }
+
+    render(<ObservedForgotPasswordForm />);
+    expect(availability[0]).toEqual({ email: true, submit: true });
+    expect(screen.getByLabelText("Email")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Send reset link" })).toBeEnabled();
+    expect(mocks.requestPasswordReset).not.toHaveBeenCalled();
+    expect(onPendingChange).not.toHaveBeenCalled();
+  });
+
   it("enables reset controls only after initialization and resets safely for a new link", async () => {
     const availability: Array<{ password: boolean; visibility: boolean; submit: boolean }> = [];
     function ObservedResetForm() {

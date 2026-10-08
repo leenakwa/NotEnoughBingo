@@ -31,6 +31,8 @@ test("browse, filter, play, share, and start a draft across browser engines", as
     .locator(".bingo-card__main")
     .click();
   await expect(page.getByRole("heading", { name: bingo.title })).toBeVisible();
+  const markStyleDisclosure = page.locator(".play-mark-disclosure > summary");
+  if (await markStyleDisclosure.isVisible()) await markStyleDisclosure.click();
   await page.getByRole("radio", { name: "Cross" }).check();
   await page.getByRole("button", { name: bingo.cell_texts[0], exact: true }).click();
   await expect(page.locator(".completion-check")).toHaveText("×");
@@ -69,4 +71,49 @@ test("browse, filter, play, share, and start a draft across browser engines", as
   await page.reload();
   await expect(page.getByRole("gridcell", { name: /Cross-browser draft/ })).toBeVisible();
   expect(pageErrors).toEqual([]);
+});
+
+test("server-rendered mobile board keeps its position while scripts hydrate", async ({ page }) => {
+  const bingo = readLiveFixture().bingos.public;
+  await page.setViewportSize({ width: 320, height: 800 });
+  let releaseScripts!: () => void;
+  const scriptsReady = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  const heldScripts: string[] = [];
+  const scriptRoute = async (route: import("@playwright/test").Route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith("/_next/") && url.pathname.endsWith(".js")) {
+      heldScripts.push(url.pathname);
+      await scriptsReady;
+    }
+    await route.continue();
+  };
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route("**/*", scriptRoute);
+  try {
+    await page.goto(`/bingo/${bingo.id}`, { waitUntil: "commit" });
+    const board = page.locator(".play-board");
+    await expect(board).toBeVisible();
+    await expect(page.getByRole("heading", { name: bingo.title })).toBeVisible();
+    await expect(page.locator(".play-mark-disclosure > summary")).toBeVisible();
+    await expect(page.locator(".play-mark-disclosure")).not.toHaveAttribute("open", "");
+    await expect(page.locator(".play-cell").first()).toBeDisabled();
+    const before = await board.boundingBox();
+    expect(before).not.toBeNull();
+    expect(heldScripts.length).toBeGreaterThan(0);
+    releaseScripts();
+    await expect(page.locator(".play-cell").first()).toBeEnabled();
+    const after = await board.boundingBox();
+    expect(after).not.toBeNull();
+    expect(after!.y).toBeCloseTo(before!.y, 0);
+    expect(after!.width).toBeCloseTo(before!.width, 0);
+    expect(after!.height).toBeCloseTo(before!.height, 0);
+    await expect(page.locator(".play-mark-disclosure")).not.toHaveAttribute("open", "");
+    expect(pageErrors).toEqual([]);
+  } finally {
+    releaseScripts();
+    await page.unroute("**/*", scriptRoute);
+  }
 });

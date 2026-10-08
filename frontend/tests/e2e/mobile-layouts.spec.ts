@@ -43,7 +43,14 @@ const revision = {
   published_at: "2026-08-07T00:00:00Z",
 };
 
-async function mockLargeBingo(page: Page, reportable = false) {
+async function mockLargeBingo(page: Page, reportable = false, size = 10) {
+  const boardCells = cells.slice(0, size * size).map((cell, index) => ({
+    ...cell,
+    row: Math.floor(index / size),
+    column: index % size,
+    text: size === 10 ? cell.text : index === 0 ? "Open board" : `Cell ${index + 1}`,
+  }));
+  const boardRevision = { ...revision, size, cells: boardCells };
   await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204, body: "" }));
   await page.route("**/api/v1/notifications/unread-count/", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: '{"unread_count":0}' }),
@@ -96,9 +103,9 @@ async function mockLargeBingo(page: Page, reportable = false) {
         description: revision.description,
         author,
         cover: null,
-        preview: { size: 10, board_background: null, cells },
+        preview: { size, board_background: null, cells: boardCells },
         tags: [],
-        size: 10,
+        size,
         status: "published",
         visibility: "public",
         completion_style: "highlight",
@@ -106,7 +113,7 @@ async function mockLargeBingo(page: Page, reportable = false) {
         liked_by_me: false,
         published_at: revision.published_at,
         updated_at: revision.published_at,
-        current_revision: revision,
+        current_revision: boardRevision,
         permissions: {
           can_edit: false,
           can_comment: false,
@@ -468,4 +475,69 @@ test("keyboard navigation stays inside a report dialog and returns to its trigge
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
+});
+
+test("board-first mobile play keeps short labels readable and native mark controls usable", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  for (const size of [3, 5, 7]) {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await mockLargeBingo(page, false, size);
+    await page.goto(`/bingo/${bingoId}`);
+    const cell = page.locator(".play-cell").first();
+    await expect(cell).toBeEnabled();
+    await expect(page.getByRole("gridcell")).toHaveCount(size * size);
+    const summary = page.locator(".play-mark-disclosure > summary");
+    await expect(summary).toBeVisible();
+    await expect(page.locator(".play-mark-disclosure")).not.toHaveAttribute("open", "");
+    const narrow = await page.evaluate(() => {
+      const board = document.querySelector<HTMLElement>(".play-board")!;
+      const cell = board.querySelector<HTMLElement>(".play-cell")!;
+      const text = cell.querySelector<HTMLElement>(".play-cell__text")!;
+      return {
+        font: parseFloat(getComputedStyle(cell).fontSize),
+        boardBottom: board.getBoundingClientRect().bottom,
+        summaryTop: document.querySelector(".play-mark-disclosure")!.getBoundingClientRect().top,
+        descriptionTop: document.querySelector(".play-description")!.getBoundingClientRect().top,
+        actionsTop: document.querySelector(".play-actions")!.getBoundingClientRect().top,
+        cellHeight: cell.clientHeight,
+        textHeight: text.scrollHeight,
+        viewport: document.documentElement.clientWidth,
+        pageWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(narrow.pageWidth).toBe(narrow.viewport);
+    expect(narrow.textHeight).toBeLessThanOrEqual(narrow.cellHeight);
+    expect(narrow.boardBottom).toBeLessThan(narrow.summaryTop);
+    expect(narrow.summaryTop).toBeLessThan(narrow.descriptionTop);
+    expect(narrow.descriptionTop).toBeLessThan(narrow.actionsTop);
+    await cell.focus();
+    await page.keyboard.press("Tab");
+    await expect(summary).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("radio", { name: "Cross" })).toBeVisible();
+    await page.getByRole("radio", { name: "Cross" }).check();
+    await page.getByRole("radio", { name: "Cross" }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("radio", { name: "Checkmark" })).toBeChecked();
+    await cell.press("Space");
+    await expect(cell).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".play-cell-detail")).toContainText("Open board");
+    await summary.press("Enter");
+    await expect(page.locator(".play-mark-disclosure")).not.toHaveAttribute("open", "");
+    await expect(cell).toHaveAttribute("aria-pressed", "true");
+    await page.setViewportSize({ width: 1710, height: 1000 });
+    await expect(summary).toBeHidden();
+    await expect(page.getByRole("radio", { name: "Checkmark" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Checkmark" })).toBeChecked();
+    const wideFont = await cell.evaluate((element) =>
+      parseFloat(getComputedStyle(element).fontSize),
+    );
+    expect(wideFont).toBeGreaterThan(narrow.font);
+    expect(wideFont).toBeLessThanOrEqual(24);
+    await page.evaluate(() => window.localStorage.clear());
+  }
+  expect(pageErrors).toEqual([]);
 });

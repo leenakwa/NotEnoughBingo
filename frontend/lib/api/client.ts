@@ -298,7 +298,8 @@ async function performApiRequest<T>(path: string, options: RequestOptions): Prom
       ) {
         try {
           data = await response.json();
-        } catch {
+        } catch (error) {
+          if (signal.aborted) throw error;
           throw new ApiClientError(response.status, {
             code: "invalid_response",
             message:

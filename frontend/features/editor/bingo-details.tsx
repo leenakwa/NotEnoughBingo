@@ -110,7 +110,7 @@ export function BingoDetails({
           <option value="">Choose a language</option>
           {bingoLanguages.map((language) => (
             <option key={language.code} value={language.code}>
-              {language.flag} {language.name}
+              {language.name} {language.flag}
             </option>
           ))}
         </select>

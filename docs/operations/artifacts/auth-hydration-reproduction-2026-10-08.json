@@ -1,0 +1,421 @@
+{
+  "date": "2026-10-08",
+  "application_source": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+  "verified_image_id": "sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6",
+  "environment_scope": "Immutable production frontend18584; fresh anonymous WebKit contexts, genuine keyboard events and deliberately held frontend JS. Only dummy credentials. Native document queries intercepted and blocked before upstream delivery; no accounts/API mutations.",
+  "browser": "WebKit",
+  "playwright": "1.61.1",
+  "ci": {
+    "head": "e6f6dfc0d52ec1bb0454e5beaadb0740b398a227",
+    "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37723657862",
+    "all_nine_jobs_success": true,
+    "backend_passed": 383,
+    "frontend_passed": 564,
+    "frontend_files": 42,
+    "smoke_passed": 303,
+    "smoke_flaky": 1,
+    "smoke_intentional_skips": 12,
+    "full_stack_passed": 120,
+    "merge_sha": "1202eafe7a31d878d69bbde855b9c85da87fdd78",
+    "merge_and_head_tree": "90b707ea2317e7dcdee4d1341239bcf0fe8286c0",
+    "tree_verified": true
+  },
+  "value_loss_observations": [
+    {
+      "delayedFrontendScripts": true,
+      "heldScripts": 10,
+      "registerAttempts": 0,
+      "pageErrorNames": [],
+      "initial": {
+        "focus": "password",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 13,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": true,
+            "valid": false
+          },
+          {
+            "name": "username",
+            "live_length": 9,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "password",
+            "live_length": 5,
+            "attribute_length": 0,
+            "tooShort": true,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      },
+      "afterInvalidEmail": {
+        "focus": "email",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 13,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": true,
+            "valid": false
+          },
+          {
+            "name": "username",
+            "live_length": 9,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "password",
+            "live_length": 5,
+            "attribute_length": 0,
+            "tooShort": true,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      },
+      "afterRelease": {
+        "focus": "email",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 13,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": true,
+            "valid": false
+          },
+          {
+            "name": "username",
+            "live_length": 9,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "password",
+            "live_length": 5,
+            "attribute_length": 0,
+            "tooShort": true,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      },
+      "afterCorrectedEmail": {
+        "focus": "username",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 21,
+            "attribute_length": 21,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "username",
+            "live_length": 0,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": true,
+            "typeMismatch": false,
+            "valid": false
+          },
+          {
+            "name": "password",
+            "live_length": 0,
+            "attribute_length": 0,
+            "tooShort": false,
+            "valueMissing": true,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      }
+    },
+    {
+      "delayedFrontendScripts": false,
+      "heldScripts": 0,
+      "registerAttempts": 0,
+      "pageErrorNames": [],
+      "initial": {
+        "focus": "password",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 13,
+            "attribute_length": 13,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": true,
+            "valid": false
+          },
+          {
+            "name": "username",
+            "live_length": 9,
+            "attribute_length": 9,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "password",
+            "live_length": 5,
+            "attribute_length": 5,
+            "tooShort": true,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      },
+      "afterInvalidEmail": {
+        "focus": "email",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 13,
+            "attribute_length": 13,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": true,
+            "valid": false
+          },
+          {
+            "name": "username",
+            "live_length": 9,
+            "attribute_length": 9,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "password",
+            "live_length": 5,
+            "attribute_length": 5,
+            "tooShort": true,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      },
+      "afterRelease": {
+        "focus": "email",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 13,
+            "attribute_length": 13,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": true,
+            "valid": false
+          },
+          {
+            "name": "username",
+            "live_length": 9,
+            "attribute_length": 9,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "password",
+            "live_length": 5,
+            "attribute_length": 5,
+            "tooShort": true,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      },
+      "afterCorrectedEmail": {
+        "focus": "password",
+        "fields": [
+          {
+            "name": "email",
+            "live_length": 21,
+            "attribute_length": 21,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "username",
+            "live_length": 9,
+            "attribute_length": 9,
+            "tooShort": false,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": true
+          },
+          {
+            "name": "password",
+            "live_length": 5,
+            "attribute_length": 5,
+            "tooShort": true,
+            "valueMissing": false,
+            "typeMismatch": false,
+            "valid": false
+          }
+        ]
+      }
+    }
+  ],
+  "native_document_navigation": [
+    {
+      "path": "/register",
+      "heldScripts": 9,
+      "form": {
+        "valid": true,
+        "method": null,
+        "action": null
+      },
+      "documents": [
+        {
+          "method": "GET",
+          "path": "/register",
+          "queryKeys": [
+            "email",
+            "username",
+            "password"
+          ],
+          "dummyMatches": {
+            "email": true,
+            "username": true,
+            "password": true
+          },
+          "blockedBeforeUpstream": true
+        }
+      ],
+      "mutations": [],
+      "clickError": null
+    },
+    {
+      "path": "/forgot-password",
+      "heldScripts": 9,
+      "form": {
+        "valid": true,
+        "method": null,
+        "action": null
+      },
+      "documents": [
+        {
+          "method": "GET",
+          "path": "/forgot-password",
+          "queryKeys": [
+            "email"
+          ],
+          "dummyMatches": {
+            "email": true,
+            "username": false,
+            "password": false
+          },
+          "blockedBeforeUpstream": true
+        }
+      ],
+      "mutations": [],
+      "clickError": null
+    }
+  ],
+  "assessment": {
+    "verified": "Registration accepts keyboard input before hydration, then next email correction clears previously entered username/password. Fully hydrated control retains both. Valid SSR registration attempts default document GET with email/username/password query keys; recovery attempts GET with email.",
+    "severity": "Medium; confidence high in native query generation and value loss. Requests were blocked before upstream, so actual production recipient/log/history/referrer exposure was not measured. Repository Nginx access logging strips query.",
+    "fix_scope": "Working-tree Register/Forgot initially disable named fields, password visibility and submission until existing activation effect. Login SSR form absent; Reset already initially disabled.",
+    "fix_verification": "Working-tree Node22 lint/types and566 tests/42 files pass, including auth37. Independent correctness/security reviews pass. Corrected delayed-JS browser packet16/16 passes in four profiles with zero retries/flaky/skips on nebqa development frontend18080; exact-source CI/configured production image still required."
+  },
+  "raw_private_evidence": [
+    {
+      "path": "/tmp/neb-signup-hydration-oct08/result.json",
+      "sha256": "8953dc6dbfe3fd8c9d977dc19301b796c452e138c01b214a2b16de50c0853586"
+    },
+    {
+      "path": "/tmp/neb-signup-hydration-oct08/native-submit-result.json",
+      "sha256": "5ef062a5cdd48c8595426221482de8f92ab0d8a49d975f9e84a69b9d256202e5"
+    },
+    {
+      "path": "/tmp/neb-signup-hydration-oct08/probe.cjs",
+      "sha256": "dfec5e229babf2b08c2183b982b4c2ad02771ba386df8ceeb932d7848332911a"
+    },
+    {
+      "path": "/tmp/neb-signup-hydration-oct08/native-submit.cjs",
+      "sha256": "0bade34f359806e46d2ea26949dcfd6f3055bbdf0f3998d0ff28ac5bc5742432"
+    },
+    {
+      "path": "/tmp/neb-auth-hydration-working-tree-reviewed-oct08.json",
+      "sha256": "318d72cf37a6d30e9c858a8061ba366c4112d9281bd0426fb450067d7b5dba13"
+    },
+    {
+      "path": "/tmp/neb-auth-hydration-working-tree-reviewed-oct08.log",
+      "sha256": "80514850f993c30f23500f2602bc56e649a6c944b12a6aa5ced94e9263089cd9"
+    },
+    {
+      "path": "/tmp/neb-hydration-native-integrated-lint-oct08.log",
+      "sha256": "11aebd9fc4c86de9bb694f1b2d7d69cbba06f09871a33ac12ebb8e7fcc5185ee"
+    },
+    {
+      "path": "/tmp/neb-hydration-native-integrated-types-oct08.log",
+      "sha256": "c42cd052f49fe0af6b61d5ac3299673db1837804a878e1f8f3177ec28932c5fd"
+    },
+    {
+      "path": "/tmp/neb-hydration-native-integrated-tests-oct08.log",
+      "sha256": "f8d0d85529882e48556bb8168415757ca1909bc38709fb2dda7b1588c5fcef6d"
+    }
+  ],
+  "working_tree_verification": {
+    "frontend_origin": "http://localhost:18080",
+    "application_mode": "nebqa development frontend, working tree",
+    "runner_context": "606 Git archive with workspace E2E testDir; not application image606",
+    "node": "22.23.1",
+    "lint": "passed",
+    "types": "passed",
+    "vitest_passed": 566,
+    "vitest_files": 42,
+    "auth_passed": 37,
+    "browser_passed": 16,
+    "browser_unexpected": 0,
+    "browser_flaky": 0,
+    "browser_skipped": 0,
+    "browser_retries": 0,
+    "profiles": [
+      "chromium",
+      "mobile",
+      "firefox",
+      "webkit"
+    ],
+    "browser_duration_ms": 41216.899,
+    "keyboard_preference_original": null,
+    "keyboard_preference_restored_verified": true,
+    "controlled_api_only": true,
+    "initial_selector_failure_retained": true,
+    "exact_source_production_gate": "pending"
+  }
+}

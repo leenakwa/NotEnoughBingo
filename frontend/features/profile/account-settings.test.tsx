@@ -906,6 +906,46 @@ describe("AccountSettings deletion grace period", () => {
     expect(screen.queryByText("Old preference failure")).not.toBeInTheDocument();
   });
 
+  it.each(["success", "failure"] as const)(
+    "restores the initiating notification checkbox after disabled-input focus loss on %s",
+    async (outcome) => {
+      let resolveSave!: (value: NotificationPreferences) => void;
+      let rejectSave!: (error: Error) => void;
+      mocks.updatePreferences.mockReturnValueOnce(
+        new Promise((resolve, reject) => {
+          resolveSave = resolve;
+          rejectSave = reject;
+        }),
+      );
+      vi.spyOn(document, "hasFocus").mockReturnValue(true);
+      const user = userEvent.setup();
+      render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
+      const checkbox = await screen.findByRole("checkbox", {
+        name: "New comments on my bingos",
+      });
+      checkbox.focus();
+      await user.keyboard(" ");
+      expect(checkbox).toBeDisabled();
+      // Model Firefox's disabled-input blur; jsdom retains a disabled input's focus.
+      document.body.tabIndex = -1;
+      document.body.focus();
+      document.body.removeAttribute("tabindex");
+      expect(document.body).toHaveFocus();
+
+      await act(async () => {
+        if (outcome === "success") resolveSave({ ...preferences, new_comment: false });
+        else rejectSave(new Error("Offline"));
+      });
+      expect(checkbox).toBeEnabled();
+      expect(checkbox).toHaveFocus();
+      if (outcome === "failure") expect(checkbox).toBeChecked();
+      else expect(checkbox).not.toBeChecked();
+      await user.tab();
+      expect(screen.getByRole("checkbox", { name: "Replies to my comments" })).toHaveFocus();
+      expect(mocks.updatePreferences).toHaveBeenCalledOnce();
+    },
+  );
+
   it("shows a pending keyboard preference change, rolls an active failure back locally and retries", async () => {
     let rejectSave!: (error: Error) => void;
     mocks.updatePreferences.mockReturnValueOnce(
@@ -956,6 +996,7 @@ describe("AccountSettings deletion grace period", () => {
       "Preferences temporarily unavailable.",
     );
     expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "After settings" })).toHaveFocus();
 
     checkbox.focus();
     await user.keyboard(" ");

@@ -2069,6 +2069,11 @@ input[type="range"] {
   background: var(--soft);
 }
 
+.profile-activity-list a > b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .profile-activity-list a > span {
   color: var(--muted);
   font-size: 0.78rem;
@@ -2119,6 +2124,8 @@ input[type="range"] {
 
 .people-list a > span:last-child {
   display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .people-list small {
@@ -2525,5 +2532,99 @@ input[type="range"] {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+.play-shell--board-first {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  column-gap: 30px;
+}
+
+.play-shell--board-first > * {
+  grid-column: 1 / -1;
+}
+.play-shell--board-first > .bingo-heading {
+  grid-column: 1;
+  grid-row: 1;
+}
+.play-shell--board-first:has(> .play-description) > .bingo-heading {
+  margin-bottom: 0;
+}
+.play-shell--board-first > .play-description {
+  grid-column: 1;
+  grid-row: 2;
+  margin-bottom: calc(1em + 30px);
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+.play-shell--board-first > .play-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+.play-shell--board-first > .play-mark-controls {
+  grid-row: 3;
+  width: min(100%, 760px);
+  margin-inline: auto;
+}
+.play-shell--board-first > .play-board-section {
+  grid-row: 4;
+  min-width: 0;
+}
+.play-mark-disclosure > summary {
+  display: none;
+}
+
+@supports (font-size: 1cqi) {
+  .play-board {
+    container-type: inline-size;
+  }
+  .play-cell {
+    font-size: clamp(
+      0.55rem,
+      min(calc(18cqi / var(--board-size)), calc(5rem / var(--board-size) + 0.15rem)),
+      1.5rem
+    );
+  }
+}
+
+@media (max-width: 700px) {
+  .play-shell--board-first {
+    display: flex;
+    flex-direction: column;
+  }
+  .play-shell--board-first > .bingo-heading {
+    margin-bottom: 30px;
+  }
+  .play-shell--board-first:has(> .play-description) > .bingo-heading {
+    margin-bottom: 30px;
+  }
+  .play-shell--board-first > .play-mark-controls {
+    width: min(100%, 760px);
+    margin-block: 16px;
+    border: var(--line);
+    background: var(--paper);
+  }
+  .play-mark-disclosure > summary {
+    display: list-item;
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .play-mark-disclosure:not([open]) + .play-mark-menu {
+    display: none;
+  }
+  .play-mark-controls .play-mark-menu {
+    margin: 0;
+    border: 0;
+  }
+  .play-shell--board-first > .play-description {
+    margin-block: 0 20px;
+  }
+  .play-shell--board-first > .play-actions {
+    align-self: stretch;
   }
 }

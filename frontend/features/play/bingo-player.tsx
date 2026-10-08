@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AuthLink } from "@/components/auth/auth-link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -51,6 +51,7 @@ export function BingoPlayer({
   const [viewer, setViewer] = useState<Viewer>(initialViewer ?? null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [markStyle, setMarkStyle] = useState<PlayMarkStyle>("checkmark");
+  const markControlsId = useId();
   const [loading, setLoading] = useState(!initialBingo);
   const [progressReady, setProgressReady] = useState(false);
   const [error, setError] = useState("");
@@ -624,7 +625,7 @@ export function BingoPlayer({
   const revision = bingo.current_revision;
   const playable = bingo.status === "published";
   return (
-    <main id="main-content" className="play-shell">
+    <main id="main-content" className="play-shell play-shell--board-first">
       <header className="bingo-heading">
         <div>
           <p className="eyebrow">
@@ -633,167 +634,182 @@ export function BingoPlayer({
           <h1 lang={revision.language || undefined} dir="auto">
             {revision.title}
           </h1>
-          {revision.description ? (
-            <p lang={revision.language || undefined} dir="auto">
-              {revision.description}
-            </p>
-          ) : null}
-        </div>
-        <div className="play-actions">
-          {viewer && viewer !== "guest" && bingo.permissions.can_like ? (
-            <button
-              type="button"
-              className="button button--secondary"
-              aria-pressed={bingo.liked_by_me}
-              disabled={!progressReady || Boolean(socialPending)}
-              onClick={() => void toggleBingoLike()}
-            >
-              {bingo.liked_by_me ? "Liked" : "Like"} · {bingo.stats.likes}
-            </button>
-          ) : viewer === "guest" ? (
-            <AuthLink
-              className="button button--secondary"
-              href={`/login?next=${encodeURIComponent(`/bingo/${bingoId}`)}`}
-            >
-              Log in to like
-            </AuthLink>
-          ) : viewer === null && playable ? (
-            <span className="button button--secondary play-action-placeholder" aria-hidden="true">
-              Log in to like
-            </span>
-          ) : null}
-          {viewer && viewer !== "guest" && viewer.id !== bingo.author.id && authorProfile ? (
-            <button
-              type="button"
-              className="button button--secondary"
-              aria-pressed={authorProfile.is_following}
-              disabled={!progressReady || Boolean(socialPending)}
-              onClick={() => void toggleFollow()}
-            >
-              {authorProfile.is_following ? "Following" : "Follow author"}
-            </button>
-          ) : null}
-          {viewer && viewer !== "guest" && bingo.permissions.can_report ? (
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={() => setReportOpen(true)}
-            >
-              Report
-            </button>
-          ) : null}
-          {bingo.permissions.can_edit ? (
-            <>
-              <Link className="button button--secondary" href={`/create?bingo=${bingo.id}`}>
-                Edit
-              </Link>
-              <button
-                type="button"
-                className="button button--secondary"
-                disabled={!progressReady || Boolean(socialPending)}
-                onClick={() =>
-                  void manageBingo(bingo.status === "archived" ? "restore" : "archive")
-                }
-              >
-                {bingo.status === "archived" ? "Restore" : "Archive"}
-              </button>
-              <button
-                type="button"
-                className="button button--danger"
-                disabled={!progressReady || Boolean(socialPending)}
-                onClick={() => void manageBingo("delete")}
-              >
-                Delete
-              </button>
-            </>
-          ) : null}
-          {playable && viewer ? (
-            <>
-              <button
-                type="button"
-                className="button button--secondary"
-                disabled={!progressReady || saving || selected.size === 0}
-                onClick={() => void reset()}
-              >
-                Reset
-              </button>
-              <button
-                ref={shareButtonRef}
-                type="button"
-                className="button button--primary"
-                aria-expanded={shareOpen}
-                aria-controls="share-result-panel"
-                disabled={!progressReady}
-                onClick={() => setShareOpen(true)}
-              >
-                Share result
-              </button>
-            </>
-          ) : playable ? (
-            <>
-              <span className="button button--secondary play-action-placeholder" aria-hidden="true">
-                Reset
-              </span>
-              <span className="button button--primary play-action-placeholder" aria-hidden="true">
-                Share result
-              </span>
-            </>
-          ) : null}
         </div>
       </header>
 
+      <div className="play-board-section">
+        <BingoBoardView
+          revision={revision}
+          selected={selected}
+          completionStyle={markStyle}
+          readOnly={!playable}
+          disabled={playable && !progressReady}
+          onToggle={toggleCell}
+        />
+
+        <p className="progress-status" aria-live="polite">
+          {playable
+            ? progressLoadFailed
+              ? "Saved progress is unavailable."
+              : !progressReady
+                ? "Loading your progress…"
+                : saving
+                  ? "Saving progress…"
+                  : `${selected.size} of ${revision.cells.length} selected`
+            : "This bingo is archived and shown read-only to its author."}
+        </p>
+      </div>
       {playable ? (
-        <fieldset className="play-mark-menu" disabled={!progressReady}>
-          <legend>Mark cells with</legend>
-          {(
-            [
-              ["cross", "×", "Cross"],
-              ["checkmark", "✓", "Checkmark"],
-              ["crossout", "╱", "Diagonal line"],
-              ["highlight", "▧", "Highlight"],
-            ] as const
-          ).map(([value, symbol, label]) => (
-            <label key={value}>
-              <input
-                type="radio"
-                name="play-mark-style"
-                value={value}
-                checked={markStyle === value}
-                onChange={() => {
-                  setMarkStyle(value);
-                  try {
-                    window.localStorage.setItem(`not-enough-bingo:mark:${bingoId}`, value);
-                  } catch {
-                    /* Private browsing may block storage. */
-                  }
-                }}
-              />
-              <span aria-hidden="true">{symbol}</span> {label}
-            </label>
-          ))}
-        </fieldset>
+        <div className="play-mark-controls">
+          <details className="play-mark-disclosure">
+            <summary aria-controls={markControlsId}>
+              Mark style:{" "}
+              {
+                {
+                  cross: "Cross",
+                  checkmark: "Checkmark",
+                  crossout: "Diagonal line",
+                  highlight: "Highlight",
+                }[markStyle]
+              }
+            </summary>
+          </details>
+          <fieldset id={markControlsId} className="play-mark-menu" disabled={!progressReady}>
+            <legend>Mark cells with</legend>
+            {(
+              [
+                ["cross", "×", "Cross"],
+                ["checkmark", "✓", "Checkmark"],
+                ["crossout", "╱", "Diagonal line"],
+                ["highlight", "▧", "Highlight"],
+              ] as const
+            ).map(([value, symbol, label]) => (
+              <label key={value}>
+                <input
+                  type="radio"
+                  name="play-mark-style"
+                  value={value}
+                  checked={markStyle === value}
+                  onChange={() => {
+                    setMarkStyle(value);
+                    try {
+                      window.localStorage.setItem(`not-enough-bingo:mark:${bingoId}`, value);
+                    } catch {
+                      /* Private browsing may block storage. */
+                    }
+                  }}
+                />
+                <span aria-hidden="true">{symbol}</span> {label}
+              </label>
+            ))}
+          </fieldset>
+        </div>
       ) : null}
 
-      <BingoBoardView
-        revision={revision}
-        selected={selected}
-        completionStyle={markStyle}
-        readOnly={!playable}
-        disabled={playable && !progressReady}
-        onToggle={toggleCell}
-      />
-
-      <p className="progress-status" aria-live="polite">
-        {playable
-          ? progressLoadFailed
-            ? "Saved progress is unavailable."
-            : !progressReady
-              ? "Loading your progress…"
-              : saving
-                ? "Saving progress…"
-                : `${selected.size} of ${revision.cells.length} selected`
-          : "This bingo is archived and shown read-only to its author."}
-      </p>
+      {revision.description ? (
+        <p className="play-description" lang={revision.language || undefined} dir="auto">
+          {revision.description}
+        </p>
+      ) : null}
+      <div className="play-actions">
+        {viewer && viewer !== "guest" && bingo.permissions.can_like ? (
+          <button
+            type="button"
+            className="button button--secondary"
+            aria-pressed={bingo.liked_by_me}
+            disabled={!progressReady || Boolean(socialPending)}
+            onClick={() => void toggleBingoLike()}
+          >
+            {bingo.liked_by_me ? "Liked" : "Like"} · {bingo.stats.likes}
+          </button>
+        ) : viewer === "guest" ? (
+          <AuthLink
+            className="button button--secondary"
+            href={`/login?next=${encodeURIComponent(`/bingo/${bingoId}`)}`}
+          >
+            Log in to like
+          </AuthLink>
+        ) : viewer === null && playable ? (
+          <span className="button button--secondary play-action-placeholder" aria-hidden="true">
+            Log in to like
+          </span>
+        ) : null}
+        {viewer && viewer !== "guest" && viewer.id !== bingo.author.id && authorProfile ? (
+          <button
+            type="button"
+            className="button button--secondary"
+            aria-pressed={authorProfile.is_following}
+            disabled={!progressReady || Boolean(socialPending)}
+            onClick={() => void toggleFollow()}
+          >
+            {authorProfile.is_following ? "Following" : "Follow author"}
+          </button>
+        ) : null}
+        {viewer && viewer !== "guest" && bingo.permissions.can_report ? (
+          <button
+            type="button"
+            className="button button--secondary"
+            onClick={() => setReportOpen(true)}
+          >
+            Report
+          </button>
+        ) : null}
+        {bingo.permissions.can_edit ? (
+          <>
+            <Link className="button button--secondary" href={`/create?bingo=${bingo.id}`}>
+              Edit
+            </Link>
+            <button
+              type="button"
+              className="button button--secondary"
+              disabled={!progressReady || Boolean(socialPending)}
+              onClick={() => void manageBingo(bingo.status === "archived" ? "restore" : "archive")}
+            >
+              {bingo.status === "archived" ? "Restore" : "Archive"}
+            </button>
+            <button
+              type="button"
+              className="button button--danger"
+              disabled={!progressReady || Boolean(socialPending)}
+              onClick={() => void manageBingo("delete")}
+            >
+              Delete
+            </button>
+          </>
+        ) : null}
+        {playable && viewer ? (
+          <>
+            <button
+              type="button"
+              className="button button--secondary"
+              disabled={!progressReady || saving || selected.size === 0}
+              onClick={() => void reset()}
+            >
+              Reset
+            </button>
+            <button
+              ref={shareButtonRef}
+              type="button"
+              className="button button--primary"
+              aria-expanded={shareOpen}
+              aria-controls="share-result-panel"
+              disabled={!progressReady}
+              onClick={() => setShareOpen(true)}
+            >
+              Share result
+            </button>
+          </>
+        ) : playable ? (
+          <>
+            <span className="button button--secondary play-action-placeholder" aria-hidden="true">
+              Reset
+            </span>
+            <span className="button button--primary play-action-placeholder" aria-hidden="true">
+              Share result
+            </span>
+          </>
+        ) : null}
+      </div>
       {progressLoadFailed ? (
         <div className="form-message form-message--error" role="alert">
           <p>Your saved progress could not be loaded. Your existing marks have not been changed.</p>

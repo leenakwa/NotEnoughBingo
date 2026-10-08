@@ -28,6 +28,7 @@ import type {
 } from "@/lib/api/types";
 import { uploadImage, type UploadPhase, type UploadProgress } from "@/lib/uploads";
 import { formatLocalDateTime } from "@/lib/date-time";
+import { usePendingInputFocus } from "@/lib/use-pending-input-focus";
 
 const preferenceLabels: Record<keyof NotificationPreferences, string> = {
   new_comment: "New comments on my bingos",
@@ -151,6 +152,7 @@ export function AccountSettings({
       window.removeEventListener(AUTH_SIGNED_OUT_EVENT, refresh);
     };
   }, [profile.id]);
+  const beginPreferenceFocusRestore = usePendingInputFocus(Boolean(pending));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -463,10 +465,15 @@ export function AccountSettings({
     }
   }
 
-  async function updatePreference(key: keyof NotificationPreferences, value: boolean) {
+  async function updatePreference(key: keyof NotificationPreferences, input: HTMLInputElement) {
     if (!preferences || pending || !beginAction(`preference-${key}`)) return;
     const lifetime = actionLifetime.current;
+    const finishFocusRestore = beginPreferenceFocusRestore(
+      input,
+      () => lifetime === actionLifetime.current,
+    );
     const previous = preferences;
+    const value = input.checked;
     setPreferences({ ...preferences, [key]: value });
     try {
       const updated = await api.profiles.updateNotificationPreferences({ [key]: value });
@@ -478,6 +485,7 @@ export function AccountSettings({
       setPreferences(previous);
       setError(errorMessage(caught));
     } finally {
+      finishFocusRestore();
       finishAction(lifetime);
     }
   }
@@ -845,7 +853,7 @@ export function AccountSettings({
                     type="checkbox"
                     checked={preferences[key]}
                     disabled={Boolean(pending)}
-                    onChange={(event) => void updatePreference(key, event.target.checked)}
+                    onChange={(event) => void updatePreference(key, event.currentTarget)}
                   />
                   <span>{label}</span>
                 </label>

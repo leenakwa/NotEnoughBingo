@@ -5333,3 +5333,196 @@ observed results and their limits. Do not include credentials or session data.
   bottleneck is established. Next bounded freshDiscover probe needs fixed idle,
   sanitized headers/IDs/timing/bytes/cancel flags, separate cleanup bucket and
   one actual navigation with correlated upstream logs. Retain every abort.
+
+### 2026-10-08 — Exact e6 CI and confirmed SSR authentication defect
+
+- Pushed e6f6dfc passes all nine CI37723657862 jobs: backend383, frontend564/
+  42 files, full-stack120; smoke303 plusone flaky WebKit signup case and12
+  intentional skips. Actual merge1202eafe7a31d878d69bbde855b9c85da87fdd78 shares
+  HEAD tree90b707ea2317e7dcdee4d1341239bcf0fe8286c0, verified through API.
+  Log /tmp/neb-ci-e6f6dfc-reviewed-oct08.log. Do not call this zero-retry smoke.
+- Failed trace shows typed username/password becoming empty when email is
+  corrected; native tooShort=false correctly describes empty password, not a
+  backend failure. Deliberate WebKit delayed-chunk reproduction on immutable606
+  (register source identical to e6) uses genuine keyboard events: enabled SSR
+  inputs retain values through hydration, then email correction clears both
+  sibling values. Fully hydrated control retains them; both zero registration
+  POST/page errors. Private /tmp/neb-signup-hydration-oct08, not committed raw.
+- Valid dummy-only SSR registration attempts default document GET/register
+  with email,username,password query keys; recovery attempts GET with email.
+  Both requests are intercepted and aborted before upstream; no account/API
+  mutation or real credentials. Independent security calibration: Medium/high
+  confidence in native query generation, no measured actual recipient/history/
+  upstream exposure. Repository Nginx access logging removes query. Sanitized
+  [reproduction](artifacts/auth-hydration-reproduction-2026-10-08.json).
+- Working-tree fix adds initial-ready state to Register/Forgot and disables
+  named inputs/password visibility/submission until the existing activation
+  effect. Login SSR form is absent while checking; Reset already disables initial
+  controls. Post-ready pending behavior, FormData, ownership, callbacks and
+  navigation are preserved. Two pre-effect availability tests add meaningful
+  coverage; Node22 auth37 pass. Independent correctness/security reviews find no
+  blocker. Delayed-JS browser regression and final exact-source image/CI remain
+  required. No build/promotion/readiness claim for this new source yet.
+
+### 2026-10-08 — Bounded RSC prefetch observations
+
+- First fresh Discover probe exits1 before idle because streaming temporarily
+  exposes fallback/settled main elements. Corrected settled-main selectors then
+  complete two fixed10-second windows and one real public-card transition on
+  unchanged606 image18584. Actual26 RSC requests: five finishes/21 canceled
+  ERR_ABORTED, all21 Next-router-prefetch1/HTTP200; seven tree-prefetch. Discover18
+  cancel roughly9.85seconds before navigation. Actual non-prefetch navigation
+  finishes200, cleanup failures/page errors/console errors zero. Canceled reads
+  receive43,535 decoded/10,881 encoded data-event bytes; these are partial sums,
+  not completed transfer sizes. Existing exact-window frontend/old-web logs are
+  empty, providing no server-cost conclusion.
+- Separate transient native cancel-wrapper run completes25 RSC/two finishes/
+  23 cancellations, page/console/cleanup errors zero. It records zero wrapper
+  cancellations and signal associations, with successful restoration. Prefetch
+  source calls lack a signal, and no total fetch-invocation counter was added;
+  cancellation caller is still unproved. Versioned Next16.3.8 reader cancellation
+  requires explicit byteLimit, which tree-prefetch omits. No blanket intentional
+  truncation explanation or failure suppression. Sanitized
+  [observations](artifacts/frontend-rsc-prefetch-observation-2026-10-08.json)
+  retain raw private report hashes, failed/completed runs and scope limitations.
+
+### 2026-10-08 — Hydration regression passes; additional native failures retained
+
+- Working-tree combined Node22 lint/types and566 tests in42 files pass. Corrected
+  Register/Forgot delayed-JS packet passes16/16 across Chromium/mobile/Firefox/
+  WebKit, retries zero,41.2seconds. App is nebqa development frontend18080; using
+  an archive for the runner does not prove an optimized image. SSR named fields,
+  password visibility and submit remain disabled; keyboard cannot edit/submit
+  until activation, then controlled native validation and one own POST succeed.
+  First selector-timeout run remains retained; Mac app keyboard setting restored.
+  Logs /tmp/neb-auth-hydration-working-tree-reviewed-oct08.log and
+  /tmp/neb-hydration-native-integrated-{lint,types,tests}-oct08.log. Sanitized
+  [hydration report](artifacts/auth-hydration-reproduction-2026-10-08.json) records
+  exact pending production/CI scope.
+- New editor/preference native packet on immutable60618584 reports27 pass/
+  21 fail in3.7minutes, no retries/flaky/skips. Retained private traces under
+  /tmp/neb-editor-preference-reviewed-oct08. Desktop select requires genuine
+  typeahead; mobile emulation uses its separate native menu sequence. WebKit's
+  final reverse link boundary uses documented Option modifier; repeat reload
+  after dismissed beforeunload is recorded by actual browser policy. A fresh
+  dirty document must still produce an actual accepted beforeunload.
+- Independent Firefox probe confirms individual checkbox disabling moves focus
+  toBODY during privacy/notification save. After controlled200/re-enable focus
+  staysBODY; nextTab repeats the initiating checkbox. Document focus remains
+  true, exactly one correct write each. /tmp/neb-preference-focus-oct08/result.json.
+  Request-owned conditional restoration is being implemented; test refocusing
+  would hide the defect and is excluded.
+- One mobile320 description native501-character input reports React185 before
+  any autosave PUT; repeated dirty-status update is only a candidate explanation.
+  A desktop-typeahead helper on mobile subsequently fails before description;
+  do not count that run as a React185 reproduction. No typing slowdown, retry
+  increase, page-error filter, completed readiness or public deployment claim.
+
+### 2026-10-08 — Existing evidence reconciled to12 checklist items
+
+- Independent bounded reconciliation finds four remaining section42 local
+  contracts already observed. The09-30 PostgreSQL custom dump/checksum/isolated
+  restore preserves user/board/migration counts3|7|59. The executed
+  [backend rehearsal](artifacts/mixed-backend-rehearsal-2026-10-08.json) applies
+  forward migrations before compatible workers/web, operates old web on that
+  schema, consumes old/new mail tasks with the compatible new worker, then
+  restores old web while retaining schema/worker and verifies users, records,
+  existing sessions and fresh logins. HEAD backend tree equals rehearsed a3:
+  db16171ede68e4fb990742e51c35b4c1a5952322; no working-tree backend edits.
+  These four local backup/compatibility/rollback/order items close; section42
+  is verified before deployment. Managed snapshots/WAL/off-site recovery,
+  online locks, actual registry/config/target rollout remain separate gates.
+- Six section76 traffic-inspection items map to the existing hashed raw report
+  behind [performance evidence](artifacts/frontend-performance-2026-10-08.json):
+  16 optimized15632 image samples record545 responses,529×200/16×202, zero
+  redirects, only expected configured localhost18580 origin. No unexpected
+  asset404/401/500 or unintended local/staging origin in this bounded traffic.
+  [Asset rehearsal](artifacts/frontend-assets-rehearsal-2026-10-08.json) checks
+  50 retained hashes/HTTP reads through promotion and rollback. This is not
+  SSR-upstream/target ingress or current working-tree proof. Query-string exposure,
+  duplicate/RSC causes, response sizes and sensitive-body review remain open.
+- Two section103 combinations map to actual
+  [frontend rehearsal](artifacts/mixed-frontend-rehearsal-2026-10-08.json):
+  c1 frontend/a3 backend3/3 and15632 frontend/c1 backend3/3, zero retries.
+  New sitemap/old backend503/no-store/Retry-After300 enforces backend-first
+  rollout.606 also passes five actual API upload/persistence cases against c1.
+  Current hydration/focus/editor frontend changes require their consolidated
+  exact-image/CI refresh; section103 remains partial despite historical pair
+  observation. CDN/previous actual target deployment/config/command stay open.
+- No new test or invented result used for this reconciliation.12 previously
+  observed items close: checklist787 checked/355 unchecked;58 verified/
+  40 partial/six N/A/one deployment-only. Section72's required engineering gate
+  contains no checkboxes, explaining why substantial build/test work changes
+  no item counter. User pace steering is saved in the continuation checkpoint.
+
+### 2026-10-08 — Native dirty controls and approved UI wrap
+
+- Test-only dirty correction completes8/8 affected native cases, retries zero,
+  /tmp/neb-preference-dirty-final-reviewed-oct08.{log,json}, nebqa development18080.
+  It aborts only unexpected read-only SSR card media and uses actual browser
+  window.location.reload for the fresh accepted beforeunload. Previous16 editor
+  cases passed; retained runs cover48 relevant cases without a new single final
+  complete48 gate. Scoped Prettier/ESLint/types pass. Earlier failures remain logs.
+- User approves full wrap in profile list cards. Seven CSS lines give relevant
+  grid children min-width0 and overflow-wrap:anywhere. Actual320 page width falls
+  from854 to320; full92-character name/handle link stays inside286px card,
+  scrollWidth284. Screenshot /tmp/neb-ui-audit-oct08/profile-following-wrap-320.jpg.
+  No truncation, font, avatar or arbitrary layout redesign.
+- User requests visible mobile alternatives. CurrentA and separate privateB
+  shown at320×667, /tmp/neb-ui-audit-oct08/game-variant-{a,b}-320.jpg. B puts actual
+  board before collapsed native mark-style disclosure, description and actions;
+  selected summary/disclosure checked in real Chrome. Source proposal is private
+  /tmp/neb-ui-mobile-game-preview-oct08/frontend, not applied to workspace.
+- Real currentA board at320 clips even Morning stretch: cell94.66px, text105.59px,
+ 24px font/26.4px line height. Component is identical in privateB. User choice
+  requested for responsive font or explicit ellipsis; source unchanged. Local
+  screenshot /tmp/neb-ui-audit-oct08/current-cell-text-clipping-320.jpg.
+- Exact-source consolidated image/CI and deployment checks still pending.
+  Checklist remains787/355;58 verified/40 partial/six N/A/one deployment-only.
+
+### 2026-10-08 — Approved mobile choices; real SSR body deadline
+
+User chooses B and responsive font sizing. Implementation proceeds in existing
+player/CSS; desktop arrangement and full-text panel retained. Original A/B/clipping
+and approved wrapping screenshots saved under artifacts/ui-review-2026-10-08.
+Wide profile wrap also verified: viewport/page1728, link271.5/scrollWidth270, full
+92-character text; bounded Chrome console warnings/errors empty.
+
+[Native SSR proof](artifacts/ssr-stalled-body-timeout-2026-10-08.json) exercises real
+Node24.16.0 fetch and AbortSignal.timeout4000 with one owned ephemeral HTTP200
+response whose JSON body stalls. Headers13.676ms; genuine TimeoutError4004.134ms;
+null/unavailable fallback, oneGET/no retry/no-store. No QA/Docker/app mutation;
+probe globals/env/sockets/listener restored. This verifies existing server.ts
+deadline includes body parsing; section82 broad timeout item remains open pending
+client/gateway/provider scope.
+
+### 2026-10-08 — Approved responsive player and cancellation verification
+
+- User-approved B is implemented with stable SSR markup: mobile board/counter
+  before native mark-style disclosure, description/actions below; desktop visual
+  arrangement preserved and actual radio fieldset visible. Board-width font scales
+  within original desktop cap. Independent source review finds no blockers.
+- Native Chrome320 confirms Morning stretch17.04px font, text37px inside93px cell,
+  full page width320. 700/701 breakpoint has correct summary/fieldset visibility
+  and no horizontal page overflow; final desktop viewport restored1728×940.
+  Bounded console errors/warnings empty. Final screenshot is saved under
+  artifacts/ui-review-2026-10-08/game-approved-b-readable-320.jpg.
+- Controlled 3/5/7 layout/short-text/Tab/Enter/radio/selection/desktop-resize cases
+  pass4/4 across Chromium/mobile/Firefox/WebKit on a current-source isolated dev
+  server. Genuine QA SSR delayed-script cases pass4/4: board position and size
+  remain stable before/after hydration; no page errors or retries. These are
+  development checks, not an optimized release-image gate. Initial root runner
+  setup failure used fabricated board id against real SSR404 and an outputDir
+  that erased its manual fixture manifest; original failed report retained.
+- [Actual API body observations](artifacts/api-body-cancellation-2026-10-08.json)
+  record native20s read deadline20014.568ms/no retry and confirmed caller-abort
+  misclassification. Small source correction preserves the original native body
+  AbortError rather than converting it to invalid_response/status200. Updated
+  private native probe preserves exact object identity in47.601ms, oneGET/no
+  retry/full cleanup. Four regression units cover cancellation identity, deadline
+  and malformed JSON; client48/48 pass. Initial diagnostic numericcode assumption
+  is retained separately, corrected without changing identity assertions.
+- Consolidated Node22 lint/types and581 units in43 files pass39.71seconds.
+  Scoped format21 frontend files and git diff check pass. Existing auth/focus/editor
+  corrections are included. Exact-source CI and configured production image remain
+  required; actual provider/target gates remain open.
