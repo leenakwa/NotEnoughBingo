@@ -39,6 +39,23 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
+Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
+finishes with ten successful jobs and failed full-stack/Release. All four smoke
+profiles and both production images pass:446 backend,619 frontend/44 files,436
+smoke/12 intentional skips; live120 pass, two fail and three do not run. Each
+smoke profile passes all six new export and eight social cases. HEAD and tested
+merge share tree `7bc1b810ce9f324bb10a68937e26d1907985b11d`; original logs,
+all nine artifacts, metadata and verified checksums are privately archived. The export creation503 case incorrectly
+uses a success-only response helper; it throws on the intended503 before its
+remaining assertions. The password-reset journey interrupts logout with hard
+navigation approximately3.8ms after the POST starts; the aborted request leaves a
+session-expired dialog intercepting final login. Trace shows no final login POST.
+Both test synchronization corrections are prepared without changing application
+behavior, timeouts, retries or rate limits; their runtime awaits the next gate.
+A public-profile Unfollow503→keyboard retry→real204/API/reload extension also
+awaits that gate. Previous green38fd does not cover these additions.
+
+
 Latest completed green source `38fd3d1`
 [CI37829451235](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37829451235)
 passes all12 jobs:446 backend,619 frontend/44 files,380 smoke/12 intentional skips
@@ -47,7 +64,8 @@ Extended avatar attachment/removal failure recovery passes9.3s; Retry/Resend
 competition at320/1710 passes in all four browser profiles. Tested merge and
 branch share tree `28bf9d654eef1378420b357e127bd928d5285fd8`. Original logs, all
 nine artifacts, metadata and checksums are archived privately. Subsequent export
-failure coverage and backend connection changes await the next exact-source gate.
+failure coverage and backend connection changes are included in the failed761
+gate above; its corrections await the next exact-source gate.
 
 Previous green source `a164b1b`
 [CI37826157791](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37826157791)

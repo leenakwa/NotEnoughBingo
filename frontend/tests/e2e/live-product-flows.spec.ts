@@ -248,9 +248,13 @@ test("account export creation and accepted status failures preserve unsaved fiel
   };
   await page.route(failurePattern, creationFailureRoute);
   try {
-    const rejected = await waitForResponse(page, "/api/v1/auth/account-export/", "POST", () =>
-      exportCard.getByRole("button", { name: "Request data export", exact: true }).click(),
+    const rejectedResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/v1/auth/account-export/" &&
+        response.request().method() === "POST",
     );
+    await exportCard.getByRole("button", { name: "Request data export", exact: true }).click();
+    const rejected = await rejectedResponse;
     expect(rejected.status()).toBe(503);
     await expect(exportCard.getByRole("alert")).toHaveText(creationMessage);
     await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
@@ -4144,6 +4148,7 @@ test.describe("live full-stack product flows", () => {
 
   test("like, root comment, reply, comment like, follow, and report", async ({
     page,
+    browserName,
   }, testInfo) => {
     const fixture = readLiveFixture();
     const bingo = fixture.bingos.public;
@@ -4165,6 +4170,177 @@ test.describe("live full-stack product flows", () => {
       follow.click(),
     );
     await expect(page.getByRole("button", { name: "Following" })).toBeVisible();
+
+    // Reuse this journey's player session and restore its followed relation.
+    const profilePath = `/api/v1/profiles/${encodeURIComponent(fixture.users.author.username)}/`;
+    const followersPath = `/api/v1/users/${fixture.users.author.id}/followers/`;
+    const csrf = (await page.context().storageState()).cookies.find(
+      (cookie) => cookie.name === "neb_csrf",
+    );
+    expect(csrf).toBeDefined();
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 989 });
+      const baselineResponse = await page.request.get(profilePath);
+      expect(baselineResponse.status()).toBe(200);
+      const baseline = (await baselineResponse.json()) as {
+        id: string;
+        username: string;
+        is_following: boolean;
+        follower_count: number;
+      };
+      expect(baseline.id).toBe(fixture.users.author.id);
+      expect(baseline.username).toBe(fixture.users.author.username);
+      expect(baseline.is_following).toBe(true);
+      expect(baseline.follower_count).toBeGreaterThan(0);
+      const message = "Unable to unfollow right now. Please try again.";
+      let deletes = 0;
+      let release!: () => void;
+      let held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let handler: Promise<void> | undefined;
+      const matchesFollowers = (url: URL) => url.pathname === followersPath && !url.search;
+      const heldDelete = (route: Route) => {
+        if (route.request().method() !== "DELETE") return route.continue();
+        deletes += 1;
+        expect(deletes).toBeLessThanOrEqual(2);
+        expect(route.request().headers()["x-csrftoken"]).toBe(csrf!.value);
+        handler = (async () => {
+          await held;
+          if (deletes === 1) {
+            await route.fulfill({ status: 503, json: { error: { code: "unavailable", message } } });
+          } else {
+            // Only the retry reaches Django; its response and persisted state are real.
+            const response = await route.fetch();
+            expect(response.status()).toBe(204);
+            await route.fulfill({ response });
+          }
+        })();
+        return handler;
+      };
+      await page.route(matchesFollowers, heldDelete);
+      try {
+        await page.goto(`/profile/${encodeURIComponent(fixture.users.author.username)}`);
+        const header = page.locator(".profile-header");
+        const counts = header.locator(".profile-counts span").first();
+        const following = header.getByRole("button", { name: "Following", exact: true });
+        await expect(header.getByText(`@${baseline.username}`, { exact: true })).toBeVisible();
+        await expect(following).toHaveAttribute("aria-pressed", "true");
+        await expect(counts).toHaveText(`${baseline.follower_count} followers`);
+        // Safari's default keyboard settings traverse all controls with Option+Tab.
+        const tabKey = browserName === "webkit" ? "Alt+Tab" : "Tab";
+        for (
+          let step = 0;
+          step < 40 && !(await following.evaluate((button) => button === document.activeElement));
+          step += 1
+        )
+          await page.keyboard.press(tabKey);
+        await expect(following).toBeFocused();
+        const rejected = page.waitForResponse(
+          (response) =>
+            new URL(response.url()).pathname === followersPath &&
+            response.request().method() === "DELETE",
+        );
+        await page.keyboard.press("Enter");
+        await expect.poll(() => deletes).toBe(1);
+        const saving = header.getByRole("button", { name: "Saving…", exact: true });
+        await expect(saving).toBeDisabled();
+        await saving.evaluate((button: HTMLButtonElement) => {
+          button.click();
+          button.click();
+        });
+        await expect(page.locator("main > [role=status]")).toHaveText("Saving changes…");
+        await expect(counts).toHaveText(`${baseline.follower_count} followers`);
+        await expect(
+          page.getByRole("button", { name: "Report profile", exact: true }),
+        ).toBeEnabled();
+        expect(deletes).toBe(1);
+        release();
+        expect((await rejected).status()).toBe(503);
+        await handler;
+        const alert = page.locator("main > [role=alert]");
+        await expect(alert).toHaveText(message);
+        await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
+        await expect(following).toBeEnabled();
+        await expect(following).toHaveAttribute("aria-pressed", "true");
+        await expect(counts).toHaveText(`${baseline.follower_count} followers`);
+        const rejectedState = await page.request.get(profilePath);
+        expect(rejectedState.status()).toBe(200);
+        expect(await rejectedState.json()).toMatchObject(baseline);
+
+        held = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        for (
+          let step = 0;
+          step < 40 && !(await following.evaluate((button) => button === document.activeElement));
+          step += 1
+        )
+          await page.keyboard.press(tabKey);
+        await expect(following).toBeFocused();
+        const recovered = page.waitForResponse(
+          (response) =>
+            new URL(response.url()).pathname === followersPath &&
+            response.request().method() === "DELETE",
+        );
+        await page.keyboard.press("Enter");
+        await expect.poll(() => deletes).toBe(2);
+        await expect(saving).toBeDisabled();
+        await expect(alert).toHaveCount(0);
+        await saving.evaluate((button: HTMLButtonElement) => {
+          button.click();
+          button.click();
+        });
+        await expect(counts).toHaveText(`${baseline.follower_count} followers`);
+        expect(deletes).toBe(2);
+        release();
+        expect((await recovered).status()).toBe(204);
+        await handler;
+        await expect(header.getByRole("button", { name: "Follow", exact: true })).toHaveAttribute(
+          "aria-pressed",
+          "false",
+        );
+        await expect(counts).toHaveText(`${baseline.follower_count - 1} followers`);
+        const saved = await page.request.get(profilePath);
+        expect(saved.status()).toBe(200);
+        expect(await saved.json()).toMatchObject({
+          id: baseline.id,
+          username: baseline.username,
+          is_following: false,
+          follower_count: baseline.follower_count - 1,
+        });
+        await page.reload();
+        await expect(header.getByRole("button", { name: "Follow", exact: true })).toHaveAttribute(
+          "aria-pressed",
+          "false",
+        );
+        await expect(counts).toHaveText(`${baseline.follower_count - 1} followers`);
+        await expect(page.locator("main > [role=alert]")).toHaveCount(0);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+        expect(deletes).toBe(2);
+      } finally {
+        release();
+        try {
+          await handler;
+        } finally {
+          await page.unroute(matchesFollowers, heldDelete);
+          const restored = await page.request.post(followersPath, {
+            headers: { "X-CSRFToken": csrf!.value },
+          });
+          expect([200, 201]).toContain(restored.status());
+          const restoredProfile = await page.request.get(profilePath);
+          expect(restoredProfile.status()).toBe(200);
+          expect(await restoredProfile.json()).toMatchObject(baseline);
+        }
+      }
+    }
+    expect(pageErrors).toEqual([]);
+    await page.goto(`/bingo/${bingo.id}`);
+    await expect(page.getByRole("button", { name: "Following", exact: true })).toBeVisible();
 
     await page.getByLabel("Add a comment").fill(rootBody);
     const commentResponse = await waitForResponse(
@@ -4898,8 +5074,12 @@ test.describe("live full-stack product flows", () => {
           async () => (await fetch("/api/v1/auth/me/", { credentials: "same-origin" })).status,
         ),
       ).toBe(200);
-      await page.getByRole("button", { name: "Log out", exact: true }).click();
-      await page.goto("/login");
+      const signedOut = await waitForResponse(page, "/api/v1/auth/logout/", "POST", () =>
+        page.getByRole("button", { name: "Log out", exact: true }).click(),
+      );
+      expect(signedOut.status()).toBe(204);
+      await expect(page).toHaveURL(/\/login$/);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       await page.getByLabel("Email").fill(email);
       await page.getByLabel("Password").fill(changedPassword);
       await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>

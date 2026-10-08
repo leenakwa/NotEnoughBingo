@@ -7630,3 +7630,43 @@ source copy; its server is stopped. Format/lint/TypeScript, checklist verificati
 and independent review pass. Scripts/reports/patches/checksums are archived
 privately. Global sections7/26, vertical visibility, native devices and outstanding
 Explore/layout policy remain separate; final combined exact CI is pending.
+
+### 2026-10-08 — Failed761 gate and test synchronization corrections
+
+Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
+finishes with ten successful jobs and failed full-stack/Release. All four smoke
+profiles and both production images pass:446 backend,619 frontend/44 files,436
+smoke/12 intentional skips; live120 pass, two fail and three do not run. Each
+smoke profile passes all six new export and eight social cases. HEAD and tested
+merge share tree `7bc1b810ce9f324bb10a68937e26d1907985b11d`; original logs,
+all nine artifacts, metadata and verified checksums are privately archived. The export creation503 case incorrectly
+uses a success-only response helper; it throws on the intended503 before its
+remaining assertions. The password-reset journey interrupts logout with hard
+navigation approximately3.8ms after the POST starts; the aborted request leaves a
+session-expired dialog intercepting final login. Trace shows no final login POST.
+Both test synchronization corrections are prepared without changing application
+behavior, timeouts, retries or rate limits; their runtime awaits the next gate.
+A public-profile Unfollow503→keyboard retry→real204/API/reload extension also
+awaits that gate. Previous green38fd does not cover these additions.
+
+The expected export503 now uses a response predicate followed by an explicit503
+assertion; its cookie/CSRF binding, one creation/zero status reads, retained
+fields and subsequent real-job recovery assertions are unchanged. Password reset
+now awaits actual logout204, application-driven `/login` and absence of an auth
+dialog before the changed-password login. Official trace confirms reset202,
+confirmation204, reused-token400, password-change204 and authenticated session
+recovery precede the aborted logout. Normal completed application logout is not
+shown faulty by this trace. Independent static reviews pass; runtime is pending.
+
+The existing Follow/comment/reply/report journey now exercises public-profile
+Unfollow at320/1710 using the same player session. A held, cookie/CSRF-bound first
+DELETE503 retains Following/count; retry via actual keyboard traversal reaches
+Django204 and checks API/reload state and exactly one follower decrement. Finally
+restores the relationship/count before original downstream social assertions.
+Restoration creates a replacement follower notification and another FOLLOW event
+per successful width; it does not restore the entire historical fixture state.
+Disabled native `.click()` attempts prove native suppression, not callback-level
+reentrancy. No extra login/registration/seed traffic, local shared-fixture run,
+application/UI changes or weakened browser assertions are introduced. External
+TypeScript/lint/format and independent patch review pass; combined exact CI must
+prove the runtime and downstream compatibility. No global checkbox is advanced.

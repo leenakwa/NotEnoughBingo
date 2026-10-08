@@ -5,7 +5,23 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest completed gate —2026-10-08: Exact `38fd3d1`
+Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
+finishes with ten successful jobs and failed full-stack/Release. All four smoke
+profiles and both production images pass:446 backend,619 frontend/44 files,436
+smoke/12 intentional skips; live120 pass, two fail and three do not run. Each
+smoke profile passes all six new export and eight social cases. HEAD and tested
+merge share tree `7bc1b810ce9f324bb10a68937e26d1907985b11d`; original logs,
+all nine artifacts, metadata and verified checksums are privately archived. The export creation503 case incorrectly
+uses a success-only response helper; it throws on the intended503 before its
+remaining assertions. The password-reset journey interrupts logout with hard
+navigation approximately3.8ms after the POST starts; the aborted request leaves a
+session-expired dialog intercepting final login. Trace shows no final login POST.
+Both test synchronization corrections are prepared without changing application
+behavior, timeouts, retries or rate limits; their runtime awaits the next gate.
+A public-profile Unfollow503→keyboard retry→real204/API/reload extension also
+awaits that gate. Previous green38fd does not cover these additions.
+
+Latest completed green gate —2026-10-08: Exact `38fd3d1`
 [CI37829451235](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37829451235)
 passes all12 jobs:446 backend,619 frontend/44 files,380 smoke/12 intentional skips
 and125 full-stack cases, with no reported flakes/retries. Both images and Release
@@ -21,8 +37,9 @@ backend eliminates reuse:27 requests use27 connections with FIN/noRST; all seven
 threshold requests return401. The next backend image closes internal connections
 to avoid this mechanism. This also removes Nginx-to-backend reuse: actual target
 latency, connection churn and sustained throughput require deployment measurement.
-The cold/unequal clone latency sample is not a capacity result. Subsequent export
-coverage and this connection change await their own exact CI; no production
+The cold/unequal clone latency sample is not a capacity result. The subsequent761
+gate builds both images but fails two full-stack tests; corrections await their
+own exact CI. No production
 deployment or broad readiness claim follows.
 
 Earlier observation —2026-10-08: Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)
