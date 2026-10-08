@@ -113,7 +113,7 @@ export interface BingoRevision {
   published_at: string;
 }
 
-export interface BingoDetail extends BingoSummary {
+export interface BingoDetail extends Omit<BingoSummary, "preview"> {
   current_revision: BingoRevision | null;
   editable_draft?: BingoDraft | null;
   permissions: {

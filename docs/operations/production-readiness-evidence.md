@@ -6447,6 +6447,92 @@ retain freshness. Optional refresh errors retain the known count, while logout
 and account changes clear it; active-effect/current-account checks reject stale
 results. Eight new cases and the existing prior-account case cover these paths.
 All609 frontend tests in43 files pass locally/19.16s and full ESLint passes;
-independent correctness review finds no meaningful issues. This source correction
-is later than the d8 image packet; its built-image/network and exact-source CI
-checks are pending, and the d8 packet is not relabeled as proving the correction.
+independent correctness review finds no meaningful issues. Full TypeScript and
+format checks also pass. This source correction is later than the d8 image packet;
+the d8 packet is not relabeled as proving it.
+
+The subsequent optimized0224870 image has matching built/runtime release,
+non-root user, no application mounts and health200. One approved two-context
+Linux Chromium packet at390/1710 passes: each seeded header makes exactly one
+startup unread GET, then two synthetic focus events refresh7 to9 and retain9
+after a controlled503. All three real same-account session responses return200
+and finish; real unread200 backing bodies are read only in memory before supplying
+controlled counts. Header/account/link rectangles remain unchanged and no page
+overflow occurs. Each context has only its exactly attributed expected unread503
+console error, with no unexpected console/page/route errors. Four telemetry writes
+are intercepted204; no business writes occur. Cleanup succeeds and the container
+is absent. Native OS focus and target services are not covered. Raw proof/scripts
+and masked header screenshots are archived outside the repository; the existing
+artifact adds headerUnread022. Exact-source CI is still pending; no global
+duplicate-request or layout checkbox is promoted.
+
+### 2026-10-08 — Actual plain-text MIME contract for account emails
+
+Ten new cases exercise both verification purposes, password reset, both direct
+notice senders and all five persisted security/deletion notice variants. The
+actual locmem message is serialized and parsed as transport MIME: text/plain,
+UTF-8 payload round-trip, no multipart or HTML alternative, configured From,
+intended recipient/current subject and exact public action/support URLs. A
+non-ASCII name/security body verifies encoding. This verifies each emitted format,
+not every enqueue/recovery route. Independent coverage review finds no meaningful
+gap for the original plain-text requirement. The complete email file passes25
+cases/2.73s in locked Python3.13.15/Django5.2.17/DRF3.17.2 with network disabled,
+read-only source and in-memory SQLite; Ruff lint/format and diff checks pass.
+An earlier stale host-venv attempt failed at PostgreSQL setup and is not counted
+as a product result. No message reaches SMTP or a provider.
+
+Only section45 plain-text fallback is checked: current emails are plain-only,
+with no HTML requiring an alternative. Production sender/domain authentication,
+delivery, inbox/mobile/dark rendering and operator choices remain open. Source
+review also corrects the tracker’s overbroad branded-subject claim: several
+security subjects lack a brand; the copy choice is pending with the user.
+Counts become816 checked/326 unchecked, of which85 are N/A and241 applicable;
+section verdicts are unchanged.
+
+### 2026-10-08 — CCA smoke reaches the job limit; independent project jobs
+
+[CI37782590752](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37782590752)
+for cca43db passes frontend601/43 files, backend402/105.64s, foundation,
+full-history secrets, both production images and123 full-stack flows/8.0min.
+The smoke job is cancelled at its existing20-minute limit:384 planned,352
+passed,12 intentionally skipped and20 without completed results. No failed-test,
+assertion, locator, test-timeout or retry records occur. Chromium completes96,
+mobile/firefox each92+4 skips; WebKit completes72+4 skips before cancellation.
+Release fails, so this is not a complete source gate. Tested merge
+968816484001dc92407d9b0679930e133044b2c0 and branch cca share full tree
+22cf896b7e6fb46f138e5420276f4c4cf6f1a276. An initial log download fails with a
+connection reset; a recovered full log and separate smoke log preserve the result.
+
+Independent execution-cost review finds no cross-project smoke fixture or order
+dependency. CI now selects each of the four existing projects in a separate job,
+retaining one worker, existing timeouts/retries/assertions and all384 discovered
+cases. Distinct artifact names avoid report collisions; fail-fast false retains
+sibling results. Release still requires aggregate e2e success. This follows
+[GitHub’s matrix-job contract](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations).
+Actionlint and discovery-only listing pass; independent workflow review passes.
+Improved elapsed time remains a hypothesis until the new complete CI runs.
+
+### 2026-10-08 — Remove unused full preview from detail responses
+
+Frontend consumer tracing finds that player, metadata, editor and recovery use
+current_revision; BingoDetail.preview has no runtime consumer. Catalog cards
+still need their preview. The detail serializer now omits only this duplicate;
+OpenAPI, generated frontend schema and the explicit detail type change together.
+This intentionally changes the predeployment detail API contract and is not
+claimed backward-compatible for unknown external clients. Retrieve and shared
+publish/archive/restore responses retain the full revision; catalog previews stay.
+
+Two regressions fail before on unexpected preview, then36 scoped backend cases
+and64 frontend cases pass. Worker observes actual uncompressed detail bytes for
+a populated100-cell board falling81,601→41,563, saving40,038/49.06%; this is one
+representative response, not a global network or latency result. Root reviews the
+source/schema/test diff, and independent correctness review finds no issues.
+Root’s final frontend check passes609 tests/43 files/17.36s, full lint/types/format;
+backend Ruff and schema validation pass. Final exact-source CI and updated-runtime
+checks remain pending. Catalog page-size/maximum-cell payload remains a separate
+performance question; section76 is not closed by this detail correction.
+
+Root also runs the combined email/API-boundary/draft-revision suite against the
+locked network-disabled SQLite test runtime:61 pass/8.38s. Full backend Ruff
+check/format pass. This combined local result does not substitute for the required
+Python3.13/PostgreSQL complete source gate.

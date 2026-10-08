@@ -93,7 +93,6 @@ function bingo(visibility: BingoDetail["visibility"]): BingoDetail {
     language: "en",
     author,
     cover,
-    preview: null,
     tags: [],
     size: 3,
     status: "published",

@@ -1703,5 +1703,103 @@
         }
       ]
     }
+  },
+  "headerUnread022": {
+    "runtime": {
+      "composePath": "/tmp/neb-rollout-a3/compose.json",
+      "frontend": {
+        "image": "sha256:ebab33592ccec0719f7453d861341f937cd9acb55f20cf6ee695391559f992b3",
+        "release": "0224870daca615a065ff244f37d4f041d9a8f47a",
+        "loopbackPort": 18584,
+        "publicRelease": "0224870daca615a065ff244f37d4f041d9a8f47a"
+      },
+      "backend": {
+        "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18585
+      }
+    },
+    "counts": {
+      "contexts": 2,
+      "completed": 2,
+      "failures": 0
+    },
+    "proofSha256": "cf41bd56b80f6bd95047e91043e460c7f6134b31a30ba3ee942d170efd3c8050",
+    "rawProofArchive": "/Users/Daniil/.codex/scratch/not-enough-bingo-production-readiness/evidence-0224870-2026-10-08/unread-browser-once/proof.json",
+    "observations": [
+      {
+        "width": 390,
+        "completed": true,
+        "seededSSR": {
+          "notifications": true,
+          "profile": true
+        },
+        "startupUnreadRequests": 1,
+        "unreadResponseStatuses": [
+          200,
+          200,
+          503
+        ],
+        "sameAccountSessionStatuses": [
+          200,
+          200,
+          200
+        ],
+        "labels": [
+          "Notifications",
+          "Notifications, 7 unread",
+          "Notifications, 9 unread",
+          "Notifications, 9 unread"
+        ],
+        "headerRectangleMaxDeltaPx": 0,
+        "documentWidth": 390,
+        "expected503ConsoleMessages": 1,
+        "unexpectedConsoleMessages": 0,
+        "pageErrors": 0,
+        "businessMutations": 0,
+        "interceptedTelemetry": 2
+      },
+      {
+        "width": 1710,
+        "completed": true,
+        "seededSSR": {
+          "notifications": true,
+          "profile": true
+        },
+        "startupUnreadRequests": 1,
+        "unreadResponseStatuses": [
+          200,
+          200,
+          503
+        ],
+        "sameAccountSessionStatuses": [
+          200,
+          200,
+          200
+        ],
+        "labels": [
+          "Notifications",
+          "Notifications, 7 unread",
+          "Notifications, 9 unread",
+          "Notifications, 9 unread"
+        ],
+        "headerRectangleMaxDeltaPx": 0,
+        "documentWidth": 1710,
+        "expected503ConsoleMessages": 1,
+        "unexpectedConsoleMessages": 0,
+        "pageErrors": 0,
+        "businessMutations": 0,
+        "interceptedTelemetry": 2
+      }
+    ],
+    "cleanup": {
+      "errors": []
+    },
+    "limits": [
+      "Only configured local Linux Chromium candidate, widths390/1710; no production/Mac/native focus claim",
+      "Synthetic window focus events test event logic; actual OS/browser focus untested",
+      "Unread7/9 and503 synthetic; real unread200 backing used in memory only; no unread payload/IDs/cookies output",
+      "All business mutations blocked and fail; telemetry204 controlled; unrelated GETs unchanged"
+    ]
   }
 }

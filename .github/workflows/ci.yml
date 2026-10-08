@@ -240,13 +240,21 @@ jobs:
         run: npm run build
 
   e2e:
-    name: Browser smoke tests
+    name: Browser smoke tests (${{ matrix.project }})
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
       options: --user 1001
     needs:
       - frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - chromium
+          - mobile
+          - firefox
+          - webkit
     timeout-minutes: 20
     defaults:
       run:
@@ -273,13 +281,13 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Run Playwright smoke tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --project=${{ matrix.project }}
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: frontend/playwright-report/
           if-no-files-found: ignore
           retention-days: 7

@@ -897,7 +897,7 @@ For each verify:
 - [ ] From address;
 - [ ] Reply-To where appropriate;
 - [ ] subject;
-- [ ] plain-text fallback where relevant;
+- [x] plain-text fallback where relevant;
 - [ ] mobile rendering;
 - [ ] acceptable dark-mode rendering;
 - [ ] links;

@@ -128,6 +128,54 @@ def test_bingo_api_enforces_catalog_and_direct_link_visibility(verified_user_fac
     assert stranger.get(f"/api/v1/bingos/{private.public_id}/").status_code == 404
 
 
+def test_full_board_detail_keeps_revision_without_duplicate_preview(verified_user_factory) -> None:
+    author = verified_user_factory()
+    document = empty_draft_document(title="Full board", size=10, language="en")
+    document["visibility"] = Bingo.Visibility.PUBLIC
+    for index, cell in enumerate(document["cells"]):
+        cell["text"] = f"Task {index + 1}: complete this activity"
+    bingo = create_bingo(author=author, document=document)
+    publish_bingo(bingo=bingo, actor=author, idempotency_key="full-board-publication")
+    guest = _api_client()
+
+    detail = guest.get(f"/api/v1/bingos/{bingo.public_id}/")
+    catalog = guest.get("/api/v1/bingos/")
+
+    assert detail.status_code == catalog.status_code == 200
+    revision = detail.data["current_revision"]
+    assert len(revision["cells"]) == 100
+    assert [cell["text"] for cell in revision["cells"]] == [
+        cell["text"] for cell in document["cells"]
+    ]
+    preview = catalog.data["results"][0]["preview"]
+    assert preview == {key: revision[key] for key in ("size", "board_background", "cells")}
+    assert "preview" not in detail.data
+
+
+def test_publish_archive_restore_detail_responses_keep_revision_without_preview(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory()
+    bingo = create_bingo(author=author, document=_document(title="Lifecycle board"))
+    client = _api_client(author)
+    published = client.post(
+        f"/api/v1/bingos/{bingo.public_id}/publish/",
+        {},
+        format="json",
+        HTTP_IDEMPOTENCY_KEY="lifecycle-publication",
+    )
+    archived = client.post(f"/api/v1/bingos/{bingo.public_id}/archive/", {}, format="json")
+    restored = client.post(f"/api/v1/bingos/{bingo.public_id}/restore/", {}, format="json")
+
+    assert published.status_code == 201
+    assert archived.status_code == restored.status_code == 200
+    revision = published.data["current_revision"]
+    assert len(revision["cells"]) == 9
+    for response in (published, archived, restored):
+        assert response.data["current_revision"] == revision
+        assert "preview" not in response.data
+
+
 def test_catalog_search_handles_unicode_literals_limits_and_pagination(
     verified_user_factory,
 ) -> None:

@@ -1291,7 +1291,6 @@ export interface components {
             readonly cover_asset_id: string | null;
             /** Format: uuid */
             readonly current_revision_id: string | null;
-            readonly preview: components["schemas"]["BingoCardPreview"] | null;
             readonly author: components["schemas"]["BingoAuthor"];
             readonly tags: components["schemas"]["TagReference"][];
             readonly stats: components["schemas"]["BingoStats"];

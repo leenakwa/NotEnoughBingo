@@ -2906,11 +2906,6 @@ components:
           format: uuid
           readOnly: true
           nullable: true
-        preview:
-          allOf:
-          - $ref: '#/components/schemas/BingoCardPreview'
-          readOnly: true
-          nullable: true
         author:
           allOf:
           - $ref: '#/components/schemas/BingoAuthor'
@@ -3008,7 +3003,6 @@ components:
       - liked_by_me
       - marking_config
       - permissions
-      - preview
       - public_id
       - stats
       - tags

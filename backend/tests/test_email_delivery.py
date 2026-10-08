@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import re
 from datetime import timedelta
+from email import policy
+from email.parser import BytesParser
 from smtplib import SMTPServerDisconnected
 
 import pytest
@@ -13,10 +16,160 @@ from django.utils.http import urlsafe_base64_encode
 from freezegun import freeze_time
 
 from apps.accounts import tasks
-from apps.accounts.models import EmailVerification
+from apps.accounts.models import AccountDeletionRequest, EmailVerification, SecurityEvent
 from apps.accounts.services import token_digest
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture
+def public_mail_settings(settings):
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    settings.DEFAULT_FROM_EMAIL = "Account notices <accounts@bingo.example.test>"
+    settings.FRONTEND_URL = "https://bingo.example.test"
+    return settings
+
+
+def assert_plain_text_message(subject, recipient, expected_urls, settings):
+    assert len(mail.outbox) == 1
+    message = mail.outbox[0]
+    assert message.subject == subject
+    assert message.from_email == settings.DEFAULT_FROM_EMAIL
+    assert message.to == [recipient]
+    assert not message.alternatives
+
+    # Inspect the MIME a transport would receive, including its decoded payload.
+    mime = BytesParser(policy=policy.default).parsebytes(message.message().as_bytes())
+    assert mime["Subject"] == subject
+    assert str(mime["From"]) == settings.DEFAULT_FROM_EMAIL
+    assert str(mime["To"]) == recipient
+    assert not mime.is_multipart()
+    assert mime.get_content_type() == "text/plain"
+    assert mime.get_content_charset() == "utf-8"
+    assert mime.get_payload(decode=True).decode("utf-8") == message.body
+    assert set(re.findall(r"https?://[^\s]+", message.body)) == set(expected_urls)
+    return message
+
+
+@pytest.mark.parametrize(
+    ("purpose", "route", "subject"),
+    [
+        (
+            EmailVerification.Purpose.VERIFY_EMAIL,
+            "verify-email",
+            "Verify your Not Enough Bingo email",
+        ),
+        (
+            EmailVerification.Purpose.CHANGE_EMAIL,
+            "confirm-email-change",
+            "Confirm your new Not Enough Bingo email",
+        ),
+    ],
+)
+def test_verification_mail_mime_contract(
+    purpose, route, subject, user_factory, public_mail_settings
+):
+    user = user_factory()
+    verification_value = "synthetic-verification-value"
+    recipient = "requested@example.test"
+    verification = EmailVerification.objects.create(
+        user=user,
+        email=recipient,
+        purpose=purpose,
+        pending_username="Игрок",
+        token_hash=token_digest(verification_value),
+        expires_at=timezone.now() + timedelta(hours=1),
+    )
+    tasks.send_verification_email.run(verification.pk, verification_value)
+    message = assert_plain_text_message(
+        subject,
+        recipient,
+        [
+            f"https://bingo.example.test/{route}?token={verification_value}",
+            "https://bingo.example.test/support",
+        ],
+        public_mail_settings,
+    )
+    if purpose == EmailVerification.Purpose.VERIFY_EMAIL:
+        assert "Игрок" in message.body
+
+
+def test_password_reset_mail_mime_contract(user_factory, public_mail_settings):
+    user = user_factory()
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    tasks.send_password_reset_email.run(user.pk, uid, token)
+    assert_plain_text_message(
+        "Reset your Not Enough Bingo password",
+        user.email,
+        [
+            f"https://bingo.example.test/reset-password?uid={uid}&token={token}",
+            "https://bingo.example.test/support",
+        ],
+        public_mail_settings,
+    )
+
+
+@pytest.mark.parametrize("kind", ["email_change_notice", "security"])
+def test_direct_account_notice_mime_contract(kind, user_factory, public_mail_settings):
+    user = user_factory()
+    if kind == "email_change_notice":
+        recipient = "former@example.test"
+        subject = "Your Not Enough Bingo email address changed"
+        tasks.send_email_change_notice.run(recipient)
+    else:
+        recipient = user.email
+        subject = "Security notice"
+        tasks.send_critical_security_email.run(user.pk, subject, "Review your account — проверьте.")
+    message = assert_plain_text_message(
+        subject, recipient, ["https://bingo.example.test/support"], public_mail_settings
+    )
+    if kind == "security":
+        assert "проверьте" in message.body
+
+
+@pytest.mark.parametrize(
+    ("event_type", "intent_key", "subject"),
+    [
+        (SecurityEvent.EventType.PASSWORD_RESET, "security_email", "Your password was reset"),
+        (SecurityEvent.EventType.PASSWORD_CHANGED, "security_email", "Your password changed"),
+        (SecurityEvent.EventType.EMAIL_CHANGED, "security_email", "Your email address changed"),
+        (
+            SecurityEvent.EventType.EMAIL_CHANGED,
+            "previous_email_notice",
+            "Your Not Enough Bingo email address changed",
+        ),
+        (
+            SecurityEvent.EventType.ACCOUNT_DELETION_REQUESTED,
+            "security_email",
+            "Account deletion requested",
+        ),
+    ],
+)
+def test_persisted_account_notice_mime_contract(
+    event_type, intent_key, subject, user_factory, public_mail_settings
+):
+    user = user_factory()
+    recipient = "former@example.test" if intent_key == "previous_email_notice" else user.email
+    intent = {"status": "pending", "recipient": recipient}
+    if event_type == SecurityEvent.EventType.ACCOUNT_DELETION_REQUESTED:
+        deletion = AccountDeletionRequest.objects.create(
+            user=user, scheduled_for=timezone.now() + timedelta(days=7)
+        )
+        intent.update(
+            deletion_request_id=deletion.pk, scheduled_for=deletion.scheduled_for.isoformat()
+        )
+    event = SecurityEvent.objects.create(
+        user=user, event_type=event_type, metadata={intent_key: intent}
+    )
+    assert tasks._deliver_security_notification(event.pk, intent_key) is True
+    message = assert_plain_text_message(
+        subject, recipient, ["https://bingo.example.test/support"], public_mail_settings
+    )
+    event.refresh_from_db()
+    assert event.metadata[intent_key]["status"] == "sent"
+    if event_type == SecurityEvent.EventType.ACCOUNT_DELETION_REQUESTED:
+        assert deletion.scheduled_for.strftime("%Y-%m-%d %H:%M UTC") in message.body
 
 
 def email_job(kind, user):

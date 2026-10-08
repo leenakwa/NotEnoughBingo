@@ -454,6 +454,7 @@ class CreatorBingoCardSerializer(BingoCardSerializer):
 
 
 class BingoDetailSerializer(BingoCardSerializer):
+    preview = None
     current_revision = BingoRevisionSerializer(read_only=True, allow_null=True)
     marking_config = MarkingConfigSerializer(read_only=True)
     background_asset_id = serializers.UUIDField(
@@ -467,7 +468,7 @@ class BingoDetailSerializer(BingoCardSerializer):
 
     class Meta(BingoCardSerializer.Meta):
         fields = (
-            *BingoCardSerializer.Meta.fields,
+            *(field for field in BingoCardSerializer.Meta.fields if field != "preview"),
             "background_asset_id",
             "marking_config",
             "current_revision",

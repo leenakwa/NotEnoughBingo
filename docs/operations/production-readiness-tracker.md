@@ -86,8 +86,8 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **815 checked /327 unchecked**. Of those327,85 belong to the six
-explicitly N/A sections;242 are applicable unchecked bullets. The42 final
+Current **816 checked /326 unchecked**. Of those326,85 belong to the six
+explicitly N/A sections;241 are applicable unchecked bullets. The42 final
 execution bullets overlap earlier checks, so these counts are not independent
 tasks or a readiness percentage. The first nine section105 actions have actual
 local CI/runtime/search/configuration evidence; the deployment sequence and
@@ -107,8 +107,13 @@ Its CI37781920465 stops at formatting in one player test; the formatting-only
 correction passes the full format check. One exact-d8 built-image packet records
 zero measured header/Follow/actions/heading/board movement in seven contexts,
 including optional profile errors. Six scenarios pass; one retains an unexpected
-console500 and real session GET500. The corrected cca source gate remains pending;
-section5 stays partial and scoped geometry does not close it.
+console500 and real session GET500. The corrected cca gate passes seven jobs,
+including123 live flows, but its smoke job hits the20-minute limit after352 passes
+and12 intentional skips, leaving20 cases without results; Release fails.
+The subsequent022 unread-count correction passes609 tests and a two-width
+controlled browser packet. Four-project smoke CI preserves all384 discovered
+cases and the existing limits; the coordinated detail-payload correction and its
+final source gate remain pending. Section5 stays partial.
 
 ### Accepted interface requirements
 
@@ -178,7 +183,7 @@ original prompt remains unchanged.
 - [x] 42. DATABASE — Verified before deployment: PostgreSQL defaults/constraints/transactions, realistic existing-data migration and10,000-board preservation, executed dump/checksum/isolated restore, plus immutable old-web→forward schema→compatible worker/new-web→old-web rollback preserve users, durable records and sessions. Business models, migrations and worker/task contracts retain the rehearsed a3 implementation; the subsequent cache-readiness HTTP-status correction has separate regression evidence and awaits its source CI gate. This closes the local contract; managed snapshots/WAL/off-site, online locks/target load and actual provider/registry/deployment remain in sections34/44/103–105.
 - [x] 43. DATA INTEGRITY — Verified before deployment: PostgreSQL concurrent likes/follows, versioned editor/progress conflicts, idempotent draft/publication/export/session/report/notification calls, soft-delete threads, reference-aware media and abandoned-job recovery passed; webhook duplication is N/A.
 - [ ] 44. BACKUPS — Partial: local evidence recorded; review remaining original bullets.
-- [ ] 45. EMAILS — Partial: registration verification, password reset, email-change and security notices have production-origin links, branded subjects and plain-text bodies; messages that direct users to support now include the public support page. Local mail flow and expiry checks passed. Messages now show their stored UTC expiration; queued resets skip invalidated tokens. Fifteen new retry/exhaustion/expiry guards, 46 related account cases, all 234 local backend tests (plus one infrastructure-only skip) and three live email journeys passed. A real isolated QA SMTP outage produced a worker retry, delivery after restoration and a successful API reset; the temporary account was removed. Sender-domain authentication, provider delivery/rate limits, a monitored support address and real-device inbox rendering still require the chosen domain and email service.
+- [ ] 45. EMAILS — Partial: registration verification, password reset, email-change and security notices have production-origin links and plain-text bodies; verification/reset subjects are branded, while several security-notice subjects omit the brand and await the user’s copy decision; messages that direct users to support now include the public support page. Local mail flow and expiry checks passed. Messages now show their stored UTC expiration; queued resets skip invalidated tokens. Fifteen new retry/exhaustion/expiry guards, 46 related account cases, all 234 local backend tests (plus one infrastructure-only skip) and three live email journeys passed. A real isolated QA SMTP outage produced a worker retry, delivery after restoration and a successful API reset; the temporary account was removed. Sender-domain authentication, provider delivery/rate limits, a monitored support address and real-device inbox rendering still require the chosen domain and email service.
 - [x] 46. NOTIFICATIONS — Verified before deployment: all activity types and deduplication, recipient-scoped unread/read/Mark All Read and timestamps, live link navigation/reload, and real deleted/private target denial passed. There is no separate Mark Unread action.
 - — 47. OAUTH / SOCIAL LOGIN — N/A for current release: capability absent in source inventory.
 - — 48. PAYMENTS — N/A for current release: capability absent in source inventory.
