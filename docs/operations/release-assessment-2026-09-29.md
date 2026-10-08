@@ -5,22 +5,30 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact5f28e03 passes all12 jobs in
-[CI37786669037](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37786669037):
-414 backend,609 frontend,372 smoke/12 intentional skips and123 full-stack flows;
+Latest observation —2026-10-08: Exact5ed50c0 passes all12 jobs in
+[CI37790158585](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37790158585):
+423 backend,610 frontend,372 smoke/12 intentional skips and123 full-stack flows;
 both images and Release pass. Tested merge and branch full trees match. The
-configured optimized pair has matching5f release identities and real guest/auth
+configured optimized pair has matching5ed release identities and real guest/auth
 GETs retain full revisions/catalog previews while removing duplicate detail
 preview. Backend still uses local fixture development settings.
 
-The subsequent slim-preview-media patch passes46 scoped backend and610 frontend
+The slim-preview-media patch also passes46 scoped backend and610 frontend
 cases, lint/types/format/schema checks and independent review. One isolated
 maximum-field shared-media fixture measures default24-card JSON falling
 5,140,890→4,246,290 bytes, approximately17.40%, while retaining complete cell
 content/styles and full detail media. Responses remain large; PostgreSQL distinct
 media scalability, ingress compression and target latency are not proved. This
-new patch requires its own committed-source gate. Follow geometry has scoped
+new patch has the complete gate above; the later two clipboard/share failure
+unit cases require their own final committed test gate. Follow geometry has scoped
 seven-context stability evidence, with one unexplained session proxy500 retained.
+
+Subsequent optional-analytics construction guard passes seven regression cases,
+independent review and final frontend lint/types/619 cases/format. Its five
+fail-before cases establish the synchronous UUID failure. The original browser
+packet used an untrusted HTTP origin and failed before feedback interactions;
+its evidence is retained. Updated image/browser and complete new-source CI remain
+required. No production HTTPS failure or readiness is inferred.
 
 Earlier observation —2026-10-08: Source `a2c2d6f` passes all nine jobs in
 [CI37769102508](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508):
@@ -74,8 +82,8 @@ The [tracker](production-readiness-tracker.md) and
 
 ## Decision
 
-Source5f has the complete source gate summarized above; the subsequent slim
-preview patch still requires its own gate. Source a2 has historical evidence for
+Source5ed has the complete source gate summarized above; the subsequent
+shared-link failure coverage still requires its own final committed test gate. Source a2 has historical evidence for
 registration metadata, private-response
 caching and development/framework logging corrections. Scoped checks and
 independent review pass. Its exact optimized packet passes registration/player/

@@ -93,6 +93,52 @@ describe("SharedResultView", () => {
     expect(await screen.findByText("Shared.")).toBeInTheDocument();
   });
 
+  it("keeps the result visible after copying fails and clears the fallback on retry", async () => {
+    const providerError = "Clipboard permission denied by provider";
+    vi.mocked(navigator.clipboard.writeText)
+      .mockRejectedValueOnce(new Error(providerError))
+      .mockResolvedValueOnce(undefined);
+    render(<SharedResultView bingoId="bingo-1" shareId="share-1" initialResult={result} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(
+      await screen.findByText("Copy failed. Select the address from your browser to share it."),
+    ).toBeVisible();
+    expect(screen.queryByText(providerError)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Movie Night Bingo" })).toBeVisible();
+    expect(screen.getByText("2 of 9 selected")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Share" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(await screen.findByText("Link copied.")).toBeVisible();
+    expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(2);
+    expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(window.location.href);
+    expect(screen.queryByText(/Copy failed\./)).not.toBeInTheDocument();
+  });
+
+  it("offers copying after native sharing fails and allows that alternative to succeed", async () => {
+    const providerError = "Native share provider failed";
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: vi.fn().mockRejectedValue(new Error(providerError)),
+    });
+    render(<SharedResultView bingoId="bingo-1" shareId="share-1" initialResult={result} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect(
+      await screen.findByText("Sharing was unavailable. You can copy the link instead."),
+    ).toBeVisible();
+    expect(screen.queryByText(providerError)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(await screen.findByText("Link copied.")).toBeVisible();
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(window.location.href);
+    expect(screen.queryByText(/Sharing was unavailable\./)).not.toBeInTheDocument();
+  });
+
   it("hides the previous result while the next shared link loads and supports retry", async () => {
     let rejectNext!: (error: Error) => void;
     vi.mocked(api.shares.get).mockReturnValueOnce(

@@ -6634,3 +6634,71 @@ unverified. The existing Nginx configuration enables gzip for application/json,
 but this uncompressed serializer measurement does not execute that ingress.
 No section76 bullet or global performance verdict is promoted. The exact new
 committed-source complete gate remains required.
+
+
+Both exact5ed50c0 optimized images subsequently build and run non-root with
+matching full revision labels and configured frontend built release/origin.
+Frontend and backend live-health responses are200. One four-GET runtime check
+returns200 for guest/registered detail and catalog: detail retains nine revision
+cells without preview; both catalog responses retain two board previews and all
+19 cell fields. Authenticated responses remain private, no-store. Detail bytes
+are5,354/5,351 and catalog9,054, unchanged for this sparse fixture. No non-null
+image descriptors exist in that fixture, so it does not verify nested five-field
+media; the isolated populated probe and focused API cases provide that proof.
+Backend keeps development settings and its existing /app/media data volume;
+there are no source bind mounts. Only candidate frontend/backend image/release
+configuration changes; other workers and data are retained. Build, immutable
+image, runtime and API artifacts are archived outside the repository. The new
+complete source gate remains pending; no target deployment is claimed.
+
+
+### 2026-10-08 — Complete exact-source gate for slim catalog media
+
+[CI37790158585](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37790158585)
+passes all12 jobs for5ed50c0f02ffeac9a4ac3d0f4caa75f6de1ca14c. Backend passes
+423 cases/61.38s on Python3.13/PostgreSQL; frontend610/43 files. Chromium passes
+96/4.1min; mobile92+4 intentional skips/2.7min; Firefox92+4/4.4min;
+WebKit92+4/6.2min. All384 smoke cases are accounted for:372 passes/12 skips.
+Full-stack passes123/8.9min. Foundation, full-history secrets, both production
+images and Release pass. Execution times exclude setup/teardown.
+
+Tested merge221cfd7f6c586cbe330fefa69ffb0ac450c90ae6 and branch5ed50c0 share
+complete tree617595a74da44902ce838c9eddb0d6077d64804a. Raw log, job metadata
+and tree proof are archived outside the repository. The populated serializer
+probe and sparse exact-image runtime proof above retain their distinct scopes.
+No target deployment or global response-size/session-proxy verdict is inferred.
+The subsequent two shared-link failure tests cover existing clipboard rejection
+and non-Abort native-share failure: readable fallback, released controls, intact
+result, no provider-error exposure and successful copying after failure. Their
+focused file passes11 cases with targeted lint/format. No runtime code changes;
+no timed persistence/native-provider/browser behavior is established by those
+unit cases. Their final committed test-source gate remains required.
+
+
+### 2026-10-08 — Optional analytics UUID failure and retained browser failure
+
+The reviewed two-context browser diagnostic terminates with zero of two cases
+verified. Its HTTP host.docker.internal origin is not trustworthy: UUID support
+is unavailable and PageActivity analytics throws before feedback interactions.
+Actual page/API GETs return200, but copy/share controls, persistence and geometry
+are not reached. Raw scripts, hashes, proof, log and successful container cleanup
+are archived separately. This is a diagnostic-origin error, not evidence of a
+production HTTPS failure. A separately reviewed trustworthy-origin packet is
+required; the failed run is not replayed or converted into a pass.
+
+The incident exposes a separate source defect: optional analytics event UUID
+construction throws synchronously outside the existing transport catch. The
+minimal guard skips the new event when UUID generation is absent or throws,
+before queue insertion or scheduling. It does not synthesize identifiers or
+change UI behavior. Existing valid queued events and normal batching remain.
+[MDN randomUUID documentation](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID)
+records its secure-context requirement.
+
+Actual-module regression tests fail five cases before the guard and pass all
+seven afterward, covering missing/throwing UUID, anonymous-ID construction,
+retained valid queue, twenty-event batching and storage-read denial. Independent
+failure-semantics review finds no blocking issue. Final frontend lint, types,
+619 tests/44 files and full format pass. Storage-write denial and actual browser
+integration are not directly established by those tests. The new source still
+requires its updated configured frontend image and complete committed-source CI.
+No checklist item or overall readiness verdict is promoted.

@@ -52,16 +52,24 @@ export function trackInteraction(
   } = {},
 ): void {
   if (typeof window === "undefined") return;
-  pending.push({
-    client_event_id: crypto.randomUUID(),
-    event_type: eventType,
-    bingo_id: options.bingoId,
-    revision_id: options.revisionId,
-    tag: options.tag,
-    metadata: options.metadata ?? {},
-    occurred_at: new Date().toISOString(),
-    anonymous_id: anonymousId(),
-  });
+  let event: ClientInteraction;
+  try {
+    if (typeof crypto === "undefined" || typeof crypto.randomUUID !== "function") return;
+    event = {
+      client_event_id: crypto.randomUUID(),
+      event_type: eventType,
+      bingo_id: options.bingoId,
+      revision_id: options.revisionId,
+      tag: options.tag,
+      metadata: options.metadata ?? {},
+      occurred_at: new Date().toISOString(),
+      anonymous_id: anonymousId(),
+    };
+  } catch {
+    // Optional analytics must not interrupt product actions when UUID generation fails.
+    return;
+  }
+  pending.push(event);
   if (pending.length >= MAX_BATCH_SIZE) {
     void flush();
   } else {

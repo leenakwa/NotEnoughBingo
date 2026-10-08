@@ -115,8 +115,10 @@ controlled browser packet. Four-project smoke CI preserves all384 discovered
 cases and the existing limits. Exact5f28e03 CI37786669037 passes all12 jobs:
 414 backend,609 frontend,372 smoke/12 intentional skips and123 full-stack flows,
 including both images and Release. Tested merge and branch full trees match.
-The subsequent slim-preview-media patch requires its own source gate. Section5
-stays partial because the unexplained session500 and other scoped gaps remain.
+The subsequent slim-preview-media patch passes exact5ed50c0 CI37790158585:
+423 backend,610 frontend,372 smoke/12 intentional skips and123 full-stack flows,
+all12 jobs successful with matching full tested/branch trees. Section5 stays
+partial because the unexplained session500 and other scoped gaps remain.
 
 ### Accepted interface requirements
 
