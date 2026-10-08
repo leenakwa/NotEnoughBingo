@@ -540,12 +540,18 @@ class ProfileSharedResultListView(generics.ListAPIView):
             "revision",
         )
         if not owner:
-            queryset = queryset.filter(
-                access=SharedResult.Access.PUBLIC,
-                hidden_at__isnull=True,
-                revoked_at__isnull=True,
-                bingo__hidden_at__isnull=True,
-            ).exclude(revision__visibility=Bingo.Visibility.PRIVATE)
+            queryset = (
+                queryset.filter(
+                    access=SharedResult.Access.PUBLIC,
+                    hidden_at__isnull=True,
+                    revoked_at__isnull=True,
+                    bingo__status=Bingo.Status.PUBLISHED,
+                    bingo__hidden_at__isnull=True,
+                    bingo__deleted_at__isnull=True,
+                )
+                .exclude(bingo__visibility=Bingo.Visibility.PRIVATE)
+                .exclude(revision__visibility=Bingo.Visibility.PRIVATE)
+            )
         return queryset.order_by("-created_at")
 
 

@@ -30,6 +30,16 @@ packet used an untrusted HTTP origin and failed before feedback interactions;
 its evidence is retained. Updated image/browser and complete new-source CI remain
 required. No production HTTPS failure or readiness is inferred.
 
+The later profile shared-result filter correction has eight actual API failures
+before and14 scoped cases passing afterward, plus independent security review.
+It removes withdrawn-board metadata from guest/other profile listings while
+preserving owner/public/unlisted behavior; its new committed-source gate and
+configured backend image remain required. Trusted-localhost shared feedback
+verifies controlled recovery and5.1-second persistence but fails strict network
+checks; its offscreen message placement awaits a user choice. Profile loading
+measurements retain fixed tabs, unexplained background aborts and a pagination
+fixture gap. Neither browser packet establishes a complete pass.
+
 Earlier observation —2026-10-08: Source `a2c2d6f` passes all nine jobs in
 [CI37769102508](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508):
 backend402/105.73s on Python3.13.16/PostgreSQL, frontend589/43 files,

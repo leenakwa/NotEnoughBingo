@@ -120,6 +120,12 @@ The subsequent slim-preview-media patch passes exact5ed50c0 CI37790158585:
 all12 jobs successful with matching full tested/branch trees. Section5 stays
 partial because the unexplained session500 and other scoped gaps remain.
 
+Subsequent optional-analytics and profile shared-result privacy corrections
+have scoped fail-before regressions and independent reviews. Their complete
+new committed-source gate remains pending. Trusted-localhost feedback/loading
+packets retain network-abort failures; feedback placement awaits the user and
+profile pagination lacks an existing next page. No section verdict changes.
+
 ### Accepted interface requirements
 
 The user retains account dialogs, one-time registration language onboarding,

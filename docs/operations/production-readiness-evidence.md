@@ -6702,3 +6702,79 @@ failure-semantics review finds no blocking issue. Final frontend lint, types,
 integration are not directly established by those tests. The new source still
 requires its updated configured frontend image and complete committed-source CI.
 No checklist item or overall readiness verdict is promoted.
+
+
+### 2026-10-08 — Trusted local shared-feedback observations, network gate failed
+
+The configured frontend is rebuilt from exact05d148a and runs non-root with
+matching built revision/origin, no mounts and health200. Backend remains actual
+5ed50c0 image56bef; its identity is not relabelled. A concurrent global Docker
+restart stops the rollout services before the new diagnostic preflight: that
+invocation reaches zero browser contexts. The same existing services/images are
+restored; separate preflight failure and subsequent invocation records remain.
+
+One reviewed actual browser packet uses a read-only in-container localhost
+proxy, without crypto mocking or insecure-origin overrides. Both320×480 and
+1710×900 contexts confirm secureContext and native randomUUID, real anonymous
+share API/SSR200 and no page/console/proxy/route errors. Four feedback states
+in each context retain the result, show readable rejection/fallback, release
+controls and permit successful copy retry. Double synchronous clicks invoke
+each provider once; copy3/share1 use the current URL. Each message persists
+5.1 seconds and is visible/unclipped after scrolling, with no horizontal overflow.
+Providers are controlled promises; this does not verify native OS integration.
+
+The packet nevertheless exits1: zero of two contexts satisfy the complete gate.
+Strict request-failure checks retain9/13 ERR_ABORTED requests, including navigation
+GETs and the controlled interactions POST. Each observes34 actual200 responses
+and one synthesized204. Cause remains unassigned; assertions are not weakened
+and the browser packet is not replayed. No business writes occur.
+
+Feedback initially sits outside the visible area after the board, even when
+Copy link/Share is reachable. Its subsequent scrolled readability does not
+resolve that placement issue. The user is asked to choose feedback by the buttons
+or a fixed bottom notice; no layout change is made pending that choice. Raw proof,
+eight cropped feedback screenshots, both invocation records and successful
+container cleanup are archived outside the repository. No global section97 or
+network/readiness verdict is promoted.
+
+
+### 2026-10-08 — Profile collection loading measurements
+
+One reviewed two-width packet on configured frontend05d148a/backend5ed measures
+actual public profile collections without adding rows. Created returns two rows;
+other public collections are empty. Initial load, populated/empty tab switching,
+controlled503 and actual successful retry are captured. Tabs and panel top remain
+fixed; loading/empty/error panels remain260px high and held states do not drift.
+Content height changes from1034→260 at320 and553.672→260 at1710, moving the footer.
+Those final content differences do not alone establish an unnecessary jump or
+a source bug. CLS is0.00372917/0; recent-input shifts remain separately recorded.
+
+The complete diagnostic exits1 with two contexts/zero complete, twelve findings
+and two fixture gaps: ten strict geometry-delta findings and two strict
+request-failure assertions. Background/navigation/telemetry ERR_ABORTED counts
+are15/14; actual collection GETs succeed. Page/route/proxy errors and unexpected
+console errors are zero; the controlled503 console attribution is retained.
+Actual Created has no next page, so disappearing pagination during load remains
+unverified. Masked screenshots, raw proof and successful cleanup are archived.
+No assertions are weakened, no replay or UI change occurs, and section5 remains
+partial.
+
+### 2026-10-08 — Withdrawn board metadata in public profile shared results
+
+Source inventory exposes a mismatch between direct shared-result authorization
+and non-owner profile collection filtering. With an old public revision/share,
+the collection still returns title, share identifier/URL and selection count
+after the current board becomes private, unpublished or deleted, whereas direct
+share access returns404. Actual API regressions fail eight restricted cases
+before the fix; four public/unlisted cases pass. The queryset now requires a
+published, undeleted current board and excludes current private visibility,
+retaining the existing share/revision/hidden guards and owner-list behavior.
+
+Afterward14 scoped API cases pass, including adjacent independent privacy and
+shared-result cases; Ruff lint/format and diff checks pass. Guest and unrelated
+authenticated readers receive no withdrawn title/share token/count or rows.
+Public/unlisted shares and owner profile listings retain their previous access.
+The regression uses SQLite in memory and direct model transitions; no full
+revision leak, deployed response projection, or complete section76 closure is
+claimed. Raw fail-before/after logs are archived. Independent security review finds no blocking issue. Exact
+new-source PostgreSQL CI/runtime verification remains required.

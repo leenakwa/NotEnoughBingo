@@ -1088,6 +1088,65 @@ def test_interaction_and_feed_api_validate_guest_events_and_public_content(
     assert all(item["visibility"] == Bingo.Visibility.PUBLIC for item in discover.data["results"])
 
 
+@pytest.mark.parametrize("viewer", ["guest", "unrelated_user"])
+@pytest.mark.parametrize(
+    "board_state", ["public", "unlisted", "private", "draft", "archived", "deleted"]
+)
+def test_profile_shared_results_follow_current_board_visibility(
+    verified_user_factory, viewer: str, board_state: str
+) -> None:
+    author = verified_user_factory(username="shared_board_author")
+    profile_user = verified_user_factory(username="shared_profile_subject")
+    bingo, revision = _published_bingo(author=author, title="Shared profile board")
+    result = create_shared_result(
+        bingo=bingo,
+        selected_cells=[],
+        display_name="Shared Profile Subject",
+        idempotency_key="profile-current-board-share",
+        actor=profile_user,
+    )
+    client = _api_client(
+        verified_user_factory(username="shared_unrelated_user")
+        if viewer == "unrelated_user"
+        else None
+    )
+    profile_url = f"/api/v1/profiles/{profile_user.username}/shared-results/"
+    direct_url = f"/api/v1/shares/{bingo.public_id}/{result.share_id}/"
+    assert client.get(profile_url).data["count"] == 1
+    assert client.get(direct_url).status_code == 200
+
+    if board_state in {"public", "unlisted", "private"}:
+        bingo.visibility = board_state
+        bingo.save(update_fields=["visibility"])
+    elif board_state == "deleted":
+        bingo.deleted_at = timezone.now()
+        bingo.save(update_fields=["deleted_at"])
+    else:
+        bingo.status = board_state
+        bingo.save(update_fields=["status"])
+    revision.refresh_from_db()
+    result.refresh_from_db()
+    assert revision.visibility == Bingo.Visibility.PUBLIC
+    assert result.access == result.Access.PUBLIC
+
+    accessible = board_state in {"public", "unlisted"}
+    assert client.get(direct_url).status_code == (200 if accessible else 404)
+    listing = client.get(profile_url)
+    assert listing.status_code == 200
+    assert listing.data["count"] == (1 if accessible else 0)
+    if accessible:
+        assert listing.data["results"][0]["id"] == result.share_id
+    else:
+        assert listing.data["results"] == []
+        assert revision.title not in listing.content.decode()
+        assert result.share_id not in listing.content.decode()
+
+    owner_listing = _api_client(profile_user).get(profile_url)
+    assert owner_listing.status_code == 200
+    assert owner_listing.data["count"] == 1
+    assert owner_listing.data["results"][0]["id"] == result.share_id
+
+
 def test_profile_subresources_apply_independent_privacy_and_visibility(
     verified_user_factory,
 ) -> None:
