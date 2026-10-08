@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ExplorePage } from "@/components/explore/explore-page";
+import { trackInteraction } from "@/lib/analytics";
 import type { BingoSummary, Page } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
@@ -51,6 +52,171 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("Explore partial and obsolete responses", () => {
+  it.each(["success", "error"])(
+    "ignores identical pending submits in one event batch and allows a repeat after %s",
+    async (outcome) => {
+      mocks.query = "search=travel";
+      let resolve: (value: Page<BingoSummary>) => void = () => undefined;
+      let reject: (reason: Error) => void = () => undefined;
+      mocks.explore.mockReturnValueOnce(
+        new Promise((done, fail) => {
+          resolve = done;
+          reject = fail;
+        }),
+      );
+      render(<ExplorePage initialResult={page([])} />);
+      const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
+
+      act(() => {
+        fireEvent.submit(form);
+        fireEvent.submit(form);
+      });
+      expect(trackInteraction).toHaveBeenCalledTimes(1);
+      expect(mocks.replace).toHaveBeenCalledTimes(1);
+      expect(mocks.explore).toHaveBeenCalledTimes(1);
+      fireEvent.submit(form);
+      expect(trackInteraction).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        if (outcome === "success") resolve(page([]));
+        else reject(new Error("offline"));
+      });
+      fireEvent.submit(form);
+      expect(trackInteraction).toHaveBeenCalledTimes(2);
+      expect(mocks.replace).toHaveBeenCalledTimes(2);
+      expect(mocks.explore).toHaveBeenCalledTimes(2);
+      await act(async () => Promise.resolve());
+    },
+  );
+
+  it("keeps a new search pending until its URL has applied and its own response settles", async () => {
+    mocks.query = "search=travel";
+    let resolveNew: (value: Page<BingoSummary>) => void = () => undefined;
+    mocks.explore.mockResolvedValueOnce(page([]));
+    mocks.explore.mockReturnValueOnce(
+      new Promise((done) => {
+        resolveNew = done;
+      }),
+    );
+    const view = render(<ExplorePage initialResult={page([])} />);
+    const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
+    fireEvent.change(screen.getByLabelText("Search by title"), { target: { value: "holiday" } });
+    fireEvent.submit(form);
+    await act(async () => Promise.resolve());
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(1);
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    mocks.query = "search=holiday";
+    view.rerender(<ExplorePage />);
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(1);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    await act(async () => resolveNew(page([])));
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledTimes(3);
+    await act(async () => Promise.resolve());
+  });
+
+  it("allows changed filters while pending and does not unlock them after an obsolete response", async () => {
+    mocks.query = "search=travel";
+    let resolveOld: (value: Page<BingoSummary>) => void = () => undefined;
+    let resolveNew: (value: Page<BingoSummary>) => void = () => undefined;
+    mocks.explore.mockReturnValueOnce(
+      new Promise((done) => {
+        resolveOld = done;
+      }),
+    );
+    mocks.explore.mockReturnValueOnce(
+      new Promise((done) => {
+        resolveNew = done;
+      }),
+    );
+    mocks.replace.mockImplementation((url: string) => {
+      mocks.query = url.split("?")[1] ?? "";
+    });
+    render(<ExplorePage initialResult={page([])} />);
+    const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
+
+    fireEvent.submit(form);
+    fireEvent.change(screen.getByLabelText("Search by title"), { target: { value: "holiday" } });
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    expect(mocks.explore.mock.calls[0]?.[1]?.aborted).toBe(true);
+    await act(async () => resolveOld(page([])));
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    await act(async () => resolveNew(page([])));
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(3);
+    expect(mocks.explore).toHaveBeenCalledTimes(3);
+    await act(async () => Promise.resolve());
+  });
+
+  it("does not unlock a newer submit when an earlier URL transition applies first", async () => {
+    mocks.query = "search=travel";
+    let resolveCurrent: (value: Page<BingoSummary>) => void = () => undefined;
+    mocks.explore.mockResolvedValueOnce(page([]));
+    mocks.explore.mockResolvedValueOnce(page([]));
+    mocks.explore.mockReturnValueOnce(
+      new Promise((done) => {
+        resolveCurrent = done;
+      }),
+    );
+    const view = render(<ExplorePage initialResult={page([])} />);
+    const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
+    const input = screen.getByLabelText("Search by title");
+    act(() => {
+      fireEvent.change(input, { target: { value: "holiday" } });
+      fireEvent.submit(form);
+      fireEvent.change(input, { target: { value: "current" } });
+      fireEvent.submit(form);
+    });
+    await act(async () => Promise.resolve());
+    mocks.query = "search=holiday";
+    view.rerender(<ExplorePage />);
+    await act(async () => Promise.resolve());
+    fireEvent.change(input, { target: { value: "current" } });
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(2);
+    mocks.query = "search=current";
+    view.rerender(<ExplorePage />);
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(2);
+    await act(async () => resolveCurrent(page([])));
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(3);
+    await act(async () => Promise.resolve());
+  });
+
+  it("allows resubmitting an aborted search after browser Back restores its source URL", async () => {
+    mocks.query = "search=travel";
+    mocks.explore.mockReturnValueOnce(new Promise(() => undefined));
+    mocks.replace.mockImplementation((url: string) => {
+      mocks.query = url.split("?")[1] ?? "";
+    });
+    const view = render(<ExplorePage initialResult={page([])} />);
+    const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
+    const input = screen.getByLabelText("Search by title");
+    fireEvent.change(input, { target: { value: "holiday" } });
+    fireEvent.submit(form);
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    expect(mocks.explore.mock.calls[0]?.[0]?.search).toBe("holiday");
+
+    mocks.query = "search=travel";
+    view.rerender(<ExplorePage />);
+    expect(mocks.explore.mock.calls[0]?.[1]?.aborted).toBe(true);
+    await act(async () => Promise.resolve());
+    fireEvent.change(input, { target: { value: "holiday" } });
+    fireEvent.submit(form);
+    expect(trackInteraction).toHaveBeenCalledTimes(2);
+    expect(mocks.replace).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledTimes(3);
+    await act(async () => Promise.resolve());
+  });
+
   it("groups active filters and preserves the remaining filters when removing a tag", () => {
     mocks.query = "search=travel&author=sample&tags=holiday,year&ordering=newest&page=3";
     render(<ExplorePage initialResult={page([])} />);

@@ -5,33 +5,32 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: source `5e71cd8` passes seven jobs in
-[CI37735197541](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37735197541).
-Backend383, frontend581/43 files, smoke372/12 intentional skips without flaky
-cases, foundation, secrets and both images pass. Full-stack122 pass/one Android
-failure; Release fails. The retained trace shows a test matched the catalog card
-heading before navigation completed. Corrected readiness waits pass the affected
-play controls across all five profiles. The first local packet has four passes
-and a later Firefox editor500 caused by an upstream connection reset; its
-separate unchanged-source repeat passes. Final corrected-source CI is required.
+Latest observation —2026-10-08: source `9920e83` passes all nine jobs in
+[CI37739609098](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37739609098):
+backend383, frontend581/43 files, smoke372/12 intentional skips and full-stack123,
+with no flaky cases; both production images and Release pass. The tested merge
+and branch head have the same complete tree. Earlier Android readiness failure
+and local Firefox upstream reset remain recorded in the dated evidence.
 
-The exact configured optimized5e image passes156 controlled native cases and a
-separate nine-case real API/SSR packet, retries zero; matching build/runtime
-release IDs, no application mounts, health200. See the
-[candidate report](artifacts/frontend-candidate-5e71cd8-2026-10-08.json).
-User-approved profile full wrapping, mobile grid above controls and board-width
-font scaling have narrow/wide and hydration evidence. The
+The [exact configured image](artifacts/frontend-candidate-9920e83-2026-10-08.json)
+passes five affected real product flows plus native narrow/wide report checks.
+Build/runtime IDs match, application mounts are absent, health returns200.
+Eight controlled modal cases pass separately. Earlier5e proof covers156 native
+and nine API/SSR cases;992 changes only the accepted report shadow at runtime.
+User-approved wrapping, mobile grid above controls and board-width font scaling
+retain their earlier narrow/wide/hydration proof. The
 [Nginx probe](artifacts/nginx-upstream-deadlines-2026-10-08.json) verifies local
-10/60s upstream-read deadlines with safe504 recovery.
+10/60s upstream-read deadlines and safe504 recovery.
 
-Current checklist:788 checked/354 unchecked;59 verified/39 partial/six N/A/
+Current checklist:801 checked/341 unchecked;59 verified/39 partial/six N/A/
 one deployment-only. Counts describe evidence, not a product-readiness percentage.
 The [tracker](production-readiness-tracker.md) and
 [dated evidence](production-readiness-evidence.md) contain scope and open items.
 
 ## Decision
 
-The latest source has an incomplete release gate. Target operator/support/legal
+Source992 has a complete CI gate. Subsequent Explore source changes require their
+own gate. Target operator/support/legal
 choices, services, TLS/ingress, secrets, monitoring, CDN/capacity, native-device
 checks and off-site recovery remain to be verified. No production registry
 promotion or public deployment has occurred. See the

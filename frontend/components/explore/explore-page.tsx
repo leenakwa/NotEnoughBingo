@@ -11,6 +11,27 @@ import { trackInteraction } from "@/lib/analytics";
 import type { AuthorSuggestion, BingoSummary, Page, Tag } from "@/lib/api/types";
 import { languageLabel } from "@/lib/languages";
 
+function searchKey(
+  search: string,
+  author: string,
+  tags: string,
+  languages: string[],
+  ordering: string,
+  page: number,
+) {
+  return JSON.stringify([
+    search.trim(),
+    author.trim(),
+    tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+    languages,
+    ordering,
+    page,
+  ]);
+}
+
 export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSummary> | null }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -27,6 +48,14 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
     searchParams.get("ordering") === "newest" ? ("newest" as const) : ("popular" as const);
   const rawPage = Number(searchParams.get("page"));
   const page = Number.isSafeInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+  const appliedKey = searchKey(
+    appliedSearch,
+    appliedAuthor,
+    appliedTags,
+    appliedLanguages,
+    appliedOrdering,
+    page,
+  );
   const [search, setSearch] = useState(appliedSearch);
   const [author, setAuthor] = useState(appliedAuthor);
   const [tags, setTags] = useState(appliedTags);
@@ -40,6 +69,11 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   const [requestVersion, setRequestVersion] = useState(0);
   const [interactive, setInteractive] = useState(false);
   const skipInitialRequest = useRef(Boolean(initialResult));
+  const pendingSubmission = useRef<{
+    key: string;
+    previousKeys: string[];
+    targetApplied: boolean;
+  } | null>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -48,6 +82,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
 
   const load = useCallback(
     async (signal: AbortSignal) => {
+      const submission = pendingSubmission.current;
       setLoading(true);
       setError("");
       try {
@@ -72,13 +107,34 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
           setError(errorMessage(caught));
         }
       } finally {
-        if (!signal.aborted) setLoading(false);
+        if (!signal.aborted) {
+          setLoading(false);
+          if (submission?.key === appliedKey && pendingSubmission.current === submission) {
+            pendingSubmission.current = null;
+          }
+        }
       }
     },
-    [appliedAuthor, appliedOrdering, appliedSearch, appliedTags, appliedLanguages, page],
+    [
+      appliedAuthor,
+      appliedOrdering,
+      appliedSearch,
+      appliedTags,
+      appliedLanguages,
+      appliedKey,
+      page,
+    ],
   );
 
   useEffect(() => {
+    const submission = pendingSubmission.current;
+    if (submission) {
+      if (appliedKey === submission.key) {
+        submission.targetApplied = true;
+      } else if (submission.targetApplied || !submission.previousKeys.includes(appliedKey)) {
+        pendingSubmission.current = null;
+      }
+    }
     if (skipInitialRequest.current) {
       skipInitialRequest.current = false;
       return;
@@ -86,7 +142,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
     const controller = new AbortController();
     void load(controller.signal);
     return () => controller.abort();
-  }, [load, requestVersion]);
+  }, [load, requestVersion, appliedKey]);
 
   useEffect(() => {
     setSearch(appliedSearch);
@@ -174,6 +230,14 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
       tagInputRef.current?.focus();
       return;
     }
+    const key = searchKey(search, author, tags, appliedLanguages, ordering, 1);
+    if (pendingSubmission.current?.key === key) return;
+    const previous = pendingSubmission.current;
+    pendingSubmission.current = {
+      key,
+      previousKeys: previous ? [...previous.previousKeys, previous.key, appliedKey] : [appliedKey],
+      targetApplied: key === appliedKey,
+    };
     setTagError("");
     if (search.trim()) {
       trackInteraction("search", {
@@ -188,6 +252,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   }
 
   function changePage(nextPage: number) {
+    pendingSubmission.current = null;
     updateUrl(nextPage, {
       search: appliedSearch,
       author: appliedAuthor,
@@ -198,6 +263,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   }
 
   function removeFilter(filter: "search" | "author" | "ordering" | "tag" | "language", tag = "") {
+    pendingSubmission.current = null;
     const next = {
       search: filter === "search" ? "" : appliedSearch,
       author: filter === "author" ? "" : appliedAuthor,
@@ -358,6 +424,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
               className="button button--secondary filter-clear"
               type="button"
               onClick={() => {
+                pendingSubmission.current = null;
                 setSearch("");
                 setAuthor("");
                 setTags("");

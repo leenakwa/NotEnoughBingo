@@ -1,0 +1,200 @@
+{
+  "source": "frontend/components/explore/explore-page.tsx",
+  "sha256": "9cc2e0c58f01671caa5ff157c7ad461b9f4ffe8cf2c72c2de3badf03ce04ebd1",
+  "stats": {
+    "startTime": "2026-10-08T07:20:16.583Z",
+    "duration": 31624.506999999998,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "project": "chromium",
+      "scenario": "same pending submission is suppressed and completion allows repeat",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "B",
+          "B"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=B"
+      }
+    },
+    {
+      "project": "chromium",
+      "scenario": "changed criteria accepted while earlier response pending",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "B",
+          "B",
+          "C"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=C"
+      }
+    },
+    {
+      "project": "chromium",
+      "scenario": "native Back from pending destination permits resubmission",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "B",
+          "S",
+          "S",
+          "B"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=B"
+      }
+    },
+    {
+      "project": "firefox",
+      "scenario": "same pending submission is suppressed and completion allows repeat",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "B",
+          "B"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=B"
+      }
+    },
+    {
+      "project": "firefox",
+      "scenario": "changed criteria accepted while earlier response pending",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "B",
+          "B",
+          "C"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=C"
+      }
+    },
+    {
+      "project": "firefox",
+      "scenario": "native Back from pending destination permits resubmission",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "B",
+          "S",
+          "S",
+          "B"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=B"
+      }
+    },
+    {
+      "project": "webkit",
+      "scenario": "same pending submission is suppressed and completion allows repeat",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "S",
+          "B",
+          "B"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=B"
+      }
+    },
+    {
+      "project": "webkit",
+      "scenario": "changed criteria accepted while earlier response pending",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "S",
+          "B",
+          "B",
+          "C"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=C"
+      }
+    },
+    {
+      "project": "webkit",
+      "scenario": "native Back from pending destination permits resubmission",
+      "status": "passed",
+      "retry": 0,
+      "evidence": {
+        "requests": [
+          "S",
+          "S",
+          "S",
+          "B",
+          "S",
+          "S",
+          "B"
+        ],
+        "searchEvents": 2,
+        "pageErrors": [],
+        "url": "http://localhost:18586/explore?search=B"
+      }
+    }
+  ],
+  "scope": "Real Playwright Chromium/Firefox/WebKit UI against isolated Next webpack dev server; browser API and analytics mocked; held network responses; actual page.goBack, no injected history; no real backend or production build; no OS preference changes. pageerror monitored; browser console messages not collected.",
+  "raw_report_sha256": "f42f16fc488f68da01b018b5a66084b0129cff01a4f218e5d506dcf5424af9ca",
+  "unit_scope": {
+    "explore_pass": 10,
+    "integrated_node": "22.23.1",
+    "frontend_pass": 587,
+    "files": 43,
+    "lint": "pass",
+    "typecheck": "pass"
+  },
+  "cleanup": {
+    "owned_server_stopped": true,
+    "qa_unchanged": true,
+    "os_preferences_unchanged": true
+  },
+  "limitations": [
+    "Controlled browser API/analytics, private Next webpack development server; no real backend or production-build claim.",
+    "Criteria changes may produce an extra cancelled read for the prior URL; this is not a one-HTTP-request-per-action guarantee.",
+    "pageerror monitored; console messages not collected.",
+    "Initial harness Turbopack failed because of external node_modules symlink before any product assertion; switched to existing webpack option."
+  ]
+}

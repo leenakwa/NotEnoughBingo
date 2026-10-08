@@ -140,7 +140,7 @@ Verify:
 
 - [x] requests visibly show progress when appropriate;
 - [x] buttons display loading/progress;
-- [ ] submit cannot be accidentally triggered twice;
+- [x] submit cannot be accidentally triggered twice;
 - [ ] layout does not jump unnecessarily;
 - [x] skeletons resemble final layout if used;
 - [x] slow operations do not look frozen;
@@ -184,24 +184,24 @@ For every form verify:
 - [x] placeholder is not the only label;
 - [ ] required fields are clear;
 - [ ] optional fields are clear where useful;
-- [ ] validation is understandable;
-- [ ] validation errors appear near the relevant field;
-- [ ] focus behavior after validation is sensible;
+- [x] validation is understandable;
+- [x] validation errors appear near the relevant field;
+- [x] focus behavior after validation is sensible;
 - [ ] Enter works appropriately;
 - [ ] Tab navigation works;
 - [ ] browser autofill works where expected;
 - [ ] password managers work;
 - [ ] copy/paste is not unnecessarily blocked;
-- [ ] accidental whitespace in emails/usernames is handled sensibly;
-- [ ] email normalization is sensible;
-- [ ] multiline input handles newlines;
+- [x] accidental whitespace in emails/usernames is handled sensibly;
+- [x] email normalization is sensible;
+- [x] multiline input handles newlines;
 - [ ] long text does not break layout;
-- [ ] Unicode works;
-- [ ] emoji works where allowed;
-- [ ] `'`, `"`, `<`, `>`, `&` do not break rendering;
-- [ ] very large numeric values are handled;
-- [ ] negative numbers are handled;
-- [ ] decimal input is handled correctly;
+- [x] Unicode works;
+- [x] emoji works where allowed;
+- [x] `'`, `"`, `<`, `>`, `&` do not break rendering;
+- [x] very large numeric values are handled;
+- [x] negative numbers are handled;
+- [x] decimal input is handled correctly;
 - [ ] max-length restrictions exist only where appropriate;
 - [ ] users know relevant limits;
 - [ ] leaving an important dirty form warns the user if losing work would be harmful.

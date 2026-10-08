@@ -5570,3 +5570,95 @@ focus stays inside, Escape closes and focus returns to Report. Mac keyboard
 setting restored and verified. This is current-source private development proof;
 optimized-image and final-source CI remain separate. Narrow/wide screenshots are
 in artifacts/ui-review-2026-10-08/report-approved-single-backdrop-{320,1728}.jpg.
+
+### 2026-10-08 — Existing native field evidence mapped to section7
+
+Nine previously unchecked field items now map to actual executed scenarios, not
+new tests or source assumptions. The156-case5e native report contains profile32,
+account24, preference32 and editor16 cases. Profile username trimming and account
+padded-email FormData cover whitespace; backend email-change normalization proves
+After@EXAMPLE.TEST becomes after@example.test, while passwords retain whitespace.
+Profile textarea Enter preserves exact multiline payload/error state. Real editor,
+profile, guest share, comment and adversarial-content journeys cover permitted
+Unicode/emoji and literal quotes/HTML punctuation without interpreting markup.
+Username ASCII restrictions are explicit validation, not silent normalization.
+
+Only three numeric UI controls exist, all bounded ranges. Executed Home/Arrow
+clamps, thousand-digit rejection, negative/out-of-range opacity rejection, decimal
+rounding0.4567→0.457 and real huge/negative/decimal board-size400 observations map
+the three numeric bullets. Source/test references are in the API/auth-editor and
+profile/account matrices and earlier dated results. No new all-form Enter/Tab,
+validation, clipboard/autofill/password-manager or visual-state coverage is claimed.
+Checklist797/345; section7 remains partial, section verdicts59/39/six N/A/one
+deployment-only.
+
+Three further section7 validation items map to executed form coverage: auth native
+constraints and real weak-password/taken-username errors; profile/account/editor
+native field/error-focus cases; real root/reply/edit/report400 field-feedback
+packet; guest required/whitespace/focus checks; and real Explore tag-limit error/
+focus cases. Login/network/token failures remain understandable action errors
+rather than fabricated field errors. Validation clarity, nearby errors and
+sensible focus close within those applicable paths. Checklist800/342; section7
+remains partial. Required/optional copy, global limit policy, native capabilities
+and remaining keyboard/dirty-form mapping are not inferred from these results.
+
+### 2026-10-08 — Approved report image and complete source992 gate
+
+[CI37739609098](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37739609098)
+passes all nine jobs on9920e83317044102c69d5dba2f40ab2df934ea75: backend383,
+frontend581/43 files, smoke372/12 intentional skips, full-stack123, foundation,
+secrets, both production images and Release. No browser flaky cases are reported.
+Actual checkout70b2b23681e971e41b8a8b7e641023427b7fcd5f and branch head share
+full tree d2e881660d3ef91fc1d2b052e2f0dc2cdf1a4370.
+
+[Candidate proof](artifacts/frontend-candidate-9920e83-2026-10-08.json) records
+exact optimized image sha256:164823c8653f2e7263dee1427f84df5a6855bafe613df22e0438e940a2932a65,
+matching build/runtime/source IDs, no application mounts and health200. Five
+real affected product flows pass in23.8s, retries/skips/flaky zero. Native Chrome
+320/1728 confirms46% single backdrop, small window shadow, fitting modal, Escape
+and trigger-focus return. Native report clipboard paste preserves two lines,
+Unicode/emoji and literal quotes/HTML punctuation exactly; no submission, draft
+cleared and original empty clipboard restored. Email/password exact paste values
+are privacy-redacted and cannot establish autofill/password-manager behavior.
+Four older message-channel console entries predate replacement; no new entries
+appear during bounded current-image modal interactions. Eight separate controlled
+modal cases pass in four browser profiles. Prior165 cases remain scoped to5e.
+Local loopback/illustrative origin/development backend; target deployment remains
+unverified. Subsequent Explore changes require a separate exact-source gate.
+
+### 2026-10-08 — Explore repeated submission and real browser Back
+
+The15-file form inventory identifies13 data-mutating forms: login/register/
+forgot/reset, profile, account email/password/deletion, root/reply/edit comments,
+report and guest share. Their synchronous guards plus editor publication have
+executed unit/native evidence in the API/auth-editor, profile/account and social
+matrices; shared comment beginAction protects all three comment submissions.
+Explore was the remaining interactive search exception: repeated pending submits
+could emit distinct analytics event IDs and restart the read.
+
+The correction normalizes a filter/page key and sets a synchronous lock before
+analytics/URL changes. Only its own completed non-aborted request releases it;
+changed criteria remain usable. Applied-target tracking distinguishes queued
+older URL transitions from leaving the destination through Back. A new Back
+regression fails before that correction and passes afterward. Independent review
+finds no remaining issue in the bounded patch. Ten Explore units pass; integrated
+Node22.23.1 lint/typecheck and587 units/43 files pass in39.95s. Scoped formatting
+and diff checks pass.
+
+[Browser proof](artifacts/explore-pending-submission-2026-10-08.json):9/9 cases
+in Chromium/Firefox/WebKit,31.6s, retries/skips/flaky zero. Held B response plus
+Search/Enter repeats produces one B read and one search event. Completion permits
+a second. Changed B→C is accepted and displays C; a cancellable extra prior-B
+read can occur during URL transition, so no one-request-per-action guarantee.
+Actual history S→Skip to content anchor→replace withB→page.goBack restoresS;
+resubmittingB yields the second B read and second search event. No injected history.
+All pageerror arrays are empty; console messages were not collected. These are
+private development UI checks with intercepted API/analytics, not backend or
+production-image proof. Initial Turbopack harness failed on an external dependency
+symlink before assertions; existing webpack mode succeeds. Owned listener18586
+is stopped; QA and OS preferences unchanged. Sanitized report records source hash.
+
+Section5 repeated-submit item closes; layout stability remains open. Checklist
+801 checked/341 unchecked;59 verified/39 partial/six N/A/one deployment-only.
+This new runtime patch requires its committed-source CI after the successful992
+gate; no target infrastructure or native-device result is inferred.
