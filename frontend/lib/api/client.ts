@@ -42,6 +42,7 @@ import {
   type AuthSessionObservation,
 } from "@/lib/auth-events";
 import { reportBrowserError } from "@/lib/browser-errors";
+import { transferUpload, type UploadProgress } from "@/lib/upload-transfer";
 
 type QueryValue = string | number | boolean | null | undefined;
 type Query = Record<string, QueryValue | QueryValue[]>;
@@ -52,6 +53,8 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   idempotencyKey?: string;
   skipCsrfBootstrap?: boolean;
   timeoutMs?: number;
+  uploadProgress?: (progress: UploadProgress) => void;
+  uploadTransfer?: boolean;
 }
 
 const publicApiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "/api/v1";
@@ -265,15 +268,27 @@ async function performApiRequest<T>(path: string, options: RequestOptions): Prom
 
   const { response, data } = await withRequestDeadline(
     async (signal) => {
-      const response = await fetch(buildUrl(path, options.query), {
-        ...options,
-        method,
-        body,
-        headers,
-        credentials: "include",
-        cache: options.cache ?? "no-store",
-        signal,
-      });
+      const response =
+        options.uploadTransfer && typeof window !== "undefined" && body instanceof Blob
+          ? await transferUpload(buildUrl(path, options.query), {
+              method,
+              body,
+              headers,
+              signal,
+              withCredentials: true,
+              onProgress: options.uploadProgress,
+              // The common API deadline also covers reading and normalizing the response.
+              timeoutMs: 0,
+            })
+          : await fetch(buildUrl(path, options.query), {
+              ...options,
+              method,
+              body,
+              headers,
+              credentials: "include",
+              cache: options.cache ?? "no-store",
+              signal,
+            });
       const contentType = response.headers.get("content-type") ?? "";
       let data: unknown = null;
       if (
@@ -521,6 +536,7 @@ export const api = {
       file: Blob,
       headers: Record<string, string>,
       signal?: AbortSignal,
+      onProgress?: (progress: UploadProgress) => void,
     ) =>
       apiRequest<MediaAsset>(`uploads/${assetId}/content/`, {
         method: "PUT",
@@ -528,6 +544,8 @@ export const api = {
         body: file,
         signal,
         timeoutMs: uploadRequestTimeoutMs,
+        uploadTransfer: true,
+        uploadProgress: onProgress,
       }),
     get: (assetId: PublicId, signal?: AbortSignal) =>
       apiRequest<MediaAsset>(`uploads/${assetId}/`, { signal }),

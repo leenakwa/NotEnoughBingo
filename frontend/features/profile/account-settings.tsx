@@ -26,7 +26,7 @@ import type {
   SessionMetadata,
   UserProfile,
 } from "@/lib/api/types";
-import { uploadImage, type UploadPhase } from "@/lib/uploads";
+import { uploadImage, type UploadPhase, type UploadProgress } from "@/lib/uploads";
 import { formatLocalDateTime } from "@/lib/date-time";
 
 const preferenceLabels: Record<keyof NotificationPreferences, string> = {
@@ -75,6 +75,7 @@ export function AccountSettings({
   const [pending, setPending] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarUploadPhase, setAvatarUploadPhase] = useState<UploadPhase>("preparing");
+  const [avatarUploadProgress, setAvatarUploadProgress] = useState<UploadProgress | null>(null);
   const avatarUploadController = useRef<AbortController | null>(null);
   const actionInFlight = useRef(false);
   const actionLifetime = useRef(0);
@@ -111,6 +112,8 @@ export function AccountSettings({
       setInitialLoading(true);
       setPending("");
       setAvatarUploading(false);
+      setAvatarUploadPhase("preparing");
+      setAvatarUploadProgress(null);
       setExportJob(null);
       setDeletionScheduledFor(null);
       setFeedbackAction("");
@@ -222,6 +225,7 @@ export function AccountSettings({
 
   function cancelAvatarUpload() {
     avatarUploadController.current?.abort();
+    setAvatarUploadProgress(null);
     setError("");
     setMessage("Upload cancelled.");
   }
@@ -264,12 +268,25 @@ export function AccountSettings({
     avatarUploadController.current = controller;
     setAvatarUploading(true);
     setAvatarUploadPhase("preparing");
+    setAvatarUploadProgress(null);
     try {
       const asset = await uploadImage(file, "avatar", {
         signal: controller.signal,
         onPhase: (phase) => {
-          if (lifetime === actionLifetime.current && !controller.signal.aborted)
+          if (
+            lifetime === actionLifetime.current &&
+            avatarUploadController.current === controller &&
+            !controller.signal.aborted
+          )
             setAvatarUploadPhase(phase);
+        },
+        onProgress: (progress) => {
+          if (
+            lifetime === actionLifetime.current &&
+            avatarUploadController.current === controller &&
+            !controller.signal.aborted
+          )
+            setAvatarUploadProgress(progress);
         },
       });
       if (lifetime !== actionLifetime.current) return;
@@ -279,6 +296,7 @@ export function AccountSettings({
       }
       avatarUploadController.current = null;
       setAvatarUploading(false);
+      setAvatarUploadProgress(null);
       const updated = await api.profiles.update({ avatar_id: asset.id });
       if (lifetime !== actionLifetime.current) return;
       onProfileChange(updated);
@@ -293,6 +311,7 @@ export function AccountSettings({
       if (lifetime === actionLifetime.current) {
         if (avatarUploadController.current === controller) avatarUploadController.current = null;
         setAvatarUploading(false);
+        setAvatarUploadProgress(null);
         finishAction(lifetime);
       }
     }
@@ -636,7 +655,11 @@ export function AccountSettings({
             ) : null}
           </div>
           {avatarUploading ? (
-            <UploadStatus phase={avatarUploadPhase} onCancel={cancelAvatarUpload} />
+            <UploadStatus
+              phase={avatarUploadPhase}
+              progress={avatarUploadProgress}
+              onCancel={cancelAvatarUpload}
+            />
           ) : null}
           {actionFeedback("avatar")}
         </div>

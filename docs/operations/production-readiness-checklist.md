@@ -144,7 +144,7 @@ Verify:
 - [ ] layout does not jump unnecessarily;
 - [x] skeletons resemble final layout if used;
 - [x] slow operations do not look frozen;
-- [ ] large uploads show progress if practical;
+- [x] large uploads show progress if practical;
 - [x] long-running jobs expose status;
 - [x] operation completion is clearly communicated.
 

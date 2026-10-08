@@ -482,3 +482,217 @@ describe("draft concurrency headers", () => {
     expect(new Headers(options.headers).get("If-Match")).toBe('"draft-7"');
   });
 });
+
+describe("authenticated API upload transport", () => {
+  class UploadRequest extends EventTarget {
+    static instances: UploadRequest[] = [];
+    upload = new EventTarget();
+    status = 200;
+    responseText = '{"id":"upload-id","status":"uploaded"}';
+    withCredentials = false;
+    timeout = 0;
+    open = vi.fn();
+    send = vi.fn();
+    abort = vi.fn(() => this.dispatchEvent(new Event("abort")));
+    setRequestHeader = vi.fn();
+    getAllResponseHeaders = vi.fn(() => "content-type: application/json\r\n");
+
+    constructor() {
+      super();
+      UploadRequest.instances.push(this);
+    }
+  }
+
+  const file = () => new File(["image"], "image.png", { type: "image/png" });
+  const setup = () => {
+    document.cookie = "neb_csrf=upload-csrf; path=/";
+    UploadRequest.instances = [];
+    vi.stubGlobal("XMLHttpRequest", UploadRequest);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  };
+  const waitForRequest = async () => {
+    await vi.waitFor(() => expect(UploadRequest.instances).toHaveLength(1));
+    return UploadRequest.instances[0]!;
+  };
+
+  it("bootstraps CSRF with fetch then uploads bytes with credentials and the masked token", async () => {
+    const fetchMock = setup();
+    document.cookie = "neb_csrf=; Max-Age=0; path=/";
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ csrf: "masked-upload-token" }), {
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const progress = vi.fn();
+    const image = file();
+    const operation = api.uploads.uploadContent(
+      "upload-id",
+      image,
+      { "Content-Type": "image/png", "X-Upload-Token": "signed-token" },
+      undefined,
+      progress,
+    );
+    const xhr = await waitForRequest();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("auth/csrf/");
+    expect(xhr.open).toHaveBeenCalledExactlyOnceWith("PUT", "/api/v1/uploads/upload-id/content/");
+    expect(xhr.send).toHaveBeenCalledExactlyOnceWith(image);
+    expect(xhr.withCredentials).toBe(true);
+    expect(xhr.setRequestHeader.mock.calls).toEqual([
+      ["accept", "application/json"],
+      ["content-type", "image/png"],
+      ["x-csrftoken", "masked-upload-token"],
+      ["x-upload-token", "signed-token"],
+    ]);
+    xhr.upload.dispatchEvent(
+      new ProgressEvent("progress", { loaded: 2, total: 5, lengthComputable: true }),
+    );
+    expect(progress).toHaveBeenCalledExactlyOnceWith({ loaded: 2, total: 5 });
+    xhr.dispatchEvent(new Event("load"));
+    expect(await operation).toEqual({ id: "upload-id", status: "uploaded" });
+    expect(reportBrowserError).not.toHaveBeenCalled();
+  });
+
+  it("preserves field validation details and the request ID from upload errors", async () => {
+    setup();
+    const operation = api.uploads.uploadContent("upload-id", file(), {});
+    const xhr = await waitForRequest();
+    xhr.status = 400;
+    xhr.responseText = JSON.stringify({
+      error: {
+        code: "validation_error",
+        message: "Check this image.",
+        details: { file: ["This file is not an image."] },
+        request_id: "upload-request-id",
+      },
+    });
+    xhr.dispatchEvent(new Event("load"));
+    await expect(operation).rejects.toMatchObject({
+      status: 400,
+      code: "validation_error",
+      details: { file: ["This file is not an image."] },
+      requestId: "upload-request-id",
+    });
+    expect(reportBrowserError).not.toHaveBeenCalled();
+  });
+
+  it("keeps the common non-JSON gateway feedback without exposing the raw body", async () => {
+    setup();
+    const operation = api.uploads.uploadContent("upload-id", file(), {});
+    const xhr = await waitForRequest();
+    xhr.status = 413;
+    xhr.responseText = "<html>Internal upload server details</html>";
+    xhr.getAllResponseHeaders.mockReturnValue("content-type: text/html\r\n");
+    xhr.dispatchEvent(new Event("load"));
+    await expect(operation).rejects.toMatchObject({
+      status: 413,
+      message: "The upload is too large. Choose a smaller file and try again.",
+    });
+    expect(reportBrowserError).not.toHaveBeenCalled();
+  });
+
+  it("reports invalid JSON from an upload response using the common safe error", async () => {
+    setup();
+    const operation = api.uploads.uploadContent("upload-id", file(), {});
+    const xhr = await waitForRequest();
+    xhr.status = 500;
+    xhr.responseText = "<internal parser payload>";
+    xhr.dispatchEvent(new Event("load"));
+    await expect(operation).rejects.toMatchObject({
+      status: 500,
+      code: "invalid_response",
+      message: "The service is temporarily unavailable.",
+    });
+    expect(reportBrowserError).toHaveBeenCalledExactlyOnceWith(
+      expect.any(ApiClientError),
+      "api",
+      500,
+    );
+  });
+
+  it("notifies authentication loss when an API upload finds an expired session", async () => {
+    setup();
+    const listener = vi.fn();
+    window.addEventListener(AUTH_REQUIRED_EVENT, listener);
+    try {
+      const operation = api.uploads.uploadContent("upload-id", file(), {});
+      const xhr = await waitForRequest();
+      xhr.status = 403;
+      xhr.responseText = JSON.stringify({
+        error: {
+          code: "not_authenticated",
+          message: "Authentication credentials were not provided.",
+        },
+      });
+      xhr.dispatchEvent(new Event("load"));
+      await expect(operation).rejects.toMatchObject({ status: 403, code: "not_authenticated" });
+      expect(listener).toHaveBeenCalledOnce();
+      expect(reportBrowserError).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(AUTH_REQUIRED_EVENT, listener);
+    }
+  });
+
+  it("reports an API upload network failure while preserving the network error type", async () => {
+    setup();
+    const operation = api.uploads.uploadContent("upload-id", file(), {});
+    const xhr = await waitForRequest();
+    xhr.dispatchEvent(new Event("error"));
+    await expect(operation).rejects.toBeInstanceOf(TypeError);
+    expect(reportBrowserError).toHaveBeenCalledExactlyOnceWith(expect.any(TypeError), "api", 0);
+  });
+
+  it("uses the existing 120-second write deadline and cancels the native request", async () => {
+    vi.useFakeTimers();
+    setup();
+    const operation = api.uploads.uploadContent("upload-id", file(), {});
+    const rejection = expect(operation).rejects.toMatchObject({
+      code: "request_timeout",
+      message: "The request timed out. It may have completed. Refresh before trying again.",
+    });
+    const xhr = await waitForRequest();
+    await vi.advanceTimersByTimeAsync(119_000);
+    expect(xhr.abort).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await rejection;
+    expect(xhr.abort).toHaveBeenCalledOnce();
+    expect(reportBrowserError).toHaveBeenCalledExactlyOnceWith(
+      expect.any(ApiClientError),
+      "api",
+      0,
+    );
+  });
+
+  it("preserves caller cancellation without recording an upload error", async () => {
+    setup();
+    const controller = new AbortController();
+    const progress = vi.fn();
+    const operation = api.uploads.uploadContent(
+      "upload-id",
+      file(),
+      {},
+      controller.signal,
+      progress,
+    );
+    const xhr = await waitForRequest();
+    controller.abort();
+    await expect(operation).rejects.toMatchObject({ name: "AbortError" });
+    expect(xhr.abort).toHaveBeenCalledOnce();
+    xhr.upload.dispatchEvent(new ProgressEvent("progress", { loaded: 5 }));
+    expect(progress).not.toHaveBeenCalled();
+    expect(reportBrowserError).not.toHaveBeenCalled();
+  });
+
+  it("never opens the upload transport for a pre-cancelled request", async () => {
+    setup();
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      api.uploads.uploadContent("upload-id", file(), {}, controller.signal),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(UploadRequest.instances).toHaveLength(0);
+    expect(reportBrowserError).not.toHaveBeenCalled();
+  });
+});

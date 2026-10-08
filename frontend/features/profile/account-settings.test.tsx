@@ -10,7 +10,7 @@ import {
 } from "@/features/profile/profile-edit-cache";
 import type { AuthenticatedUser, NotificationPreferences, UserProfile } from "@/lib/api/types";
 import { AUTH_SIGNED_IN_EVENT } from "@/lib/auth-events";
-import { uploadImage } from "@/lib/uploads";
+import { uploadImage, type UploadOptions } from "@/lib/uploads";
 
 const mocks = vi.hoisted(() => ({
   cancelAccountDeletion: vi.fn(),
@@ -504,10 +504,13 @@ describe("AccountSettings deletion grace period", () => {
   it("lets the user cancel an avatar upload without changing the profile", async () => {
     const user = userEvent.setup();
     const onProfileChange = vi.fn();
+    let uploadOptions: UploadOptions | undefined;
     vi.mocked(uploadImage).mockImplementation(
       (_file, _kind, options) =>
         new Promise((_resolve, reject) => {
+          uploadOptions = options;
           options?.onPhase?.("uploading");
+          options?.onProgress?.({ loaded: 200, total: 400 });
           options?.signal?.addEventListener("abort", () =>
             reject(new DOMException("Upload cancelled.", "AbortError")),
           );
@@ -518,12 +521,122 @@ describe("AccountSettings deletion grace period", () => {
     fireEvent.change(screen.getByLabelText("Upload avatar"), {
       target: { files: [new File(["image"], "avatar.png", { type: "image/png" })] },
     });
-    await screen.findByText("Uploading image…");
+    await screen.findByText("Uploading image… 50%");
 
     await user.click(screen.getByRole("button", { name: "Cancel upload" }));
 
     expect(await screen.findByText("Upload cancelled.")).toBeVisible();
+    act(() => {
+      uploadOptions?.onPhase?.("uploading");
+      uploadOptions?.onProgress?.({ loaded: 400, total: 400 });
+    });
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(onProfileChange).not.toHaveBeenCalled();
+  });
+
+  it("keeps avatar processing indeterminate after byte transfer and clears progress on completion", async () => {
+    let uploadOptions: UploadOptions | undefined;
+    let resolveUpload!: (asset: Awaited<ReturnType<typeof uploadImage>>) => void;
+    vi.mocked(uploadImage).mockImplementationOnce((_file, _kind, options) => {
+      uploadOptions = options;
+      return new Promise((resolve) => {
+        resolveUpload = resolve;
+      });
+    });
+    const avatar = {
+      id: "avatar",
+      kind: "avatar" as const,
+      status: "ready" as const,
+      url: "/api/v1/media/avatar/",
+      mime_type: "image/png",
+    };
+    mocks.updateProfile.mockResolvedValue({ ...profile, avatar });
+    const changed = vi.fn();
+    render(<AccountSettings profile={profile} onProfileChange={changed} />);
+    fireEvent.change(await screen.findByLabelText("Upload avatar"), {
+      target: { files: [new File(["image"], "avatar.png", { type: "image/png" })] },
+    });
+    expect(screen.getByRole("progressbar")).not.toHaveAttribute("value");
+    act(() => {
+      uploadOptions?.onPhase?.("uploading");
+      uploadOptions?.onProgress?.({ loaded: 400, total: 400 });
+    });
+    expect(screen.getByRole("progressbar", { name: "Uploading image…" })).toHaveAttribute(
+      "value",
+      "100",
+    );
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
+    act(() => uploadOptions?.onPhase?.("processing"));
+    expect(screen.getByRole("progressbar", { name: "Processing image…" })).not.toHaveAttribute(
+      "value",
+    );
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
+    await act(async () => resolveUpload(avatar));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(changed).toHaveBeenCalledWith({ ...profile, avatar });
+    act(() => uploadOptions?.onProgress?.({ loaded: 100, total: 400 }));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+  it("isolates old avatar progress and completion after the profile identity changes", async () => {
+    let oldOptions: UploadOptions | undefined;
+    let nextOptions: UploadOptions | undefined;
+    let resolveOldUpload!: (asset: Awaited<ReturnType<typeof uploadImage>>) => void;
+    let resolveNextUpload!: (asset: Awaited<ReturnType<typeof uploadImage>>) => void;
+    vi.mocked(uploadImage)
+      .mockImplementationOnce((_file, _kind, options) => {
+        oldOptions = options;
+        return new Promise((resolve) => {
+          resolveOldUpload = resolve;
+        });
+      })
+      .mockImplementationOnce((_file, _kind, options) => {
+        nextOptions = options;
+        return new Promise((resolve) => {
+          resolveNextUpload = resolve;
+        });
+      });
+    const avatar = {
+      id: "next-avatar",
+      kind: "avatar" as const,
+      status: "ready" as const,
+      url: "/api/v1/media/next-avatar/",
+      mime_type: "image/png",
+    };
+    const changed = vi.fn();
+    const view = render(<AccountSettings profile={profile} onProfileChange={changed} />);
+    const selectFile = (input: HTMLElement) =>
+      fireEvent.change(input, {
+        target: { files: [new File(["image"], "avatar.png", { type: "image/png" })] },
+      });
+    selectFile(await screen.findByLabelText("Upload avatar"));
+    act(() => {
+      oldOptions?.onPhase?.("uploading");
+      oldOptions?.onProgress?.({ loaded: 300, total: 400 });
+    });
+    expect(screen.getByText("Uploading image… 75%")).toBeVisible();
+    const next = { ...profile, id: "22222222-2222-4222-8222-222222222222", username: "next" };
+    mocks.me.mockResolvedValue({ ...currentUser, ...next });
+    mocks.updateProfile.mockResolvedValue({ ...next, avatar });
+    view.rerender(<AccountSettings profile={next} onProfileChange={changed} />);
+    await waitFor(() => expect(screen.getByLabelText("Upload avatar")).toBeEnabled());
+    expect(oldOptions?.signal?.aborted).toBe(true);
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    selectFile(screen.getByLabelText("Upload avatar"));
+    act(() => {
+      nextOptions?.onPhase?.("uploading");
+      nextOptions?.onProgress?.({ loaded: 100, total: 400 });
+      oldOptions?.onPhase?.("processing");
+      oldOptions?.onProgress?.({ loaded: 400, total: 400 });
+    });
+    await act(async () => resolveOldUpload(avatar));
+    expect(screen.getByText("Uploading image… 25%")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Cancel upload" })).toBeEnabled();
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
+    await act(async () => resolveNextUpload(avatar));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(changed).toHaveBeenCalledOnce();
+    expect(changed).toHaveBeenCalledWith({ ...next, avatar });
   });
 
   it("routes through an explanatory login screen after scheduling revokes sessions", async () => {

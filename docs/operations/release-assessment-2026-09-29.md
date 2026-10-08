@@ -5,26 +5,28 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Current continuation evidence (2026-10-08): last all-nine green source remains
-`c1fc2d7`. Subsequent failures are retained in the dated evidence. Current pushed
-`15632b6` failed CI37710181069: seven jobs passed, full-stack115 pass/one fail,
-Release failed. The uncommitted packet corrects revoked fixture ownership without
-changing verification limits, adds departed-auth/guest-form safeguards, and passes
-500 frontend tests with Node22 lint/types. Actual auth departure16 and guest
-share4 engine cases pass, retries zero. The next ordered run ended113 pass/one
-reset-token reuse failure/three not run. The reset initialization gate correction
-now passes meaningful regression/review and four real engine journeys. Eight
-profile/export partial-composition engine cases and16 native auth-control cases
-also pass; full ordered119-case verification passes, retries zero. Backend source remains covered by382 PostgreSQL passes/one skip.
+Current continuation evidence (2026-10-08): pushed `b0d3e7e` passes all nine
+jobs in [CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152):
+backend383, frontend503, smoke231/12 intentional skips, full-stack119, both
+production images, scans and Release gate. The actual PR merge checkout has the
+same tree as HEAD. Earlier failed revisions remain in the dated evidence.
 
-Immutable old/new frontend and backend combinations, compatible worker rollback,
-one same-context stale-tab editor journey and all50 retained static assets across
-promotion/rollback now have sanitized local artifacts. Sixteen optimized-image
-fresh/warm samples record152–165KB fresh JS transfer and tiny measured CLS;284
-aborted RSC reads mean that diagnostic is not a clean unfiltered performance gate.
-Real CDN, target capacity, native browser zoom/favicon/autofill/device evidence
-and remaining local requirements stay open. The checklist currently records
-774 checked/368 unchecked;57 verified/41 partial/six N/A/one deployment-only.
+Its exact Git-archive configured optimized frontend image passes68 auth/control
+cases across four engines, retries zero; matching build/runtime release and
+health200. The asset archive now holds61 files, all checked over HTTP before
+candidate promotion. Original50-file promotion/rollback checks and compatible
+backend/worker rollout have separate sanitized evidence. Local images use
+loopback HTTP, development Django settings and an illustrative HTTPS origin.
+Sixteen optimized fresh/warm observations record152–165KB fresh JS and tiny CLS;
+284 aborted RSC reads mean that diagnostic is not a clean performance gate.
+
+The separate uncommitted upload-progress packet passes Node22 lint/types and560
+tests and120 ordered live cases, with scoped reviews. Actual3MiB slow-storage
+progress/cancel/retry/processing/ready-attachment/reload proof passes;12 scoped
+cases across four engines also pass. New CI/immutable-image gates remain pending.
+Real CDN, target capacity, native browser zoom/favicon/autofill/device
+evidence and other local requirements remain open. The checklist records775
+checked/367 unchecked;57 verified/41 partial/six N/A/one deployment-only.
 
 Use the [continuation checkpoint](production-readiness-continuation-plan.md) and
 latest [dated evidence](production-readiness-evidence.md). All observations below
@@ -32,10 +34,10 @@ remain historical; the current working tree is not a completed release gate.
 
 ## Decision
 
-The historical source passed the local checks below. Current browser verification
-has an open failure, as recorded above. A prior
-pushed revision passed its exact-commit CI gate; every subsequent revision
-must pass again before promotion. This is **not an authorized public
+The committed source above passes its exact-source CI and bounded local image
+gates. Every subsequent revision must pass again before promotion; the separate
+working-tree packet is not a completed release gate. This is **not an authorized
+public
 deployment**. Images have not been promoted to a production registry or tested
 on the target platform.
 Production operator identity, private support contact, legal review, managed

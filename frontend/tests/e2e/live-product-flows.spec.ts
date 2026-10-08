@@ -8,6 +8,7 @@ import { expect, test } from "@playwright/test";
 
 import type { BingoDraft } from "@/lib/api/types";
 
+import { largeImagePng } from "./large-image-fixture";
 import {
   authStatePath,
   E2E_FIXTURE_PASSWORD,
@@ -3410,6 +3411,8 @@ test.describe("live full-stack product flows", () => {
     await authenticateAs(page, "author");
     await page.goto("/create");
     await page.getByRole("gridcell").first().click();
+    await page.getByRole("textbox", { name: "Text for row 1, column 1" }).press("Escape");
+    await expect(page.getByRole("heading", { name: "Cell editor" })).toBeVisible();
     const input = page.getByLabel("Add image to cell");
     const applicationOrigin = new URL(page.url()).origin;
     let blocked = 0;
@@ -3568,6 +3571,198 @@ test.describe("live full-stack product flows", () => {
     await page.unroute("**/*");
     await input.setInputFiles({ name: "cell.png", mimeType: "image/png", buffer: cellImagePng });
     await expect(page.getByRole("button", { name: "Remove cell image" })).toBeVisible();
+  });
+
+  test("large image upload reports real byte progress, cancels and persists after retry", async ({
+    page,
+    browserName,
+  }, testInfo) => {
+    test.skip(browserName !== "chromium", "CDP transfer throttling requires Chromium.");
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    await authenticateAs(page, "author");
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto("/create");
+    await page.getByRole("gridcell").first().click();
+    const text = "Large upload progress and durable attachment 🎲";
+    const cellText = page.getByRole("textbox", { name: "Text for row 1, column 1" });
+    await cellText.fill(text);
+    await expect(page).toHaveURL(/\/create\?bingo=[0-9a-f-]+$/);
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    await cellText.press("Escape");
+    await expect(page.getByRole("heading", { name: "Cell editor" })).toBeVisible();
+    const bingoId = new URL(page.url()).searchParams.get("bingo")!;
+    socialFormBoards.set(page, bingoId);
+    const body = largeImagePng();
+    expect(body.length).toBeGreaterThan(3 * 1024 * 1024);
+    expect(body.length).toBeLessThan(5 * 1024 * 1024);
+    const file = { name: "большая картинка.png", mimeType: "image/png", buffer: body };
+    const origin = new URL(page.url()).origin;
+    let storageRequests = 0;
+    let intentRequests = 0;
+    let completeRequests = 0;
+    const storageStatuses: number[] = [];
+    page.on("request", (request) => {
+      if (request.method() !== "POST") return;
+      const url = new URL(request.url());
+      if (url.origin !== origin) storageRequests += 1;
+      if (url.pathname === "/api/v1/uploads/intents/") intentRequests += 1;
+    });
+    page.on("response", (response) => {
+      if (response.request().method() === "POST" && new URL(response.url()).origin !== origin) {
+        storageStatuses.push(response.status());
+      }
+    });
+    await page.evaluate(() => {
+      const samples: number[] = [];
+      const record = () => {
+        const progress = document.querySelector<HTMLProgressElement>(".upload-status progress");
+        if (progress?.hasAttribute("value")) {
+          if (samples.at(-1) !== progress.value) samples.push(progress.value);
+        }
+      };
+      const observer = new MutationObserver(record);
+      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+      Object.assign(window, { uploadProgressObservation: { samples, observer } });
+    });
+    const observedProgress = () =>
+      page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              uploadProgressObservation: { samples: number[] };
+            }
+          ).uploadProgressObservation.samples,
+      );
+    let releaseComplete!: () => void;
+    let reportComplete!: () => void;
+    const heldComplete = new Promise<void>((resolve) => {
+      releaseComplete = resolve;
+    });
+    const completeRequested = new Promise<void>((resolve) => {
+      reportComplete = resolve;
+    });
+    let completeHandler: Promise<void> | undefined;
+    const completeRoute = (route: Route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      completeRequests += 1;
+      completeHandler = (async () => {
+        reportComplete();
+        await heldComplete;
+        await route.continue();
+      })();
+      return completeHandler;
+    };
+    await page.route("**/api/v1/uploads/*/complete/", completeRoute);
+    const cdp = await page.context().newCDPSession(page);
+    let storagePreflights = 0;
+    cdp.on("Network.requestWillBeSent", (event) => {
+      if (event.request.method === "OPTIONS" && new URL(event.request.url).origin !== origin) {
+        storagePreflights += 1;
+      }
+    });
+    await cdp.send("Network.enable");
+    const progress = page.getByRole("progressbar", { name: "Uploading image…" });
+    const input = page.getByLabel("Add image to cell");
+    try {
+      await cdp.send("Network.emulateNetworkConditions", {
+        offline: false,
+        latency: 50,
+        downloadThroughput: 10 * 1024 * 1024,
+        uploadThroughput: 256 * 1024,
+      });
+      await input.setInputFiles(file);
+      await expect
+        .poll(async () => (await observedProgress()).filter((value) => value > 0 && value < 100))
+        .not.toHaveLength(0);
+      await expect(progress).toBeVisible();
+      await expect(page.getByRole("button", { name: "Cancel upload" })).toBeEnabled();
+      await page.getByRole("button", { name: "Cancel upload" }).click();
+      await expect(page.getByText("Upload cancelled.")).toBeVisible();
+      await expect(progress).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Remove cell image" })).toHaveCount(0);
+      expect(completeRequests).toBe(0);
+      expect(storageRequests).toBe(1);
+      expect(intentRequests).toBe(1);
+
+      await page.evaluate(() => {
+        (
+          window as unknown as { uploadProgressObservation: { samples: number[] } }
+        ).uploadProgressObservation.samples.length = 0;
+      });
+      const retryStarted = Date.now();
+      await input.setInputFiles(file);
+      await expect
+        .poll(async () => (await observedProgress()).filter((value) => value > 0 && value < 100))
+        .not.toHaveLength(0);
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(progress).toBeVisible();
+        await expect(page.getByRole("button", { name: "Cancel upload" })).toBeEnabled();
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        ).toBe(true);
+      }
+      await completeRequested;
+      expect(Date.now() - retryStarted).toBeGreaterThan(8_000);
+      const samples = await observedProgress();
+      expect(samples.filter((value) => value > 0 && value < 100).length).toBeGreaterThan(2);
+      // React can batch the final byte event with the transition to processing.
+      expect(samples.every((value) => value >= 0 && value <= 100)).toBe(true);
+      expect(samples.every((value, index) => index === 0 || value >= samples[index - 1]!)).toBe(
+        true,
+      );
+      await expect(page.getByRole("progressbar", { name: "Processing image…" })).toBeVisible();
+      await expect(
+        page.getByRole("progressbar", { name: "Processing image…" }),
+      ).not.toHaveAttribute("value");
+      await expect(page.getByRole("button", { name: "Cancel upload" })).toBeEnabled();
+      await expect(page.getByRole("button", { name: "Remove cell image" })).toHaveCount(0);
+      expect(intentRequests).toBe(2);
+      expect(storageRequests).toBe(2);
+      expect(completeRequests).toBe(1);
+      expect(storageStatuses).toEqual([204]);
+      releaseComplete();
+      await completeHandler;
+      await expect(page.getByRole("button", { name: "Remove cell image" })).toBeVisible({
+        timeout: 30_000,
+      });
+      await expect(page.locator(".upload-status")).toHaveCount(0);
+      await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+      const draft = await page.request.get(`/api/v1/bingos/${bingoId}/draft/`);
+      expect(draft.status()).toBe(200);
+      const saved = (await draft.json()) as BingoDraft;
+      expect(saved.cells[0]?.text).toBe(text);
+      expect(saved.cells[0]?.image?.status).toBe("ready");
+      expect(saved.cells[0]?.image?.width).toBe(1024);
+      expect(saved.cells[0]?.image?.height).toBe(1024);
+      await page.reload();
+      const cell = page.getByRole("gridcell").first();
+      await expect(cell).toContainText(text);
+      await expect(cell.locator(".editor-cell__image")).toBeVisible();
+      expect(pageErrors).toEqual([]);
+      await testInfo.attach("real-upload-progress", {
+        body: JSON.stringify({ bytes: body.length, samples, storageStatuses, storagePreflights }),
+        contentType: "application/json",
+      });
+    } finally {
+      releaseComplete();
+      await completeHandler;
+      await page.unroute("**/api/v1/uploads/*/complete/", completeRoute);
+      await cdp.send("Network.emulateNetworkConditions", {
+        offline: false,
+        latency: 0,
+        downloadThroughput: -1,
+        uploadThroughput: -1,
+      });
+      await cdp.detach();
+      await page.evaluate(() => {
+        const observation = (
+          window as unknown as { uploadProgressObservation?: { observer: MutationObserver } }
+        ).uploadProgressObservation;
+        observation?.observer.disconnect();
+      });
+    }
   });
 
   test("discover scales fixture text with the board and keeps it inside cells", async ({

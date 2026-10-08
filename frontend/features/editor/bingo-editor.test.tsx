@@ -7,7 +7,7 @@ import { createEditorState, editorReducer } from "@/features/editor/editor-state
 import { ApiClientError } from "@/lib/api/client";
 import { AUTH_SESSION_ENDED_EVENT, AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
 import type { BingoDetail, BingoDraft, ExportJob, RevisionCell } from "@/lib/api/types";
-import { uploadImage } from "@/lib/uploads";
+import { uploadImage, type UploadOptions } from "@/lib/uploads";
 
 const mocks = vi.hoisted(() => ({
   session: vi.fn(),
@@ -241,10 +241,13 @@ describe("BingoEditor autosave and safety", () => {
   });
 
   it("lets the author cancel a pending image transfer without changing the board", async () => {
+    let uploadOptions: UploadOptions | undefined;
     vi.mocked(uploadImage).mockImplementation(
       (_file, _kind, options) =>
         new Promise((_resolve, reject) => {
+          uploadOptions = options;
           options?.onPhase?.("uploading");
+          options?.onProgress?.({ loaded: 100, total: 400 });
           options?.signal?.addEventListener("abort", () =>
             reject(new DOMException("Upload cancelled.", "AbortError")),
           );
@@ -255,13 +258,131 @@ describe("BingoEditor autosave and safety", () => {
       target: { files: [new File(["image"], "background.png", { type: "image/png" })] },
     });
     await settle();
-    expect(screen.getByText("Uploading image…")).toBeVisible();
+    expect(screen.getByText("Uploading image… 25%")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel upload" }));
+    act(() => uploadOptions?.onProgress?.({ loaded: 400, total: 400 }));
+    expect(screen.getByRole("progressbar")).not.toHaveAttribute("value");
     await settle();
 
     expect(screen.getByText("Upload cancelled.")).toBeVisible();
+    act(() => {
+      uploadOptions?.onPhase?.("uploading");
+      uploadOptions?.onProgress?.({ loaded: 400, total: 400 });
+    });
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Remove background" })).not.toBeInTheDocument();
+
+    vi.mocked(uploadImage).mockImplementationOnce(() => new Promise(() => undefined));
+    fireEvent.change(screen.getByLabelText("Upload background"), {
+      target: { files: [new File(["next-image"], "retry.png", { type: "image/png" })] },
+    });
+    act(() => {
+      uploadOptions?.onPhase?.("uploading");
+      uploadOptions?.onProgress?.({ loaded: 400, total: 400 });
+    });
+    expect(screen.getByRole("progressbar", { name: "Preparing image…" })).not.toHaveAttribute(
+      "value",
+    );
+  });
+
+  it.each(["board", "cell", "cover"] as const)(
+    "shows byte progress for the %s image and waits for processing before attaching it",
+    async (target) => {
+      let uploadOptions: UploadOptions | undefined;
+      let resolveUpload!: (asset: Awaited<ReturnType<typeof uploadImage>>) => void;
+      vi.mocked(uploadImage).mockImplementationOnce((_file, _kind, options) => {
+        uploadOptions = options;
+        return new Promise((resolve) => {
+          resolveUpload = resolve;
+        });
+      });
+      await openEditor();
+      if (target === "cell") {
+        fireEvent.click(screen.getByRole("button", { name: "Row 1, column 1: empty" }));
+      } else if (target === "cover") {
+        fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+      }
+      const input = screen.getByLabelText(
+        target === "board"
+          ? "Upload background"
+          : target === "cell"
+            ? "Add image to cell"
+            : "Choose file",
+      );
+      fireEvent.change(input, {
+        target: { files: [new File(["image"], "image.png", { type: "image/png" })] },
+      });
+      expect(screen.getByRole("progressbar")).not.toHaveAttribute("value");
+      act(() => {
+        uploadOptions?.onPhase?.("uploading");
+        uploadOptions?.onProgress?.({ loaded: 400, total: 400 });
+      });
+      expect(screen.getByRole("progressbar", { name: "Uploading image…" })).toHaveAttribute(
+        "value",
+        "100",
+      );
+      expect(screen.getByRole("button", { name: "Cancel upload" })).toBeEnabled();
+      act(() => uploadOptions?.onPhase?.("processing"));
+      expect(screen.getByRole("progressbar", { name: "Processing image…" })).not.toHaveAttribute(
+        "value",
+      );
+      expect(screen.getByRole("progressbar").parentElement).not.toHaveTextContent("100%");
+      await act(async () => resolveUpload(CELL_IMAGE));
+      expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    },
+  );
+
+  it("isolates an old upload's progress and completion from the next draft's upload", async () => {
+    let oldOptions: UploadOptions | undefined;
+    let nextOptions: UploadOptions | undefined;
+    let resolveOldUpload!: (asset: Awaited<ReturnType<typeof uploadImage>>) => void;
+    let resolveNextUpload!: (asset: Awaited<ReturnType<typeof uploadImage>>) => void;
+    vi.mocked(uploadImage)
+      .mockImplementationOnce((_file, _kind, options) => {
+        oldOptions = options;
+        return new Promise((resolve) => {
+          resolveOldUpload = resolve;
+        });
+      })
+      .mockImplementationOnce((_file, _kind, options) => {
+        nextOptions = options;
+        return new Promise((resolve) => {
+          resolveNextUpload = resolve;
+        });
+      });
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    const selectFile = () =>
+      fireEvent.change(screen.getByLabelText("Upload background"), {
+        target: { files: [new File(["image"], "background.png", { type: "image/png" })] },
+      });
+    selectFile();
+    act(() => {
+      oldOptions?.onPhase?.("uploading");
+      oldOptions?.onProgress?.({ loaded: 300, total: 400 });
+    });
+    expect(screen.getByText("Uploading image… 75%")).toBeVisible();
+    const nextId = "33333333-3333-4333-8333-333333333333";
+    mocks.getDraft.mockResolvedValueOnce(draft({ bingo_id: nextId }));
+    view.rerender(<BingoEditor bingoId={nextId} />);
+    await settle();
+    expect(oldOptions?.signal?.aborted).toBe(true);
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    selectFile();
+    act(() => {
+      nextOptions?.onPhase?.("uploading");
+      nextOptions?.onProgress?.({ loaded: 100, total: 400 });
+      oldOptions?.onPhase?.("processing");
+      oldOptions?.onProgress?.({ loaded: 400, total: 400 });
+    });
+    await act(async () => resolveOldUpload(CELL_IMAGE));
+    expect(screen.getByText("Uploading image… 25%")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Cancel upload" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Remove background" })).not.toBeInTheDocument();
+    await act(async () => resolveNextUpload(CELL_IMAGE));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove background" })).toBeVisible();
   });
 
   it("explains a session connection error and can retry into the editor", async () => {

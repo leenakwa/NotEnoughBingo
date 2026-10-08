@@ -36,6 +36,19 @@ unresolved failures or missing evidence.
 
 ## Repository review map
 
+### Latest source gate — 2026-10-08
+
+`b0d3e7e` passes all nine [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152);
+actual PR merge tree equals HEAD. Backend383, frontend503, smoke231/12 intentional
+skips and full-stack119 pass. The exact Git-archive optimized frontend passes68
+auth/native-control cases in four engines; asset archive61 files passes HTTP
+checks before its promotion. Separate uncommitted upload-progress source passes
+560 frontend tests and120 ordered live cases, with12 scoped engine cases and
+a genuine3MiB slow-storage cancel/retry/ready-attachment rehearsal. Section5
+large-upload progress closes locally;775 checked/367 unchecked. Section verdicts
+remain57 verified/41 partial/six N/A/one deployment-only. New exact-source CI and
+optimized-image gates remain required. Details remain in dated evidence/checkpoint.
+
 ### Current requirements override — 2026-10-03
 
 The user confirmed that all new local UI changes are intentional: account forms
@@ -76,7 +89,7 @@ pending. The follow transaction defect is reproduced/fixed and independently rev
 12 affected engine cases and six late business-graph rollback cases pass.
 Eleven section 82 contract bullets now have mapped local evidence, including
 actual oversized bodies and bounded reads; provider timeout remains open.
-Total **774 checked / 368 unchecked**, section verdict counts unchanged.
+Total **775 checked / 367 unchecked**, section verdict counts unchanged.
 Use the dated evidence and [continuation plan](production-readiness-continuation-plan.md)
 for preserved failures, exact commands and next tasks. Production readiness has
 not been established.

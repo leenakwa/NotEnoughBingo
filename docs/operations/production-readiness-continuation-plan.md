@@ -22,138 +22,176 @@ authorization. Commits/pushes to the existing work branch are authorized.
 
 ## Latest resume checkpoint — 2026-10-08
 
-Goal remains active. This checkpoint supersedes historical checkpoints below.
-Prompt and continuation request remain unchanged; expected continuation SHA-256:
+This section supersedes historical checkpoints below. The native Codex goal is
+**active**, without a token budget. Complete all applicable local requirements;
+do not stop after one packet or passing CI. The original prompt and complete
+continuation request are unchanged and verified by SHA-256. Continuation SHA-256:
 `965004fb008a7a930c8f4fa34540cd4c113f1a74654fb0e8dd7438c18c2eefe7`.
-Current pushed HEAD: `15632b6d0b17a8b90d7634fe404a54dbcdcc4cc4` on
-`sk/production-readiness`; draft PR: https://github.com/leenakwa/NotEnoughBingo/pull/18.
-[CI 37710181069](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37710181069)
-failed: seven jobs passed; full-stack 115 pass / one fail, Release failed.
-The email-change fixture copied a player session already revoked by the preceding
-password test; anonymous verification hit the unchanged five/hour limit. The
-uncommitted correction proves the unaffected moderator's real identity before
-creating/verifying the isolated account. Last all-nine green remains `c1fc2d7`.
-CI builds a PR merge SHA; its tree was verified equal to the pushed source tree.
-Do not confuse that merge identity with the head's image identity.
 
-Uncommitted implementation packet:
+### Source and exact-source gate
 
-- Auth request ownership prevents departed/replaced login, register, forgot and
-  reset forms from applying stale navigation, focus, feedback or callbacks.
-  A successful departed login still publishes the global signed-in fact.
-  Reset query cleanup preserves unrelated parameters/hash. Scoped tests pass34.
-- Guest sharing is a native form with required/max50 nickname, Enter submit,
-  synchronous duplicate guard, scoped errors, pending controls and lifetime
-  protection. Submission captures actual FormData, including DOM/autofill values.
-  Scoped tests pass34; actual held-failure/retry/Enter case passes four engines.
-- Integrated Node22 lint/types and 501 frontend tests/40 files pass (final reset gate). Backend app
-  source unchanged since 382 PostgreSQL passes / one infrastructure skip.
-- Auth departure cases pass16 across four engines, retries zero. Earlier geometry
-  expectation failures and one WebKit missing-input run remain retained; hydration
-  preconditions/filled-value assertions were added, without increasing retries.
-- New auth-native-controls first run6 pass/10 fail: Username exact accessible
-  name included its help, and macOS WebKit default Tab skipped buttons. Corrected
-  label selector; temporary app-specific AppleKeyboardUIMode2 then14 pass/two fail
-  (login recovery link Tab in WebKit). Preference restored to originally absent.
-  Native link-key verification is pending; no synthetic focus/tabindex workaround.
-- Reset initialization gate now disables controls until current UID/token scope
-  is ready, including query changes. Meaningful pre-passive-effect regression and
-  independent review pass; scoped35 tests, full501 checks pass. Real Chromium
-  reset/reuse journey passes once. Full ordered gate still pending.
-- Two composition cases integrated. Initial trial found two relative-has locator
-  defects and a held-route/unroute cleanup race; ended two failures/one Chromium
-  reset pass, interrupted remaining cases (exit130). Corrected tests load Created
-  normally then hold Drafts, await held-handler completion before unroute, and use
-  relative card heading selectors. Four-engine twelve-case reviewed run passes12/12, retries zero:
-  /tmp/neb-auth-reset-partial-composition-reviewed-browser-oct08.log.
-- Final native constraints/Tab/Enter/pending/error run passes16/16 across four
-  engines at320/1710. Mac WebKit uses documented Option-Tab for links and a
-  temporary app-only keyboard-navigation preference for buttons; restored absent.
-  Physical iOS and Linux branch remain separate from this host observation.
-- Full ordered119-case run passes119/119 in5.8 minutes, retries zero:
-  /tmp/neb-auth-share-reset-full-ordered-oct08.log. Fixture ownership correction,
-  real reset/reuse and guest/partial scenarios pass in their actual full order.
-- Independent test review found only a same-mounted share-transition coverage
-  gap; two success/error regressions now pass, player group36. App source unchanged.
-  Independent retention correctness/CI review found no meaningful issue; root
- 13 boundary tests/Compose/Nginx/Ruff/YAML pass; browser-source Gitleaks dir clear.
-- First ordered117-case run failed a guest feedback selector matching Next's
-  route announcer:94 pass / one fail /22 not run. Main-scoped selector fixed;
-  targeted guest case passes4. Second ordered run ended113 pass / one fail /three
-  not run: reset-token reuse produced no POST and the final input was empty.
-  Trace is retained under frontend/.playwright-cli/artifacts/
-  auth-share-full-ordered-reviewed-oct08; read-only diagnosis is assigned to
-  api_contract_evidence_review. Do not call the full suite passed.
+- Branch: `sk/production-readiness`; pushed HEAD:
+  `b0d3e7e3f3dfb0e695c6f93e0b174c822fa1be26`.
+- Draft PR: https://github.com/leenakwa/NotEnoughBingo/pull/18.
+- [CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152)
+  **passes all nine jobs**: backend383, frontend503/40 files, browser smoke231
+  plus12 intentional skips, full-stack119, foundation, secret scan, both
+  production images and Release gate. Linux native-auth branch passed in smoke.
+- Actual CI checkout `480beb3dc0c4706b64e1412bf995046d059cf4fd` is the PR merge
+  commit. Its tree equals HEAD's `4ac79078c07e8f412f190c826d8c066d11a7d8ac`,
+  verified through GitHub's commit API. Image labels use their actual build SHA;
+  do not confuse merge identity with the head image identity.
+- Earlier15632b6 CI37710181069 failed (seven jobs pass, full-stack115 pass/one
+  fail, Release failed). It reused a revoked player session for token-email
+  setup. The unaffected moderator identity is now checked before isolated
+  verification. Limits and retries were not increased. Earlier a3e1c00 and
+  d4dd0b7 failures remain in the evidence log.
 
-Release evidence completed locally:
+### Completed b0d3e7e packet
 
-- Immutable old/new frontend × opposite backend core journeys each pass three
-  Chromium cases. New frontend/old backend sitemap returns503/no-store with
-  Retry-After300, preserving the backend-first rollout requirement. New/new
-  sitemap passes two parts/ten URLs after readiness.
-- Same-origin stale-tab rehearsal passes one strict Chromium case: two tabs in
-  one browser context, offline unsaved Unicode recovery, old→new frontend,
-  real RSC/document fallback, durable editor version1→2, and old web/frontend
-  rollback while retaining forward schema/new worker. Zero page errors/HTTP
-  failures;135 RSC aborts and two deliberate offline failures are retained.
-  This does not prove every lazy route or independent browser context.
-- New append-only asset publisher has13 boundary tests and scoped security
-  review. Nginx serves all50 files in the old/new union with matching hashes,
-  cache/security headers and gzip before promotion, afterward and after rollback.
-  Empty archive falls back to Next; missing/private/map/traversal paths cannot
-  gain immutable error caching. Idempotent republication adds zero files.
-- Sixteen immutable-image fresh/warm observations cover four routes at390/1710px.
-  Fresh JS transfer152–165KB, warm JS zero, CLS≤0.000775. Probe exits1 because
-  284 RSC requests were aborted; no API/document failure/page error occurred.
-  Cause/server cost and real CDN/capacity remain unverified.
-- Sanitized reports: artifacts/mixed-frontend-rehearsal-2026-10-08.json,
-  artifacts/frontend-assets-rehearsal-2026-10-08.json,
-  artifacts/frontend-performance-2026-10-08.json. Existing backend rehearsal is
-  artifacts/mixed-backend-rehearsal-2026-10-08.json. Never commit raw auth traces.
+- Login/register/forgot/reset request ownership prevents stale navigation,
+  feedback, focus and callbacks after departure or replacement. A successful
+  departed login still publishes global signed-in state. Reset initialization
+  disables controls until the current UID/token scope is ready and preserves
+  unrelated query/hash when cleaning the token. Auth35 unit cases pass.
+- Guest sharing is a required/max50 nickname form with native Enter, actual
+  FormData capture, synchronous duplicate/pending guard and request ownership.
+  Player36 cases include old-success/error same-mounted board handover.
+- Real auth departure16, native auth controls16, partial composition/reset12
+  and guest failure/retry cases pass across four engines, retries zero. Mac
+  WebKit uses temporary app-only keyboard navigation and documented Option-Tab
+  for links; the originally absent preference was restored. Physical iOS and
+  native password-manager behavior remain unverified.
+- Final stable-source ordered live suite119/119 passes in5.8 minutes:
+  /tmp/neb-auth-share-reset-full-ordered-oct08.log. Earlier selector, geometry,
+  reset-empty-input and cleanup failures are retained; corrected reruns are
+  separately logged. Independent correctness/security/coverage reviews pass.
+- Append-only trusted-image asset publisher passes13 boundary tests, scoped
+  reviews, Compose/Nginx/Ruff/YAML checks and actual image export. All50 original
+  old/new assets pass hash/cache/security/gzip checks before promotion, after
+  promotion and rollback; empty archive falls back to Next. No automatic pruning.
 
-Isolated project `nebrollout-a3`, private workdir `/tmp/neb-rollout-a3`, currently
-new-frontend18580 + old-web18581 + new-worker, PG/Redis/Mailpit18525. Asset proxies
-18582/18583 and archive `/private/tmp/neb-frontend-assets-oct08` remain for checks.
-Source images have no app mounts; loopback HTTP/development Django settings and
-illustrative HTTPS origin are not target deployment evidence. Root owns Docker
-flips, shared QA browsers, DB tests and commits. `nebqa`18080 is separate.
-Credentials stay in mode600 temp files. No concurrent shared PostgreSQL pytest,
-fixture reseeding or application writes during strict browser runs.
+### Completed immutable b0d3e7e candidate
 
-Next ordered work:
+- Exact Git-archive configured frontend production build passes; actual Docker
+  image ID `sha256:6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529`,
+  tag `neb-rollout-frontend:new-b0d3e7e`, candidate port18584, no app mounts.
+  Embedded/runtime release match; health200. Build log:
+  /tmp/neb-frontend-b0d3e7e-production-build-oct08.log.
+- Optimized auth/native-controls68/68 pass across four engines, retries zero:
+  /tmp/neb-frontend-b0d3e7e-auth-browser-oct08.log. Mac app preference restored.
+- Publication adds11 files, retained union61 files/2,159,808 bytes. All61 pass
+  HTTP hash/cache/security/gzip checks before candidate promotion; the proxy's
+  active frontend remains15632b6. First wrong config-digest export and undersized
+  gzip-probe failures remain logged. Sanitized report:
+  artifacts/frontend-candidate-b0d3e7e-2026-10-08.json.
 
-1. **Complete:** prompt/request hashes verified; checkpoint, retained-assets
-   deployment instructions, tracker/evidence/assessment/artifacts reconciled.
-2. **Complete locally:** reset initialization correction and independent review,
-   native auth16 and partial/reset12 strict cases. Share board-handover two new
-   regressions close the independent coverage recommendation; no app change.
-3. **Complete locally:** stable-source ordered119/119 browser run, final scoped
-   lint/format, Node22 player36 (two added regressions), independent reviews,
-   artifact/browser-source Gitleaks directory scans and infrastructure checks.
-4. Commit/push reviewed packet; obtain all nine green CI jobs for its exact source
-   and verify its configured optimized artifact. Update durable evidence after
-   actual results. Never merge/deploy/registry-promote without authorization.
-5. Next mapped local batch: implement real upload byte progress and observe a
-   valid multi-MB slow MinIO transfer, processing/persistence, cancellation/retry.
-   Explorer found fetch phase labels only; historical claim that presigned POST
-   cannot report byte progress is unsupported. Official XHR docs confirm upload
-   progress, unknown-total indeterminate state and cross-origin preflight. Keep
-   API-local CSRF/credentials/auth/error semantics, storage signed fields/headers
-   without API cookies,120-second deadline, cleanup and lifetime guards. Read-only
-   upload_progress_contract report gives primary MDN/WHATWG refs; no source edits
-   for this next batch yet. Root owns actual upload browser evidence.
-6. Observe custom format/size/card/tag/download hover/pressed/focus/pending states
-   at320/1710 before minimal scoped CSS; preserve deliberate hover/shadow design.
-   Continue other local mapped requirements. Do not end after one green gate.
+### Current uncommitted upload-progress packet
 
-Counters: **774 checked /368 unchecked**; section verdicts after section4 closure:
-57 verified /41 partial /6 N/A /one deployment-only. Section59 compatibility
-bullet closed from mixed-image/stale-tab/retained-assets evidence; real CDN still
-open. Section4 partial-composition bullet is closed after both cases passed in all
-four engines and inventory reconciliation.
-Native200% browser zoom/favicon chrome/autofill/password managers/physical devices
-remain capability gaps; viewport/DPR/page-only evidence cannot close them.
-Only actual deployment/operator dependencies may be left at the end; goal active.
+- Transport and UI workers are complete and **source-frozen**. Shared contract:
+  onProgress(UploadProgress{loaded:number,total:number|null}). New XHR transfer
+  helper preserves API CSRF/credentials/errors/auth handling, signed storage
+  fields/headers,120-second deadline, cancellation/terminal cleanup and stale
+  callback guards. UploadStatus shows a bounded percentage only for known totals
+  during transfer; preparation/processing/unknown totals are indeterminate.
+- Worker scoped transport77 and UI97 cases pass. Integrated Node22 lint/types
+  and **560 tests/42 files pass**:
+  /tmp/neb-upload-progress-integrated-node22-oct08.log. Diff check passes.
+- Independent scoped security, failure-semantics, UI correctness and browser
+  coverage reviews find no material blocker. Browser coverage recommended visible
+  Processing and enabled Cancel assertions after100; both are now added.
+- First existing four-engine packet ends9 pass/two fail/one not run. Mobile
+  inline cell editing hides the inspector after successful attachment; Escape
+  now stabilizes the intended inspector flow. Desktop WebKit trace shows real
+  intent429 from accumulated fixture traffic. No limit/retry increase. Separately
+  seeded reviewed projects pass **12/12** (three each, four engines):
+  /tmp/neb-upload-progress-existing-logout-*-reviewed-oct08.log.
+- New valid1024×1024 random-RGB PNG exceeds3MiB without artificial padding. The
+  real Chromium slow MinIO transfer/cancel/retry/ready-image/durable-draft case
+  passes once in20.8 seconds, no storage fulfill or synthetic progress:
+  /tmp/neb-upload-progress-large-initial-browser-oct08.log. Native-driven UI
+  samples include intermediate percentages through100; held completionAPI proves
+  processing remains separate from transfer. Original new assertions now await
+  the full ordered gate; storage already accepted cannot be undone by cancellation.
+- First full ordered120-case gate ends91 pass/one fail/28 not run, retries
+  zero: last rendered transfer value99 rather than required100. Successful
+  storage204 and phase transition can batch the final React progress render.
+  The test now verifies bounded increasing intermediate progress and actual204,
+  with visible indeterminate Processing/Cancel and no ready attachment while
+  completion is held. It does not require rendering each terminal byte event.
+  Failed log/trace retained: /tmp/neb-upload-progress-full-ordered-oct08.log.
+- Root corrected **120/120 full ordered gate passes**,6.1 minutes, retries
+  zero/no skips/no unexpected cases. Log:
+  /tmp/neb-upload-progress-full-ordered-reviewed-oct08.log. Numeric report records
+  3,147,780 bytes, native-driven intermediate UI percentages, storage204 and two
+  actual CORS preflights. Ready1024×1024 asset persists after reload;320/1710
+  layouts and page errors pass. Sanitized artifact:
+  artifacts/upload-progress-rehearsal-2026-10-08.json. Scoped format/lint/types,
+  diff/checklist and browser-source Gitleaks directory scan pass.
+- Separate next-packet worker owns only profile-view.test.tsx; frozen19/19 unit
+  cases (+4), lint/format pass. No app change. Exclude that file from the current
+  upload commit; its new native browser evidence remains for next packet.
+- Installed Chromium-only CDP transfer contract and primary docs were verified
+  by upload_progress_contract; root actual runtime pacing is now observed.
+  The test restores unlimited network conditions and detaches in finally.
+
+### Root responsibilities and preserved environments
+
+- Root owns shared QA browsers/fixture reset, PostgreSQL pytest, Docker flips,
+  builds, CI, evidence and commits. Never run concurrent shared DB tests/reseeding
+  or source writes during strict browser gates. Workers own disjoint code areas.
+- Shared `nebqa` origin18080, Mailpit18025, existing QA volumes preserved.
+- Isolated `nebrollout-a3`, private `/tmp/neb-rollout-a3`, currently frontend15632
+  port18580, old web18581, new worker, PG/Redis/Mailpit18525. Asset proxies18582/3
+  and b0 candidate18584 remain. Archive `/private/tmp/neb-frontend-assets-oct08`
+  is append-only. Private credentials remain in mode600 temp files.
+- Source images have no app mounts. Loopback HTTP, development Django settings
+  and illustrative HTTPS origin are local evidence, not the target deployment.
+- Mixed opposite-version core journeys pass3 each; new frontend/old backend
+  sitemap503 preserves backend-first order. New/new sitemap passes after ready.
+  Stale-tab/offline editor rehearsal is two tabs in one Chromium context, not
+  independent contexts or every unprefetched lazy route. 135 RSC aborts and two
+  deliberate offline failures are retained. Performance16 observations at390/
+  1710 record152–165KB fresh JS/zero warm JS/CLS≤0.000775;284 aborted RSC reads
+  make that diagnostic nonzero, with cause/server cost still unverified.
+
+### Ordered next steps
+
+1. Persist this checkpoint, exact b0 CI/image evidence and PR description.
+2. **Complete locally:** stable-source120/120 ordered upload gate,12/12 scoped
+   engine cases, genuine slow-storage proof, sanitized numeric artifact and
+   independent reviews. Preserve failures and unchanged retries/limits.
+3. Address independent review findings, run relevant gates, review final diff,
+   commit/push this packet and obtain all-nine CI plus configured optimized-image
+   evidence for that source. Update checklist only for requirements actually proved.
+4. Next control observation at320/1710: .format-button, .size-control button,
+   .tag-chips button, .card-action, .active-filters > button,
+   .download-control > div button, .icon-button, profile-tabs roles,
+   .language-options label, .switch-list label and .upload-button. Observe normal,
+   hover, held press, keyboard focus and disabled/pending; hold real writes for
+   async Like/download/upload/preferences. Synchronous loading is N/A. Section8
+   still needs hover/active/loading/intended-form ownership mapping; section5
+   needs duplicate and pending→error→retry→success geometry mapping per action.
+   Section7's next gaps are profile native constraints/first-error order, account
+   keyboard/normalization/dirty policy, editor required/title-language order,
+   preference keyboard/dirty departure and social inventory reconciliation.
+   profile_native_form_gaps confirms profile constraints already exist:
+   required username3–30/ASCII-underscore/padded trim + backend lowercase,
+   optional name80/bio500, hints, FormData and ordered error focus. No source bug
+   established. Next worker owns profile-view.test.tsx only for three field
+   rejections, multiple-error order, sibling retention and field-only clearing;
+   root adds real native clamps/Tab/Enter/newline/heldPATCH/save-reload evidence.
+   Native clipboard/autofill remain separate. Preserve deliberate hover/shadow
+   and product decisions.
+5. Continue other mapped local requirements. Merge, public deploy and registry
+   promotion require separate authorization; commits/pushes are authorized.
+
+Counters: **775 checked /367 unchecked**, **57 verified /41 partial /6 N/A /one
+ deployment-only**. Section4 is closed after independent composition inventory
+and real recovery cases. Section59 compatibility bullet is locally proved;
+real CDN remains open. Native200% browser zoom/favicon chrome/autofill/password
+managers/physical devices are capability gaps; viewport/DPR/page-only evidence
+cannot close them. Goal remains active until all possible local work is done.
 
 ## Historical starting state
 

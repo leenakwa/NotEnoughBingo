@@ -5112,3 +5112,73 @@ observed results and their limits. Do not include credentials or session data.
   frontend gate predates only those two added tests; their Node22 scoped run
   passes afterward. Current source still requires all nine remote CI jobs and
   its configured optimized image; no deployment or merge is authorized.
+
+### 2026-10-08 — b0d3e7e exact-source gate and immutable candidate
+
+- Pushed `b0d3e7e3f3dfb0e695c6f93e0b174c822fa1be26` passes all nine jobs in
+  [CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152):
+  backend383, frontend503/40 files, smoke231 with12 intentional skips,
+  full-stack119, foundation, secrets, both production images and Release gate.
+  The actual merge checkout `480beb3dc0c4706b64e1412bf995046d059cf4fd` and HEAD
+  share tree `4ac79078c07e8f412f190c826d8c066d11a7d8ac`, verified through the
+  GitHub commit API. Linux native-auth controls pass; physical devices remain open.
+- Exact Git-archive configured frontend image builds and starts on isolated
+  candidate18584, with no application mounts, matching embedded/runtime release
+  and health200. Actual image ID:
+  `sha256:6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529`.
+  All68 optimized auth/native-control cases pass across four engines, retries
+  zero. Mac app-only keyboard preference restored. Build/browser logs:
+  /tmp/neb-frontend-b0d3e7e-production-build-oct08.log and
+  /tmp/neb-frontend-b0d3e7e-auth-browser-oct08.log.
+- Export adds11 files; archive now61 files/2,159,808 bytes. All61 pass actual
+  hash/cache/security/gzip checks before candidate promotion, while active proxy
+  frontend is still15632b6. First export used the build config digest rather
+  than Docker image ID and failed before publication. First gzip probe selected
+  a328-byte manifest below the1024-byte threshold; eligible-JS correction passes.
+  Both failed diagnostics are retained. Sanitized exact-source report:
+  [frontend candidate](artifacts/frontend-candidate-b0d3e7e-2026-10-08.json).
+- New upload-progress working tree is separate from this passed source. Its
+  integrated Node22 lint/types and560 tests/42 files pass; scoped security and
+  failure-semantic reviews find no meaningful issue. Actual multi-MB byte pacing,
+  storage CORS and cancellation runtime proof are still pending. No merge,
+  public deployment or registry promotion occurred. Checklist774/368 unchanged.
+
+### 2026-10-08 — Real upload byte progress and current-request ownership
+
+- Browser transfers use a shared XHR helper with native byte progress and known/
+  unknown totals. API upload preserves common CSRF/credentials/error/auth and
+  deadline semantics; storage preserves signed fields/headers without API
+  credentials. All terminal/cancel/timeout paths settle once and remove listeners.
+  UI percentages are bounded and only measurable during transfer; preparation,
+  processing and unknown totals remain indeterminate. Editor/avatar callbacks
+  require current lifetime/controller and non-aborted signal; cancellation,
+  replacement and completion clear progress.100% transferred never means ready.
+- Node22 lint/types and560 tests/42 files pass. Transport77 and UI97 scoped cases
+  plus independent security/failure/UI/behavioral reviews pass. Scoped all-source
+  format, browser lint/types, diff check and browser-source Gitleaks scan pass.
+- Initial ordinary four-engine gate9 pass/two fail/one not run: mobile inline
+  mode hides inspector after successful attachment (explicit Escape corrected);
+  desktop trace proves actual upload-intent429 from accumulated fixture traffic.
+  Normally seeded projects then pass12/12, retries zero and unchanged limits.
+- New valid1024×1024 random RGB PNG is3,147,780 bytes. Chromium CDP throttles
+  actual MinIO multipart upload to256KiB/s. Intermediate native-driven UI
+  percentages, cancellation before completion, exactly two intents/transfers and
+  one completion, two actual CORS preflights and real storage204 are observed.
+  Held real completionAPI proves visible indeterminate Processing and enabled
+  Cancel, without ready attachment; release leads to decoded ready1024×1024 asset,
+  autosaved draft and attachment after reload.320/1710 layouts and page errors pass.
+- First ordered gate91 pass/one fail/28 not run: UI last sample99 rather than100.
+  React can batch final progress with processing; corrected test verifies bounded
+  monotonic intermediate values and real storage success instead of requiring
+  each final event to render. Failure trace/log retained. Final ordered gate
+  **120/120 passes**,6.1 minutes, retries zero, no skips or unexpected cases.
+  /tmp/neb-upload-progress-full-ordered-reviewed-oct08.log; sanitized
+  [numeric transfer evidence](artifacts/upload-progress-rehearsal-2026-10-08.json).
+- Section5 practical-large-progress bullet closes locally:775 checked/367 open,
+  section verdicts unchanged. Its other duplicate/layout bullets remain open.
+  Physical devices/native chooser/clipboard/autofill and actual deployment remain
+  separate. This packet still needs its own CI and configured optimized image.
+- Separate next-packet profile-view unit changes add four cases (19/19 scoped),
+  proving per-field/multiple-error association, focus, retained siblings and
+  field-specific clearing. No profile implementation change; not included in the
+  upload packet's560 tests or its commit. Root native profile browser proof remains.

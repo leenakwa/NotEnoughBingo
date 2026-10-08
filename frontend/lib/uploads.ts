@@ -1,8 +1,10 @@
 import { api } from "@/lib/api/client";
 import type { MediaAsset } from "@/lib/api/types";
+import { transferUpload, type UploadProgress } from "@/lib/upload-transfer";
+
+export type { UploadProgress } from "@/lib/upload-transfer";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
-const transferTimeoutMs = 120_000;
 
 const sizeLimits: Record<MediaAsset["kind"], number> = {
   cover: 8 * 1024 * 1024,
@@ -24,6 +26,7 @@ export type UploadPhase = "preparing" | "uploading" | "processing";
 export interface UploadOptions {
   signal?: AbortSignal;
   onPhase?: (phase: UploadPhase) => void;
+  onProgress?: (progress: UploadProgress) => void;
 }
 
 function throwIfCancelled(signal?: AbortSignal): void {
@@ -50,30 +53,29 @@ function waitForProcessing(milliseconds: number, signal?: AbortSignal): Promise<
 
 async function transferToStorage(
   url: string,
-  init: RequestInit,
-  upstream?: AbortSignal,
+  method: string,
+  body: Blob | FormData,
+  options: UploadOptions,
+  headers?: HeadersInit,
 ): Promise<void> {
-  const controller = new AbortController();
-  const cancel = () => controller.abort(upstream?.reason);
-  if (upstream?.aborted) cancel();
-  else upstream?.addEventListener("abort", cancel, { once: true });
-  let timedOut = false;
-  const timer = window.setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, transferTimeoutMs);
-
   try {
-    const response = await fetch(url, { ...init, signal: controller.signal });
+    const response = await transferUpload(url, {
+      method,
+      body,
+      headers,
+      signal: options.signal,
+      onProgress: options.onProgress,
+    });
     if (!response.ok) throw new Error("Image upload failed. Check your connection and try again.");
   } catch (error) {
-    if (timedOut && !upstream?.aborted) {
+    if (
+      error instanceof DOMException &&
+      error.name === "TimeoutError" &&
+      !options.signal?.aborted
+    ) {
       throw new Error("Image upload timed out. Check your connection and try again.");
     }
     throw error;
-  } finally {
-    window.clearTimeout(timer);
-    upstream?.removeEventListener("abort", cancel);
   }
 }
 
@@ -114,31 +116,21 @@ export async function uploadImage(
     const form = new FormData();
     for (const [key, value] of Object.entries(ticket.fields)) form.set(key, value);
     form.set("file", file);
-    await transferToStorage(
-      ticket.upload_url,
-      {
-        method: "POST",
-        body: form,
-      },
-      options.signal,
-    );
+    await transferToStorage(ticket.upload_url, "POST", form, options);
   } else if (ticket.upload_url.startsWith("/api/")) {
+    const headers = { ...ticket.headers };
+    if (!new Headers(headers).has("Content-Type")) headers["Content-Type"] = file.type;
     await api.uploads.uploadContent(
       ticket.asset_id,
       file,
-      { ...ticket.headers, "Content-Type": file.type },
+      headers,
       options.signal,
+      options.onProgress,
     );
   } else {
-    await transferToStorage(
-      ticket.upload_url,
-      {
-        method: ticket.method,
-        headers: { ...ticket.headers, "Content-Type": file.type },
-        body: file,
-      },
-      options.signal,
-    );
+    const headers = { ...ticket.headers };
+    if (!new Headers(headers).has("Content-Type")) headers["Content-Type"] = file.type;
+    await transferToStorage(ticket.upload_url, ticket.method, file, options, headers);
   }
 
   throwIfCancelled(options.signal);

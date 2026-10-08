@@ -11,7 +11,7 @@ import {
   type EditorState,
   type TextFormat,
 } from "@/features/editor/editor-state";
-import type { UploadPhase } from "@/lib/uploads";
+import type { UploadPhase, UploadProgress } from "@/lib/uploads";
 
 const formats: { value: TextFormat; label: string; glyph: string }[] = [
   { value: "bold", label: "Bold", glyph: "B" },
@@ -26,6 +26,7 @@ export function CellInspector({
   onImageSelected,
   uploadPending,
   uploadPhase,
+  uploadProgress,
   onCancelUpload,
   uploadFeedback,
   imageDescriptionValidationKey = null,
@@ -35,6 +36,7 @@ export function CellInspector({
   onImageSelected: (file: File) => void;
   uploadPending: boolean;
   uploadPhase?: UploadPhase;
+  uploadProgress?: UploadProgress | null;
   onCancelUpload: () => void;
   uploadFeedback: { text: string; error: boolean } | null;
   imageDescriptionValidationKey?: string | null;
@@ -213,7 +215,9 @@ export function CellInspector({
           }}
         />
       </label>
-      {uploadPhase ? <UploadStatus phase={uploadPhase} onCancel={onCancelUpload} /> : null}
+      {uploadPhase ? (
+        <UploadStatus phase={uploadPhase} progress={uploadProgress} onCancel={onCancelUpload} />
+      ) : null}
       {uploadFeedback ? (
         <p
           className={uploadFeedback.error ? "form-message form-message--error" : "form-message"}

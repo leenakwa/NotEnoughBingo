@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-08",
+  "source": "b0d3e7e3f3dfb0e695c6f93e0b174c822fa1be26",
+  "source_tree": "4ac79078c07e8f412f190c826d8c066d11a7d8ac",
+  "image_id": "sha256:6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529",
+  "actual_container_image": "sha256:6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529",
+  "application_mounts": 0,
+  "public_build_runtime_release_matches": true,
+  "origin": "https://bingo.example.com",
+  "environment_scope": "Illustrative origin, loopback HTTP, isolated old backend with forward schema and new worker; not target production",
+  "build_log": "/tmp/neb-frontend-b0d3e7e-production-build-oct08.log",
+  "health_status": 200,
+  "auth_browser_cases": 68,
+  "auth_browser_engines": [
+    "Chromium",
+    "mobile WebKit emulation",
+    "Firefox",
+    "desktop WebKit"
+  ],
+  "retries": 0,
+  "auth_log": "/tmp/neb-frontend-b0d3e7e-auth-browser-oct08.log",
+  "native_keyboard_limit": "Mac WebKit app-only keyboard navigation preference and Option-Tab for links; preference restored after run; physical iOS unverified",
+  "publication": {
+    "added_files": 11,
+    "files": 33,
+    "image_id": "sha256:6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529",
+    "image_reference": "sha256:6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529",
+    "inventory": "/private/tmp/neb-frontend-assets-oct08/private/releases/6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529.json",
+    "release": "b0d3e7e3f3dfb0e695c6f93e0b174c822fa1be26",
+    "retained_bytes": 2159808
+  },
+  "asset_http_before_promotion": {
+    "phase": "b0-published-reviewed",
+    "actual_frontend_image": "sha256:401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd",
+    "assets_checked": 61,
+    "bytes_checked": 2159808,
+    "old_only_assets": 17,
+    "new_only_assets": 17,
+    "all_bytes_match_inventories": true,
+    "successful_assets_immutable_and_security_headers": true,
+    "gzip_roundtrip": true,
+    "errors": [
+      {
+        "path": "/_next/static/absent-release.js",
+        "status": 404,
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/_next/static/not-public.map",
+        "status": 404,
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/private/releases/6802c9b1a4ecb1abb8316112f8812694b5654ada4074998cb31e2b564f7a4529.json",
+        "status": 404,
+        "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/_next/static/../../../private/releases/inventory.json",
+        "status": 400,
+        "cache_control": null
+      }
+    ]
+  },
+  "retained_initial_diagnostics": [
+    "First export attempt incorrectly used the build config digest rather than inspected Docker image ID; exited nonzero before publication.",
+    "First new HTTP probe selected a 328-byte manifest for gzip although Nginx gzip_min_length is 1024; failed, corrected probe selects eligible JS and passes."
+  ],
+  "ci": {
+    "run_id": 37715496152,
+    "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs_passed": 9,
+    "checkout_sha": "480beb3dc0c4706b64e1412bf995046d059cf4fd",
+    "checkout_tree": "4ac79078c07e8f412f190c826d8c066d11a7d8ac",
+    "tree_equals_head": true,
+    "backend_cases": 383,
+    "frontend_cases": 503,
+    "frontend_test_files": 40,
+    "browser_smoke_passed": 231,
+    "browser_smoke_intentional_skips": 12,
+    "full_stack_passed": 119
+  },
+  "limitations": [
+    "Production origin, registry provenance/retention, ingress, providers and actual replicas/CDN remain unverified.",
+    "Source b0d3e7e only; new upload-progress working tree is separate and uncommitted."
+  ]
+}

@@ -41,7 +41,7 @@ import {
 } from "@/lib/auth-events";
 import { makeIdempotencyKey } from "@/lib/guest-progress";
 import type { BingoDraft, BingoExportFormat, ExportJob, MediaAsset } from "@/lib/api/types";
-import { uploadImage, type UploadPhase } from "@/lib/uploads";
+import { uploadImage, type UploadPhase, type UploadProgress } from "@/lib/uploads";
 
 type UploadTarget = "board" | "cell" | "cover";
 type EditorPayload = ReturnType<typeof editorPayload>;
@@ -75,6 +75,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const [step, setStep] = useState<EditorStep>("board");
   const [uploading, setUploading] = useState<UploadTarget | null>(null);
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("preparing");
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [cellUploadFeedback, setCellUploadFeedback] = useState<{
     text: string;
     error: boolean;
@@ -132,6 +133,8 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     saveLoop.current = null;
     actionInFlight.current = false;
     uploadController.current?.abort();
+    setUploadPhase("preparing");
+    setUploadProgress(null);
   }, []);
 
   useEffect(() => {
@@ -360,13 +363,19 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     setMessage("");
     setCellUploadFeedback(null);
     setUploadPhase("preparing");
+    setUploadProgress(null);
     setUploading(target);
     const cellKeys = target === "cell" ? [...state.selectedKeys] : undefined;
     try {
       const asset = await uploadImage(file, kind, {
         signal: controller.signal,
         onPhase: (phase) => {
-          if (isCurrent()) setUploadPhase(phase);
+          if (isCurrent() && uploadController.current === controller && !controller.signal.aborted)
+            setUploadPhase(phase);
+        },
+        onProgress: (progress) => {
+          if (isCurrent() && uploadController.current === controller && !controller.signal.aborted)
+            setUploadProgress(progress);
         },
       });
       if (!isCurrent() || controller.signal.aborted) return;
@@ -380,7 +389,10 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       else setError(feedback);
     } finally {
       if (uploadController.current === controller) uploadController.current = null;
-      if (isCurrent()) setUploading(null);
+      if (isCurrent()) {
+        setUploading(null);
+        setUploadProgress(null);
+      }
     }
   }
 
@@ -388,6 +400,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
 
   function cancelUpload() {
     uploadController.current?.abort();
+    setUploadProgress(null);
     setError("");
     if (uploading === "cell") setCellUploadFeedback({ text: "Upload cancelled.", error: false });
     else setMessage("Upload cancelled.");
@@ -917,7 +930,9 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           }
           saveStatus={saveStatusView}
         />
-        {uploading ? <UploadStatus phase={uploadPhase} onCancel={cancelUpload} /> : null}
+        {uploading ? (
+          <UploadStatus phase={uploadPhase} progress={uploadProgress} onCancel={cancelUpload} />
+        ) : null}
       </main>
     );
   }
@@ -1019,7 +1034,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
           ) : null}
         </div>
         {uploading === "board" ? (
-          <UploadStatus phase={uploadPhase} onCancel={cancelUpload} />
+          <UploadStatus phase={uploadPhase} progress={uploadProgress} onCancel={cancelUpload} />
         ) : null}
 
         <EditorBoard state={state} dispatch={dispatch} />
@@ -1058,6 +1073,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         imageDescriptionValidationKey={imageDescriptionValidationKey}
         uploadPending={uploading !== null}
         uploadPhase={uploading === "cell" ? uploadPhase : undefined}
+        uploadProgress={uploading === "cell" ? uploadProgress : null}
         onCancelUpload={cancelUpload}
         uploadFeedback={cellUploadFeedback}
         onImageSelected={(file) => void handleUpload("cell", file, "cell_image")}
