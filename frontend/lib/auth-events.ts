@@ -9,6 +9,21 @@ export const AUTH_SESSION_ENDED_EVENT = "neb:auth-session-ended";
 export const AUTH_SESSION_OBSERVED_EVENT = "neb:auth-session-observed";
 export const AUTH_SIGNED_OUT_EVENT = "neb:auth-signed-out";
 
+let authSyncChannel: BroadcastChannel | undefined;
+
+export function getAuthSyncChannel(): BroadcastChannel | undefined {
+  if (authSyncChannel) return authSyncChannel;
+  if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
+  try {
+    // Share one instance for this document: BroadcastChannel excludes the sending instance.
+    // It stays open across component mounts so listeners and publishers always share it.
+    authSyncChannel = new window.BroadcastChannel(AUTH_SYNC_KEY);
+    return authSyncChannel;
+  } catch {
+    // Storage events and focus revalidation remain available when messaging is restricted.
+  }
+}
+
 export interface AuthSessionObservation {
   userId: string | null;
   logoutEvent: string | null;
@@ -43,11 +58,7 @@ function broadcastAuthChange(signedOut: boolean): void {
     if (signedOut) {
       window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT));
       try {
-        if (typeof window.BroadcastChannel !== "undefined") {
-          const channel = new window.BroadcastChannel(AUTH_SYNC_KEY);
-          channel.postMessage("signed-out");
-          channel.close();
-        }
+        getAuthSyncChannel()?.postMessage("signed-out");
       } catch {
         // The storage signal remains available when messaging is restricted.
       }

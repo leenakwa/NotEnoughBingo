@@ -85,7 +85,38 @@ Log In link is reached after six Tabs with visible focus/internal scrolling;
 Escape returns to Create account. No form values, submissions or authentication
 are used. Chrome Reset confirms100% before only the owned Guest window closes.
 
-Authenticated settings/editor, recovery and report zoom remain unchecked;
-global section24 remains partial. Light/dark browser-chrome favicon visibility,
-native screen-reader behavior and physical devices also remain unchecked.
-Viewport or CSS/device-scale changes do not establish native zoom.
+An additional authenticated packet in native Chrome154/macOS at actual200%
+observes readable profile username/display name/bio/language fields and visible
+Tab outlines on Save profile, Send confirmation, Change password and Schedule
+deletion. No settings write request is sent. The inline forgotten-current-password
+link wraps around the button; its layout choice remains pending. An accessibility
+union-center click hits Change password and shows required-field validation,
+which does not establish a pointer defect. Keyboard focus+Return opens
+`/forgot-password`; title/email/lower actions are readable and Back to login has
+visible focus. Recovery submission/delivery remains unchecked.
+
+Authenticated Create initially shows a readable pristine5×5 board and disabled
+Save. Clicking a cell opens its inline textarea; batched Right+Return inserts a
+newline and autosaves a new owned disposable draft. This does not prove board
+arrow navigation. Escape/Undo restores25 empty cells and Saved. Inspector
+headings/text/format and details title/language/cover actions are readable, with
+visible language-control Tab focus. The exact owned draft is subsequently
+soft-deleted through the existing service; histories remain.
+
+This packet uses cached frontend05d148a/backendb6 on localhost18584. Frontend
+application-source diff to5f4bca9 excluding tests is empty, establishing source
+UI equivalence only, not a latest-image run. Own logout revokes the session but
+unexpectedly opens an expiry auth dialog on `/login`; the traced same-document
+logout-channel refresh race has a subsequent source fix passing623 frontend
+units/45 files, typecheck/lint/format, scoped review and four-profile local browser
+regression with synthetic APIs and native channel transport. Exact-source CI and
+a native current-image rerun remain pending; completed exact5f CI does not cover
+that patch. Chrome Reset confirms100% and only the owned Guest window closes. Native screenshots
+remain in the tool conversation, without a separate saved-file artifact.
+
+Report/other-form zoom, other engines/devices, native screen readers and
+all-flow200% coverage remain unchecked; global section24 remains partial.
+Only dark browser-chrome screenshot evidence exists, so section92's both-theme
+favicon visibility remains unchecked. Viewport or CSS/device-scale changes do
+not establish native zoom. See the evidence ledger's 2026-10-09 authenticated
+native Chrome200% packet for cleanup and pending decisions.

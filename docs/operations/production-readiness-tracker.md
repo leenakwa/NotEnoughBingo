@@ -30,32 +30,38 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-10-08: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-10-09: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
 
 ## Repository review map
 
-### Latest observed source gate — 2026-10-08
+### Latest observed source gate — 2026-10-09
 
-Exact `0d2d96b` [CI37841457182](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37841457182)
-passes all12 jobs:446 backend,619 frontend/44 files,436 smoke/12 intentional skips
-and125 full-stack cases, with no reported flakes/retries. Both production images
-and Release pass. Export creation503 recovery, synchronized password-reset
-logout/login and public-profile Unfollow503→keyboard retry→real204/API/reload
-at320/1710 pass. Tested merge `52ef38f97db3b4bcade5c552c07929111815484a`
-shares HEAD's full tree `b2a2f5a587ce3f401018a18a8cade1cf29c57576`.
-Original logs, all nine artifacts, metadata, integrity checks and checksums are
-archived privately under `evidence-0d2d96b-2026-10-08/ci/result.json`.
+Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
+finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke
+and12 intentional skips, plus125 full-stack cases; no reported flakes/retries.
+Chromium passes114 smoke cases; each other profile passes110 with four skips.
+Both production images, Release and all baseline gates pass. The password-reset
+journey passes6.6s with held logout503→real204/login; the session journey passes
+4.7s with actual owned current-session revocation. Branch5f and tested merge
+`f8f07dc24736450a617525726ac606671a9765b2` share full tree
+`996c08acbf0f53024927392a60ee1a45eecb55e8`. Original log ZIP, all nine artifacts,
+API metadata, integrity checks and checksums are archived privately under
+`evidence-5f4bca9-2026-10-09/ci/`.
 
-Two subsequently applied, reviewed patches change only existing account-native
-and live-product tests. Synthetic empty-session states pass8/8 at320/1710 across
-Chromium/mobile Chromium/Firefox/WebKit. The added held logout503→actual204/login
-and real owned current-session revocation assertions await the next exact CI;
-this completed gate does not verify those additions. No application behavior,
-rate limits, timeouts or retries change. No deployment or broad readiness claim
-follows.
+A subsequent application patch shares one BroadcastChannel instance per
+document while preserving the legacy logout string. It targets the native
+same-document logout refresh race recorded below. The full frontend unit suite
+passes623 tests/45 files in10.85s;
+typecheck/lint/format and scoped correctness/security/privacy review pass.
+A scoped browser regression passes all four configured profiles using synthetic
+API responses, real mounted account/auth UI and native BroadcastChannel transport
+with storage blocked. Own logout opens no expiry dialog; a separate legacy
+logout witness still does. Exact-source CI and a native current-image rerun remain
+pending; exact5f CI does not cover this later patch. No global checklist item,
+deployment or broad readiness claim is advanced.
 
 Earlier failed gate —2026-10-08: Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
 finishes with ten successful jobs and failed full-stack/Release. All four smoke
@@ -69,7 +75,7 @@ remaining assertions. The password-reset journey interrupts logout with hard
 navigation approximately3.8ms after the POST starts; the aborted request leaves a
 session-expired dialog intercepting final login. Trace shows no final login POST.
 Both test synchronization corrections and the public-profile Unfollow503→keyboard
-retry→real204/API/reload extension subsequently pass exact0d CI above. The failed
+retry→real204/API/reload extension subsequently pass the earlier exact0d CI. The failed
 run remains historical evidence; application behavior, timeouts, retries and rate
 limits are unchanged.
 
@@ -266,7 +272,7 @@ original prompt remains unchanged.
 - [ ] 21. RESPONSIVE DESIGN — Partial: 320–2560 px board/editor gate, mobile WebKit, landscape/short-height inspector, and simulated keyboard-sized modal passed; real address-bar, keyboard, and iPhone safe-area behavior still need device evidence.
 - [x] 22. TOUCH UX — Verified before deployment: 44 px mobile touch targets, tap navigation/language/play/editor actions, optional drag alternatives, and no hover/tooltip-only critical controls.
 - [x] 23. KEYBOARD UX — Verified before deployment: navigation, Enter/Space/Escape, visible focus, and cross-browser report-dialog focus trap/return.
-- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy now passes. Three unnamed editor sliders gained explicit accessible names and values, confirmed in the browser tree. The independent current ARIA/template inventory and two corrected semantics, ten live state/width Axe/contrast probes and native checkbox visual evidence pass; native Chrome200% guest discovery/play/login/register/auth-gate observations now pass within a bounded cached-image scope; authenticated settings/editor/recovery/report zoom remains unchecked. See accessibility-verification-matrix.md.
+- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy now passes. Three unnamed editor sliders gained explicit accessible names and values, confirmed in the browser tree. The independent current ARIA/template inventory and two corrected semantics, ten live state/width Axe/contrast probes and native checkbox visual evidence pass; native Chrome200% guest discovery/play/login/register/auth-gate observations now pass within a bounded cached-image scope; authenticated settings/editor/recovery readability and visible focus are also observed on source-equivalent cached frontend05d148a, with no settings write request; report/other-form and other-engine/device zoom remain unchecked. Native logout opens an unexpected expiry dialog; a subsequent source fix passes scoped local browser regression while exact-source CI and native current-image verification remain pending. See accessibility-verification-matrix.md.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: placeholder inventory and product/auth names checked; legal operator copy and broader error-message exposure remain.
 - [ ] 26. LONG-CONTENT TORTURE TEST — Partial: prior account/title limits, 254-character email, long URL/multilingual comment and profile/card/cell checks retain their scope. The exact-a2 maximum-content packet exposes horizontal overflow in Explore active-filter labels at320px with permitted80-character title/author and15 tags of50 characters. Wrapping and overflow are reopened; the user’s choice of full wrapping or ellipsis is pending. The packet does not establish a new temporal layout shift.
 - [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.
@@ -334,7 +340,7 @@ original prompt remains unchanged.
 - [ ] 89. LEGAL / BUSINESS FOOTER — Partial: Privacy, Terms, Cookies, and current-year footer verified; a private contact and real operator/legal identity still need user-provided details and review.
 - [x] 90. FOOTER — Verified before deployment: current-year branded footer, five working internal links, contact destination page, intentional cookies anchor, responsive layout, and no broken placeholders; official social accounts are not configured for this release.
 - [x] 91. PAGE METADATA — Verified before deployment: production-mode public route heads expose title, description, canonical, Open Graph/Twitter URLs and images, and favicon links at the configured origin.
-- [ ] 92. FAVICON SET — Partial: ICO, SVG browser icon, and 180px Apple touch icon return 200 and appear in page head; light/dark browser chrome still needs a visual check. Native Chrome app access timed out; the page-only extension cannot supply this evidence. PWA is absent.
+- [ ] 92. FAVICON SET — Partial: ICO, SVG browser icon, and 180px Apple touch icon return 200 and appear in page head; native dark browser chrome is captured, but visibility in both light/dark chrome remains unchecked. PWA is absent.
 - [x] 93. SCROLL BEHAVIOR — Verified before deployment: route top, browser Back, modal close, horizontal overflow, and sticky-header anchor behavior checked at mobile and desktop widths. Removed global smooth scrolling after a mobile WebKit tap missed a moving checkbox; the corrected language flow passed 20 repeated touch runs and the full live regression.
 - [x] 94. MODALS — Verified before deployment: report dialog X, Cancel, Escape, backdrop, focus containment, background scroll lock, and 320px-high viewport; there is no destructive modal action.
 - [x] 95. DROPDOWNS / POPOVERS — Verified before deployment: language disclosures and download options open/close with touch and keyboard, remain unclipped at 320–1710px, and stay anchored on scroll; popup targets meet 44px.

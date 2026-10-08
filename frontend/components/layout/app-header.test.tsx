@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
+import { BroadcastChannel as NativeBroadcastChannel } from "node:worker_threads";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppHeader } from "@/components/layout/app-header";
 import {
@@ -9,6 +10,9 @@ import {
   AUTH_SESSION_ENDED_EVENT,
   AUTH_SESSION_OBSERVED_EVENT,
   AUTH_SIGNED_OUT_EVENT,
+  AUTH_SYNC_KEY,
+  notifySignedOut,
+  getAuthSyncChannel,
 } from "@/lib/auth-events";
 import type { AuthenticatedUser } from "@/lib/api/types";
 
@@ -139,12 +143,128 @@ describe("AppHeader scroll shadow", () => {
 });
 
 describe("AppHeader session expiry", () => {
+  afterAll(() => getAuthSyncChannel()?.close());
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.pathname = "/bingo/test";
     window.history.replaceState({}, "", "/bingo/test");
     mocks.session.mockResolvedValue(user);
     mocks.unreadCount.mockResolvedValue({ count: 0 });
+  });
+
+  it("ignores its own logout broadcast while the local guest lookup is pending", async () => {
+    vi.stubGlobal("BroadcastChannel", NativeBroadcastChannel);
+    const witness = new NativeBroadcastChannel(AUTH_SYNC_KEY);
+    const delivered = new Promise<unknown>((resolve) =>
+      witness.addEventListener("message", (event) => resolve((event as MessageEvent).data)),
+    );
+    const openDialog = vi.fn();
+    window.addEventListener(AUTH_DIALOG_EVENT, openDialog);
+    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+    let unmount: (() => void) | undefined;
+    try {
+      await act(async () => {
+        ({ unmount } = render(<AppHeader initialUser={user} />));
+      });
+      let finishLogout!: (next: AuthenticatedUser | null) => void;
+      mocks.session.mockReturnValueOnce(
+        new Promise<AuthenticatedUser | null>((resolve) => {
+          finishLogout = resolve;
+        }),
+      );
+      mocks.session.mockResolvedValue(null);
+      await act(async () => {
+        notifySignedOut();
+        mocks.replace("/login");
+        expect(await delivered).toBe("signed-out");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      // The broadcast must not start an expiry lookup that overtakes the local logout lookup.
+      expect(mocks.session).toHaveBeenCalledTimes(2);
+      expect(openDialog).not.toHaveBeenCalled();
+      await act(async () => finishLogout(null));
+      expect(screen.getByRole("link", { name: "Log in" })).toBeVisible();
+      expect(openDialog).not.toHaveBeenCalled();
+      expect(mocks.replace).toHaveBeenCalledExactlyOnceWith("/login");
+    } finally {
+      unmount?.();
+      witness.close();
+      storage.mockRestore();
+      window.removeEventListener(AUTH_DIALOG_EVENT, openDialog);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("keeps expiry recovery for a foreign legacy logout broadcast without storage", async () => {
+    vi.stubGlobal("BroadcastChannel", NativeBroadcastChannel);
+    const sender = new NativeBroadcastChannel(AUTH_SYNC_KEY);
+    const openDialog = vi.fn();
+    window.addEventListener(AUTH_DIALOG_EVENT, openDialog);
+    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+    let unmount: (() => void) | undefined;
+    try {
+      await act(async () => {
+        ({ unmount } = render(<AppHeader initialUser={user} />));
+      });
+      mocks.session.mockResolvedValueOnce(null);
+      await act(async () => {
+        sender.postMessage("signed-out");
+        await waitFor(() => expect(openDialog).toHaveBeenCalledOnce());
+      });
+      expect(mocks.session).toHaveBeenCalledTimes(2);
+      expect(openDialog.mock.calls[0]?.[0]).toMatchObject({
+        detail: { mode: "login", reason: "session-expired" },
+      });
+      expect(screen.getByRole("link", { name: "Log in" })).toBeVisible();
+    } finally {
+      unmount?.();
+      sender.close();
+      storage.mockRestore();
+      window.removeEventListener(AUTH_DIALOG_EVENT, openDialog);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("removes unmounted channel listeners and keeps the shared channel usable after remount", async () => {
+    vi.stubGlobal("BroadcastChannel", NativeBroadcastChannel);
+    const sender = new NativeBroadcastChannel(AUTH_SYNC_KEY);
+    const witness = new NativeBroadcastChannel(AUTH_SYNC_KEY);
+    let unmount: (() => void) | undefined;
+    const deliverLogout = async () => {
+      const delivered = new Promise<void>((resolve) =>
+        witness.addEventListener("message", () => resolve(), { once: true }),
+      );
+      sender.postMessage("signed-out");
+      await delivered;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    };
+    try {
+      await act(async () => {
+        ({ unmount } = render(<AppHeader initialUser={user} />));
+      });
+      unmount?.();
+      await act(deliverLogout);
+      expect(mocks.session).toHaveBeenCalledOnce();
+
+      await act(async () => {
+        ({ unmount } = render(<AppHeader initialUser={user} />));
+      });
+      expect(mocks.session).toHaveBeenCalledTimes(2);
+      await act(deliverLogout);
+      expect(mocks.session).toHaveBeenCalledTimes(3);
+      unmount?.();
+      await act(deliverLogout);
+      expect(mocks.session).toHaveBeenCalledTimes(3);
+    } finally {
+      unmount?.();
+      sender.close();
+      witness.close();
+      vi.unstubAllGlobals();
+    }
   });
 
   it.each(["classic", "modern"] as const)(

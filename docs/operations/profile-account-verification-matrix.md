@@ -30,7 +30,7 @@ Real persistence, native-device capabilities and global section8 remain separate
 | Separate email/password forms; Show/Hide buttons | Existing units/live journeys prove real FormData, mismatch/field focus after enabling, pending guards, retention/clearing and Enter; new controlled native cases prove required/typeMismatch, keyboard-entered11→12 new/confirmation boundaries, full card Tab/Show-Hide ownership, DOM email edge-space stripping with mixed case preserved to API, untrimmed passwords and short current credentials; existing backend email-change test proves lowercase normalization | Native autofill/password-manager, Mac/other-browser clipboard and unmatched control-state contexts; configured065 Linux clipboard is recorded below. Reload observation clears volatile email/password without warning; no persisted-work or desired policy claim |
 | Deletion password/confirmation form; standalone cancellation | Existing real API scheduling/grace-period and browser cancellation evidence; new native cases prove empty input opens no confirmation, short untrimmed current credential, Tab/Show-Hide no submit, Enter/dismiss retains input/no write, accept invokes own endpoint once and retained422/error focus after pending | Exacta55a2b1 CI passes successful scheduling through the browser confirmation, original-cookie revocation, grace login and UI cancellation; dedicated-fixture a164 CI passes the combined suite. Unmatched visual feedback contexts remain separate; scheduling/recovery does not prove physical deletion |
 | Avatar input/upload/removal/cancel | Labeled file input, 5 MB/type hint, input reset and phase feedback, cancellation/lifetime units; actual upload/remove persistence and chooser keyboard/focus journey; exact a164 CI proves invalid/oversized zero-write behavior and same-file intent503 retry; exact38fd CI passes attachment/removal503 recovery and persistence | Native OS chooser cancellation; progress remains phase based |
-| Session Sign out/account Log out/section Retry | Independent loading/error/retry, private identity gating, logout/login and obsolete-callback units/journeys; other-session Space/Enter, scoped pending, held failure and real retry/revocation, unrelated draft preserved | Synthetic empty-session UI passes8/8 at320/1710 in all four browser profiles. Reviewed, applied live additions cover held logout503/scoped error/unchanged auth→actual204/login and owned current-session DELETE204→secondary guest401 with primary draft untouched; these await next exact CI. Current-session pending has unit evidence; disabled native click suppression does not prove callback reentrancy |
+| Session Sign out/account Log out/section Retry | Independent loading/error/retry, private identity gating, logout/login and obsolete-callback units/journeys; other-session Space/Enter, scoped pending, held failure and real retry/revocation, unrelated draft preserved | Synthetic empty-session UI passes8/8 at320/1710 in all four browser profiles. Exact5f CI passes held logout503/scoped error/unchanged auth→actual204/login and owned current-session DELETE204→secondary guest401 with primary draft untouched. Native cached-image logout separately opens an unexpected expiry dialog; a later shared-channel fix passes623 full frontend units/45 files, typecheck/lint/format, scoped review and four-profile local browser regression with synthetic APIs/native channel transport. Exact-source CI and native current-image verification remain pending; exact5f CI does not cover it. Current-session pending has unit evidence; disabled native click suppression does not prove callback reentrancy |
 | Export request/status/download link | Semantic button→link, preparing feedback, polling/lifetime guards; real ZIP download journey; exact71a22ec full-stack CI covers accepted real job→controlled status-read503→real same-job retry/ready with retained drafts and320/1710 overflow checks (`live-product-flows.spec.ts`, “account export creation and accepted status failures preserve unsaved fields and allow real recovery”) | Exact0d CI passes creation503→real recovery and all route-controlled failed/expired/41-poll exhaustion cases across four browser profiles, including retry, retained drafts and keyboard anchor activation. Failed761 helper history remains in the dated evidence. Native file delivery/error remains unproved; controlled geometry does not settle feedback-layout policy |
 | Public-profile Follow/Report launcher | Identity gating, optional viewer retry, obsolete follow completion, native buttons; configured065 controlled POST503→204 and DELETE503 retain the correct state, with Tab/Shift+Tab focus and pending/hover/press observations below | Exact0d CI passes Unfollow503→native keyboard retry→real204/API/reload at320/1710 in the existing live journey; pointer-launched report focus remains unverified. Relationship/count restoration recreates follower notifications and FOLLOW events, so it does not undo every fixture side effect; downstream flows remain in the combined gate. Intercepted Follow success does not prove persistence |
 | Profile activity tabs | Browser-proved selected hover/held-press contrast regression corrected by scoped text color; 8 cases at320/1710 in four profiles prove computed contrast17.53 hover/press and19.80 normal/focus, 3px keyboard outline, preserved press movement and no overflow/page errors | Included in source5e71cd8 and its optimized-image native packet. Disabled N/A; loading belongs to panel. Other control state inventories remain separate |
@@ -107,3 +107,40 @@ wraps without measured form/control/error clipping or horizontal overflow.
 Its collection succeeds, while14 request failures/two controlled422 console
 errors retain failed clean-flow/wrapper verdicts. Exact owned cleanup passes.
 Backend persistence, other profile controls and layout policy remain separate.
+
+
+## Authenticated native200% and completed exact5f gate — 2026-10-09
+
+Native Chrome154/macOS at actual browser-menu200% on localhost18584 shows
+readable profile fields and visible Tab outlines on Save profile, Send
+confirmation, Change password and Schedule deletion. No settings write request
+is sent. The inline forgotten-current-password link wraps around its neighboring
+button, with layout choice pending; keyboard focus+Return opens readable
+`/forgot-password` with visible Back-to-login focus. An accessibility union-center
+click that instead hits Change password and required-field validation is not
+proof of an actual pointer defect. Recovery delivery, native autofill/managers
+and other engines/devices remain separate. Cached frontend05d148a/backendb6
+establishes source UI equivalence to5f excluding tests, not a latest-image run.
+
+Own logout revokes only its session and preserves all ten baseline active-session
+IDs/profile values, but opens an unexpected expiry dialog. Distinct publisher
+and header channel objects allow the logout string to reach the same-document
+header; runtime ordering is inferred. A subsequent working-tree fix shares one
+channel per document while retaining the legacy string. The full frontend suite
+passes623 tests/45 files in10.85s; typecheck/lint/format and scoped correctness/
+security/privacy review pass. Four configured browser profiles pass a synthetic-
+API regression with real mounted account/auth UI, native channel transport and
+blocked storage: own logout shows no expiry dialog/event, while a foreign legacy
+logout witness still does. Exact-source CI and native current-image verification
+remain pending; this later patch is outside completed exact5f CI. See the dated
+evidence ledger for both retained prepatch failures and the completed private
+31-file provenance/artifact archive.
+
+[CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
+passes all12 jobs, including444 smoke cases/12 intentional skips and125 live
+cases without reported flakes/retries. The password-reset held503→real204/login
+case passes6.6s; actual owned current-session revocation passes4.7s. Branch5f
+and tested merge share tree `996c08acbf0f53024927392a60ee1a45eecb55e8`; original
+logs/artifacts/API/checksums are archived privately under
+`evidence-5f4bca9-2026-10-09/ci/`. Counts stay816/326, including85 N/A and241
+applicable; no global readiness verdict follows.

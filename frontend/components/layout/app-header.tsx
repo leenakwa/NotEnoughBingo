@@ -15,6 +15,7 @@ import {
   AUTH_SESSION_ENDED_EVENT,
   AUTH_SESSION_OBSERVED_EVENT,
   AUTH_SIGNED_OUT_EVENT,
+  getAuthSyncChannel,
   openAuthDialog,
   type AuthSessionObservation,
 } from "@/lib/auth-events";
@@ -337,17 +338,11 @@ export function AppHeader({
     const handleStorage = (event: StorageEvent) => {
       if (event.key === AUTH_SYNC_KEY) void refreshUser(true);
     };
-    let signOutChannel: BroadcastChannel | undefined;
-    try {
-      if (typeof window.BroadcastChannel !== "undefined") {
-        signOutChannel = new window.BroadcastChannel(AUTH_SYNC_KEY);
-        signOutChannel.addEventListener("message", (event) => {
-          if (event.data === "signed-out") void refreshUser(true);
-        });
-      }
-    } catch {
-      // Storage events and focus revalidation remain available.
-    }
+    const signOutChannel = getAuthSyncChannel();
+    const handleSignOutMessage = (event: MessageEvent) => {
+      if (event.data === "signed-out") void refreshUser(true);
+    };
+    signOutChannel?.addEventListener("message", handleSignOutMessage);
     window.addEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
     window.addEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
     window.addEventListener(AUTH_SESSION_OBSERVED_EVENT, handleSessionObserved);
@@ -355,7 +350,7 @@ export function AppHeader({
     window.addEventListener("pageshow", handlePageShow);
     window.addEventListener("storage", handleStorage);
     return () => {
-      signOutChannel?.close();
+      signOutChannel?.removeEventListener("message", handleSignOutMessage);
       window.removeEventListener(AUTH_CHANGED_EVENT, handleCurrentTabChange);
       window.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthenticationRequired);
       window.removeEventListener(AUTH_SESSION_OBSERVED_EVENT, handleSessionObserved);

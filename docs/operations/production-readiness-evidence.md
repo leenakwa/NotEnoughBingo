@@ -7734,3 +7734,117 @@ CSS viewport, current full-image equivalence, authenticated settings/editor,
 recovery/report zoom, and all-flow200% certification remain unverified. Global
 section24 remains unchecked; no counters, UI requirements or deployment claims
 change.
+
+### 2026-10-09 — Bounded authenticated native Chrome200% packet
+
+The root observes actual browser-menu200% in an owned Guest window in native
+Chrome154/macOS on localhost18584, with cached frontend05d148a/backendb6.
+Frontend application-source diff05d148a→5f4bca9 excluding tests is empty: this
+establishes source UI equivalence, not execution of a latest frontend image.
+At the earlier native-observation checkpoint, [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
+for5f4bca9 is running with ten passed jobs and full-stack pending; no completed
+CI success follows from this packet; the later completed gate is recorded below.
+
+Profile username/display name/bio/language fields are readable. Native Tab shows
+visible outlines on Save profile, Send confirmation, Change password and
+Schedule deletion; no settings write request is sent. The inline forgotten-
+current-password link wraps around its neighboring button, with the user layout
+choice pending. An accessibility union-center click reaches Change password and
+shows HTML required-field validation; that is not proof of an actual pointer
+defect. Keyboard focus+Return opens `/forgot-password`, where title/email/lower
+actions are readable and Back to login shows visible focus. No reset is sent.
+An earlier127.0.0.1 credential login returns403 with the actual raw CSRF trusted-
+origin reason; authorized localhost fixture login works. The existing CSRF-copy
+choice remains pending and no security configuration is weakened.
+
+Authenticated Create initially shows a readable pristine5×5 board with disabled
+Save. Clicking its first cell opens an inline textarea. Batched Right+Return
+inserts a newline and autosaves the new owned disposable draft
+`cbf513da-fd9f-4cb8-9b95-277407ed1c00`; this is not board-arrow navigation proof
+and does involve a new draft write. Escape/Undo restores all25 empty cells and
+Saved. Inspector headings/text/format and details title/language/cover actions
+are readable, with visible Tab focus on language. Cleanup guards exact owner,
+draft status/title and absence of a revision, then soft-deletes only that draft
+through the existing service. Its record histories remain.
+
+Native Logout revokes only the owned session. An exact database comparison
+retains all ten baseline active-session IDs and unchanged profile values.
+However, `/login` unexpectedly opens an expiry auth dialog, unlike the existing
+live5156 expectation. Source tracing identifies distinct publisher/header
+BroadcastChannel objects allowing the logout string to reach the same-document
+header and trigger `refreshUser(true)`; runtime ordering is inferred. A subsequent
+source fix shares one channel per document while preserving the legacy string.
+Its full frontend unit suite, typecheck/lint/format and scoped review pass.
+Local four-profile browser regression now passes as recorded below; exact-source
+CI and native current-image verification remain pending, outside exact5f CI.
+
+Chrome Reset confirms100%; only the owned Guest window closes to the profile
+picker and no user profile is changed. Screenshots are retained in the tool
+conversation only, without invented saved-file paths. Global section24 zoom
+remains unchecked for other forms/report, engines and devices; section92's
+light/dark favicon check also remains unchecked because only native dark chrome
+is captured. Counters stay816 checked/326 unchecked, including85 N/A and241
+applicable. No global readiness or real-deployment claim changes.
+
+
+### 2026-10-09 — Completed exact5f gate; subsequent logout fix has scoped local verification
+
+Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
+finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke
+and12 intentional skips, plus125 full-stack cases; no reported flakes/retries.
+Chromium passes114 smoke cases; each other profile passes110 with four skips.
+Both production images, Release and all baseline gates pass. The password-reset
+journey passes6.6s with held logout503→real204/login; the session journey passes
+4.7s with actual owned current-session revocation. Branch5f and tested merge
+`f8f07dc24736450a617525726ac606671a9765b2` share full tree
+`996c08acbf0f53024927392a60ee1a45eecb55e8`. Original log ZIP, all nine artifacts,
+API metadata, integrity checks and checksums are archived privately under
+`evidence-5f4bca9-2026-10-09/ci/`.
+
+A subsequent application patch shares one BroadcastChannel instance per
+document while preserving the legacy logout string. It targets the native
+same-document logout refresh race recorded above. The full frontend unit suite
+passes623 tests/45 files in10.85s;
+typecheck/lint/format and scoped correctness/security/privacy review pass.
+A scoped browser regression passes all four configured profiles using synthetic
+API responses, real mounted account/auth UI and native BroadcastChannel transport
+with storage blocked. Own logout opens no expiry dialog; a separate legacy
+logout witness still does. Exact-source CI and a native current-image rerun remain
+pending; exact5f CI does not cover this later patch. No global checklist item,
+deployment or broad readiness claim is advanced.
+
+The existing password-reset case90 at `live-product-flows.spec.ts:4947` passes
+6.6s, including held logout503 followed by real204 and application login. The
+existing session case110 at `live-product-flows.spec.ts:6004` passes4.7s,
+including actual owned current-session revocation. This closes the prior
+exact-runtime gap for those test additions and the eight synthetic empty-session
+smoke cases; it does not erase the separate native cached-image logout defect.
+Counters remain816 checked/326 unchecked, including85 N/A and241 applicable.
+
+
+### 2026-10-09 — Local shared-channel logout regression verification
+
+The subsequent shared-channel patch passes the full frontend
+unit suite:623 tests/45 files in10.85s, retained at
+`/tmp/neb-shared-channel-unit-oct09.log`. Final typecheck/lint/format and scoped
+correctness plus security/privacy reviews pass with no meaningful findings.
+
+The final scoped browser regression passes Chromium3.5s, configured narrow
+Pixel7 mobile Chromium2.6s, Firefox4.4s and WebKit4.7s, total25s. Responses are
+synthetic API fixtures, but AccountSettings/AuthDialog are actually mounted and
+use native BroadcastChannel transport with storage blocked. Own logout reaches
+login without an expired-session dialog/event; a distinct foreign witness
+publishing the legacy logout string still opens the expiry modal. The original
+prepatch5f run fails with actual `[session-expired]` after own logout. The original
+and final viewport-adjusted prepatch baselines both retain this failure. The root
+reads the final baseline/four-profile logs and confirms all five current source
+hashes match the retained provenance. Private archive
+`evidence-logout-shared-channel-2026-10-09` is complete:31 files, approximately
+2.32MB, including both baseline traces/videos/screenshots, source/configuration,
+provenance/manifests and the full frontend unit log. Managed preview3191 is stopped.
+
+This establishes scoped local behavior under synthetic API responses. It does
+not rerun the observed defect in a native current frontend image or cover the
+new patch with exact-source CI; both remain pending. The earlier cached-image
+native bug observation and its cleanup evidence remain valid historical results.
+Counters and global partial verdicts remain unchanged.

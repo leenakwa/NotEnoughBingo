@@ -174,6 +174,141 @@ async function expectPendingGuard(page: Page, form: Locator, requests: unknown[]
   await expectNoOverflow(page);
 }
 
+test("explicit logout ignores its own native broadcast and preserves foreign expiry recovery", async ({
+  page,
+  context,
+}) => {
+  // Session/logout responses are synthetic; channel delivery and the mounted account/dialog UI are real.
+  const width = page.viewportSize()?.width ?? 1280;
+  let signedOut = false;
+  let guestLookups = 0;
+  let release!: () => void;
+  const heldLogout = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let localDelivered!: () => void;
+  const localDelivery = new Promise<void>((resolve) => {
+    localDelivered = resolve;
+  });
+  let foreignDelivered!: () => void;
+  const foreignDelivery = new Promise<void>((resolve) => {
+    foreignDelivered = resolve;
+  });
+  let guestStarted!: () => void;
+  const guestRequest = new Promise<void>((resolve) => {
+    guestStarted = resolve;
+  });
+  const dialogReasons: unknown[] = [];
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.exposeFunction("recordLocalLogoutDelivery", localDelivered);
+  await page.exposeFunction("recordAuthDialog", (reason: unknown) => dialogReasons.push(reason));
+  await page.addInitScript(() => {
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === "neb:auth-sync") throw new Error("Injected unavailable auth storage");
+      return setItem.call(this, key, value);
+    };
+    window.addEventListener("neb:auth-dialog", (event) => {
+      void (
+        window as unknown as Window & { recordAuthDialog: (reason: unknown) => Promise<void> }
+      ).recordAuthDialog((event as CustomEvent).detail?.reason);
+    });
+  });
+  const sessionEndpoint = "**/api/v1/auth/session/";
+  const logoutEndpoint = "**/api/v1/auth/logout/";
+  const loginNavigation = /\/login(?:\?.*)?$/;
+  const handleSession = async (route: Route) => {
+    expect(route.request().method()).toBe("GET");
+    if (!signedOut) return route.fulfill({ json: { user } });
+    guestLookups += 1;
+    if (guestLookups === 1) {
+      guestStarted();
+      await heldLogout;
+    }
+    await route.fulfill({ json: { user: null } });
+  };
+  const handleLogout = (route: Route) => {
+    expect(route.request().method()).toBe("POST");
+    signedOut = true;
+    return route.fulfill({ status: 204, body: "" });
+  };
+  const handleLoginNavigation = async (route: Route) => {
+    expect(route.request().method()).toBe("GET");
+    await heldLogout;
+    await route.continue();
+  };
+  await page.route(sessionEndpoint, handleSession);
+  await page.route(logoutEndpoint, handleLogout);
+  await page.route(loginNavigation, handleLoginNavigation);
+  const witness = await context.newPage();
+  try {
+    await openAccount(page, width);
+    await expect(page.getByRole("link", { name: "Profile for Native Account" })).toBeVisible();
+    await witness.route("**/logout-channel-witness", (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: "<!doctype html><title>Native channel witness</title>",
+      }),
+    );
+    await witness.goto(new URL("/logout-channel-witness", page.url()).href);
+    await witness.exposeFunction("recordForeignLogoutDelivery", foreignDelivered);
+    await witness.evaluate(() => {
+      const channel = new BroadcastChannel("neb:auth-sync");
+      channel.addEventListener("message", (event) => {
+        if (event.data === "signed-out") {
+          void (
+            window as unknown as Window & { recordForeignLogoutDelivery: () => Promise<void> }
+          ).recordForeignLogoutDelivery();
+        }
+      });
+    });
+    await page.bringToFront();
+    await page.evaluate(() => {
+      // Registered after the header: same-document message tasks run after its receiver.
+      const probe = new BroadcastChannel("neb:auth-sync");
+      probe.addEventListener("message", (event) => {
+        if (event.data === "signed-out") {
+          probe.close();
+          void (
+            window as unknown as Window & { recordLocalLogoutDelivery: () => Promise<void> }
+          ).recordLocalLogoutDelivery();
+        }
+      });
+    });
+    await page.getByRole("button", { name: "Log out", exact: true }).click();
+    await Promise.all([localDelivery, foreignDelivery, guestRequest]);
+    expect(guestLookups).toBe(1);
+    expect(dialogReasons).toEqual([]);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    release();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { name: "Log in", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(dialogReasons).toEqual([]);
+
+    signedOut = false;
+    await openAccount(page, width);
+    await expect(page.getByRole("link", { name: "Profile for Native Account" })).toBeVisible();
+    signedOut = true;
+    await witness.evaluate(() => {
+      const sender = new BroadcastChannel("neb:auth-sync");
+      sender.postMessage("signed-out");
+      sender.close();
+    });
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog")).toContainText("Your session ended.");
+    expect(dialogReasons).toEqual(["session-expired"]);
+    expect(errors).toEqual([]);
+  } finally {
+    release();
+    await witness.close();
+    await page.unroute(sessionEndpoint, handleSession);
+    await page.unroute(logoutEndpoint, handleLogout);
+    await page.unroute(loginNavigation, handleLoginNavigation);
+  }
+});
+
 for (const width of [320, 1710]) {
   // Synthetic empty-list rendering only; this does not establish server session state.
   test(`account empty sessions render without actions at ${width}`, async ({ page }) => {

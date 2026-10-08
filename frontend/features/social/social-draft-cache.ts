@@ -1,6 +1,6 @@
 "use client";
 
-import { AUTH_SIGNED_OUT_EVENT, AUTH_SYNC_KEY } from "@/lib/auth-events";
+import { AUTH_SIGNED_OUT_EVENT, AUTH_SYNC_KEY, getAuthSyncChannel } from "@/lib/auth-events";
 
 import type { ReportReason, ReportTargetType } from "@/lib/api/types";
 
@@ -19,7 +19,6 @@ const drafts = new Map<string, { draft: SocialDraft; savedAt: number }>();
 let owner: string | undefined;
 let generation = 0;
 let listening = false;
-let signOutChannel: BroadcastChannel | undefined;
 
 export function clearSocialDrafts(): void {
   drafts.clear();
@@ -31,16 +30,9 @@ function listenForSignOut(): void {
   if (listening || typeof window === "undefined") return;
   listening = true;
   window.addEventListener(AUTH_SIGNED_OUT_EVENT, clearSocialDrafts);
-  try {
-    if (typeof window.BroadcastChannel !== "undefined") {
-      signOutChannel = new window.BroadcastChannel(AUTH_SYNC_KEY);
-      signOutChannel.addEventListener("message", (event) => {
-        if (event.data === "signed-out") clearSocialDrafts();
-      });
-    }
-  } catch {
-    // Fall back to the existing storage signal.
-  }
+  getAuthSyncChannel()?.addEventListener("message", (event) => {
+    if (event.data === "signed-out") clearSocialDrafts();
+  });
   window.addEventListener("storage", (event) => {
     if (event.key === AUTH_SYNC_KEY && event.newValue?.startsWith("signed-out:")) {
       clearSocialDrafts();
