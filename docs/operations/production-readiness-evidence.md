@@ -6778,3 +6778,102 @@ The regression uses SQLite in memory and direct model transitions; no full
 revision leak, deployed response projection, or complete section76 closure is
 claimed. Raw fail-before/after logs are archived. Independent security review finds no blocking issue. Exact
 new-source PostgreSQL CI/runtime verification remains required.
+
+
+### 2026-10-08 — Configured privacy-filter image and bounded response projection
+
+Exact backendb6aabca builds and runs non-root with matching revision/APP_RELEASE
+and existing media-only data volume. Frontend retains its actual05d148a image
+identity; its complete frontend source is identical to b6aabca, verified by Git.
+No image is relabelled. Only candidate backend changes; fixture development
+settings and other services/data remain. Both live-health checks return200.
+Build/image/runtime artifacts are archived outside the repository.
+
+One reviewed GET-only packet observes24 actual API and HTML documents for public
+bingo, author profile, public share and private-board controls as guest, author
+and player. Bodies/cookies/identities stay in memory; retained evidence contains
+statuses, field paths and comparison booleans. All20 successful responses have
+no fields outside the inspected allowlist, and all ten successful selected
+inline-Flight projections match their corresponding API objects. Known private
+board title/nine cell markers are present in both owner controls and absent from
+public responses and guest/player private404 documents/API. Owner editable
+drafts are permitted; guest/player public-bingo drafts are null. Authenticated
+viewer projections match the requesting account's own ID/email.
+
+The original guest viewer comparison assumes null and records false; source
+returns the explicit guest sentinel. One separately recorded additional guest
+document GET confirms only that sentinel and no viewer object. The original
+report/script is retained, not rewritten or replayed. Independent security
+review supports the bounded projection result, not every HTML field.
+
+Hidden-bio and distinct unpublished-draft markers are unavailable. No withdrawn
+share fixture or genuinely unrelated ordinary share reader exists in this
+manifest; the public-share author is privileged and player is the result owner.
+Progress, report/private-media responses, explicit RSC/prefetch and production
+remain outside this packet. The withdrawal filter has separate endpoint
+fail-before/after tests; deployed privacy transitions are not newly proved.
+No global section76 checkbox or readiness verdict is promoted. Exact new-source
+CI remains running when these observations are recorded.
+
+
+### 2026-10-08 — Complete analytics/privacy source gate
+
+[CI37796382333](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37796382333)
+passes all12 jobs for b6aabca6050687919c2a5c0ca953bc3817eed474. Backend435
+cases pass/106.89s on Python3.13/PostgreSQL; frontend619/44 files/31.32s.
+Chromium96/4.0min, mobile92+4 intentional skips/3.7min, Firefox92+4/4.7min
+and WebKit92+4/4.8min account for372 passes/12 skips/384 planned smoke cases.
+Full-stack123/6.6min, foundation/history secrets, both images and Release pass.
+Durations exclude setup/teardown. Tested merge0d92fe0f1e2dd161c6c0f4aa2f21a67330d2deea
+and branch share full tree573afb87b2c952c5f632c7454ca035db0e5e3ce8, verified
+from raw checkout log, GitHub commit API and local Git. Raw log/job metadata/tree
+proof are archived. This does not cover the subsequent expiry-test additions.
+
+### 2026-10-08 — Deterministic session and CSRF cookie expiry contracts
+
+Two new tests and expanded password-rotation assertions use deliberately short
+isolated overrides and an installed frozen clock, without changing production
+duration. Login Max-Age/Expires match persisted expiry; authenticated reads at
+30/59 seconds do not renew a60-second session. Cache naturally expires at61
+seconds, and the server rejects the old credential even when Django Client
+continues sending it. Password rotation after five minutes retains the original
+20-minute deadline and emits the remaining900 seconds. CSRF Max-Age/Expires
+are checked independently; a matching retained CSRF token has no server TTL,
+while a missing token is rejected. No cache purge simulates session expiration.
+
+Three focused cases pass. A broader SQLite attempt retains13 passes/two
+PostgreSQL skips/three existing pg_try_advisory_lock failures; this unsupported
+job backend is not presented as a passing full module run. The same two modules
+then pass18 cases/10.65s on real local PostgreSQL, with no failures/skips. A unique
+isolated test database is absent before setup and dropped afterward. Ruff and
+format pass; independent test review finds no coverage/mock-realism issue.
+Local Python3.14.5/Django5.2.16/pytest8.4.2 and locmem differ from project-pinned
+CI/runtime. Redis natural expiry, actual browser cookie removal and deployed
+host/path/duration remain unverified. Code defaults30 days while example
+configuration supplies14; the user is asked to select the final policy. No
+policy or section51 checkbox is silently changed. The added test-source gate
+remains required. Raw outcomes are archived outside the repository.
+
+
+### 2026-10-08 — Third recovery-route downstream token leakage observation
+
+One separately reviewed local Chromium invalid-token diagnostic covers
+confirm-email-change on the configured05d frontend/b6 backend. Its nonsecret
+marker is intentionally carried by the initial document; exactly one browser
+and one proxy initial-document observation are excluded from downstream checks.
+Actual document200 supplies no-referrer, and native secure-context UUID support
+is available.34 downstream browser requests and33 proxy forwarded-read
+observations contain no marker/token query in URL or Referer; no downstream
+Referer is present. These are67 layer observations, not67 unique requests.
+
+The confirmation token appears only in the intercepted POST body; its controlled
+400 is displayed. No confirmation reaches the backend or changes an account.
+A body-free diagnostic-only proxy POST returns405, proving nonread rejection.
+The packet exits0 for leakage checks only. Twelve aborted navigation GETs and
+the controlled400 console error remain recorded separately; this is not a
+complete network pass or a waiver of earlier strict failures. Page/route/proxy
+errors are zero and the diagnostic container is removed. Raw scripts/proof/log
+are archived. Other engines, real provider/history/ingress behavior and actual
+successful token consumption remain outside this observation; existing live
+email-change URL-stripping tests supply separate evidence. Section55/76 stays
+open for the registration-email query decision and remaining deployment scope.

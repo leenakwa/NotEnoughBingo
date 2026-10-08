@@ -5,7 +5,19 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact5ed50c0 passes all12 jobs in
+Latest observation —2026-10-08: Exact b6aabca passes all12 jobs in
+[CI37796382333](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37796382333):
+435 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack flows;
+both images and Release pass, with matching tested/branch full trees. Local
+frontend retains actual05d identity/source equivalent to b6; backend runs exact
+b6, both non-root/healthy. The bounded actual API/HTML projection packet has
+meaningful owner-positive/guest-other-negative private-board controls and
+matching authorized API/client props, with its stated fixture/surface gaps.
+Subsequent deterministic expiry coverage passes18 cases on isolated PostgreSQL
+and independent review, but requires its own committed-test gate. Final login
+duration remains a user choice; native/Redis/deployed expiry is not proved.
+
+Earlier observation —2026-10-08: Exact5ed50c0 passes all12 jobs in
 [CI37790158585](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37790158585):
 423 backend,610 frontend,372 smoke/12 intentional skips and123 full-stack flows;
 both images and Release pass. Tested merge and branch full trees match. The

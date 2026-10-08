@@ -122,7 +122,9 @@ partial because the unexplained session500 and other scoped gaps remain.
 
 Subsequent optional-analytics and profile shared-result privacy corrections
 have scoped fail-before regressions and independent reviews. Their complete
-new committed-source gate remains pending. Trusted-localhost feedback/loading
+b6aabca source gate CI37796382333 passes all12 jobs:435 backend,619 frontend,
+372 smoke/12 skips and123 live flows, with matching full trees. Subsequent expiry
+test additions pass18 local PostgreSQL cases but need their committed-test gate. Trusted-localhost feedback/loading
 packets retain network-abort failures; feedback placement awaits the user and
 profile pagination lacks an existing next page. No section verdict changes.
 

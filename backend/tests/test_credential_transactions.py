@@ -20,7 +20,7 @@ from django.db.models.query import QuerySet
 from django.test import Client, RequestFactory
 from django.utils import timezone
 from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
+from django.utils.http import http_date, urlsafe_base64_encode
 from freezegun import freeze_time
 
 from apps.accounts import services, tasks
@@ -118,34 +118,40 @@ def test_credential_sql_failure_rolls_back_password_sessions_and_callbacks(
 def test_password_change_keeps_session_data_expiry_and_rotates_cookie_on_django_request(
     verified_user_factory, csrf_request
 ) -> None:
-    user = verified_user_factory(password=OLD_PASSWORD)
-    request, metadata = authenticated_request(user, csrf_request)
-    expiry = timezone.now() + timedelta(minutes=20)
-    request.session["cart"] = {"board": "saved"}
-    request.session.set_expiry(expiry)
-    request.session.save()
-    old_key = request.session.session_key
-    with patch("apps.accounts.services.send_password_security_notification.delay"):
-        response = PasswordChangeView.as_view()(request)
-    assert response.status_code == 204
-    metadata.refresh_from_db()
-    user.refresh_from_db()
-    assert request.session.session_key != old_key
-    assert metadata.session_key == request.session.session_key
-    assert request.session["cart"] == {"board": "saved"}
-    assert request.session.get_expiry_date() == expiry
-    assert request.session[HASH_SESSION_KEY] == user.get_session_auth_hash()
-    assert Session.objects.get(session_key=request.session.session_key).expire_date == expiry
-    assert not Session.objects.filter(session_key=old_key).exists()
-    assert CachedDbSessionStore(old_key).load() == {}
-    from apps.accounts.middleware import RotationSafeSessionMiddleware
+    with freeze_time("2026-10-08 12:00:00") as clock:
+        user = verified_user_factory(password=OLD_PASSWORD)
+        request, metadata = authenticated_request(user, csrf_request)
+        expiry = timezone.now() + timedelta(minutes=20)
+        request.session["cart"] = {"board": "saved"}
+        request.session.set_expiry(expiry)
+        request.session.save()
+        old_key = request.session.session_key
+        clock.tick(timedelta(minutes=5))
+        with patch("apps.accounts.services.send_password_security_notification.delay"):
+            response = PasswordChangeView.as_view()(request)
+        assert response.status_code == 204
+        metadata.refresh_from_db()
+        user.refresh_from_db()
+        assert request.session.session_key != old_key
+        assert metadata.session_key == request.session.session_key
+        assert request.session["cart"] == {"board": "saved"}
+        assert request.session.get_expiry_date() == expiry
+        assert request.session[HASH_SESSION_KEY] == user.get_session_auth_hash()
+        assert Session.objects.get(session_key=request.session.session_key).expire_date == expiry
+        assert not Session.objects.filter(session_key=old_key).exists()
+        assert CachedDbSessionStore(old_key).load() == {}
+        from apps.accounts.middleware import RotationSafeSessionMiddleware
 
-    # Sending the committed replacement needs no second SQL/cache session save.
-    with patch.object(request.session, "save", side_effect=AssertionError("Unexpected save")):
-        response = RotationSafeSessionMiddleware(lambda req: response).process_response(
-            request, response
-        )
-    assert response.cookies[settings.SESSION_COOKIE_NAME].value == request.session.session_key
+        # Sending the committed replacement needs no second SQL/cache session save.
+        with patch.object(request.session, "save", side_effect=AssertionError("Unexpected save")):
+            response = RotationSafeSessionMiddleware(lambda req: response).process_response(
+                request, response
+            )
+        assert response.cookies[settings.SESSION_COOKIE_NAME].value == request.session.session_key
+
+        cookie = response.cookies[settings.SESSION_COOKIE_NAME]
+        assert cookie["max-age"] == 15 * 60
+        assert cookie["expires"] == http_date(expiry.timestamp())
 
 
 @pytest.mark.parametrize("operation", ["reset", "change"])
