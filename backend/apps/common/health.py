@@ -40,6 +40,8 @@ def ready(_request):
     try:
         cache.set("healthcheck", "ok", timeout=5)
         checks["cache"] = "ok" if cache.get("healthcheck") == "ok" else "error"
+        if checks["cache"] == "error":
+            status_code = 503
     except Exception:
         checks["cache"] = "error"
         status_code = 503

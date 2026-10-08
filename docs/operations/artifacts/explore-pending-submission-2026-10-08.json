@@ -192,9 +192,193 @@
     "os_preferences_unchanged": true
   },
   "limitations": [
-    "Controlled browser API/analytics, private Next webpack development server; no real backend or production-build claim.",
+    "Initial development packet uses controlled browser API/analytics on private Next webpack server; its cases do not establish real backend or production build. Separate optimized-image observations are under production.",
     "Criteria changes may produce an extra cancelled read for the prior URL; this is not a one-HTTP-request-per-action guarantee.",
     "pageerror monitored; console messages not collected.",
     "Initial harness Turbopack failed because of external node_modules symlink before any product assertion; switched to existing webpack option."
-  ]
+  ],
+  "production": {
+    "source_commit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "image_id": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+    "raw_proof_sha256": "d74f21fe7f03b17610c4cf1d2439970f02a34121673d32e01cc1c3d1e25a032a",
+    "guard_cases": 9,
+    "guard_projects": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "guard_retries": 0,
+    "layout_observations": [
+      {
+        "route": "/discover",
+        "width": 390,
+        "http_status": 200,
+        "page_width": 390,
+        "max_observed_page_width": 390,
+        "observed_cls": 0,
+        "initial_observed_grid": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "final_observed_grid": {
+          "x": 16,
+          "y": 679.78125,
+          "width": 358,
+          "height": 1174
+        },
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 7
+      },
+      {
+        "route": "/create",
+        "width": 390,
+        "http_status": 200,
+        "page_width": 390,
+        "max_observed_page_width": 390,
+        "observed_cls": 0,
+        "initial_observed_grid": null,
+        "final_observed_grid": null,
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 19
+      },
+      {
+        "route": "/create",
+        "width": 1710,
+        "http_status": 200,
+        "page_width": 1710,
+        "max_observed_page_width": 1710,
+        "observed_cls": 0,
+        "initial_observed_grid": null,
+        "final_observed_grid": null,
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 14
+      },
+      {
+        "route": "/explore",
+        "width": 390,
+        "http_status": 200,
+        "page_width": 390,
+        "max_observed_page_width": 390,
+        "observed_cls": 0,
+        "initial_observed_grid": null,
+        "final_observed_grid": null,
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 13
+      },
+      {
+        "route": "/bingo/<synthetic-fixture>",
+        "width": 390,
+        "http_status": 200,
+        "page_width": 390,
+        "max_observed_page_width": 390,
+        "observed_cls": 0.0006855929487179487,
+        "initial_observed_grid": {
+          "x": 16,
+          "y": 234.546875,
+          "width": 358,
+          "height": 358
+        },
+        "final_observed_grid": {
+          "x": 16,
+          "y": 234.546875,
+          "width": 358,
+          "height": 358
+        },
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 13
+      },
+      {
+        "route": "/discover",
+        "width": 1710,
+        "http_status": 200,
+        "page_width": 1710,
+        "max_observed_page_width": 1710,
+        "observed_cls": 0,
+        "initial_observed_grid": null,
+        "final_observed_grid": null,
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 20
+      },
+      {
+        "route": "/explore",
+        "width": 1710,
+        "http_status": 200,
+        "page_width": 1710,
+        "max_observed_page_width": 1710,
+        "observed_cls": 0,
+        "initial_observed_grid": null,
+        "final_observed_grid": null,
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 20
+      },
+      {
+        "route": "/bingo/<synthetic-fixture>",
+        "width": 1710,
+        "http_status": 200,
+        "page_width": 1710,
+        "max_observed_page_width": 1710,
+        "observed_cls": 0,
+        "initial_observed_grid": {
+          "x": 475,
+          "y": 519.015625,
+          "width": 760,
+          "height": 760
+        },
+        "final_observed_grid": {
+          "x": 475,
+          "y": 519.015625,
+          "width": 760,
+          "height": 760
+        },
+        "page_errors": 0,
+        "console_warning_errors": 0,
+        "rsc_get_abort_count": 12
+      }
+    ],
+    "limits": [
+      "Controlled API/analytics for nine guard cases; real API for eight initial layout observations.",
+      "First observed frame can already follow hydration. Earlier delayed-script prehydration proof is separate.",
+      "No global layout or Core Web Vitals certification; only guest Discover/Explore/Create/player at390/1710.",
+      "RSC GET ERR_ABORTED failures retained; cancellation cause and server cost unresolved.",
+      "Initial five layout diagnostics failed due to wrong selectors; only those five repeated after external selector correction."
+    ],
+    "image_metadata": {
+      "source": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+      "image": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+      "application_mounts": 0,
+      "build_release": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+      "runtime_release": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+      "label_release": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+      "frontend_health": 200
+    },
+    "frontend_tree": "f91a49317decc4101ec1f35f0e76a910226ed42b",
+    "backend_tree": "db16171ede68e4fb990742e51c35b4c1a5952322"
+  },
+  "ci": {
+    "run_id": 37743142188,
+    "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37743142188",
+    "conclusion": "success",
+    "passed_jobs": 9,
+    "source_commit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "tested_merge": "1d7d3cdaecc46413758c71796697013b58969882",
+    "head_and_merge_tree": "8221a4cf06f03b7031fbefcb6d7deffb8110f71c",
+    "backend_pass": 383,
+    "frontend_pass": 587,
+    "frontend_files": 43,
+    "smoke_pass": 372,
+    "smoke_skip": 12,
+    "smoke_flaky": 0,
+    "fullstack_pass": 123,
+    "fullstack_flaky": 0,
+    "raw_log_sha256": "d6577369167d96f2c1647986e1ad2d5422620b3991fdc95242c3d12df9d4d451"
+  }
 }

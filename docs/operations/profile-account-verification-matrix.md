@@ -40,3 +40,15 @@ cover relevant reset semantics.
 Narrow/wide overflow checks do not prove a physical virtual keyboard, every
 control's visual states or feedback layout stability. Keep those limits explicit
 when mapping this inventory to the original checklist.
+
+## Public Follow control — 2026-10-08
+
+The [profile control artifact](artifacts/profile-tab-states-2026-10-08.json) adds
+two Chromium320/1710 failure/retry flows and two native focus probes on the exact
+configured065 image. Follow/Following hover and held press change visibly;
+Tab/Shift+Tab expose3px focus outlines. Pending shows “Saving…” and “Saving
+changes…”, disables the button and retains44px height. Controlled503 retains
+Follow, own POST204 retry shows Following, and DELETE503 retains Following.
+Only the follower endpoint is invoked by these actions; analytics/client-errors
+are separately intercepted. Mobile width stays288px; desktop label widths vary
+89.61→99.22→118.42px. No real writes or global layout/control verdict is claimed.

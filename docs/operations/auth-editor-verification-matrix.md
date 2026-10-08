@@ -29,7 +29,39 @@ native-field label inventory is in
 Source5e71cd8 passes581 frontend units and the configured optimized-image packet
 of156 controlled native cases, including16 editor and32 preference cases. A
 separate nine-case real API/SSR packet also passes. Historical run corrections
-and the current incomplete CI gate are recorded in the
+and the subsequent complete source065 CI gate are recorded in the
 [dated evidence](production-readiness-evidence.md) and
 [release assessment](release-assessment-2026-09-29.md). These results map the
 listed controls, not every native form in sections7/8.
+
+## Native social and search keyboard — 2026-10-08
+
+[Configured source065 keyboard proof](artifacts/native-form-keyboard-2026-10-08.json)
+adds six Chromium/Firefox/WebKit cases at320/1710:30 root/reply/edit/report/guest
+share form walks. Tab/Shift+Tab, textarea newline Enter and submit Enter pass;
+each form invokes only its own held endpoint, then retains text after controlled400.
+Three separate Explore cases pass Search/Author/Tags/sort/Search/Clear forward and
+reverse traversal, radio ArrowDown and own-form Enter. Existing eight auth/profile/
+account form kinds plus these six complete the14-form keyboard/submit inventory;
+editor controls retain their separately recorded native packet scope.
+
+Two initial WebKit cases failed a launcher-focus expectation after pointer opening.
+Only their diagnostic launch changed to keyboard Enter, then both passed; the
+original four Chromium/Firefox cases were retained. Corrected WebKit keyboard
+opening returns focus to its launcher after Escape. A separate WebKit pointer-launch observation
+leaves BODY focused, so no universal pointer-focus return is claimed. API writes
+are intercepted, not persisted; native autofill/password-manager, clipboard,
+dirty-form policy and all-control visual states remain separate.
+
+## Editor custom control observations — 2026-10-08
+
+The [editor control artifact](artifacts/editor-tag-controls-2026-10-08.json) adds
+two Chromium320/1710 cases on configured065. Size3→10→3 and disabled bounds,
+Bold selected state, tag removal, download disclosure and native3px focus work
+without overflow. Size/format/tag hover and held press keep their appearance;
+the user is choosing their feedback treatment. Download hover/press changes.
+Pointer activation after resize works; mobile inline editing hides the inspector
+until Escape. Initial harness expectations missed that state and incorrectly
+forbade five legitimate intercepted autosave PUTs per case. Corrected original
+pointer cases pass, with no manual-save/publish/export or real backend writes.
+No page/console errors. This does not close all-control visual requirements.

@@ -187,8 +187,8 @@ For every form verify:
 - [x] validation is understandable;
 - [x] validation errors appear near the relevant field;
 - [x] focus behavior after validation is sensible;
-- [ ] Enter works appropriately;
-- [ ] Tab navigation works;
+- [x] Enter works appropriately;
+- [x] Tab navigation works;
 - [ ] browser autofill works where expected;
 - [ ] password managers work;
 - [ ] copy/paste is not unnecessarily blocked;
@@ -223,7 +223,7 @@ Also verify:
 - [x] links are links;
 - [x] clickable `<div>` is not used unnecessarily;
 - [x] pointer/interaction feedback is sensible;
-- [ ] submit buttons submit only the intended form;
+- [x] submit buttons submit only the intended form;
 - [x] destructive actions are visually recognizable;
 - [x] irreversible actions require confirmation where appropriate;
 - [x] confirmation describes exactly what will happen.

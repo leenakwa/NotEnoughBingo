@@ -6,12 +6,14 @@ import subprocess
 import sys
 from datetime import timedelta
 from types import SimpleNamespace
+from unittest.mock import MagicMock, Mock
 
 import pytest
 from django.core.cache import cache
 from django.test import Client
 from django.utils import timezone
 
+from apps.common import health
 from apps.common.logging import JsonFormatter
 from apps.common.tasks import BEAT_HEARTBEAT_CACHE_KEY, record_beat_heartbeat
 
@@ -169,3 +171,44 @@ def test_beat_health_reports_recent_and_stale_heartbeats() -> None:
     assert healthy.json()["status"] == "ok"
     assert stale.status_code == 503
     assert stale.json()["status"] == "stale"
+
+
+@pytest.mark.parametrize(
+    ("cached_value", "failure_operation", "expected_status"),
+    [
+        pytest.param("ok", None, 200, id="healthy"),
+        pytest.param(None, None, 503, id="missing-value"),
+        pytest.param("unexpected", None, 503, id="wrong-value"),
+        pytest.param("ok", "set", 503, id="write-exception"),
+        pytest.param("ok", "get", 503, id="read-exception"),
+    ],
+)
+def test_readiness_requires_successful_cache_round_trip(
+    monkeypatch, cached_value, failure_operation, expected_status
+) -> None:
+    monkeypatch.setattr(health, "connection", MagicMock())
+    executor = MagicMock()
+    executor.migration_plan.return_value = []
+    monkeypatch.setattr(health, "MigrationExecutor", Mock(return_value=executor))
+    cache_backend = Mock()
+    cache_backend.get.return_value = cached_value
+    if failure_operation:
+        getattr(cache_backend, failure_operation).side_effect = RuntimeError(
+            "private cache connection detail"
+        )
+    monkeypatch.setattr(health, "cache", cache_backend)
+
+    response = Client().get("/api/v1/health/ready/")
+
+    assert response.status_code == expected_status
+    assert response.json() == {
+        "status": "ok" if expected_status == 200 else "degraded",
+        "checks": {
+            "database": "ok",
+            "migrations": "ok",
+            "cache": "ok" if expected_status == 200 else "error",
+        },
+    }
+    cache_backend.set.assert_called_once_with("healthcheck", "ok", timeout=5)
+    if failure_operation != "set":
+        cache_backend.get.assert_called_once_with("healthcheck")

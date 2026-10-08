@@ -1,0 +1,272 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+  "imageId": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+  "scope": "Native desktop-engine keyboard interactions against the configured optimized local image. Controlled API responses; no target deployment or physical-device claim.",
+  "moduleHashes": {
+    "features/social/comments-panel.tsx": "e426bcba952335b6aa66e2879cf574060e99165476c28cd857e3c8568f640aa1",
+    "features/social/report-dialog.tsx": "8e4301d8afd452839507a5a2d29782042767a453ad6b8c55c2a2da6e64cd5acc",
+    "features/play/bingo-player.tsx": "8f1c2b76b877c27db1925d031f5da0bfbe4bf43a78aeaa2e732b768c389eed1a",
+    "components/explore/explore-page.tsx": "9cc2e0c58f01671caa5ff157c7ad461b9f4ffe8cf2c72c2de3badf03ce04ebd1"
+  },
+  "social": {
+    "result": {
+      "expected": 6,
+      "passed": 6,
+      "retries": 0,
+      "formsCovered": 30,
+      "writesPerCase": 5,
+      "unexpectedWrites": 0,
+      "realBackendWrites": 0
+    },
+    "cases": [
+      {
+        "engine": "chromium",
+        "width": 320,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "chromium",
+        "width": 1710,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "firefox",
+        "width": 320,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "firefox",
+        "width": 1710,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "webkit",
+        "width": 320,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "webkit",
+        "width": 1710,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      }
+    ],
+    "tabOrder": {
+      "root": [
+        "comment_body",
+        "Post comment"
+      ],
+      "reply": [
+        "reply_body",
+        "Cancel",
+        "Post reply"
+      ],
+      "edit": [
+        "edited_comment",
+        "Cancel",
+        "Save"
+      ],
+      "report": [
+        "×",
+        "reason",
+        "description",
+        "Cancel",
+        "Send report"
+      ],
+      "share": [
+        "nickname",
+        "Cancel",
+        "Create share link"
+      ]
+    },
+    "assertions": [
+      "Tab and Shift+Tab traverse active controls in each form.",
+      "Textarea Enter inserts a newline; Enter on submit invokes only that form endpoint.",
+      "Outer whitespace is trimmed while multiline Unicode, emoji and literal markup punctuation survive.",
+      "Each held mutation returns a controlled400; input remains available for correction.",
+      "Corrected WebKit keyboard-launched report dialog traps Tab and returns focus to its launcher after Escape."
+    ],
+    "console": "Expected intercepted progress404 and validation400 resource errors are retained; no empty-console claim.",
+    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher→Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
+    "pointerFocusObservation": {
+      "engine": "webkit",
+      "before": "TEXTAREA[name=comment_body]",
+      "opened": "Close report dialog button",
+      "after": "BODY",
+      "restoredLauncher": false,
+      "scope": "Pointer opening followed by Escape; distinct from the corrected keyboard-launch proof. Focus policy remains a pending user choice."
+    }
+  },
+  "explore": {
+    "stats": {
+      "startTime": "2026-10-08T08:02:24.929Z",
+      "duration": 8988.442,
+      "expected": 3,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "engine": "chromium",
+        "status": "passed",
+        "retry": 0,
+        "submitFormOwnership": true,
+        "searchEvents": 1,
+        "requests": [
+          "S",
+          "S"
+        ],
+        "pageErrors": []
+      },
+      {
+        "engine": "firefox",
+        "status": "passed",
+        "retry": 0,
+        "submitFormOwnership": true,
+        "searchEvents": 1,
+        "requests": [
+          "S",
+          "S"
+        ],
+        "pageErrors": []
+      },
+      {
+        "engine": "webkit",
+        "status": "passed",
+        "retry": 0,
+        "submitFormOwnership": true,
+        "searchEvents": 1,
+        "requests": [
+          "S",
+          "S"
+        ],
+        "pageErrors": []
+      }
+    ],
+    "tabOrder": [
+      "Search",
+      "Author",
+      "Tags",
+      "selected sort radio",
+      "Search submit",
+      "Clear"
+    ],
+    "assertions": [
+      "Forward Tab and reverse Shift+Tab traverse the listed controls.",
+      "ArrowDown changes selected sort from Popular to New.",
+      "Enter on Search invokes its own form and emits one search event."
+    ],
+    "scope": "API and analytics intercepted; separate pending-guard cases were not rerun. Two same-query reads in the recorded transition are not a one-HTTP-request claim."
+  },
+  "keyboardPreference": {
+    "domain": "org.webkit.Playwright",
+    "key": "AppleKeyboardUIMode",
+    "temporaryValue": 2,
+    "original": null,
+    "restoredVerified": true
+  },
+  "checklistMapping": {
+    "section7": [
+      "Enter works appropriately",
+      "Tab navigation works"
+    ],
+    "section8": [
+      "submit buttons submit only the intended form"
+    ],
+    "priorEvidence": "Other eight data-mutating form kinds have existing auth/profile/account native evidence. Editor controls are covered separately by the existing native editor packet. Combined inventory:13 data-mutating form kinds plus Explore."
+  },
+  "notEstablished": [
+    "Native autofill/password-manager and general clipboard behavior",
+    "Every control hover/active/loading or global layout stability",
+    "Dirty-form policy across the product",
+    "Pointer-launched WebKit report focus restoration",
+    "Real persistence from the intercepted writes"
+  ],
+  "rawReports": [
+    {
+      "name": "neb-social-keyboard-native-proof-oct08.json",
+      "sha256": "0583de41d0aa6cb2e78e7c0de3afbe8a7fd79c0e8bebed5ff876872069c62baa"
+    },
+    {
+      "name": "neb-explore-tab-native-proof-oct08.json",
+      "sha256": "398ad622bf7faa2e5d2d57ce03feeda5b16a2492736a52582d1e62cf75528449"
+    },
+    {
+      "name": "neb-social-keyboard-initial-oct08.json",
+      "sha256": "564bccf8a0a607fe183f0e4b724777bf37538f2707f3ed8ae5adb621274ac343"
+    },
+    {
+      "name": "neb-social-keyboard-webkit-keyboard-launch-oct08.json",
+      "sha256": "2ed00fe3ae2863bbc15512b3a5d9550396fd0b431ca33442910e2eecf78b16ef"
+    },
+    {
+      "name": "neb-report-pointer-focus-oct08.json",
+      "sha256": "e3893841a5a88ed522fe2f27a3b78213b0a5949320db5b692ebd1fa501562958"
+    },
+    {
+      "name": "neb-explore-tab-oct08.json",
+      "sha256": "2d18c9b4bd3c58958cf3b875a5fe156767d021cfbdc227486e11c5472a606c7a"
+    }
+  ]
+}

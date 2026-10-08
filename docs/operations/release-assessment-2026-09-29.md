@@ -5,32 +5,45 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: source `9920e83` passes all nine jobs in
-[CI37739609098](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37739609098):
-backend383, frontend581/43 files, smoke372/12 intentional skips and full-stack123,
+Latest observation —2026-10-08: source `0655989` passes all nine jobs in
+[CI37743142188](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37743142188):
+backend383, frontend587/43 files, smoke372/12 intentional skips and full-stack123,
 with no flaky cases; both production images and Release pass. The tested merge
-and branch head have the same complete tree. Earlier Android readiness failure
-and local Firefox upstream reset remain recorded in the dated evidence.
+and branch head have the same complete tree. Historical failures remain in the
+dated evidence.
 
-The [exact configured image](artifacts/frontend-candidate-9920e83-2026-10-08.json)
-passes five affected real product flows plus native narrow/wide report checks.
-Build/runtime IDs match, application mounts are absent, health returns200.
-Eight controlled modal cases pass separately. Earlier5e proof covers156 native
-and nine API/SSR cases;992 changes only the accepted report shadow at runtime.
-User-approved wrapping, mobile grid above controls and board-width font scaling
-retain their earlier narrow/wide/hydration proof. The
-[Nginx probe](artifacts/nginx-upstream-deadlines-2026-10-08.json) verifies local
+The [exact configured image](artifacts/explore-pending-submission-2026-10-08.json)
+passes nine controlled Explore guard cases in three engines and eight real-API
+guest initial-layout observations at390/1710. Release identity matches, no app
+mounts, health200. Seven CLS0; mobile game0.00068559; board dimensions stable,
+no overflow/pageerror/console warning/error. First frames may follow hydration.
+118 RSC GET aborts remain unexplained; this is not a global layout/CWV verdict.
+Previous992 report image passes five affected real product flows and native
+modal/clipboard checks; eight controlled modal cases pass separately. Earlier5e
+proof remains scoped to156 native and nine API/SSR cases. Accepted wrapping,
+mobile grid-first layout, board-width font scaling and single backdrop remain.
+The [Nginx probe](artifacts/nginx-upstream-deadlines-2026-10-08.json) verifies local
 10/60s upstream-read deadlines and safe504 recovery.
 
-Current checklist:801 checked/341 unchecked;59 verified/39 partial/six N/A/
+[Native keyboard proof](artifacts/native-form-keyboard-2026-10-08.json) adds
+30 social form walks at320/1710 across three engines and three Explore cases.
+Enter/Tab and own-form submission now map across14 form kinds using prior
+auth/profile/account evidence; intercepted social400 responses do not establish
+persistence. Corrected WebKit keyboard opening returns report focus; its separate
+pointer opening leaves BODY focused, with the intended focus policy undecided.
+
+The subsequent cache-readiness correction has13 passing scoped observability
+checks and independent review; its production-runtime/source CI gate remains
+required. Existing configured frontend observations remain scoped to065.
+
+Current checklist:804 checked/338 unchecked;59 verified/39 partial/six N/A/
 one deployment-only. Counts describe evidence, not a product-readiness percentage.
 The [tracker](production-readiness-tracker.md) and
 [dated evidence](production-readiness-evidence.md) contain scope and open items.
 
 ## Decision
 
-Source992 has a complete CI gate. Subsequent Explore source changes require their
-own gate. Target operator/support/legal
+Source065 has a complete CI gate. Target operator/support/legal
 choices, services, TLS/ingress, secrets, monitoring, CDN/capacity, native-device
 checks and off-site recovery remain to be verified. No production registry
 promotion or public deployment has occurred. See the

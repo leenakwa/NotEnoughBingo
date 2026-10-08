@@ -5662,3 +5662,113 @@ Section5 repeated-submit item closes; layout stability remains open. Checklist
 801 checked/341 unchecked;59 verified/39 partial/six N/A/one deployment-only.
 This new runtime patch requires its committed-source CI after the successful992
 gate; no target infrastructure or native-device result is inferred.
+
+### 2026-10-08 — Complete Explore source gate and optimized runtime
+
+[CI37743142188](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37743142188)
+passes all nine jobs on0655989fa176d2337fbd5ea93ce082073f7a413a: backend383,
+frontend587/43 files, smoke372/12 intentional skips, full-stack123, both images,
+foundation, secrets and Release. Browser summaries show no flaky cases. Smoke
+lasts18.9min and live9.4min; no timeout/retry setting changes were made. Actual
+merge1d7d3cdaecc46413758c71796697013b58969882 and branch head have full tree
+8221a4cf06f03b7031fbefcb6d7deffb8110f71c.
+
+The existing [Explore proof](artifacts/explore-pending-submission-2026-10-08.json)
+also records optimized image sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56,
+matching source/build/runtime/label, no app mounts, frontend health200. Nine
+controlled guard scenarios pass in Chromium/Firefox/WebKit on this image. API/
+analytics are intercepted in these cases; real-backend search flows are covered
+separately by CI, not inferred from interception.
+
+Eight guest initial-layout observations use real API at390/1710 on Discover,
+Explore, Create and a synthetic public board. All HTTP200, page width within
+viewport, pageerror and console warning/error arrays empty. Seven observed CLS0;
+mobile game0.0006855929487179487. First/last board358×358 mobile and760×760 desktop
+remain equal; game SSR markup exists. First observed frame can follow hydration,
+so earlier explicit delayed-script proof remains separate. No global layout/CWV
+or capacity claim.118 GET RSC ERR_ABORTED failures are retained; cause/server cost
+remain open. Five initial diagnostic selectors failed; only those five samples
+were repeated after correcting external selectors. Prior nine guards and three
+successful samples were not repeated. Source/OS/QA/data unchanged during probes.
+Sanitized record keeps raw hashes; logs/screens are retained in external task
+scratch. Checklist801/341 and section verdicts59/39/six N/A/one deployment-only
+stay unchanged; section5 layout stability still requires broader itemized scope.
+
+
+### 2026-10-08 — Native social and Explore keyboard ownership
+
+[Sanitized keyboard proof](artifacts/native-form-keyboard-2026-10-08.json) records
+configured optimized source0655989fa176d2337fbd5ea93ce082073f7a413a, image
+sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56,
+matching module hashes and original report hashes. Six Chromium/Firefox/WebKit
+cases at320/1710 cover30 root/reply/edit/report/guest-share form walks. Native
+Tab/Shift+Tab traverses active controls; textarea Enter inserts exact newlines,
+and submit Enter invokes only the intended form endpoint. Five held requests per
+case return controlled400, with retained values and no unrelated or real backend
+writes. Trimmed payloads preserve Unicode/emoji/newlines/literal markup punctuation.
+Page-error arrays are empty; expected intercepted progress404/validation400
+resource errors remain in console evidence. This is UI ownership/recovery proof,
+not real persistence or a clean-console claim.
+
+The original four Chromium/Firefox cases pass. Initial WebKit320/1710 cases opened
+Report with a pointer and failed the launcher-focus expectation after Escape. A
+separate pointer probe confirms BODY afterward. Only those two diagnostic launches
+changed to focus Report then Enter; both keyboard cases pass without retries.
+Corrected WebKit keyboard opening traps Tab and Escape restores launcher focus.
+Pointer behavior
+is preserved as a separate observation; the desired policy awaits the user.
+No universal pointer-focus return is inferred. App-only WebKit keyboard navigation
+was temporarily enabled and its original absent setting restored and verified.
+
+Three separate Explore cases pass forward/reverse Search→Author→Tags→selected
+sort radio→Search submit→Clear traversal, ArrowDown Popular→New, and Enter on the
+own form with one search event. API/analytics are intercepted and two same-query
+reads appear in the transition; no one-HTTP-request claim. Existing nine pending
+guard cases were not repeated. These cases pass in8.99s without retries/skips/
+flaky results.
+
+Prior auth/profile/account native packets cover the other eight data-mutating form
+kinds, and editor native controls are recorded separately. Combined14-form
+inventory supports exactly section7 Enter/Tab and section8 intended submit.
+Checklist804 checked/338 unchecked; verdicts59 verified/39 partial/six N/A/one
+deployment-only stay unchanged. Required/optional/limit copy, native capabilities,
+dirty-form policy, all-control visual states and global layout stability remain
+open. Complete source065 CI remains the independent gate recorded above; no
+source change, target service or physical-device result is implied.
+
+### 2026-10-08 — Public Follow control states
+
+- [Additional profile control proof](artifacts/profile-tab-states-2026-10-08.json)
+  records two controlled failure/retry flows plus two native focus probes,
+  Chromium320/1710 on configured source065. Hover/held press, native Tab/Shift+Tab
+  focus, pending “Saving…”/disabled/status,503 retention and own POST204 retry pass.
+  DELETE503 retains Following. All mutations, including analytics/client-errors,
+  are intercepted; no real backend writes, unrelated action writes or page errors.
+  Expected503 console errors remain. Initial harness failures:none.
+- Button height stays44px and mobile width288px; desktop widths vary with labels
+ 89.61/99.22/118.42px. This is a scoped observation, without a global layout verdict
+  or a new interface decision. No checklist marks change.
+
+### 2026-10-08 — Editor custom controls and cache readiness correction
+
+- [Additional editor control observations](artifacts/editor-tag-controls-2026-10-08.json)
+  pass two Chromium320/1710 cases on configured065. Size/format/tag actions,
+  disabled size limits, native focus and download disclosure work without overflow.
+  Size/format/tag pointer states keep their appearance; feedback treatment awaits
+  the user's choice. No source design change is made.
+- Initial mobile harness expected the inspector during inline editing, and desktop
+  incorrectly expected zero autosaves. Source and existing mobile test confirm
+  pointer activation followed by Escape; corrected original pointer cases pass.
+  Five legitimate autosave PUTs per case are intercepted; no manual publication,
+  export, real backend writes, page or console errors. Raw failures are retained.
+- Readiness previously returned200/ok even when cache round-trip returned absent
+  or unexpected data and checks.cache was error. The minimal correction returns
+ 503/degraded for that branch. Five endpoint regressions cover healthy, absent,
+  wrong, write-exception and read-exception results, including exact safe JSON.
+  Before correction:two regressions failed, three passed. After:13 scoped
+  observability tests pass in2.03s on localPython3.14.5 with SQLite in memory.
+  Initial full module run had one setup error from unavailable postgres hostname;
+  changing only the isolated test environment resolves it. Ruff/check/format pass;
+  independent review finds no issues. Actual Redis is not exercised by these mocks.
+  ProductionPython/PostgreSQL and the committed-source CI gate remain required.
+  No global dependency-availability mark or production readiness claim is added.

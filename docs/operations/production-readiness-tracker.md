@@ -38,26 +38,43 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
-Source `9920e83` passes all nine jobs in
-[CI37739609098](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37739609098):
-backend383, frontend581/43 files, smoke372/12 intentional skips, full-stack123,
+Source `0655989` passes all nine jobs in
+[CI37743142188](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37743142188):
+backend383, frontend587/43 files, smoke372/12 intentional skips, full-stack123,
 foundation, secrets, both production images and Release. Browser suites report
-no flaky cases. CI tests merge70b2b236 with the same complete tree as the source.
+no flaky cases. CI tests merge1d7d3cda with the same complete tree as this source.
 
-The [exact configured image](artifacts/frontend-candidate-9920e83-2026-10-08.json)
-passes five affected real product flows. Native Chrome320/1728 modal checks
-confirm the accepted single backdrop, fit, Escape/focus return and exact multiline
-report clipboard paste. Eight controlled modal cases pass across four browser
-profiles. Prior156 native and nine real API/SSR cases apply to5e; the only runtime
-change in992 is the accepted report shadow. These are isolated local observations.
-The subsequent Explore pending-submit correction has a separate local gate;
-its eventual committed source requires its own complete CI gate. Target services,
+The [exact configured Explore image](artifacts/explore-pending-submission-2026-10-08.json)
+passes nine controlled guard cases in Chromium/Firefox/WebKit, including repeated
+Search/Enter, changed criteria, completion and actual browser Back. Eight guest
+initial-layout observations use real API at390/1710: HTTP200, no page overflow,
+no page errors or console warnings/errors; seven CLS0 and mobile game0.00068559.
+Observed board dimensions remain stable. First frames may follow hydration;
+this is not an all-layout or target Core Web Vitals verdict.118 GET RSC aborts
+remain unexplained. Build/runtime/label match065, no app mounts, health200.
+
+The prior [report image](artifacts/frontend-candidate-9920e83-2026-10-08.json)
+passes five affected real flows and native narrow/wide modal/clipboard checks;
+eight controlled modal cases pass separately. Earlier156 native and nine API/SSR
+cases remain scoped to5e. These are isolated local observations. Target services,
 CDN, capacity and native-device capabilities remain separate requirements.
 Historical failures remain in the [dated evidence](production-readiness-evidence.md).
 
-Current **801 checked /341 unchecked**. Section42 backup/migration/rollback
+[Native keyboard proof](artifacts/native-form-keyboard-2026-10-08.json) adds30
+social form walks in six Chromium/Firefox/WebKit cases at320/1710 and three Explore
+Tab/Enter cases. Held social writes reach only their own intercepted endpoints;
+no real writes. Corrected WebKit keyboard opening returns report focus; a separate
+pointer launch leaves BODY focused, with its desired policy undecided. Earlier
+auth/profile/account/editor packets retain their own source scope.
+
+Current **804 checked /338 unchecked**. Section42 backup/migration/rollback
 contracts and section82 applicable API contracts have local evidence. Provider
 and target measurements remain open in their relevant sections.
+
+The subsequent cache-readiness correction returns503/degraded when the cache
+round-trip fails; five endpoint regressions and13 scoped observability checks
+pass locally with independent review. Its production-runtime/source CI gate
+remains required. The configured frontend proofs above remain scoped to065.
 
 ### Accepted interface requirements
 
@@ -87,8 +104,8 @@ observations; the original prompt remains unchanged.
 - [x] 4. UI STATES — Verified locally: mapped required and optional reads cover initial/loading/loaded/empty/partial/error/offline/retry/permission/session states. Auth/header/catalog, editor publication lookup, player author/progress/comments, profile viewer/activity, account sessions/preferences/export and social surfaces retain independent usable content and protect request ownership. The final two composition gaps now pass eight cases in four engines: profile activity Drafts503 with retained profile/email edits and scoped real200 retry without identity reload; accepted real export202 followed by exact status503, retained profile/email/password edits, available unrelated actions and recovery to the same ready job. Their four accompanying reset-reuse cases also pass. Full current source CI remains separate; native form/control requirements remain in sections7/8.
 - [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, completion feedback and real multi-MB byte progress/cancellation were exercised; synchronous submission protection covers13 data-mutating forms, editor publication and the corrected Explore search; ten Explore units and nine controlled browser scenarios pass. Layout stability still needs an itemized sweep. Skeletons are not used in this release.
 - [x] 6. ERROR HANDLING — Verified before deployment: relevant 400/401/403/404/409/413/422/429/500 and gateway/network/timeout cases have safe human-readable feedback, retained work and appropriate retry; proxy HTML and parser/exception internals stay out of the interface.
-- [ ] 7. FORMS — Partial: executed native and real API cases cover field labels, understandable nearby validation and focus, preserved work after errors, concurrent mutation protection, account-scoped comment/report recovery, whitespace/email normalization, permitted Unicode/literals and bounded numeric controls. Silent DOM-fill submission passes in four browser profiles for three account forms; this does not establish native autofill/password-manager behavior. Required/optional copy, global limit policy, remaining per-form keyboard/dirty-state mapping and native capabilities remain open. See the dated evidence and API/auth-editor, profile/account and accessibility matrices for scope and results.
-- [ ] 8. BUTTONS AND CONTROLS — Partial: semantic button/link markup, focus and disabled states, destructive styling/confirmation, and 44px editor touch targets at 320/1710px were checked. Shared button hover/press feedback now changes visibly without mobile overflow; custom control states and form ownership need the remaining per-control sweep.
+- [ ] 7. FORMS — Partial: executed native and real API cases cover field labels, understandable nearby validation and focus, preserved work after errors, concurrent mutation protection, account-scoped comment/report recovery, whitespace/email normalization, permitted Unicode/literals and bounded numeric controls. Silent DOM-fill submission passes in four browser profiles for three account forms; this does not establish native autofill/password-manager behavior. Native Enter/Tab and intended form ownership now map across the14 form kinds; required/optional copy, global limit policy, dirty-state policy and native capabilities remain open. See the dated evidence and API/auth-editor, profile/account and accessibility matrices for scope and results.
+- [ ] 8. BUTTONS AND CONTROLS — Partial: semantic button/link markup, focus and disabled states, destructive styling/confirmation, and 44px editor touch targets at 320/1710px were checked. Shared button hover/press feedback now changes visibly without mobile overflow; intended submit ownership is verified across the14 form kinds. Custom control states still need the remaining per-control sweep.
 - [x] 9. DESTRUCTIVE ACTIONS — Verified before deployment: confirmed permanent Delete/Reset, authorization and repeat safety, account-deletion cancellation, and live Archive/Restore with guest 404/200 and reload persistence; permanent actions do not promise undo.
 - [x] 10. SIGNUP — Verified before deployment: browser validation, password visibility and Enter, Mailpit verification and resend, duplicate and weak-password API behavior, expired and reused links.
 - [x] 11. LOGIN — Verified before deployment: valid/invalid credentials, rate limit, safe return navigation, signed-in redirect, and session-error fallback.
@@ -116,13 +133,13 @@ observations; the original prompt remains unchanged.
 - [ ] 33. BROWSER COMPATIBILITY — Partial: installed Chrome and Safari, Playwright Firefox, WebKit, and mobile emulation cover core flows; actual Edge and iOS/Android browser devices remain unverified.
 - [ ] 34. PERFORMANCE — Partial: production bundles, request counts, N+1, gzip, cache policy, image/font assets, and layout shifts reviewed. Social API root/reply pages now have distinct-author/avatar/like query-growth regressions: 8 root-page and 6 reply-page queries at one and 24 items; a reply-parent N+1 was fixed. Target CDN choice and real-network/load budgets remain open.
 - [x] 35. FONTS — Verified before deployment: UI uses system stacks; the worker ships Pango/Noto fallback and shaping for all 15 content languages plus emoji. Real PNG/PDF downloads were visually checked, with zero missing glyphs in native layout diagnostics and no line truncation.
-- [ ] 36. SEO FOR PUBLIC PAGES — Partial: production-mode metadata, sitemap, robots, staging noindex, and slash redirects verified; heading hierarchy, URL policy, sitemap scale, and real HTTPS host remain.
+- [ ] 36. SEO FOR PUBLIC PAGES — Partial: configured production metadata, robots/staging noindex, headings, canonical URLs, slash redirects, local duplicate handling and scalable sitemap are verified locally; target www/alternate-host and HTTP→HTTPS verification remain.
 - [ ] 37. SOCIAL SHARING — Partial: real HTML now emits absolute branded 1200×630 OG/Twitter images for catalog, bingo, profile, and shared result; external service previews and the final domain remain.
 - [ ] 38. DOMAIN AND DNS — Partial: public smoke script is prepared; the actual domain, records, and propagation need target-environment evidence.
 - [ ] 39. HTTPS / TLS — Partial: smoke script enforces HTTPS; certificate and edge configuration need target-environment evidence.
 - [ ] 40. ENVIRONMENT VARIABLES — Partial: frontend image build/runtime origin contract, Django production origin consistency, and local-env isolation verified; real DB, storage, email, monitoring, and public origin values remain.
 - [x] 41. SECRETS — Verified before deployment: complete-history Gitleaks, tracked-path and ignore rules, Docker build contexts, and client-bundle marker scan found no real secret; OAuth is absent.
-- [x] 42. DATABASE — Verified before deployment: PostgreSQL defaults/constraints/transactions, realistic existing-data migration and10,000-board preservation, executed dump/checksum/isolated restore, plus immutable old-web→forward schema→compatible worker/new-web→old-web rollback preserve users, durable records and sessions. Backend tree is unchanged from the rehearsed a3 source. This closes the local contract; managed snapshots/WAL/off-site, online locks/target load and actual provider/registry/deployment remain in sections34/44/103–105.
+- [x] 42. DATABASE — Verified before deployment: PostgreSQL defaults/constraints/transactions, realistic existing-data migration and10,000-board preservation, executed dump/checksum/isolated restore, plus immutable old-web→forward schema→compatible worker/new-web→old-web rollback preserve users, durable records and sessions. Business models, migrations and worker/task contracts retain the rehearsed a3 implementation; the subsequent cache-readiness HTTP-status correction has separate regression evidence and awaits its source CI gate. This closes the local contract; managed snapshots/WAL/off-site, online locks/target load and actual provider/registry/deployment remain in sections34/44/103–105.
 - [x] 43. DATA INTEGRITY — Verified before deployment: PostgreSQL concurrent likes/follows, versioned editor/progress conflicts, idempotent draft/publication/export/session/report/notification calls, soft-delete threads, reference-aware media and abandoned-job recovery passed; webhook duplication is N/A.
 - [ ] 44. BACKUPS — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 45. EMAILS — Partial: registration verification, password reset, email-change and security notices have production-origin links, branded subjects and plain-text bodies; messages that direct users to support now include the public support page. Local mail flow and expiry checks passed. Messages now show their stored UTC expiration; queued resets skip invalidated tokens. Fifteen new retry/exhaustion/expiry guards, 46 related account cases, all 234 local backend tests (plus one infrastructure-only skip) and three live email journeys passed. A real isolated QA SMTP outage produced a worker retry, delivery after restoration and a successful API reset; the temporary account was removed. Sender-domain authentication, provider delivery/rate limits, a monitored support address and real-device inbox rendering still require the chosen domain and email service.
@@ -139,7 +156,7 @@ observations; the original prompt remains unchanged.
 - [x] 56. ACCOUNT SETTINGS — Verified before deployment: names, email change/reverification, settings password change/recovery, logout/session revocation, deletion/cancel/anonymization, avatar upload/remove/reload, and language/privacy/notification persistence; separate timezone and logout-all controls are absent.
 - — 57. TEAMS / ORGANIZATIONS — N/A for current release: capability absent in source inventory.
 - [x] 58. BROWSER STORAGE — Verified before deployment: version/revision/owner checks, corrupt/stale/unavailable storage, non-persistent browser contexts and account isolation have evidence. Private root/reply/edit/report recovery uses bounded account/board-scoped tab memory with explicit sign-out purge and generation guards. Real sender-storage-blocked BroadcastChannel fallback passed; simultaneous auth-sync storage/BroadcastChannel unavailability exposed and corrected a same-account recovery bug. Signed HttpOnly logout-event metadata survives re-login and current-version focus checks purge missed explicit logout; ordinary expiry recovery remains. Eight scoped storage cases passed in four browser modes, plus backend signature/expiry/cookie-policy and header obsolete-response controls. The historical page-error gate failed one mobile WebKit case; the integrated feedback/lifecycle/session correction now passes 36 strict related cases in four browser modes. Server/child baselines, initial account changes and simulated persisted-page recovery have targeted regressions; actual native BFCache remains unverified. Physical devices and deployed cookie domains remain in their corresponding sections.
-- [ ] 59. CACHE — Partial: dynamic HTML/API no-store policy, immutable hashed assets, no service worker, and logout isolation checked; version-swap and CDN invalidation require a target release path.
+- [ ] 59. CACHE — Partial: dynamic HTML/API no-store policy, immutable hashed assets, no service worker and logout isolation checked; bounded mixed immutable frontend, stale-tab recovery, retained assets and rollback have local proof. Target CDN/replicas and retention policy remain.
 - [x] 60. SERVICE WORKER / PWA — Verified before deployment: no PWA/manifest/worker/install capability in source; live browser had zero service workers and CacheStorage entries. Conditional PWA bullets are N/A; there is no previously deployed origin.
 - [ ] 61. ANALYTICS — Partial: play completion and other core interactions are recorded without free-text search/filter values after a client/server privacy fix and backfill; categorical page/CTA and server signup/login counts plus a mature activation/return report are now implemented; exact guest-to-signup conversion, target isolation and real observations remain.
 - [ ] 62. PRODUCT METRICS — Partial: registration counts and core board/play actions are queryable from first-party records; the read-only cohort report measures estimated arrivals, mature signup-to-activation/return and their drop-offs; exact guest conversion and real production data remain unavailable.
@@ -150,10 +167,10 @@ observations; the original prompt remains unchanged.
 - [ ] 67. HEALTH ENDPOINT — Partial: live, readiness, database, migration, cache, and Beat checks respond on QA without secrets; target storage/email and external monitor coverage remain.
 - [ ] 68. CRON / SCHEDULED JOBS — Partial: UTC schedule and QA Beat heartbeat observed; structured task retry/failure logging is configured. PostgreSQL advisory locks and bounded retries now prove local overlap/duplicate safety; the actual singleton deployment and alerts need a target platform.
 - [ ] 69. QUEUES / WORKERS — Partial: QA worker/Redis healthy on a durable default queue; media/export retries and duplicate guards exist, and trending work is bounded; local Redis/worker restart replay, stalled-claim recovery and terminal storage failures passed; the actual production queue/platform and delivered alerts remain.
-- [x] 70. PRODUCTION BUILD — Verified before deployment: configured optimized image9920e83 builds and runs with matching release identity, zero application mounts and health200; five affected real product flows pass. Subsequent Explore changes require their own artifact gate. Actual domain/provider values remain rollout inputs.
+- [x] 70. PRODUCTION BUILD — Verified before deployment: configured optimized image0655989 builds and runs with matching release identity, zero application mounts and health200; nine controlled Explore guard cases and eight real-API guest layout observations pass within their recorded scope. Actual domain/provider values remain rollout inputs.
 - [x] 71. DEPENDENCIES — Verified before deployment: committed npm and Python 3.13 production/development locks, clean installs and builds, runtime version alignment, local ARM64 native imports, x86_64 CI production image and real worker PNG/PDF export pass.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [x] 73. TESTS — Verified before deployment: source9920e83 passes383 backend,581 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky cases. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent. Subsequent Explore changes pass587 frontend cases locally and require their own complete source gate.
+- [x] 73. TESTS — Verified before deployment: source0655989 passes383 backend,587 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky cases. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial:16 actual optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. No unexpected asset404/401/500 or unintended localhost/staging origin in that bounded observation. RSC abort cause/size, credentials in URLs and sensitive payload review remain open; latest frontend fixes need a final exact-image refresh.
@@ -185,7 +202,7 @@ observations; the original prompt remains unchanged.
 - [x] 102. SESSION EXPIRATION — Verified before deployment: concurrent authentication failures trigger one session recheck; editor and play flows explain expiry, preserve unsaved progress, and restore the intended route after login.
 - [ ] 103. VERSION / DEPLOYMENT COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 104. ROLLBACK — Partial: additive migrations and an existing-data downgrade/upgrade rehearsal support backward compatibility; no remote feature flags exist. The isolated immutable c1fc2d7/a3e1c00 backend rehearsal restores old web while retaining forward schema/new worker and checks durable records plus existing/fresh sessions. Its sanitized artifact and reusable command are saved; actual prior deployment, registry/config retention and the target-platform rollback command remain unproven.
-- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: source9920e83 passes the complete CI gate and bounded configured-image checks. Subsequent Explore changes have local evidence but require committed-source CI. Remaining applicable local requirements and the target deployment sequence stay open.
+- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: source0655989 passes the complete CI gate and bounded configured-image checks. Remaining applicable local requirements and the target deployment sequence stay open.
 
 ## Deployment handoff, separate from predeployment completion
 
