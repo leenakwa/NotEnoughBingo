@@ -1084,8 +1084,8 @@ Review:
 - [x] account deletion;
 - [x] data export if supported/required;
 - [x] analytics data;
-- [ ] passwords are never logged;
-- [ ] tokens are never logged;
+- [x] passwords are never logged;
+- [x] tokens are never logged;
 - [ ] sensitive information is not unnecessarily put into query params;
 - [ ] third-party processors/services are accounted for.
 

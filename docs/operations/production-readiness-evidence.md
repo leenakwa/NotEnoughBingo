@@ -5957,3 +5957,72 @@ No cause is established, no payload/retention success is claimed and no timeout,
 source or service policy is changed from that observation. The earlier configured
 source065 is untouched. The subsequent metadata source requires its own exact CI;
 ceb remains the latest complete gate until that result is recorded.
+
+
+### 2026-10-08 — Complete224 gate and private logging/cache corrections
+
+[CI37763092789](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37763092789)
+passes all nine jobs for22429b12f51e7f22dd9ab80018371b03ffee9b2c:388 backend91.78s,
+589 frontend/43 files,372 smoke/12 intentional skips14.8min and123 live8.7min,
+foundation, full-history secrets, both production images and Release. No flaky
+summary. Merge7d4f83a9e924be73358524b728fad30092061090 has complete tree
+6ba0b96f63c5220d0a188a43bedcf783638d02bf, matching branch224 (raw checkout log,
+local git tree and GitHub Git API). Raw2MB log remains in external task scratch.
+Registration credential metadata therefore has a complete source gate.
+
+The [native artifact](artifacts/native-form-keyboard-2026-10-08.json) adds six
+read-only privacy cases on frontend065/old backendc1: five actual API200 field
+schemas and two dummy bearer-document200 observations. Session metadata has no
+raw session key; public profile/author have no email/auth fields. Both documents
+have no-referrer;68 classified requests contain no downstream dummy-token URL or
+Referer. One automatic verification POST is intercepted400; real writes0,
+page errors0, expected400 console. Required initial links are excluded from leak
+checks; their dummy query remains after controlled failure. Own public profile
+is requested as its owner. This bounded packet does not close global section76.
+
+Actual auth/me and sessions lack Cache-Control; current source also lacks the
+policy. Current-dependency isolated Django tests reproduce three missing headers
+(me/sessions/own profile), while session status passes. A dedicated API-only
+middleware after Django authentication snapshots user state before/after DRF
+and adds private,no-store. Logout, restored pending-deletion sessions,403/404,
+304, ordinary login and explicit cache-header merging are covered; validators,
+anonymous and static response behavior remain coherent. Thirteen new cache+
+33 account tests pass; the combined cache/account/observability/client-error set
+passes77. Ruff/scoped mypy/diff-check and independent review pass. Earlier broader
+SQLite run has57 passes/two existing PostgreSQL advisory-lock failures; it is not
+a PostgreSQL gate. Exact new source CI/runtime are still required.
+
+Source sink tracing finds no active application logging bypass, but Django's
+inherited django/server handlers and Next development incoming-request logging
+bypass privacy controls. Installed Django's actual WSGI/request logging test
+reproduces dummy token/email/password output. Explicit django and django.server
+handlers now use the existing JsonFormatter without propagation; the subprocess
+regression retains logger/severity/status without dummy secrets. First combined
+run has76 passes/one Gunicorn child-settings harness failure; only the private
+bootstrap is repaired, then all77 pass. No production-source fallback or test
+filter is introduced. Old stale-venv21-pass/16-failure comparison is preserved:
+current runtime37 passes, with installed DRF parser code explaining raw-body
+handling differences. Old failures have a summary, not an invented filesystem log.
+
+Next16.3.8 bundled logging guide supports logging:false. Before two anonymous
+HTTP GET200 dummy recovery links, dev output contains UID/tokens; after actual
+config restart/health200 two GET200 links emit none. First after attempt occurs
+during restart and gets two HTTP errors; excluded from PASS. This probe has no
+browser, mutations or real credentials. Full Node22 lint/types/589 tests in43
+files pass. Independent logging review passes. Section55 local password/token
+logging bullets are checked:807/335; verdicts58/40/six N/A/one deployment-only.
+These application/framework/proxy controls do not promise external-provider logs.
+
+Standalone RegisterPage actually renders RegisterForm without onRegistered,
+so its verify-email?email= fallback is reachable. Dialog registration already
+retains email in memory. The user is asked whether standalone resend should use
+temporary tab state or ask email again; no implementation choice is silently
+applied. Section55 sensitive-query remains open, as do CSRF copy, seven other UI
+choices, native capabilities and real deployment. New cache/logging changes still
+require an exact-source CI and configured-image verification before release.
+
+A bounded registration observation after the verified Next config restart still
+reaches HTTP200 but not field readiness within the unchanged15s gate. All three
+fields remain disabled with correct credential metadata; console/page errors and
+writes are zero. Payload/retention/overflow are not reached. The separate hashed
+proof is retained externally; no causal attribution or further replay is made.

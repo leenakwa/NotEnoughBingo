@@ -5,18 +5,16 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: source `ceb11d0` passes all nine jobs in
-[CI37754016843](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37754016843),
-attempt2: backend388, frontend589/43 files, smoke372/12 intentional skips and
-full-stack123; foundation, secrets, both production images and Release pass.
-No browser flaky summary. Tested merge3d1078d and source share the complete tree
-1525cd34365574bbf60fa795c6ccd5e6da69bf9b. First attempt stalls downloading Ubuntu
-fonts before pytest; one failed-job repeat preserves already successful jobs.
-Earlier c6 player failures are corrected by idempotent matching SSR seed reuse,
-with guest/registered StrictMode fail-before regressions. Failed attempts remain
-in the dated evidence. A newly observed CSRF technical error message awaits a
-user-approved replacement; this gate does not close all local/UI requirements.
-
+Latest observation —2026-10-08: Source `22429b1` passes all nine jobs in
+[CI37763092789](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37763092789):
+backend388/91.78s on Python3.13/PostgreSQL, frontend589/43 files, smoke372/12
+intentional skips14.8min and full-stack123/8.7min; foundation, secrets, both
+production images and Release pass. No browser flaky summary appears. Tested
+merge7d4f83a9e924be73358524b728fad30092061090 and branch source share complete tree
+6ba0b96f63c5220d0a188a43bedcf783638d02bf. Earlier failed runs remain in the dated
+evidence. Subsequent private-API response and framework/dev logging corrections
+pass scoped local tests and independent review; their exact source CI and fresh
+configured runtime remain pending. CSRF copy and other UI choices remain open.
 The [exact configured image](artifacts/explore-pending-submission-2026-10-08.json)
 passes nine controlled Explore guard cases in three engines and eight real-API
 guest initial-layout observations at390/1710. Release identity matches, no app
@@ -41,18 +39,19 @@ The subsequent cache-readiness correction has13 passing scoped observability
 checks and independent review. Its388-test Python3.13/PostgreSQL job passes;
 the complete ceb source gate passes. Existing configured frontend observations remain scoped to065.
 
-Current checklist:805 checked/337 unchecked;58 verified/40 partial/six N/A/
+Current checklist:807 checked/335 unchecked;58 verified/40 partial/six N/A/
 one deployment-only. Counts describe evidence, not a product-readiness percentage.
 The [tracker](production-readiness-tracker.md) and
 [dated evidence](production-readiness-evidence.md) contain scope and open items.
 
 ## Decision
 
-Sourceceb has a complete CI gate. The subsequent registration autocomplete
-metadata correction passes local lint/types/589 tests; its exact CI is pending.
-Current dev rendered attributes match, but browser submission remains unverified
-because fields stay disabled in that observation. Applicable local/UI
-requirements remain open.
+Source224 has a complete CI gate including registration metadata. Subsequent
+private-response caching and development/framework logging fixes have passing
+scoped checks and independent review; exact new source CI/runtime are pending.
+Reachable registration email-query behavior, CSRF copy and other UI choices
+remain open. Current dev metadata rendered earlier, but its submission was
+unverified in that observation; historical configured proofs retain source065.
 Target operator/support/legal
 choices, services, TLS/ingress, secrets, monitoring, CDN/capacity, native-device
 checks and off-site recovery remain to be verified. No production registry

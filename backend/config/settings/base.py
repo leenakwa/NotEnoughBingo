@@ -63,6 +63,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.common.middleware.PrivateApiCacheMiddleware",
     "apps.accounts.middleware.SessionMetadataMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -429,6 +430,8 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "json"}},
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
     "loggers": {
+        "django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "django.server": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
         "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
         "celery": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
         "celery.task": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},

@@ -18,6 +18,47 @@ from apps.common.logging import JsonFormatter
 from apps.common.tasks import BEAT_HEARTBEAT_CACHE_KEY, record_beat_heartbeat
 
 
+def test_installed_django_framework_loggers_do_not_emit_request_secrets() -> None:
+    # Applying dictConfig closes existing handlers. A child process exercises
+    # Django's defaults and our override without altering pytest's logger state.
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import logging, logging.config, os; "
+            "os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings.test'; "
+            "import django; django.setup(); "
+            "from django.conf import settings; "
+            "from django.core.servers.basehttp import WSGIRequestHandler; "
+            "settings.DEBUG = True; "
+            "logging.config.dictConfig(settings.LOGGING); "
+            "handler = object.__new__(WSGIRequestHandler); handler.request = object(); "
+            "handler.log_message('\"%s\" %s %s', "
+            "'GET /reset?token=DUMMYTOKEN&email=DUMMYEMAIL HTTP/1.1', '200', '5'); "
+            "logging.getLogger('django.request').error('Request failed for %s', "
+            "{'password': 'DUMMYPASSWORD', 'email': 'DUMMYEMAIL'})",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=15,
+    )
+
+    serialized = result.stdout + result.stderr
+    assert all(
+        marker not in serialized for marker in ("DUMMYTOKEN", "DUMMYEMAIL", "DUMMYPASSWORD")
+    ), serialized
+    records = [json.loads(line) for line in result.stderr.splitlines()]
+    assert len(records) == 2
+    assert {record["logger"] for record in records} == {"django.server", "django.request"}
+    assert all(record["message"] == "log.record" for record in records)
+    server = next(record for record in records if record["logger"] == "django.server")
+    assert server["status_code"] == 200
+    assert server["level"] == "INFO"
+    request = next(record for record in records if record["logger"] == "django.request")
+    assert request["level"] == "ERROR"
+
+
 def test_installed_gunicorn_uses_safe_formatter_for_master_and_access_logs() -> None:
     result = subprocess.run(
         [

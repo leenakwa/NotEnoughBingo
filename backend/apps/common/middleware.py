@@ -7,9 +7,28 @@ import uuid
 from collections.abc import Callable
 
 from django.http import HttpRequest, HttpResponse
+from django.utils.cache import patch_cache_control
 
 SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 request_logger = logging.getLogger("app.request")
+
+
+class PrivateApiCacheMiddleware:
+    """Prevent storage of API responses associated with an authenticated session."""
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        if not request.path.startswith("/api/v1/"):
+            return self.get_response(request)
+        authenticated = bool(getattr(request, "user", None) and request.user.is_authenticated)
+        response = self.get_response(request)
+        # Logout and rejected DRF authentication can clear request.user; DRF can
+        # also restore a restricted pending-deletion session after Django auth.
+        if authenticated or (getattr(request, "user", None) and request.user.is_authenticated):
+            patch_cache_control(response, private=True, no_store=True)
+        return response
 
 
 class RequestIdMiddleware:

@@ -127,7 +127,7 @@
         "Save"
       ],
       "report": [
-        "\u00d7",
+        "×",
         "reason",
         "description",
         "Cancel",
@@ -147,7 +147,7 @@
       "Corrected WebKit keyboard-launched report dialog traps Tab and returns focus to its launcher after Escape."
     ],
     "console": "Expected intercepted progress404 and validation400 resource errors are retained; no empty-console claim.",
-    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher\u2192Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
+    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher→Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
     "pointerFocusObservation": {
       "engine": "webkit",
       "before": "TEXTAREA[name=comment_body]",
@@ -519,5 +519,121 @@
       "name": "neb-browser-address-autofill-native-proof-oct08.json",
       "sha256": "d7a54229d177599bf6b9631a7049fe737653dde4fca534ab492c65479970e62f"
     }
+  },
+  "networkPrivacy": {
+    "frontendSourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "backendScope": "Old c1 configured backend; module fingerprints and runtime in external raw proof. Not new cache middleware runtime.",
+    "logicalCases": 6,
+    "apiReadResponses200": 5,
+    "bearerDocuments200": 2,
+    "browserRequestsClassified": 68,
+    "downstreamDummyQueryLeaks": 0,
+    "refererDummyLeaks": 0,
+    "publicAuthFieldsAbsent": true,
+    "sessionKeysAbsent": true,
+    "realMutations": 0,
+    "limits": [
+      "Own public profile was requested as its owner; no cross-owner/anonymous profile verdict.",
+      "Required initial bearer-link GETs are excluded from leak assertions; dummy query stays after controlled verification failure.",
+      "auth/me and auth/sessions lacked Cache-Control; session status was private,no-store.",
+      "Six cases do not establish global network privacy."
+    ],
+    "rawReport": {
+      "name": "neb-network-privacy-native-proof-oct08.json",
+      "sha256": "e0e5bcc1712ced170b0abc71ec4bdbc12049f71b7148b318bc18c2d97e17a413"
+    }
+  },
+  "localLoggingProtection": {
+    "baseCommit": "22429b12f51e7f22dd9ab80018371b03ffee9b2c",
+    "sourceIdentity": "Logging/cache patch based on22429b1; exact module hashes identify the tested source. PostgreSQL CI for this patch remains pending in this observation.",
+    "moduleHashes": [
+      {
+        "sha256": "4a8eab5a395a8df82991ce57cced7eea6095974b4fd54a33053f0510eb18434f",
+        "path": "backend/apps/common/logging.py"
+      },
+      {
+        "sha256": "df9e2a390406871d1b543a788a66920d1d1cecfa0dd518906a60982d6ed1cde3",
+        "path": "backend/apps/common/middleware.py"
+      },
+      {
+        "sha256": "d260700ce988d9dc1ecb292458c823d4435359d11e7d217b1711a7c00f951025",
+        "path": "backend/config/settings/base.py"
+      },
+      {
+        "sha256": "9d40de00940bab4753a983262a2d4dd02c080c1d009e64be0ef65d239e63453c",
+        "path": "backend/apps/common/tests/test_observability.py"
+      },
+      {
+        "sha256": "d362e40755cb339b5237a4b95740604c91a6564eaec06d56a702efd1f5067c00",
+        "path": "backend/tests/test_private_api_cache.py"
+      },
+      {
+        "sha256": "19e61864a4706d7611fc0f21ce78163406dc70cdfc5ebf7d22b3a9d69f7d9d94",
+        "path": "frontend/next.config.ts"
+      }
+    ],
+    "backend": {
+      "runtime": "Python3.13.15,Django5.2.17,DRF3.17.2 in existing nebqa backend; isolated memory DB/cache/mail/storage/broker/results, Sentry disabled.",
+      "frameworkBefore": "Actual WSGI request logger and Django request handler emit dummy token/email/password through inherited raw handlers.",
+      "frameworkAfter": "Explicit django/django.server handlers use JsonFormatter; installed-framework subprocess verifies no dummy secrets and retained logger/severity/status.",
+      "scopedSuitePassed": 77,
+      "independentReview": "PASS; static source/test review; not separate runtime execution.",
+      "limits": "Earlier broad SQLite run has two existing PostgreSQL advisory-lock failures. First combined logging suite has one Gunicorn child-settings harness failure, preserved and fixed only in private bootstrap.",
+      "scopedSuiteNote": "After replacing the dummy login test password literal with runtime generation, the same77 tests, Ruff and scoped mypy pass again; scanner policy unchanged."
+    },
+    "frontend": {
+      "runtime": "Next16.3.8 development; actual config restart verified, health200.",
+      "before": "Two anonymous dummy bearer GET200 URLs emit UID/tokens in request logs.",
+      "after": "logging:false; two dummy bearer GET200 URLs emit no UID/tokens. No browser mutation or production-runtime claim.",
+      "firstAfterAttempt": "Two HTTP errors during server restart; excluded from passing evidence.",
+      "quality": "Node22 lint/typecheck/589 tests in43 files pass.",
+      "registrationAfterRestart": {
+        "status": 200,
+        "ready": false,
+        "timeoutMs": 15000,
+        "disabledFields": 3,
+        "consoleErrors": 0,
+        "pageErrors": 0,
+        "mutations": 0,
+        "sourceSha256": "0945e5934ed03bcf2ef894c5c3faaca67a55ed8a28af19ac91cead5dfeef1c24",
+        "proofSha256": "998fef58f373b3d270e535f8574048e6392df3bfba0c2e4d5fe5c4cf7423a0f6",
+        "limits": "Rendered autocomplete attributes match; submission, payload, retention and overflow were not reached. Cause unestablished; no further attempts."
+      }
+    },
+    "checklistScope": "Section55 local application/framework/proxy password and token logging; provider guarantees remain separate. Registration email-query behavior remains open pending user choice.",
+    "rawReports": [
+      {
+        "name": "neb-django-framework-logging-before-detail-oct08.log",
+        "sha256": "efa6893b17ef28369bae71c914f8e3b9876b219828b79e31b3b8aa69c4c0dc5a"
+      },
+      {
+        "name": "neb-django-framework-logging-after-oct08.log",
+        "sha256": "893104a6ad0265fbb64341c9ad9c8cd09a331a09b09467e1cdcafa89e5f886b3"
+      },
+      {
+        "name": "neb-django-framework-logging-after-fixed-harness-oct08.log",
+        "sha256": "3918da8625e84ace558542e03c947a94090a0b051d4189b9b7fb52d56eaec2da"
+      },
+      {
+        "name": "neb-next-request-privacy-before-oct08.json",
+        "sha256": "cfa94ca65879ef00139e5ca2dd0907568d0f02a37037ebc500116c3579d1aeea"
+      },
+      {
+        "name": "neb-next-request-privacy-after-oct08.json",
+        "sha256": "03d8ae01330ad1e8d2387102aede6eb50fba8923ebe7dfe38a0d8ad04c1fd8a3"
+      },
+      {
+        "name": "neb-next-request-privacy-ready-after-oct08.json",
+        "sha256": "5ed22d6c344b96491ff3d5eed18778bb28c0d9666a3e23769b1f8eb5ca4947dd"
+      },
+      {
+        "name": "neb-private-api-cache-generated-password-oct08.log",
+        "sha256": "f17da5d2d053de10125ee5eed7840ca161f92237929085e08bb11a3486faab15"
+      },
+      {
+        "name": "neb-private-api-cache-generated-password-mypy-oct08.log",
+        "sha256": "5d4b6d285b77932e3d08212c3b4974d0a803f98ec60408ac6ccf6a063fa6c19e"
+      }
+    ]
   }
 }

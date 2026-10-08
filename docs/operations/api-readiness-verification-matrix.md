@@ -71,3 +71,23 @@ expired idempotency retention. Files: `test_follow_transactions.py`,
 and PostgreSQL fault-case results support checking §42 transactions for
 these relevant local business boundaries. Broker delivery, post-commit process
 failure and deployment/migration compatibility remain separately constrained.
+
+
+## Private response and logging scope — 2026-10-08
+
+Six optimized-source065/old-backendc1 read-only cases record exact field names,
+not private values: session/me own fields, owner session metadata without raw
+session keys, public profile/author without email/auth fields, and two dummy
+bearer documents with no-referrer. Among68 requests no downstream dummy token
+URL/Referer appears; initial required links are excluded. This is scoped traffic,
+not all-response or global network privacy evidence. The existing
+[native artifact](artifacts/native-form-keyboard-2026-10-08.json) records limits.
+
+Actual auth/me and sessions headers lack no-store. Current-source Django tests
+also reproduce missing headers on own profile (three failures; session status
+passes). A dedicated authenticated API middleware now adds private,no-store,
+including logout, restored deletion sessions, errors and304; anonymous/static
+rules and validators retain their semantics. Thirteen new cache tests and33
+account tests pass; combined cache/account/observability/client-error set77 pass.
+Ruff/scoped mypy and independent review pass. Exact PostgreSQL CI and new configured
+runtime are pending; earlier SQLite PostgreSQL-only failures remain recorded.

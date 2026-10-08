@@ -38,19 +38,16 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
-Source `ceb11d0` passes all nine jobs in attempt2 of
-[CI37754016843](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37754016843):
-backend388 on Python3.13/PostgreSQL, frontend589/43 files, smoke372/12 intentional
-skips, full-stack123, foundation, secrets, both production images and Release.
-No browser flaky summary appears. CI merge3d1078d83069ba50a205226e5019e852c12379a6
-and branch source have the same complete tree1525cd34365574bbf60fa795c6ccd5e6da69bf9b.
-
-Attempt1 never starts pytest: external Ubuntu font download exhausts the backend
-job limit. One repeat runs failed/dependent jobs for the same source and reuses
-successful jobs. Earlier c6 full-stack failures lose the seeded player during
-StrictMode effect replay; ceb fixes that cause with two fail-before regressions.
-Both failed gates remain recorded in the dated evidence. This passing gate does
-not resolve the newly observed CSRF copy or other pending local/UI requirements.
+Source `22429b1` passes all nine jobs in
+[CI37763092789](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37763092789):
+backend388/91.78s on Python3.13/PostgreSQL, frontend589/43 files, smoke372/12
+intentional skips14.8min and full-stack123/8.7min; foundation, secrets, both
+production images and Release pass. No browser flaky summary appears. Tested
+merge7d4f83a9e924be73358524b728fad30092061090 and branch source share complete tree
+6ba0b96f63c5220d0a188a43bedcf783638d02bf. Earlier failed runs remain in the dated
+evidence. Subsequent private-API response and framework/dev logging corrections
+pass scoped local tests and independent review; their exact source CI and fresh
+configured runtime remain pending. CSRF copy and other UI choices remain open.
 
 The [exact configured Explore image](artifacts/explore-pending-submission-2026-10-08.json)
 passes nine controlled guard cases in Chromium/Firefox/WebKit, including repeated
@@ -75,7 +72,7 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **805 checked /337 unchecked**. Section42 backup/migration/rollback
+Current **807 checked /335 unchecked**. Section42 backup/migration/rollback
 contracts and section82 applicable API contracts have local evidence. Provider
 and target measurements remain open in their relevant sections.
 
@@ -178,7 +175,7 @@ observations; the original prompt remains unchanged.
 - [x] 70. PRODUCTION BUILD — Verified before deployment: configured optimized image0655989 builds and runs with matching release identity, zero application mounts and health200; nine controlled Explore guard cases and eight real-API guest layout observations pass within their recorded scope. Actual domain/provider values remain rollout inputs.
 - [x] 71. DEPENDENCIES — Verified before deployment: committed npm and Python 3.13 production/development locks, clean installs and builds, runtime version alignment, local ARM64 native imports, x86_64 CI production image and real worker PNG/PDF export pass.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [x] 73. TESTS — Verified before deployment: sourceceb11d0 passes388 backend,589 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky summary. Attempt1 preparation cancellation and same-source failed-job repeat are retained. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent.
+- [x] 73. TESTS — Verified before deployment: source22429b1 passes388 backend,589 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky summary. Earlier source preparation cancellation and same-source failed-job repeat are retained. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on dated optimized local builds, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial:16 actual optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. No unexpected asset404/401/500 or unintended localhost/staging origin in that bounded observation. RSC abort cause/size, credentials in URLs and sensitive payload review remain open; latest frontend fixes need a final exact-image refresh.
@@ -210,7 +207,7 @@ observations; the original prompt remains unchanged.
 - [x] 102. SESSION EXPIRATION — Verified before deployment: concurrent authentication failures trigger one session recheck; editor and play flows explain expiry, preserve unsaved progress, and restore the intended route after login.
 - [ ] 103. VERSION / DEPLOYMENT COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 104. ROLLBACK — Partial: additive migrations and an existing-data downgrade/upgrade rehearsal support backward compatibility; no remote feature flags exist. The isolated immutable c1fc2d7/a3e1c00 backend rehearsal restores old web while retaining forward schema/new worker and checks durable records plus existing/fresh sessions. Its sanitized artifact and reusable command are saved; actual prior deployment, registry/config retention and the target-platform rollback command remain unproven.
-- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: sourceceb11d0 passes the complete CI gate; bounded configured-image checks cover source0655989 separately. Remaining applicable local requirements and the target deployment sequence stay open.
+- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: source22429b1 passes the complete CI gate; bounded configured-image checks cover source0655989 separately. Remaining applicable local requirements and the target deployment sequence stay open.
 
 ## Deployment handoff, separate from predeployment completion
 
