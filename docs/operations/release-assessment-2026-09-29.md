@@ -5,7 +5,18 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact7534134 passes all12 jobs in
+Latest observation —2026-10-08: Exactbc38a5a passes all12 jobs in
+[CI37802454204](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37802454204):
+446 backend,619 frontend,371 clean smoke/one recovered WebKit flake/12 skips
+and123 full-stack cases; both images and Release pass, with matching full
+tested/branch trees. The first reset-password trace records a WebKit
+network-process crash and failed second document; navigation/hydration
+provenance remains unproved. No assertion or timeout is relaxed.
+This gate covers the activation-validity correction. The instrumented local
+fetch packet observes23 fulfilled promises despite17 CDP aborts; body
+completion/native cancellation attribution remains unproved.
+
+Earlier observation —2026-10-08: Exact7534134 passes all12 jobs in
 [CI37799307071](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37799307071):
 437 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack flows;
 both images and Release pass, with matching tested/branch full trees. This
@@ -17,8 +28,8 @@ post-header aborts, but their cancellation mechanism remains unproved.
 
 A subsequent activation-validity patch rejects START without a board and
 excludes historical unbound starts from cohort activation. It passes28 local
-PostgreSQL cases and independent correctness review; its exact source CI remains
-required. The metric still counts client-reported starts.
+PostgreSQL cases and independent correctness review; the laterbc38a5a source
+gate above passes. The metric still counts client-reported starts.
 
 Earlier observation —2026-10-08: Exact b6aabca passes all12 jobs in
 [CI37796382333](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37796382333):

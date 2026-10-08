@@ -127,7 +127,10 @@ b6aabca source gate CI37796382333 passes all12 jobs:435 backend,619 frontend,
 test additions pass18 local PostgreSQL cases and exact7534134 CI37799307071
 passes all12 jobs:437 backend,619 frontend,372 smoke/12 skips and123 live flows,
 with matching full trees. A separate real Redis probe verifies natural local
-expiry. Trusted-localhost feedback/loading
+expiry. Subsequentbc38a5a CI37802454204 passes all12 jobs:446 backend,619
+frontend,371 clean smoke/one recovered WebKit flake/12 skips and123 live flows,
+with matching full trees. The first reset-password trace records a WebKit
+network-process crash/failed second document; its initiator remains unproved. Trusted-localhost feedback/loading
 packets retain network-abort failures; feedback placement awaits the user and
 profile pagination lacks an existing next page. No section verdict changes.
 

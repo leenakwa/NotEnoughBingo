@@ -6976,5 +6976,81 @@ logs and the isolated PostgreSQL runner are archived outside the repository;
 credentials remain only in process memory/environment. Local Python3.14.5/
 Django5.2.16/DRF3.16.1/pytest8.4.2 differs from locked CI. The report still uses
 client-reported starts and cannot establish independent play persistence. The
-new source requires its own exact CI gate; completed7534134 does not cover it.
+new source subsequently passes its exactbc38a5a gate below; completed7534134
+does not cover it.
 Section62's real-user/deployment dependencies remain open.
+
+
+### 2026-10-08 — Native fetch settlements beside CDP failures
+
+One independently reviewed instrumented Chromium observation on FE05d/BEb6
+collects one390×900 shared-result context for22.009 seconds with no Playwright
+routes, business writes or forced body reads. All23 original native fetch
+promises fulfill:20 route GET200, session/CSRF GET200 and one controlled
+telemetryPOST204. Method/route counts match all23 CDP Fetch requests. CDP
+records35 total requests,17 canceled ERR_ABORTED and18 finishes;16 failed
+requests are RSC200 and one is the unique telemetryPOST204. The POST's route,
+method, deployed initiator and timing support correlation with nativefetch15,
+which fulfills despite the CDP failure. This does not prove real telemetry
+persistence because the proxy supplies its response.
+
+All five observation hooks install and47 events deliver. Local counters prove
+no missing fetch outcomes, observer attachments or binding deliveries; no
+wrapped AbortController.abort or stream/reader.cancel invocation is observed.
+These observations establish header-stage promise success, not response-body
+completion, Flight decoding or useful prefetch cache entries, consistent with
+the observed version's [FetchManager response handling](https://github.com/chromium/chromium/blob/149.0.7827.0/third_party/blink/renderer/core/fetch/fetch_manager.cc#L738). Browser/internal
+cancellation remains unproved; instrumentation changes function identity,
+timing and rejection reporting. Independent source/result review agrees with
+this bounded interpretation. Earlier strict failures are not waived.
+
+Collection completes1/1 with zero collection/safety errors, but the wrapper
+exits1: its case-sensitive cleanup classifier records unknown for Docker's
+lowercase 'error: no such object' response. A separate read-only inspect
+confirms the diagnostic container absent. Original cleanup/proof/log and
+reviewed scripts remain unchanged; the supplementary absence proof is saved
+separately and all raw files are archived. This does not convert the original
+wrapper failure to a pass. Runtime does not cover the newerbc backend patch.
+
+
+### 2026-10-08 — Bounded native Chrome availability and cleanup
+
+The historical task-owned Chrome tab is no longer found; this is not evidence
+of a locked Mac. One new task-owned Chrome tab successfully loads local
+Discover, exposing project accessibility state and a page-only screenshot with
+light page styling. Native inventory exposes no matching project window, so
+toolbar/favicon appearance, Chrome theme, zoom and Mac lock state remain
+unproved. No unrelated window is inspected and no theme/zoom or business state
+changes. The new tab is then closed through its supported API; original
+availability and separate cleanup records are archived. Section92's light/dark
+browser-chrome requirement remains open.
+
+
+### 2026-10-08 — Complete activation-validity source gate and retained flake
+
+Exactbc38a5a passes all12 jobs in [CI37802454204](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37802454204):
+446 backend cases/92.25s,619 frontend cases/44 files/34.40s and123 full-stack
+cases/8.6min. Chromium96/4.1min, mobile92+4 skips/3.7min, Firefox92+4/4.7min
+and WebKit91+one recovered flaky+4 skips/6.7min account for371 clean passes,
+one flaky and12 intentional skips across384 planned smoke cases. Both images,
+foundation/history secrets and Release pass. Test durations exclude setup.
+
+The first WebKit reset-password filled-value scenario fails before filling or
+submission: input readiness remains disabled for the five-second expectation.
+Retry1 passes/2.3s. This is not presented as a clean92-pass WebKit result or
+a confirmed filled-value/API-rejection defect. Source readiness depends on
+credential initialization after mounting, not session/CSRF/submit responses.
+The retained first trace records an original document,18 scripts and CSS200;
+a second document request at+842ms fails with a WebKit internal error. At
++3764ms the console reports a network-process crash. No auth API request or
+application runtime exception is recorded; controls remain disabled. The
+second navigation initiator and hydration completion are unproved. This
+implicates browser infrastructure without establishing an application defect.
+No timeout, retry count or assertion is changed.
+
+Raw checkout merge00c3a63d35cde6ff29110c4b1300c2ad93d5fa99 and local branch
+share full tree55861e2bfe600bfff8da36cac88ced511b5ee4f4, checked against
+GitHub's commit API. Raw log, job metadata, tree proof and the WebKit failure
+report are archived outside the repository. Local FE05d/BEb6 remains a
+separate runtime; new activation behavior has scoped PostgreSQL and pinned
+CI evidence rather than a relabeled old backend container.
