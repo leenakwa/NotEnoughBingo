@@ -7184,3 +7184,132 @@ Exact owned accounts/profiles/privacy, Follow edge, session metadata/login event
 durable/cached sessions and actor-scoped user/session_status throttle keys pass
 absence assertions; the diagnostic container is absent. Scripts/helper, hashes,
 structured observations and cleanup are archived outside the repository.
+
+
+### 2026-10-08 — Unpublished edits remain isolated on a public board
+
+One isolated fixture publishes a public3x3 board with unique title, description
+and nine cell markers, then saves distinct unpublished edits without replacing
+the current revision. Fresh owner and unrelated sessions plus a guest context
+check API detail, raw SSR HTML and actual navigation RSC, in that order.
+All nine bounded response controls contain the published metadata/cells and
+correct board/revision identities. Unpublished metadata and all nine draft
+cell markers appear only for the owner; guest/unrelated APIs return no editable
+draft and their complete response bodies contain none of those markers.
+
+Each browser clicks the existing catalog card NextLink and renders only the
+published title, description and nine cells. Full RSC proof requires a postclick
+request with neither prefetch header, exact expected cookie binding, complete
+actual gzip-decoded upstream body, board/revision IDs and all expected markers.
+Partial prefetches are excluded. All three roles have those proxy witnesses;
+the guest also has a successful complete browser-body witness. HTTP decoding
+does not establish React Flight semantic parsing. Actual runtime FE05d/BEb6
+is retained; newer backend START/metrics behavior is outside this packet.
+
+Independent result review confirms collection3/3. Clean-flow success remains
+false and browser/controller exit1 is retained: six CDP body-read errors and
+30 request failures, with zero console errors or guarded business writes.
+This establishes a bounded unpublished-edit projection boundary rather than
+all network/privacy surfaces or production ingress/cache behavior. No source
+defect, checkbox tick or section closure follows.
+
+Exact owned draft is removed before its board/revision/cell cascade; exact
+idempotency, accounts/profiles/privacy, session metadata/login events,
+durable/cached sessions and actor user/session_status throttle keys pass
+absence assertions. The diagnostic browser is absent. Scripts, fingerprints,
+structured observations and cleanup are archived outside the repository.
+
+### 2026-10-08 — Account control geometry under controlled responses
+
+One disposable normal account with two owned sessions supplies38 Chromium DOM
+geometry captures:19 states each at320x1000 and1710x1000. Notification checkbox
+and noncurrent-session Sign out each cover normal, hover, held pointer press,
+held pending and controlled completion; export covers those states plus held
+creation/status/processing responses and ready-link hover/press. Exact
+cookie-bound responses simulate preference success, session503 and export
+queued/processing/ready. No business write reaches the backend and no export
+job, file, download or email is created.
+
+Measured control/label/status ancestor-clipping arrays are empty and document/
+body widths show no horizontal overflow. Held button/link presses move rendered
+coordinates1px through a transform while raw layout offsets remain unchanged.
+Session pending text widens the control48.72→67.22px narrow and76.81→115.22px
+wide. Notification feedback increases card height54.41px narrow and39px wide.
+Starting another action clears shared feedback; the preceding card contracts,
+including a54.41px upward movement of the narrow export card. These measurements
+do not establish a policy defect or quantified CLS. Status-space and session
+button-width treatments await the user.
+
+Independent result review confirms collection38/38 and exact owned cleanup.
+Clean-flow success remains false, with browser/controller exit1:20 request
+failures and four console errors (two untrusted-origin COOP messages and two
+controlled503 messages), zero probe failures. All fixture preferences remain
+unchanged, both owned sessions remain unrevoked and no real export job exists
+before cleanup; exact account/profile/privacy/preferences, login events,
+session metadata/durable/cache entries and actor throttle keys are then absent.
+The diagnostic container is absent. Scripts, hashes and results are archived
+outside the repository. This is geometry evidence without screenshots, color/
+focus assessment, native capability or functional persistence/delivery proof;
+global section8 and its unchecked controls remain open.
+
+### 2026-10-08 — Partial Save profile geometry observation
+
+A separate disposable-account packet captures normal, hover, actual Tab focus,
+held press and disabled Saving profile states at320/1710px (ten measurements).
+Actual Tab traverses Username, Display name, Bio and Save profile; the focused
+button has a3px solid outline with3px offset. Button height remains44px and held
+press changes a1px transform without raw layout reflow. Saving text widens the
+button147.22→176.03px and pending feedback increases form height39px. Measured
+form/control clipping and horizontal overflow are absent. Four form-only
+screenshots mask all three field values; visual inspection finds intact labels,
+button and pending-message layout within this limited masked scope.
+
+Field-error completion fails at both widths because the synthetic422 mistakenly
+uses plain strings in details.username. The client extracts validation objects
+containing message, as used by the existing native-control tests; therefore
+the expected field alert never appears. This is a diagnostic fixture error,
+not an application defect. Collection/clean-flow and browser/controller remain
+failed: two completion timeouts,15 request failures and two controlled422
+console errors. No completion or retained-input result is claimed. Computed
+opaque-color contrast omits disabled opacity/compositing and establishes no
+rendered disabled contrast or compliance. Independent result review confirms
+these limits. Exact owned unchanged-profile/privacy/preferences, session/event/
+cache/throttle cleanup passes and the diagnostic container is absent. Scripts,
+results and four masked images are archived outside the repository. A correctly
+shaped completion-only diagnostic follows below; original evidence is retained.
+
+### 2026-10-08 — Corrected Save profile error-completion observation
+
+A distinct completion-only packet uses the existing validation-object shape:
+details.username contains an object with message/code. It measures held pending
+only as an error-growth baseline, then controlled422 completion at320/1710px;
+earlier normal/hover/Tab/press states are not rerun. Both contexts retain the
+entered value, enable Save and automatically return focus to Username while
+showing its nearby field alert. Four measurements and two masked form-only
+completion images are collected. Visual inspection shows the error wrapping
+inside the narrow form and remaining on one line in the wide form, with no
+measured control/form/error clipping or horizontal overflow.
+
+The error occupies34.78px narrow and17.39px wide. Relative to held pending,
+form height changes+2.78px narrow and−14.61px wide as pending feedback disappears;
+no layout policy or quantified CLS follows. Collection succeeds, but clean-flow
+and browser/controller remain failed with14 request failures and two controlled
+422 console errors, zero probe failures. Exact owned unchanged-profile/privacy/
+preferences, session/event/cache/throttle cleanup passes; the diagnostic container
+is absent. Scripts/results/two masked images are archived outside the repository.
+The original malformed-response failure remains unchanged. These combined
+observations establish bounded visual states, not backend profile persistence,
+native autofill, rendered disabled contrast or a global section8 verdict.
+
+### 2026-10-08 — Successful deletion browser coverage prepared
+
+The live product suite adds “confirmed account deletion signs out an isolated
+account and can be cancelled after login”. Source assertions cover a fresh
+actor, accepted native confirmation, real scheduling202/password payload,
+signed-out UI, preserved-original-cookie revocation, grace-period UI login and
+UI cancellation with persisted restoration. Failure cleanup checks exact fresh
+ID/email before canceling any remaining schedule and logging out; it restores
+the disposable actor rather than claiming physical account removal. Independent
+source review, targeted ESLint/Prettier and TypeScript checks pass. Application
+source is unchanged. Runtime execution and the new exact-source CI gate remain
+pending; earlier123-flow CI does not cover this added test.

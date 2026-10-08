@@ -5792,6 +5792,171 @@ test("session sign-out shows scoped progress and retries without losing credenti
   }
 });
 
+test("confirmed account deletion signs out an isolated account and can be cancelled after login", async ({
+  page,
+  playwright,
+}) => {
+  const api = page.context().request;
+  const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
+  const email = `e2e-deletion-${nonce}@example.test`;
+  const password = `QA-${randomUUID()}-account`;
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+  let ownedId = "";
+  let revokedSession: APIRequestContext | undefined;
+  async function csrfHeaders() {
+    const csrf = (await api.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
+    expect(csrf).toBeDefined();
+    return { "X-CSRFToken": csrf!.value };
+  }
+  async function ownedAccount() {
+    const current = await api.get("/api/v1/auth/me/");
+    expect(current.status()).toBe(200);
+    const actor = (await current.json()) as {
+      id: string;
+      email: string;
+      deletion_scheduled_for: string | null;
+    };
+    expect(actor.id).toBe(ownedId);
+    expect(actor.email).toBe(email);
+    return actor;
+  }
+  try {
+    expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
+    const registered = await api.post("/api/v1/auth/register/", {
+      headers: await csrfHeaders(),
+      data: { email, username: `e2e_deletion_${nonce}`, password },
+    });
+    expect(registered.status()).toBe(202);
+    const link = new URL(await verificationLink(api, email));
+    const token = link.searchParams.get("token");
+    expect(token).toBeTruthy();
+    expect(
+      (
+        await api.post("/api/v1/auth/verify-email/", {
+          headers: await csrfHeaders(),
+          data: { token },
+        })
+      ).status(),
+    ).toBe(200);
+    expect(
+      (
+        await api.post("/api/v1/auth/login/", {
+          headers: await csrfHeaders(),
+          data: { email, password },
+        })
+      ).status(),
+    ).toBe(200);
+    const identity = await api.get("/api/v1/auth/me/");
+    expect(identity.status()).toBe(200);
+    const actor = (await identity.json()) as { id: string; email: string };
+    expect(actor.email).toBe(email);
+    expect(actor.id).toBeTruthy();
+    expect(Object.values(readLiveFixture().users).map((user) => user.id)).not.toContain(actor.id);
+    ownedId = actor.id;
+    expect((await ownedAccount()).deletion_scheduled_for).toBeNull();
+    expect(
+      (
+        await api.patch("/api/v1/profiles/me/", {
+          headers: await csrfHeaders(),
+          data: { preferred_languages: ["en"] },
+        })
+      ).status(),
+    ).toBe(200);
+    // Keep the original authenticated cookies to prove server-side revocation,
+    // independently of the browser clearing its current session on sign-out.
+    revokedSession = await playwright.request.newContext({
+      baseURL: test.info().project.use.baseURL,
+      storageState: await api.storageState(),
+    });
+    expect((await revokedSession.get("/api/v1/auth/me/")).status()).toBe(200);
+    await page.goto("/profile");
+    const section = page.locator("form.settings-card").filter({
+      has: page.getByRole("heading", { name: "Delete account", exact: true }),
+    });
+    await section.getByLabel("Confirm with your password", { exact: true }).fill(password);
+    const confirmation = page.waitForEvent("dialog");
+    const scheduling = waitForResponse(page, "/api/v1/auth/account-deletion/", "POST", () =>
+      section.getByRole("button", { name: "Schedule account deletion", exact: true }).click(),
+    );
+    const dialog = await confirmation;
+    const confirmationType = dialog.type();
+    const confirmationMessage = dialog.message();
+    await dialog.accept();
+    const scheduled = await scheduling;
+    expect(confirmationType).toBe("confirm");
+    expect(confirmationMessage).toBe(
+      "Schedule account deletion? You can cancel during the grace period.",
+    );
+    expect(scheduled.status()).toBe(202);
+    expect(scheduled.request().postDataJSON()).toEqual({ password });
+    const deletion = (await scheduled.json()) as { status: string; scheduled_for: string };
+    expect(deletion.status).toBe("scheduled");
+    expect(Number.isFinite(Date.parse(deletion.scheduled_for))).toBe(true);
+    await expect(page).toHaveURL(/\/login\?next=%2Fprofile&reason=deletion-scheduled$/);
+    await expect(
+      page.getByText(
+        "Account deletion is scheduled and all sessions were signed out. Log back in to review or cancel it during the grace period.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Log in", exact: true })).toBeVisible();
+    expect((await api.get("/api/v1/auth/me/")).status()).toBe(401);
+    expect((await revokedSession.get("/api/v1/auth/me/")).status()).toBe(401);
+
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    const loggedIn = await waitForResponse(page, "/api/v1/auth/login/", "POST", () =>
+      page.getByRole("button", { name: "Log in", exact: true }).click(),
+    );
+    expect(loggedIn.status()).toBe(200);
+    await expect(page).toHaveURL(/\/profile$/);
+    expect((await ownedAccount()).deletion_scheduled_for).toBe(deletion.scheduled_for);
+    await expect(section.locator("time")).toHaveAttribute("datetime", deletion.scheduled_for);
+    const cancelled = await waitForResponse(page, "/api/v1/auth/account-deletion/", "DELETE", () =>
+      section.getByRole("button", { name: "Cancel deletion", exact: true }).click(),
+    );
+    expect(cancelled.status()).toBe(204);
+    await expect(section.getByRole("status")).toHaveText("Account deletion cancelled.");
+    await expect(section.locator("time")).toHaveCount(0);
+    await expect(section.getByLabel("Confirm with your password", { exact: true })).toHaveValue("");
+    expect((await ownedAccount()).deletion_scheduled_for).toBeNull();
+    await page.reload();
+    await expect(section.getByLabel("Confirm with your password", { exact: true })).toBeVisible();
+    await expect(section.getByRole("button", { name: "Cancel deletion", exact: true })).toHaveCount(
+      0,
+    );
+    expect(errors).toEqual([]);
+  } finally {
+    try {
+      if (ownedId) {
+        expect(
+          (
+            await api.post("/api/v1/auth/login/", {
+              headers: await csrfHeaders(),
+              data: { email, password },
+            })
+          ).status(),
+        ).toBe(200);
+        const actor = await ownedAccount();
+        if (actor.deletion_scheduled_for) {
+          expect(
+            (
+              await api.delete("/api/v1/auth/account-deletion/", { headers: await csrfHeaders() })
+            ).status(),
+          ).toBe(204);
+          expect((await ownedAccount()).deletion_scheduled_for).toBeNull();
+        }
+        expect(
+          (await api.post("/api/v1/auth/logout/", { headers: await csrfHeaders() })).status(),
+        ).toBe(204);
+      }
+    } finally {
+      await revokedSession?.dispose();
+    }
+  }
+});
+
 test("deletion cancellation shows scoped progress and retries for an isolated account", async ({
   page,
 }) => {

@@ -5,7 +5,23 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact `b04fcad` passes all12 jobs in
+Latest observation —2026-10-08: Exact `71a22ec` passes all12 jobs in
+[CI37812635002](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37812635002):
+446 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack
+cases, with no reported smoke flakes. Both images and Release pass. Tested
+merge `4fee4631be30def169f928d3d6c2897ba59dda5d` shares full tree
+`dffb093a6f367da550504c7f27472a2133655e51` with the branch. This docs-only
+gate retains the previous application source. Subsequent unpublished-draft
+projection verifies nine bounded owner/guest/unrelated API/HTML/navigation-RSC
+controls; six CDP body-read errors and30 request failures retain its failed
+clean-flow/wrapper verdict. A separate38-state account geometry packet records
+notification/session/export at320/1710px without measured clipping/overflow;
+status-space/session-width choices await the user. Its20 request failures/four
+console errors retain failed clean-flow/wrapper verdicts. Both packets verify
+exact owned cleanup. No broad privacy/control closure or production readiness
+follows; these subsequent observations are recorded in the working documents.
+
+Earlier observation —2026-10-08: Exact `b04fcad` passes all12 jobs in
 [CI37806507157](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37806507157):
 446 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack
 cases, with no reported smoke flakes. Both images and Release pass.
