@@ -2370,8 +2370,10 @@ test("report rejection for an archived target keeps context and destination", as
   const bingo = await createSocialFormBoard(page);
   await authenticateAs(page, "player");
   await page.goto(`/bingo/${bingo.id}`);
+  await expect(page.locator("button.play-cell").first()).toBeEnabled();
   await page.locator(".play-actions").getByRole("button", { name: "Report", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Report bingo" });
+  await expect(dialog).toBeVisible();
   const context = dialog.getByLabel("Additional context (optional)", { exact: true });
   const text = "Keep context when target becomes unavailable 🎲";
   await context.fill(text);
@@ -3847,6 +3849,7 @@ test.describe("live full-stack product flows", () => {
     await expectNoAccessibilityViolations(page);
 
     await page.goto(`/bingo/${fixture.bingos.public.id}`);
+    await expect(page.locator("button.play-cell").first()).toBeEnabled();
     await expect(page.getByRole("heading", { name: fixture.bingos.public.title })).toBeVisible();
     await expect(page.getByRole("group", { name: "Mark cells with" })).toBeVisible();
     await expectNoAccessibilityViolations(page);
@@ -3862,6 +3865,7 @@ test.describe("live full-stack product flows", () => {
 
     await authenticateAs(page, "player");
     await page.goto(`/bingo/${fixture.bingos.public.id}`);
+    await expect(page.locator("button.play-cell").first()).toBeEnabled();
     await expect(page.getByRole("heading", { name: fixture.bingos.public.title })).toBeVisible();
     await page.getByRole("button", { name: "Report", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Report bingo" })).toBeVisible();

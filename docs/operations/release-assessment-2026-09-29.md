@@ -5,7 +5,14 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: source `0655989` passes all nine jobs in
+Latest observation —2026-10-08: source `c6d770d` has seven passing CI jobs,
+including388 backend tests on Python3.13/PostgreSQL,587 frontend cases and372
+smoke/12 intentional skips. Full-stack has96 passes, two failures and25 not run;
+Release fails in [CI37750054487](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37750054487).
+Both traces show the player resetting to “Opening bingo…”; a local StrictMode
+regression reproduces it, and its correction still needs a complete source gate.
+
+Latest complete passing source `0655989` passes all nine jobs in
 [CI37743142188](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37743142188):
 backend383, frontend587/43 files, smoke372/12 intentional skips and full-stack123,
 with no flaky cases; both production images and Release pass. The tested merge
@@ -33,8 +40,8 @@ persistence. Corrected WebKit keyboard opening returns report focus; its separat
 pointer opening leaves BODY focused, with the intended focus policy undecided.
 
 The subsequent cache-readiness correction has13 passing scoped observability
-checks and independent review; its production-runtime/source CI gate remains
-required. Existing configured frontend observations remain scoped to065.
+checks and independent review. Its388-test Python3.13/PostgreSQL job passes;
+the complete source gate fails as recorded above. Existing configured frontend observations remain scoped to065.
 
 Current checklist:804 checked/338 unchecked;59 verified/39 partial/six N/A/
 one deployment-only. Counts describe evidence, not a product-readiness percentage.
@@ -43,7 +50,8 @@ The [tracker](production-readiness-tracker.md) and
 
 ## Decision
 
-Source065 has a complete CI gate. Target operator/support/legal
+Source065 has a complete CI gate; current source requires a new passing gate.
+Target operator/support/legal
 choices, services, TLS/ingress, secrets, monitoring, CDN/capacity, native-device
 checks and off-site recovery remain to be verified. No production registry
 promotion or public deployment has occurred. See the

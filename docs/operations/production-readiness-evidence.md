@@ -5770,5 +5770,52 @@ source change, target service or physical-device result is implied.
   Initial full module run had one setup error from unavailable postgres hostname;
   changing only the isolated test environment resolves it. Ruff/check/format pass;
   independent review finds no issues. Actual Redis is not exercised by these mocks.
-  ProductionPython/PostgreSQL and the committed-source CI gate remain required.
-  No global dependency-availability mark or production readiness claim is added.
+  The subsequent388-test Python3.13/PostgreSQL CI job passes; the complete gate
+  fails as recorded below. No global dependency-availability mark or production readiness claim is added.
+
+### 2026-10-08 — Actual social beforeunload dialogs
+
+- [Native form proof](artifacts/native-form-keyboard-2026-10-08.json) adds eight
+  complete Chromium/WebKit cases at390px on configured source065: root/reply/edit/
+  report trusted input, real beforeunload dismiss and accept, retained exact text
+  on cancellation, verified full reload on acceptance. Accepted root/reply/report
+  drafts are empty; edit returns to its server original. All mutations intercepted,
+  business mutations0, real writes0, pageErrors empty; expected progress404 console
+  errors remain. No product/OS/QA changes or new checklist marks.
+- Original Firefox page.reload shows no warning; DOM Location.reload after trusted
+  activation shows actual warnings and cancellation retains text. Final four
+  cases did not observe a fresh document within5s after accept. Early prototype
+  PASS cases read old DOM and are excluded. Exact installed Firefox command and
+  DOM reload paths differ, but the internal reason and accepted-reload behavior
+  remain unresolved. Attempts stopped; no product-hook defect or global pass
+  is claimed. Raw initial/prototype/final reports and trace references preserved.
+
+### 2026-10-08 — c6 source CI failure and player effect replay
+
+[CI37750054487](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37750054487)
+for source c6d770dc3f7583967d9977675dd14f5456081e24 finishes with seven passing jobs:
+backend388 on CPython3.13.16/PostgreSQL, frontend587/43 files, smoke372/12 intentional
+skips, foundation, full-history secrets and both production images. Full-stack
+reports96 passes, two failures and25 not run; Release fails. No flaky summary or
+automatic retry is recorded. The previous complete065 gate remains historical.
+
+The report/archive case loses its dialog after clicking Report, before report
+POST or archiving starts. The accessibility case observes the title and marking
+group, then evaluates an empty heading list. Both trace snapshots and the latter
+PNG show “Opening bingo…”; relevant GETs return200 and trace consoles contain no
+warnings/errors. CI uses next dev with React StrictMode. The one-use initial-data
+ref makes effect replay discard matching SSR data and reset player state. This
+source correlation is reproduced by two new local StrictMode tests for guest
+and registered viewers: both fail before the correction, both pass afterward.
+The trace itself has no explicit effect-replay instrumentation. Raw CI log,
+artifact11538805351 and sanitized trace proof remain in external task scratch.
+
+The correction reuses matching initial data at loadVersion0. Auth refresh and
+retry still advance loadVersion; a different board ID still fetches fresh data.
+The two affected E2E scenarios wait for an enabled game cell, and Report asserts
+its dialog before filling. No timeout, retry, StrictMode or error-filter policy
+changes. Independent review finds no correctness/regression issues. All38 player
+tests pass after the fix; integrated Node22.23.1 lint, TypeScript and589 tests in43
+files pass (38.55s). Scoped ESLint and owned-file Prettier also pass on local
+Node24.19.0. The next exact-source complete gate remains required; existing
+optimized-image observations stay scoped to065.

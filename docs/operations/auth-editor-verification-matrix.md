@@ -65,3 +65,16 @@ until Escape. Initial harness expectations missed that state and incorrectly
 forbade five legitimate intercepted autosave PUTs per case. Corrected original
 pointer cases pass, with no manual-save/publish/export or real backend writes.
 No page/console errors. This does not close all-control visual requirements.
+
+## Native social unload warning — 2026-10-08
+
+The [native form artifact](artifacts/native-form-keyboard-2026-10-08.json) adds
+eight complete Chromium/WebKit cases at390px for root/reply/edit/report:
+actual beforeunload cancellation retains exact text; accepted full reload clears
+root/reply/report and restores the edit's server original. Page memory does not
+persist those drafts through accepted reload. No business or real backend writes.
+Firefox shows actual warnings and retains text on cancellation for all four
+forms through DOM Location.reload; final document markers did not confirm
+accepted reload within5s. Initial prototype PASS results read the old document
+and are excluded. The automation/Firefox difference remains unresolved.
+This establishes bounded warnings, without a global dirty-form policy verdict.

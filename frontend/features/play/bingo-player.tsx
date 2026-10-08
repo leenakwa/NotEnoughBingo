@@ -79,7 +79,6 @@ export function BingoPlayer({
   const completedRevision = useRef<string | null>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const nicknameRef = useRef<HTMLInputElement>(null);
-  const initialBingoConsumed = useRef(false);
   const guestSelectionToSync = useRef<string[] | null>(null);
   const mutationLifetime = useRef(0);
   const invalidateMutations = useCallback(() => {
@@ -119,9 +118,7 @@ export function BingoPlayer({
   useEffect(() => {
     let active = true;
     async function load() {
-      const canUseInitial =
-        !initialBingoConsumed.current && loadVersion === 0 && initialBingo?.id === bingoId;
-      initialBingoConsumed.current = true;
+      const canUseInitial = loadVersion === 0 && initialBingo?.id === bingoId;
       requestVersion.current += 1;
       progressVersion.current = 0;
       completedRevision.current = null;

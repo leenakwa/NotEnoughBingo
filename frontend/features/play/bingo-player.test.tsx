@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
@@ -197,6 +198,33 @@ describe("BingoPlayer", () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
+  it.each(["guest", "registered"])(
+    "keeps the server-rendered board through StrictMode effect replay for a %s viewer",
+    async (mode) => {
+      render(
+        <StrictMode>
+          <BingoPlayer
+            bingoId={bingo.id}
+            initialBingo={bingo}
+            initialViewer={mode === "guest" ? "guest" : viewer}
+          />
+        </StrictMode>,
+      );
+
+      expect(screen.getByRole("heading", { name: bingo.title })).toBeVisible();
+      expect(screen.queryByText("Opening bingo…")).not.toBeInTheDocument();
+      expect(mocks.getBingo).not.toHaveBeenCalled();
+      const cell = screen.getByRole("button", { name: "Open the board" });
+      await waitFor(() => expect(cell).toBeEnabled());
+      expect(mocks.getViewer).not.toHaveBeenCalled();
+      expect(mocks.saveProgress).not.toHaveBeenCalled();
+      await act(async () => cell.click());
+      expect(cell).toHaveAttribute("aria-pressed", "true");
+      expect(mocks.getBingo).not.toHaveBeenCalled();
+      window.localStorage.clear();
+    },
+  );
+
   it.each(["leave", "logout"])("does not send queued marks after %s", async (boundary) => {
     let resolveSave!: (value: PlayProgress) => void;
     mocks.saveProgress.mockReturnValueOnce(
@@ -270,8 +298,9 @@ describe("BingoPlayer", () => {
     mocks.getBingo.mockResolvedValueOnce(next);
     mocks.getProgress.mockResolvedValueOnce({ ...progress, version: 8 });
     mocks.saveProgress.mockResolvedValueOnce({ ...progress, version: 9 });
-    view.rerender(<BingoPlayer bingoId={next.id} />);
+    view.rerender(<BingoPlayer bingoId={next.id} initialBingo={bingo} initialViewer={viewer} />);
     await screen.findByRole("heading", { name: "Next board" });
+    expect(mocks.getBingo).toHaveBeenCalledExactlyOnceWith(next.id);
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
     );
@@ -735,6 +764,7 @@ describe("BingoPlayer", () => {
     act(() => window.dispatchEvent(new Event(AUTH_SIGNED_IN_EVENT)));
 
     await screen.findByRole("button", { name: "Like · 0" });
+    expect(mocks.getBingo).toHaveBeenCalledExactlyOnceWith(bingo.id);
     expect(screen.getByRole("button", { name: "Open the board, selected" })).toHaveAttribute(
       "aria-pressed",
       "true",

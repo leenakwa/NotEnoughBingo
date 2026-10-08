@@ -268,5 +268,53 @@
       "name": "neb-explore-tab-oct08.json",
       "sha256": "2d18c9b4bd3c58958cf3b875a5fe156767d021cfbdc227486e11c5472a606c7a"
     }
-  ]
+  ],
+  "beforeUnload": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "imageId": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+    "moduleHashes": {
+      "features/social/comments-panel.tsx": "e426bcba952335b6aa66e2879cf574060e99165476c28cd857e3c8568f640aa1",
+      "features/social/report-dialog.tsx": "8e4301d8afd452839507a5a2d29782042767a453ad6b8c55c2a2da6e64cd5acc",
+      "features/social/social-draft-cache.ts": "8401771696ab884cf01fb090de12192c9df7144f786aa4179ce97dcc64e3c463",
+      "lib/use-unsaved-changes-warning.ts": "34e8c3718228dbba92126fb488eb5fd202ca4e4687eea1d18713cc15bdea2035"
+    },
+    "width": 390,
+    "forms": [
+      "root",
+      "reply",
+      "edit",
+      "report"
+    ],
+    "result": {
+      "fullDismissAcceptCasesPassed": 8,
+      "firefoxAcceptedReloadUnverified": 4,
+      "skips": 0,
+      "automaticRetries": 0
+    },
+    "verifiedEngines": [
+      "Chromium",
+      "WebKit"
+    ],
+    "dismiss": "Actual native beforeunload dialog cancels reload and retains exact entered text.",
+    "acceptedReload": "Chromium/WebKit confirm a full reload: root/reply/report drafts are empty, and edit restores its server original.",
+    "firefox": {
+      "warningAndDismiss": "Actual dialogs and retained text observed for four forms with DOM Location.reload after trusted input.",
+      "acceptedReload": "Fresh document not observed within5s in final four marker-based cases.",
+      "limitations": [
+        "Original four page.reload cases produced no dialog.",
+        "DOM Location.reload produced a native beforeunload dialog; dismissal retained input, and trusted activation was verified.",
+        "The first one-case and subsequent two-case prototypes read the old DOM before asynchronous reload; their PASS labels do not establish accepted reload.",
+        "The final four document-marker cases did not observe a fresh document within five seconds after accepting. The automation difference remains unresolved; no product-hook failure is established. Further attempts stopped."
+      ]
+    },
+    "scope": "390px root/reply/edit/report forms; native beforeunload after trusted input, no synthetic beforeunload. All mutating APIs intercepted; read-only fixture cookies; no auth writes, reseeding, source changes or OS preference changes.",
+    "mutations": "Only intercepted analytics; business mutations0 and real backend writes0 in eight complete cases.",
+    "pageErrors": [],
+    "console": "Expected intercepted progress404 errors retained in eight complete cases.",
+    "globalDirtyFormVerdict": false,
+    "rawReport": {
+      "name": "neb-social-beforeunload-native-proof-oct08.json",
+      "sha256": "2feb380117132e362d0accf3b0ac69089a63d82b2d2dcf417b1a195950c55ce3"
+    }
+  }
 }

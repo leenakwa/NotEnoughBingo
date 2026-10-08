@@ -38,7 +38,17 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
-Source `0655989` passes all nine jobs in
+Source `c6d770d` fails the complete gate in
+[CI37750054487](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37750054487):
+seven jobs pass, including388 backend tests on Python3.13/PostgreSQL,587 frontend
+cases and372 smoke/12 intentional skips. Full-stack reports96 passed, two failed
+and25 not run; Release fails. Both failures observe a seeded player board
+resetting to “Opening bingo…” before a report or accessibility check. The local
+StrictMode regression reproduces that reset. A correction is under verification;
+the current source has no complete passing gate. Section verdicts below retain
+their dated scope and do not establish current release sign-off.
+
+Latest complete passing source `0655989` passes all nine jobs in
 [CI37743142188](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37743142188):
 backend383, frontend587/43 files, smoke372/12 intentional skips, full-stack123,
 foundation, secrets, both production images and Release. Browser suites report
@@ -73,8 +83,8 @@ and target measurements remain open in their relevant sections.
 
 The subsequent cache-readiness correction returns503/degraded when the cache
 round-trip fails; five endpoint regressions and13 scoped observability checks
-pass locally with independent review. Its production-runtime/source CI gate
-remains required. The configured frontend proofs above remain scoped to065.
+pass locally with independent review. The388-test Python3.13/PostgreSQL CI job
+passes; the complete source gate fails as recorded above. The configured frontend proofs above remain scoped to065.
 
 ### Accepted interface requirements
 
