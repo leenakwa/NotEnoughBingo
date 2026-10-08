@@ -8288,3 +8288,228 @@ full lint passes. Source CSS/export changes retain scoped review evidence, but
 committed034 CI and the latest optimized44 image do not cover these subsequent
 patches. No new optimized-image/deployment or global section76 claim follows;
 checklist817/325 and sections59 Verified/39 Partial/6 N/A/1 deployment-only remain.
+
+### 2026-10-09 — Optimized ec69223 export announcement and pagination loading
+
+The immutable local frontend for `ec692234ba892b16ed2aae3cbd8eeecc0f91ad0d`
+uses image `a6f3016ccce0f803e2888664f873b3a01f255f2625ca8a8d151e316976c1b42b`.
+Root verifies its revision and embedded release, nextjs user, no mounts and
+Discover HTTP200. This is a local staging artifact, not a deployed production
+environment. `evidence-export-optimized-ec69223-2026-10-09/` has15 root-verified
+hashes and independent review: at320/1710 the same mounted export request button
+exposes polite/atomic AX metadata during disabled preparation, then the download
+link and existing success status appear. Actual Tab focus and bounded geometry
+checks pass without console/page errors. Synthetic account/export responses do
+not verify real export creation/download, backend authorization or screen-reader
+speech.53 aborted Next.js prefetches and the earlier CLI sandbox failure are
+retained; the successful direct browser run closes its owned contexts.
+
+`evidence-catalog-loading-layout-2026-10-09/` has22 root-verified hashes after
+independent review corrected a success-height transcription. An actual Next
+click requests Discover page2. During a held response,24 cards disappear and
+scroll clamps3080→0 at1440px,13930→112 at390px; success restores24 cards but
+keeps the clamped position. Document heights are3980→994→4087 and
+14830→1224→14830 respectively. FeedPage clears results in its pagination and
+identity/language refresh branches. Loading/valid empty/injected503 error have
+matching260px status boxes, stable heading/intro landmarks, and retry succeeds.
+Zero recorded layout shifts excluding recent input does not prove field CLS or
+intentional pagination UX. Two console errors match injected503 responses; an
+initial pre-interception SSR interaction202 is preserved as incidental analytics,
+so zero writes is not claimed. Subsequent diagnostic non-GETs are intercepted.
+The loading behavior choice is pending; no placeholder or retained-card design
+has been adopted. These scoped results do not close sections5/8/76 or change
+checklist/section counts.
+
+### 2026-10-09 — Custom-control feedback and native address-storage preconditions
+
+`evidence-custom-controls-ec69223-2026-10-09/` records actual hover, held press,
+reset and native Tab focus on optimized ec69223 at390/1440. All61 hashes verify.
+Tag removal has no hover/pressed pixel change but visible keyboard focus. PNG/PDF
+download entries change background on hover but show no further held-press
+feedback. The download trigger and comment Like have visible hover/pressed/reset
+feedback; Like's mocked pending state disables/dims before successful completion.
+No console/page errors, export actions or unexpected API traffic occur; diagnostic
+non-GETs are intercepted. These are two bounded visual-feedback gaps, not a global
+section8 verdict. Their styling choice remains open; no source style is selected.
+
+`evidence-native-address-autofill-ec69223-2026-10-09/` verifies32 hashes and native
+Linux Chromium149 Addresses Add/Save/reopened-Edit readback of a dummy name/email.
+Profile display_name (autocomplete=name) and account new_email (autocomplete=email)
+remain empty after a single click/ArrowDown/Tab attempt. No committed native fill
+or observable suggestion popup is proved in this headless run, so neither form
+submission nor a product defect/unsupported-browser conclusion follows. Mocked
+application traffic has no unexpected writes or console/page errors; the owned
+browser, forwarder, profile and container are removed. A headed suggestion
+selection check remains necessary before changing source. This storage proof
+does not close the general browser-autofill/password-manager requirements.
+
+### 2026-10-09 — Drained RSC-body fixture privacy subcheck
+
+`evidence-rsc-bodies-ec69223-2026-10-09/` has206 root-verified artifact hashes.
+The exact optimized ec69223 frontend and cachedb6 backend serve178 fully read
+Flight streams:29 guest,76 author,73 player;164 browser streams plus14 real-cookie
+RSC reads.309 browser requests are observed, all streams have no-store, and no
+body is unreadable. Known owned fixture emails, original/new session keys and
+QA password are checked as raw, percent-encoded and form-encoded values. No
+private-value match occurs in guest/nonowner bodies, observed URLs or Referer.
+Four own-email observations occur only in owning authenticated board streams
+(browser and explicit read per owner), consistent with the cookie-scoped viewer
+projection; expected owner-private data is not classified as a public leak.
+
+62 relevant actual-runtime backend Python source hashes match HEAD for accounts,
+exports, media and public projections. This is scoped source equivalence, not
+full latest backend image equivalence; Dockerfile/analytics changes are separate.
+Real UI logins establish own isolated QA sessions; both own logouts return204.
+Original active IDs/keys remain10/2, with profile/contact/privacy identity values
+unchanged; owned browsers/contexts/runners close. Ordinary incidental analytics
+and last-seen effects are retained, so zero writes is not claimed. The earlier
+body-access/header-adapter attempt and its verified own-session cleanup remain
+private historical evidence. CDP response-stage observation pauses stream
+delivery before unchanged continuation, affecting timing. This passes a known
+fixture RSC-body subcheck only: no universal secret absence, export/recovery
+lifecycle completion, deployed cache/ingress proof or global section76 closure
+follows.
+
+### 2026-10-09 — Completed ec69223 source gate
+
+[CI37856721227](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37856721227)
+completes SUCCESS on ec692234ba892b16ed2aae3cbd8eeecc0f91ad0d with all12 jobs:
+446 backend,625 frontend/45 files,452 smoke/12 intentional skips and125 live.
+Chromium passes116 smoke cases; Firefox/WebKit/mobile each pass112 with four
+skips. All577 reported passed cases have retry0, with no failures, timed-out,
+interrupted cases or report errors. The four dense-preview regressions pass
+7.4/19.8/5.5/6.7s in their recorded profiles. Both images and Release pass.
+Logged merge35e151daf770d4ddef9a806f31663a1d13c9fdb2 and branch/local ec69223
+share full tree dce1150323c8791a945abdf357b07836cd4fd1ec. Root independently
+verifies all nine original artifact API digests and27 archive hashes, with
+ZIP/gzip and five embedded browser-report integrity retained in the private
+`evidence-ec69223-2026-10-09/ci/` packet. The watch exits0. Later documentation
+reconciliation is not included in this source gate; deployment remains untested.
+
+### 2026-10-09 — Native stored-address pointer selection
+
+The earlier headless and headed-keyboard attempts remain historical, not product
+defects. A fresh headed Linux Chromium149 profile verifies native Addresses
+Add/Save/Edit readback and XTest extension/pointer preconditions. Fresh full-window
+saved-name/email popups ground native pointer selection. The initially typed
+prefixes are explicit; full stored values and FormData match exactly only after
+selection. Email also survives native blur.42 root-verified hashes are retained
+in `evidence-native-address-autofill-ec69223-2026-10-09/native-pointer-followup/`;
+43 hashes cover the prior headed attempt, where one intercepted profile PATCH
+contained a prefix and no real backend write occurred. The successful pointer
+run has no form submissions, backend writes or console/page errors. Owned
+profile/browser/forwarder/container/Xvfb are removed, with prior packet files
+unchanged. No Mac user profile or new dependency is used. This proves native
+stored-address selection for two fields only, not separate display-name blur,
+actual business submission, every form/browser or password-manager completion.
+
+### 2026-10-09 — Automatic native password Save and Update
+
+`evidence-native-manager-save-update-ec69223-2026-10-09/` has35 root-verified
+hashes and independent review. An owned headed Linux Chromium149 profile on
+optimized ec69223 observes native Save after successful mocked Login navigates
+to /profile and removes its form. A grounded native pointer click commits the
+exact origin/username/password to the browser store, verified by native readback.
+Successful mocked Change password matches FormData and request values, clears
+its fields, and presents Update; native selection stores the exact changed
+password. This is automatic submission detection, not manual Add. The initial
+username-selector diagnostic mismatch is preserved and corrected before Update.
+Current password is explicitly typed, not claimed as native autofill. No real
+backend write, unexpected request or console/page error occurs; the owned
+profile/browser/forwarder/container/Xvfb are removed.
+
+Generation eligibility is separate. Exact149 source rejects inactive password
+synchronization for generation; the unsigned offline profile is not an eligible
+generation configuration. Correct new-password autocomplete cannot override
+that profile gate. See the [version-pinned feature manager](https://chromium.googlesource.com/chromium/src/+/149.0.7827.0/components/password_manager/core/browser/password_feature_manager_impl.cc#28).
+The scoped Save/Update result does not verify every form, signed-in generation,
+third-party managers, operator devices or deployment, and does not close section7.
+
+### 2026-10-09 — Real account-export transport and private download
+
+`evidence-account-export-transport-ec69223-2026-10-09/` retains63 root-verified
+artifact hashes and passes independent scope/cleanup review. Exactly one actual
+UI POST returns202 queued; two UI status
+polls observe queued → ready after one worker attempt. The owner downloads a
+35,497-byte ZIP whose integrity, stored checksum and account identity match.
+Decompressed entries exclude the known fixture plaintext password, both password
+hashes, original and newly created own session keys under raw/percent/form scans;
+no credential field paths are present. The owner's contact email is expected.
+This is a bounded known-value check, not universal secret absence.
+
+The guest receives401 for the same job and404 for its file; the nonowner receives
+404 for both. Inspected denial bodies contain generic errors. Owner creation,
+status and download responses have private, no-store and nosniff; the ZIP uses
+an attachment filename. Browser URL/Referer observations cover the owner flow
+and player login; direct denial reads do not prove UI-generated Referer behavior.
+
+Guarded cleanup expires and detaches only the new owned job and invokes
+reference-aware asset deletion; the actual storage object is absent. One EXPIRED
+job and one DELETED asset audit tombstone remain: author counts change from0 to1
+jobs and45 to46 asset rows. All original45 assets, profiles, privacy/contact and
+password hashes are unchanged; original session IDs/keys remain10/2 after both
+own logouts return204. All contexts and the browser close; no owned runner remains.
+
+The frontend is exact optimized ec69223. Backend equivalence remains scoped to
+the previously compared62 source files in cached b6; the cached a3 worker matches
+11/12 inspected files, with HTTP middleware differing. This local export/privacy
+subcheck does not close section76, credential recovery, remote storage/CDN/cache
+or deployment requirements.
+
+### 2026-10-09 — Four conditional requirements absent from this release
+
+Source inventory and independent review establish release-scoped N/A for original
+checkbox IDs495 (product WebSocket secure transport),558 (invitation emails),559
+(receipt emails) and797 (payment-webhook failure alerts). Standard Django ASGI/
+WSGI entry points, actual installed apps/routes/models, account mail tasks and
+provider/dependency inventory expose no corresponding product capability.
+Generic nginx Upgrade forwarding and development WS CSP allowances remain;
+they do not establish a product WebSocket consumer. Future or external operator
+integrations are outside this inventory and require reopening these conditions.
+General HTTPS, email delivery and dependency alerts remain applicable.
+
+`conditional-na-four-ec69223-2026-10-09.json` retains exact requirements and source
+references outside the repository. The unchecked count stays325 and section
+verdicts stay59/39/6/1; release-scoped N/A rises85 →89 and applicable unchecked
+bullets fall240 →236. No requirement is marked verified by this reconciliation.
+
+### 2026-10-09 — Retained isolated PostgreSQL restore rehearsal
+
+`evidence-backup-restore-ec69223-2026-10-09/` retains47 root-hashed files, including
+the actual239,960-byte custom-format dump and adjacent checksum. Byte-identical
+copies of the current backup/restore wrappers run against an owned PostgreSQL
+fixture. Users change1 →2 →1; ordered user data and all63 migration rows match
+the pre-backup baseline after restore, and the post-backup user is absent.
+Actual Django migrate/check passes. All five idle writer stubs stop and restart;
+this verifies wrapper orchestration, not serving application readiness.
+Backup takes0.762s and restore9.866s in this small local fixture, not an RTO claim.
+
+The cached backend matches46 tracked configuration/manage/migration source files;
+full artifact equivalence is not claimed. All owned containers, network and volume
+are removed and cleanup is verified. Independent review supports original IDs552
+and553 for the known/executed local PostgreSQL procedure. Production scale, actual
+writers, storage/queue recovery, scheduling, encryption, off-site durability and
+target deployment remain open.
+
+### 2026-10-09 — Implemented email-type functional coverage reconciliation
+
+Independent assertion/report review supports original IDs554–557 locally:
+registration, verification (including changed email), password reset and all
+implemented account-security notifications. Exact ec69223 CI has passing modules
+`test_email_delivery.py` and `test_account_email_recovery.py` (25 tests each) in
+the446-test backend run; named test assertions are inspected in source, while
+individual backend testcase reports are unavailable. The retained full-stack
+report has named registration/Mailpit, password-reset, changed-email and token-only
+retry/reuse cases passed with retry0/errors0. Notification MIME/recipient/sent-state
+assertions cover password change, new/previous email and deletion notices;
+full-stack SMTP assertions for password/deletion notices are absent.
+
+This closes the four functional email-type bullets only. Final sender/provider,
+support destination and real inbox rendering remain open. Links and expired links
+remain unchecked: existing live helpers strip the emitted origin before navigation,
+and reuse cases do not prove browser recovery after elapsed-time expiry. The current
+test patch adds protocol/origin/intended-route assertions to all three Mailpit link
+helpers, preserving query extraction; targeted lint/typecheck/format pass, with
+independent review. Its exact-source live CI is still pending. Checklist totals
+are now823 checked/319 unchecked, including89 release-scoped N/A and230 applicable
+unchecked; section verdicts remain59/39/6/1.

@@ -40,17 +40,19 @@ unresolved failures or missing evidence.
 ### Latest observed source gate — 2026-10-09
 
 Latest completed committed-source gate: exact
-`0341e77428c441423151aa6fd51f5892ae6dbcaa`
-[CI37853375991](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37853375991)
-finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,448 smoke/12
-intentional skips and125 full-stack cases; no reported flakes/retries. This is a
-workflow_dispatch on exact034 full tree
-`ea58350e492f21afe4f2f836c5d5ce1fb9ee4407`, not a PR merge gate. Both production
-images and Release pass. The subsequent export live-region and preview content-visibility CSS/test
-patches are not covered by this gate. Earlier exact44 canonical local/native packets
-retain their recorded image/runtime scope. See the
-[dated034 evidence](production-readiness-evidence.md#2026-10-09--completed-committed034-gate-and-pending-export-patch)
-and [canonical/RSC limits](production-readiness-evidence.md#2026-10-09--canonical-local44-header-flow-and-bounded-rsc-attribution).
+`ec692234ba892b16ed2aae3cbd8eeecc0f91ad0d`
+[CI37856721227](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37856721227)
+finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,452 smoke/12
+intentional skips and125 full-stack cases; all577 reported passed cases have
+zero retries/errors. Logged tested merge35e151daf770d4ddef9a806f31663a1d13c9fdb2
+and branch/local HEAD share full tree dce1150323c8791a945abdf357b07836cd4fd1ec.
+All nine original artifact API digests, archive integrity and27 packet hashes
+verify. Both production images and Release pass. This covers the export
+live-region and offscreen-preview source/test patches; subsequent documentation
+reconciliation is outside this committed gate. Optimized local ec69223 runtime
+and earlier44 native packets retain their recorded scopes. See the
+[dated ec69223 gate](production-readiness-evidence.md#2026-10-09--completed-ec69223-source-gate)
+and [optimized local evidence](production-readiness-evidence.md#2026-10-09--optimized-ec69223-export-announcement-and-pagination-loading).
 
 Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
 finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke
@@ -187,8 +189,11 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **817 checked /325 unchecked**. Of those325,85 belong to the six
-explicitly N/A sections;240 are applicable unchecked bullets. The42 final
+Current **823 checked /319 unchecked**. Of those319,89 are release-scoped N/A:
+85 belong to the six explicitly N/A sections, and four conditional requirements
+cover absent product WebSockets, invitation/receipt emails and payment-webhook
+alerts. Source inventory and independent review support these exclusions;
+230 are applicable unchecked bullets. The42 final
 execution bullets overlap earlier checks, so these counts are not independent
 tasks or a readiness percentage. The first nine section105 actions have actual
 local CI/runtime/search/configuration evidence; the deployment sequence and
@@ -307,12 +312,12 @@ original prompt remains unchanged.
 - [ ] 36. SEO FOR PUBLIC PAGES — Partial: configured production metadata, robots/staging noindex, headings, canonical URLs, slash redirects, local duplicate handling and scalable sitemap are verified locally; target www/alternate-host and HTTP→HTTPS verification remain.
 - [ ] 37. SOCIAL SHARING — Partial: real HTML now emits absolute branded 1200×630 OG/Twitter images for catalog, bingo, profile, and shared result; external service previews and the final domain remain.
 - [ ] 38. DOMAIN AND DNS — Partial: public smoke script is prepared; the actual domain, records, and propagation need target-environment evidence.
-- [ ] 39. HTTPS / TLS — Partial: smoke script enforces HTTPS; certificate and edge configuration need target-environment evidence.
+- [ ] 39. HTTPS / TLS — Partial: smoke script enforces HTTPS; certificate and edge configuration need target-environment evidence. Product WebSocket transport is N/A for this release; generic proxy Upgrade support and development WS CSP allowances do not establish a product WebSocket feature.
 - [ ] 40. ENVIRONMENT VARIABLES — Partial: frontend image build/runtime origin contract, Django production origin consistency, and local-env isolation verified; real DB, storage, email, monitoring, and public origin values remain.
 - [x] 41. SECRETS — Verified before deployment: complete-history Gitleaks, tracked-path and ignore rules, Docker build contexts, and client-bundle marker scan found no real secret; OAuth is absent.
 - [x] 42. DATABASE — Verified before deployment: PostgreSQL defaults/constraints/transactions, realistic existing-data migration and10,000-board preservation, executed dump/checksum/isolated restore, plus immutable old-web→forward schema→compatible worker/new-web→old-web rollback preserve users, durable records and sessions. Business models, migrations and worker/task contracts retain the rehearsed a3 implementation; the subsequent cache-readiness HTTP-status correction has separate regression evidence and awaits its source CI gate. This closes the local contract; managed snapshots/WAL/off-site, online locks/target load and actual provider/registry/deployment remain in sections34/44/103–105.
 - [x] 43. DATA INTEGRITY — Verified before deployment: PostgreSQL concurrent likes/follows, versioned editor/progress conflicts, idempotent draft/publication/export/session/report/notification calls, soft-delete threads, reference-aware media and abandoned-job recovery passed; webhook duplication is N/A.
-- [ ] 44. BACKUPS — Partial: local evidence recorded; review remaining original bullets.
+- [ ] 44. BACKUPS — Partial: byte-identical current backup/restore wrappers pass an isolated PostgreSQL rehearsal; baseline users and63 migration rows restore exactly, the post-backup user disappears, and migration/check plus writer-stub stop/restart pass. The local restore procedure and execution are verified with retained dump/checksum/logs and independent review. Target backups, scheduling, retention and off-site durability remain open; stubs do not prove deployed application recovery.
 - [ ] 45. EMAILS — Partial: registration verification, password reset, email-change and security notices have production-origin links and plain-text bodies; verification/reset subjects are branded, while several security-notice subjects omit the brand and await the user’s copy decision; messages that direct users to support now include the public support page. Local mail flow and expiry checks passed. Messages now show their stored UTC expiration; queued resets skip invalidated tokens. Fifteen new retry/exhaustion/expiry guards, 46 related account cases, all 234 local backend tests (plus one infrastructure-only skip) and three live email journeys passed. A real isolated QA SMTP outage produced a worker retry, delivery after restoration and a successful API reset; the temporary account was removed. Sender-domain authentication, provider delivery/rate limits, a monitored support address and real-device inbox rendering still require the chosen domain and email service.
 - [x] 46. NOTIFICATIONS — Verified before deployment: all activity types and deduplication, recipient-scoped unread/read/Mark All Read and timestamps, live link navigation/reload, and real deleted/private target denial passed. There is no separate Mark Unread action.
 - — 47. OAUTH / SOCIAL LOGIN — N/A for current release: capability absent in source inventory.
@@ -430,3 +435,15 @@ local stack. Automate a short post-deployment smoke and rollback gate for those
 facts; it should be a release safety check, not a second product-discovery
 phase. The current PR is a draft until the predeployment checklist is complete
 and the handoff values are supplied.
+
+### 2026-10-09 — Additional optimized local evidence
+
+Optimized local ec69223 confirms the export preparation live-region metadata
+and completion at320/1710 (15 verified hashes; synthetic APIs, no speech or real
+export/backend claim). A separate Discover page2 held-response probe confirms
+card removal and premature scroll clamping at1440/390 (22 corrected verified
+hashes); the loading UX choice remains pending. Stable landmarks and raw
+excluded-input layout-shift observations are not field CLS proof. See the
+[dated optimized evidence](production-readiness-evidence.md#2026-10-09--optimized-ec69223-export-announcement-and-pagination-loading).
+No checklist/section counts change; committed034 CI does not cover these later
+source changes, and these local observations do not certify deployment.

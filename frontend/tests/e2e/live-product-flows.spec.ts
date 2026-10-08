@@ -17,6 +17,9 @@ import {
 } from "./live-fixture";
 
 const mailpitBaseURL = (process.env.MAILPIT_BASE_URL ?? "http://localhost:8025").replace(/\/$/, "");
+const expectedFrontendURL = new URL(
+  process.env.FRONTEND_URL ?? process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:8080",
+);
 const cellImagePng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAE0lEQVR4nGP8f4YBK2DCLjxYJQBrGAHb+/Mz+AAAAABJRU5ErkJggg==",
   "base64",
@@ -2255,7 +2258,14 @@ async function verificationLink(request: APIRequestContext, email: string): Prom
         if (detailResponse.ok()) {
           const body = JSON.stringify(await detailResponse.json());
           const match = body.match(/https?:\/\/[^\\\s"'<>]+\/verify-email\?token=[A-Za-z0-9_-]+/);
-          if (match) return match[0].replaceAll("\\u0026", "&");
+          if (match) {
+            const link = match[0].replaceAll("\\u0026", "&");
+            const url = new URL(link);
+            expect(url.protocol).toBe(expectedFrontendURL.protocol);
+            expect(url.origin).toBe(expectedFrontendURL.origin);
+            expect(url.pathname).toBe("/verify-email");
+            return link;
+          }
         }
       }
     }
@@ -2294,7 +2304,13 @@ async function passwordResetLink(
           const match = body.match(
             /https?:\/\/[^\\\s"'<>]+\/reset-password\?uid=[A-Za-z0-9_-]+&token=[A-Za-z0-9_-]+/,
           );
-          if (match) return match[0];
+          if (match) {
+            const url = new URL(match[0]);
+            expect(url.protocol).toBe(expectedFrontendURL.protocol);
+            expect(url.origin).toBe(expectedFrontendURL.origin);
+            expect(url.pathname).toBe("/reset-password");
+            return match[0];
+          }
         }
       }
     }
@@ -2326,7 +2342,13 @@ async function emailChangeLink(request: APIRequestContext, email: string): Promi
           const match = body.match(
             /https?:\/\/[^\\\s"'<>]+\/confirm-email-change\?token=[A-Za-z0-9_-]+/,
           );
-          if (match) return match[0];
+          if (match) {
+            const url = new URL(match[0]);
+            expect(url.protocol).toBe(expectedFrontendURL.protocol);
+            expect(url.origin).toBe(expectedFrontendURL.origin);
+            expect(url.pathname).toBe("/confirm-email-change");
+            return match[0];
+          }
         }
       }
     }

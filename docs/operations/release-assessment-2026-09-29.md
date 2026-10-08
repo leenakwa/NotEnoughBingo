@@ -6,25 +6,34 @@ final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
 Latest completed committed-source gate: exact
-`0341e77428c441423151aa6fd51f5892ae6dbcaa`
-[CI37853375991](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37853375991)
-finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,448 smoke/12
-intentional skips and125 full-stack cases; no reported flakes/retries. This is a
-workflow_dispatch on exact034 full tree
-`ea58350e492f21afe4f2f836c5d5ce1fb9ee4407`, not a PR merge gate. Both production
-images and Release pass. The subsequent export live-region and preview content-visibility CSS/test
-patches are not covered by this gate. Earlier exact44 canonical local/native packets
-retain their recorded image/runtime scope. See the
-[dated034 evidence](production-readiness-evidence.md#2026-10-09--completed-committed034-gate-and-pending-export-patch)
-and [canonical/RSC limits](production-readiness-evidence.md#2026-10-09--canonical-local44-header-flow-and-bounded-rsc-attribution).
+`ec692234ba892b16ed2aae3cbd8eeecc0f91ad0d`
+[CI37856721227](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37856721227)
+finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,452 smoke/12
+intentional skips and125 full-stack cases; all577 reported passed cases have
+zero retries/errors. Logged tested merge35e151daf770d4ddef9a806f31663a1d13c9fdb2
+and branch/local HEAD share full tree dce1150323c8791a945abdf357b07836cd4fd1ec.
+All nine original artifact API digests, archive integrity and27 packet hashes
+verify. Both production images and Release pass. This covers the export
+live-region and offscreen-preview source/test patches; subsequent documentation
+reconciliation is outside this committed gate. Optimized local ec69223 runtime
+and earlier44 native packets retain their recorded scopes. See the
+[dated ec69223 gate](production-readiness-evidence.md#2026-10-09--completed-ec69223-source-gate)
+and [optimized local evidence](production-readiness-evidence.md#2026-10-09--optimized-ec69223-export-announcement-and-pagination-loading).
 
 The current representative native Chrome154/macOS200% packet verifies the
 original zoom requirement with guest/authenticated views and readable keyboard
 focus on exact44 frontend/cachedb6 backend, supplemented by source-equivalent
 historical observations. Owned fixtures are guardedly soft-deleted, own session
 revoked, and baseline profile/ten-session IDs preserved; revisions/analytics remain.
-Section24 is Verified before deployment; checklist817/325 and section totals
+Section24 is Verified before deployment; checklist823/319 and section totals
 59 Verified/39 Partial/6 N/A/1 deployment-only follow from the original bullets.
+Of319 unchecked bullets,89 are release-scoped N/A:85 in the six N/A sections
+plus four absent-feature conditions (product WebSockets, invitation/receipt
+emails and payment-webhook alerts), confirmed by source inventory and independent
+review.230 applicable unchecked bullets remain. Four implemented email-type
+functional checks and the two local restore-procedure checks have separately
+reviewed evidence; applicability reconciliation itself changes no checkbox or
+section verdict.
 Section76 remains Partial: canonical guest URLs and unchanged-source privacy
 contracts have bounded evidence, but archived CI reports contain no raw transport
 captures and cannot prove account/recovery headers, response projection or Referer
@@ -476,3 +485,15 @@ The new guest-safe `/api/v1/auth/session/` status endpoint removed the observed
 403 resource entries from a fresh guest `/discover` page while keeping
 `/api/v1/auth/me/` protected. Recheck the production console on the final
 domain; the local QA browser is not production evidence.
+
+### 2026-10-09 — Additional optimized local evidence
+
+Optimized local ec69223 confirms the export preparation live-region metadata
+and completion at320/1710 (15 verified hashes; synthetic APIs, no speech or real
+export/backend claim). A separate Discover page2 held-response probe confirms
+card removal and premature scroll clamping at1440/390 (22 corrected verified
+hashes); the loading UX choice remains pending. Stable landmarks and raw
+excluded-input layout-shift observations are not field CLS proof. See the
+[dated optimized evidence](production-readiness-evidence.md#2026-10-09--optimized-ec69223-export-announcement-and-pagination-loading).
+No checklist/section counts change; committed034 CI does not cover these later
+source changes, and these local observations do not certify deployment.

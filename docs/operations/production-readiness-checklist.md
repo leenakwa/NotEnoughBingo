@@ -876,17 +876,17 @@ Verify:
 - [ ] backups run automatically if expected;
 - [ ] retention is defined;
 - [ ] backups are not only on the same failing machine;
-- [ ] restore procedure is known;
-- [ ] restore has been tested if possible.
+- [x] restore procedure is known;
+- [x] restore has been tested if possible.
 
 # 45. EMAILS
 
 If any emails exist, test all relevant types:
 
-- [ ] registration;
-- [ ] verification;
-- [ ] password reset;
-- [ ] notifications;
+- [x] registration;
+- [x] verification;
+- [x] password reset;
+- [x] notifications;
 - [ ] invitations;
 - [ ] receipts.
 
