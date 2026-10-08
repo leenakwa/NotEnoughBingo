@@ -635,5 +635,196 @@
         "sha256": "5d4b6d285b77932e3d08212c3b4974d0a803f98ec60408ac6ccf6a063fa6c19e"
       }
     ]
+  },
+  "optimizedRuntimeVerification": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "runtime": {
+      "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+      "frontendImage": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+      "backendImage": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+      "frontendBuiltReleaseMatches": true,
+      "bothImageRevisionLabelsMatch": true,
+      "backendAppReleaseMatches": true,
+      "backendSettingsModule": "config.settings.development",
+      "environment": "isolated-rehearsal",
+      "frontendPort": 18584,
+      "backendPort": 18585,
+      "frontendMounts": "none (root verified)",
+      "backendScope": "Gunicorn image with local development settings; DEBUG True, fixture PostgreSQL, S3 false (root verified); not target production configuration",
+      "linuxBrowserImage": "mcr.microsoft.com/playwright:v1.61.1-noble",
+      "linuxBrowserImageDigest": "sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48",
+      "playwrightVersion": "1.61.1"
+    },
+    "registration": {
+      "ready": true,
+      "documentStatus": 200,
+      "attributes": [
+        {
+          "name": "email",
+          "type": "email",
+          "autocomplete": "username",
+          "disabled": false
+        },
+        {
+          "name": "username",
+          "type": "text",
+          "autocomplete": "nickname",
+          "disabled": false
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "autocomplete": "new-password",
+          "disabled": false
+        }
+      ],
+      "payload": {
+        "keys": [
+          "email",
+          "password",
+          "username"
+        ],
+        "emailMatches": true,
+        "usernameMatches": true,
+        "passwordMatches": true
+      },
+      "retained": {
+        "email": true,
+        "username": true,
+        "password": true
+      },
+      "submitEnabled": true,
+      "geometry": {
+        "viewport": 390,
+        "documentWidth": 390,
+        "overflow": false
+      }
+    },
+    "playerCases": [
+      {
+        "identity": "guest",
+        "width": 390,
+        "documentStatus": 200,
+        "gridRemainsVisible": true,
+        "geometry": {
+          "viewport": 390,
+          "documentWidth": 390,
+          "overflow": false
+        }
+      },
+      {
+        "identity": "registered",
+        "width": 390,
+        "documentStatus": 200,
+        "gridRemainsVisible": true,
+        "geometry": {
+          "viewport": 390,
+          "documentWidth": 390,
+          "overflow": false
+        },
+        "report": {
+          "remainsVisible": true,
+          "backdrop": "rgba(0, 0, 0, 0.46)",
+          "fitsWidth": true,
+          "closedAfterEscape": true
+        }
+      },
+      {
+        "identity": "registered",
+        "width": 1710,
+        "documentStatus": 200,
+        "gridRemainsVisible": true,
+        "geometry": {
+          "viewport": 1710,
+          "documentWidth": 1710,
+          "overflow": false
+        },
+        "report": {
+          "remainsVisible": true,
+          "backdrop": "rgba(0, 0, 0, 0.46)",
+          "fitsWidth": true,
+          "closedAfterEscape": true
+        }
+      }
+    ],
+    "headerCases": [
+      {
+        "identity": "registered",
+        "kind": "auth-me",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "registered",
+        "kind": "auth-sessions",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "registered",
+        "kind": "profile",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "guest",
+        "kind": "auth-me",
+        "status": 401,
+        "cacheControl": null,
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "guest",
+        "kind": "auth-sessions",
+        "status": 401,
+        "cacheControl": null,
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "guest",
+        "kind": "profile",
+        "status": 200,
+        "cacheControl": null,
+        "vary": "Accept, Cookie, origin"
+      }
+    ],
+    "realMutations": 0,
+    "interceptedMutations": {
+      "registration": 1,
+      "analytics": 3
+    },
+    "pageErrors": 0,
+    "expectedConsoleErrors": 1,
+    "scopeLimits": [
+      "One registration390, guestplayer390, registeredplayer390/1710, six realAPI GET observations only; not global layout/production readiness.",
+      "600ms post-ready visibility observation does not prove SSR before hydration, absence of all races, or StrictMode dev behavior.",
+      "The previous currentdev disabled-input failure remains unexplained; optimized PASS does not establish logging/restart as cause.",
+      "Registration response was intercepted400; no real account/auth writes or successful registration asserted.",
+      "No Mac UI, OS preferences, private credentials, source edits, service changes or reseed."
+    ],
+    "rawProof": {
+      "name": "neb-optimized-a2-bounded-native-proof-oct08.json",
+      "sha256": "75bcaeee48047e5d6ecd20abdb17e87324e4afd362e0e021868a99bd8affa3d3"
+    },
+    "cleanupVerified": {
+      "disposableContainerAbsent": true,
+      "browserAndProxiesClosed": true
+    },
+    "sourceGate": {
+      "runId": 37769102508,
+      "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508",
+      "jobsPassed": 9,
+      "backendPassed": 402,
+      "frontendPassed": 589,
+      "smokePassed": 372,
+      "intentionalSmokeSkips": 12,
+      "livePassed": 123,
+      "testedMerge": "33a8aaf58bb15f11577019a14c9315d936455050",
+      "completeTree": "15a3af87976ca42bc80a24dc2174c1efeb0414ec",
+      "branchTreeMatches": true
+    }
   }
 }

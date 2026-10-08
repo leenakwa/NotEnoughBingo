@@ -83,11 +83,15 @@ URL/Referer appears; initial required links are excluded. This is scoped traffic
 not all-response or global network privacy evidence. The existing
 [native artifact](artifacts/native-form-keyboard-2026-10-08.json) records limits.
 
-Actual auth/me and sessions headers lack no-store. Current-source Django tests
-also reproduce missing headers on own profile (three failures; session status
-passes). A dedicated authenticated API middleware now adds private,no-store,
+Earlier configured065/c1 auth/me and sessions headers lack no-store. Django
+tests before the correction also reproduce missing headers on own profile
+(three failures; session status passes). A dedicated authenticated API middleware now adds private,no-store,
 including logout, restored deletion sessions, errors and304; anonymous/static
 rules and validators retain their semantics. Thirteen new cache tests and33
 account tests pass; combined cache/account/observability/client-error set77 pass.
-Ruff/scoped mypy and independent review pass. Exact PostgreSQL CI and new configured
-runtime are pending; earlier SQLite PostgreSQL-only failures remain recorded.
+Ruff/scoped mypy and independent review pass. Corrected source a2 CI passes402
+backend tests with PostgreSQL and all nine jobs in its complete gate. Its exact configured production images also return real authenticated
+me/sessions/public-profile200 with private,no-store; anonymous profile200 retains
+its prior policy, while anonymous me/sessions return401. This six-GET packet
+uses fixture PostgreSQL and development backend settings; provider/CDN behavior
+and global traffic remain separate. Earlier failures remain recorded.

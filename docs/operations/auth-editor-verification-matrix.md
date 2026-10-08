@@ -135,3 +135,19 @@ After the verified development configuration restart, the same15s registration
 readiness check again returns HTTP200 with three disabled fields and correct
 autocomplete attributes; errors and writes remain zero. No submission assertion
 is reached. Cause remains unestablished; this does not establish a logging link.
+
+
+## Exact optimized source a2 — 2026-10-08
+
+The existing [native artifact](artifacts/native-form-keyboard-2026-10-08.json)
+records an initialized standalone registration at390px within the same15s gate:
+native input of three dummy fields, one controlled400, exact payload/retention
+for all three and re-enabled submission; no overflow. Guest390 and registered
+390/1710 players retain their grid, including while Report is open. Report uses
+one46% backdrop, fits both widths and closes on Escape; screenshots were inspected.
+No page errors or real mutations; the expected400 console is retained. These
+local immutable a2 images have matching source/build/runtime release identities;
+backend uses development settings with fixture PostgreSQL. This is bounded
+optimized evidence, not a cause for the earlier dev timeout or a general native
+manager/device verdict. Complete exact a2 CI passes all nine jobs:402 backend,
+589 frontend,372 smoke/12 intentional skips and123 live cases.

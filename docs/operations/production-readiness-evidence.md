@@ -6055,3 +6055,62 @@ specifically. Its source SHA211f3b3c1bd983637d2b34492a0550701b12cd63ed20a2e2d281
 and raw fail/pass logs are retained externally. Exact CI for the corrected test
 is still required. Subsequent source supersedes the failed run; workflow
 concurrency may cancel its still-running smoke job, which is not a smoke PASS.
+
+
+### 2026-10-08 — Exact a2 optimized registration, report and cache packet
+
+Both immutable source a2c2d6f54b690f730c1186c1eb739ef414437e7c images build and run:
+frontend30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46,
+backend3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226.
+Builder release, runtime release and OCI revision match a2; frontend has no
+mounts, backend only the owned media volume. Read-only migrate --check passes;
+no migration changes since the existing a3 schema. Frontend health and backend
+live/ready return200. An initial wrong /api/v1/health/ probe returns404; the
+inspected live/ready routes correct the harness, not the application. Backend
+runs Gunicorn from the production image using local development settings with
+DEBUG, fixture PostgreSQL and S3 disabled; no target/provider claim is made.
+
+The [existing native artifact](artifacts/native-form-keyboard-2026-10-08.json)
+adds initialized standalone registration390 with the unchanged15s gate: native
+three-field dummy input, exactly one controlled400, payload and retention3/3,
+re-enabled button and no overflow. Guest390 and registered390/1710 retain the
+player grid; registered Report remains open after600ms, keeps the grid, fits the
+viewport, uses rgba(0,0,0,0.46) and closes by Escape. Root inspected both screenshots;
+the approved paper/border/shadow treatment is consistent without clipped controls.
+This does not prove every UI/control/device or pre-hydration SSR behavior.
+
+Six real API GETs to candidate backend18585: authenticated me/sessions/profile
+return200 and private,no-store; anonymous me/sessions401 and public-profile200
+retain their prior cache policy. Only field names are retained. Register1 and
+analytics3 POSTs are intercepted before backend; real mutations0, page errors0,
+expected controlled400 console only. Owned browser/proxies close and disposable
+container is absent. Raw proof/script/log/screenshots are retained externally.
+Earlier dev disabled-field observations remain unexplained; optimized PASS does
+not establish a causal logging/restart fix. No blanket native manager, global
+network or product-readiness verdict follows.
+
+The corrected [a2 CI37769102508](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508)
+backend job passes402 tests in105.73s on Python3.13.16/PostgreSQL, and frontend,
+foundation and secrets jobs pass. Remaining image/smoke/live jobs are still
+running at this observation. Failed b77 backend401/1 remains archived; its still
+running smoke is automatically cancelled by unchanged workflow concurrency when
+a2 arrives. This is a new-source gate, not a same-source retry or a smoke PASS.
+Checklist remains807/335 and58/40/six N/A/one deployment-only.
+
+
+### 2026-10-08 — Complete corrected a2 gate
+
+[CI37769102508](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508)
+completes all nine jobs successfully for a2c2d6f54b690f730c1186c1eb739ef414437e7c:
+402 backend105.73s on Python3.13.16/PostgreSQL,589 frontend/43 files,
+372 smoke/12 intentional skips17.3min and123 live8.2min; foundation,
+full-history secrets, both production images and Release pass. No flaky summary.
+Raw checkout merge33a8aaf58bb15f11577019a14c9315d936455050 has complete tree
+15a3af87976ca42bc80a24dc2174c1efeb0414ec, equal to branch a2; raw checkout log,
+GitHub Git API and local git verify the comparison. Complete2,067,028-byte log
+and metadata remain in external task scratch. No retry, assertion, timeout or
+logging privacy policy is weakened. The earlier b77 failure and cancelled smoke
+remain separate. The exact local optimized packet retains its explicit backend
+fixture-settings boundary. Checklist807/335;85 unchecked are N/A,250 applicable;
+58 verified/40 partial/six N/A/one deployment-only. No deployment or final product
+readiness is inferred from this passing gate.

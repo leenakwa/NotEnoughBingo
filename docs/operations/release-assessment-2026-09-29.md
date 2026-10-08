@@ -5,16 +5,18 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Source `22429b1` passes all nine jobs in
-[CI37763092789](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37763092789):
-backend388/91.78s on Python3.13/PostgreSQL, frontend589/43 files, smoke372/12
-intentional skips14.8min and full-stack123/8.7min; foundation, secrets, both
-production images and Release pass. No browser flaky summary appears. Tested
-merge7d4f83a9e924be73358524b728fad30092061090 and branch source share complete tree
-6ba0b96f63c5220d0a188a43bedcf783638d02bf. Earlier failed runs remain in the dated
-evidence. Subsequent private-API response and framework/dev logging corrections
-pass scoped local tests and independent review; their exact source CI and fresh
-configured runtime remain pending. CSRF copy and other UI choices remain open.
+Latest observation —2026-10-08: Source `a2c2d6f` passes all nine jobs in
+[CI37769102508](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508):
+backend402/105.73s on Python3.13.16/PostgreSQL, frontend589/43 files,
+smoke372/12 intentional skips17.3min and full-stack123/8.2min; foundation,
+full-history secrets, both production images and Release pass. No browser flaky
+summary. Tested merge33a8aaf58bb15f11577019a14c9315d936455050 and branch a2 share
+complete tree15a3af87976ca42bc80a24dc2174c1efeb0414ec. Earlier failed/cancelled
+runs remain in the dated evidence. Private-API caching and framework/dev logging
+corrections have fail-before regressions and independent review. Exact optimized
+a2 registration/player/report/cache observations pass; backend uses local
+fixture development settings. CSRF copy and other UI choices remain open.
+
 The [exact configured image](artifacts/explore-pending-submission-2026-10-08.json)
 passes nine controlled Explore guard cases in three engines and eight real-API
 guest initial-layout observations at390/1710. Release identity matches, no app
@@ -37,21 +39,25 @@ pointer opening leaves BODY focused, with the intended focus policy undecided.
 
 The subsequent cache-readiness correction has13 passing scoped observability
 checks and independent review. Its388-test Python3.13/PostgreSQL job passes;
-the complete ceb source gate passes. Existing configured frontend observations remain scoped to065.
+the complete ceb source gate passes. Earlier configured frontend observations remain scoped to065.
 
 Current checklist:807 checked/335 unchecked;58 verified/40 partial/six N/A/
-one deployment-only. Counts describe evidence, not a product-readiness percentage.
+one deployment-only. Of335 unchecked bullets,85 belong to the six explicitly N/A sections;250 are
+applicable. The42 final-execution bullets overlap earlier checks. These counts
+describe evidence, not independent tasks or a product-readiness percentage.
 The [tracker](production-readiness-tracker.md) and
 [dated evidence](production-readiness-evidence.md) contain scope and open items.
 
 ## Decision
 
-Source224 has a complete CI gate including registration metadata. Subsequent
-private-response caching and development/framework logging fixes have passing
-scoped checks and independent review; exact new source CI/runtime are pending.
+Source a2 has a complete CI gate covering registration metadata, private-response
+caching and development/framework logging corrections. Scoped checks and
+independent review pass. Its exact optimized packet passes registration/player/
+report and actual private/public cache header checks.
 Reachable registration email-query behavior, CSRF copy and other UI choices
-remain open. Current dev metadata rendered earlier, but its submission was
-unverified in that observation; historical configured proofs retain source065.
+remain open. Current dev registration stayed disabled in its observation;
+optimized a2 registration passes separately without proving that cause. Historical
+configured proofs retain source065.
 Target operator/support/legal
 choices, services, TLS/ingress, secrets, monitoring, CDN/capacity, native-device
 checks and off-site recovery remain to be verified. No production registry
