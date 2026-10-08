@@ -1,9 +1,11 @@
 # Production readiness evidence log
 
-Use this log with the [full prompt](production-readiness-prompt.txt),
-[execution plan](production-readiness-plan.md), and
-[105-section tracker](production-readiness-tracker.md). Each entry records
+Use this log with the [full prompt](production-readiness-prompt.txt)
+and [105-section tracker](production-readiness-tracker.md). Each entry records
 observed results and their limits. Do not include credentials or session data.
+Historical machine-local paths identify original runs; raw reports and browser
+diagnostics are retained outside the repository. Sanitized linked artifacts are
+the portable evidence.
 
 ## Baseline — 2026-09-29
 
@@ -4220,15 +4222,13 @@ observed results and their limits. Do not include credentials or session data.
   error or final-source release success is claimed from the focused result.
 
 
-### 2026-10-08 — durable continuation, session restoration and profile/account forms
+### 2026-10-08 — session restoration and profile/account forms
 
 - The complete continuation attachment is preserved verbatim in
   `production-readiness-continuation-request-2026-10-08.md`; its SHA-256 is
   `965004fb008a7a930c8f4fa34540cd4c113f1a74654fb0e8dd7438c18c2eefe7`.
   The original 105-section/1,142-item prompt remains unchanged with its recorded
-  SHA-256. The active goal and `production-readiness-continuation-plan.md`
-  preserve scope, authorization, remaining batches and resume instructions.
-  Preservation commit: `92c480a`. There is no merge/deployment authorization.
+  SHA-256. Preservation commit: `92c480a`.
 - Disabled Agentation is isolated behind a client dynamic import with SSR off
   and the existing development-only server gate. Enabled development was
   separately exercised on `/support`: toolbar v3.0.2 visible, two tool chunks
@@ -4353,9 +4353,6 @@ observed results and their limits. Do not include credentials or session data.
 - Original prompt and continuation request hashes are unchanged:
   `7b920f477e1087c2fe456f7bdbafef11e00e7be8ca17bc8ec99f180c274b65d9` and
   `965004fb008a7a930c8f4fa34540cd4c113f1a74654fb0e8dd7438c18c2eefe7`.
-  The active goal remains incomplete. The continuation plan records source,
-  evidence, remaining tasks and ownership; user-local `.codex/config.toml`
-  remains excluded from project commits.
 - Profile SQL update now commits username/profile/language/avatar changes
   atomically. Fault tests cover failures before and after profile persistence.
   Default contracts cover scalar/JSON declarations, inherited user fields,
@@ -4848,13 +4845,10 @@ observed results and their limits. Do not include credentials or session data.
   open. This is not a production-readiness or deployment claim.
 
 
-### 2026-10-08 — Preserved continuation, exact-source CI and corrected browser expectations
+### 2026-10-08 — exact-source CI and corrected browser expectations
 
 - The complete original prompt and verbatim continuation request remain unchanged;
-  SHA-256 checks match their registered values. The active goal has no token
-  budget and still requires all applicable predeployment work, exact-source CI
-  and current evidence. The continuation plan is the durable resume checkpoint;
-  one packet or green gate does not complete it.
+  SHA-256 checks match their registered values.
 - Packet `a3e1c00e945855df82be25191207610ef861e148` was pushed on the existing
   branch and draft PR #18. [CI 37707547894](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37707547894)
   **failed**: backend/frontend quality, foundation, history secrets and both
@@ -5053,7 +5047,7 @@ observed results and their limits. Do not include credentials or session data.
   is in progress. Do not claim full-stack success or current release readiness.
 - Prepared auth native-control and profile/export partial-composition scenarios
   still require execution. Exact new source CI and configured artifact remain
-  pending. Goal and continuation checkpoint stay active.
+  pending.
 
 ### 2026-10-08 — Reset initialization and final local native/composition runs
 
@@ -5243,10 +5237,8 @@ observed results and their limits. Do not include credentials or session data.
   directory. Reviewed full check and scoped format pass; browser/artifact
   Gitleaks directory scans and checklist/diff checks pass. No test/retry/limit
   setting was changed to obtain these results.
-- Checklist775/367 and section verdicts remain unchanged. Profile/control
-  inventory and continuation checkpoint are updated; original prompt/request
-  hashes remain unchanged and native goal active. Exact-source CI remains pending.
-  No merge or deployment is authorized.
+- Checklist775/367 and section verdicts remained unchanged at this observation.
+  Original prompt/request hashes match. Exact-source CI was pending.
 
 ### 2026-10-08 —606 exact-source recovery and immutable native/upload checks
 
@@ -5267,8 +5259,8 @@ observed results and their limits. Do not include credentials or session data.
   progress in the real upload cases. Source/scope/logs and numeric proof are in
   [sanitized606 candidate report](artifacts/frontend-candidate-606ebb6-2026-10-08.json).
 - These gates cover606; subsequent CSS and account browser evidence are a
-  separate working-tree packet. Original prompt/request hashes remain unchanged,
-  native goal stays active and checklist775/367 remains unchanged.
+  separate working-tree packet. Original prompt/request hashes match;
+  checklist775/367 remained unchanged at this observation.
 
 ### 2026-10-08 — Selected-tab contrast, tag target and account native controls
 
@@ -5453,7 +5445,7 @@ observed results and their limits. Do not include credentials or session data.
   observed items close: checklist787 checked/355 unchecked;58 verified/
   40 partial/six N/A/one deployment-only. Section72's required engineering gate
   contains no checkboxes, explaining why substantial build/test work changes
-  no item counter. User pace steering is saved in the continuation checkpoint.
+  no item counter.
 
 ### 2026-10-08 — Native dirty controls and approved UI wrap
 
@@ -5526,3 +5518,42 @@ client/gateway/provider scope.
   Scoped format21 frontend files and git diff check pass. Existing auth/focus/editor
   corrections are included. Exact-source CI and configured production image remain
   required; actual provider/target gates remain open.
+
+### 2026-10-08 — Exact approved-UI image, API deadlines and CI failure
+
+- [Configured5e candidate](artifacts/frontend-candidate-5e71cd8-2026-10-08.json)
+  runs exact Git-archive source5e71cd8c8f722a3512d868401d3c0d99e49332a1, matching
+  build/runtime IDs, zero app mounts, frontend/backend health200. Controlled
+  native packet156/156 and separate real API/SSR packet9/9 pass, retries/skips/
+  flaky zero. The former includes16 editor,32 preferences and16 delayed-JS auth
+  cases; the latter proves actual Blob/CSRF/processing/persistence,3MiB byte
+  progress/cancel/retry and stable SSR hydration. Mac keyboard setting restored
+  and verified after each run. Local loopback/illustrative origin/backend c1;
+  no target deployment claim. Raw reports retained privately under /tmp with
+  SHA-256 recorded in the candidate artifact.
+- [CI37735197541](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37735197541)
+  completes seven successful jobs: backend383, frontend581/43 files, smoke372/
+  12 intentional skips with no flaky cases, foundation, secrets and both images.
+  Full-stack122 passes/one Android failure; Release fails. Retained trace shows
+  heading matched the catalog H2 while frameUrl remained /explore; disclosure
+  isVisible=false before game navigation completed. Waiting for actual grid and
+  enabled cell corrects test readiness, without changed retries/timeouts/source.
+- Initial corrected local flow packet4 pass/one Firefox failure: Cross selection
+  passed before later /create session500. Candidate proxy records ECONNRESET/
+  socket hang up; backend closure cause remains unknown. Separate unchanged-source
+  Firefox repeat1/1 passes. All five relevant browser profiles therefore have
+  successful affected-control observations across these runs, not one clean
+  consolidated five-case gate. Earlier failed reports/traces remain private.
+- [Actual Nginx deadlines](artifacts/nginx-upstream-deadlines-2026-10-08.json)
+  exercises unchanged current template via official envsubst and owned stalled
+  listeners: health50410.029s, genericAPI50460.014s, auth50460.022s. All three
+  pass, original recovery HTML hash/no-store/security headers, one upstream accept
+  each and owned-container/network cleanup verified. Initial private harness
+  readiness failure produced no measurements; its cause remains unknown. Revised
+  harness retains startup diagnostics and uses an ordinary isolated bridge.
+- Applicable local section82 timeout maps native client20s body read, SSR4s body
+  read, upload120s guards and actual gateway10/60s inactivity deadlines. It does
+  not prove a total-transfer ceiling, connect/send/frontend120s, actual provider/
+  CDN/TLS or target load. Item closes within the tracker predeployment definition;
+  checklist788/354,59 verified/39 partial/six N/A/one deployment-only. Final
+  corrected-source CI and real deployment remain separate gates.

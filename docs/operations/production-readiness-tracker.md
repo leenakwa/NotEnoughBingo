@@ -29,78 +29,42 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-10-08: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-10-08: **59 verified**, **39 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
 
 ## Repository review map
 
-### Latest source gate — 2026-10-08
+### Latest observed source gate — 2026-10-08
 
-Pushed e6 passes all nine [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37723657862):
-backend383, frontend564/42 files, full-stack120, smoke303 plusone flaky WebKit
-signup case/12 intentional skips. Actual merge tree equals HEAD. Last strict
-zero-retry CI is606; its exact configured image passes53 bounded cases.
-Current hydration/focus/editor fixes require their own consolidated final gate;
-Node22 hydration packet passes566 units/16 controlled browser cases, and a
-separate optimized isolated one-line editor guard passes the formerly failing
-native fast-input case. Do not describe current source as release ready.
+Source `5e71cd8` passes seven checks in
+[CI37735197541](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37735197541):
+backend383, frontend581/43 files, smoke372/12 intentional skips without flaky
+cases, foundation, secrets and both image jobs. Full-stack122 pass/one Android
+failure; Release fails. The trace shows the test matched the catalog card heading
+before navigation to the game completed. Test readiness correction is under
+verification; this source does not pass the complete release gate.
 
-Existing observed evidence now maps12 additional items: database backup/
-migration/rollback contracts, six scoped network-panel inspections and both
-mixed frontend/backend combinations. These are local versioned observations,
-not proof of the target infrastructure or latest working-tree frontend. Section42
-closes locally; §103 remains partial until the current frontend gate. Current
-**787 checked /355 unchecked**, **58 verified /40 partial /six N/A /one deployment-only**.
-Target backup/registry/config/CDN/device checks remain explicit. See the dated
-reconciliation in [evidence](production-readiness-evidence.md) and
-[checkpoint](production-readiness-continuation-plan.md).
+Its exact configured optimized image passes156 controlled native cases and a
+separate nine-case real API/SSR packet, retries zero. Build/runtime release IDs
+match and health returns200. These checks use isolated local services and an
+illustrative public origin. Target infrastructure, providers, CDN, capacity and
+native-device capabilities remain separate requirements. Historical checks and
+failures are retained in the [dated evidence](production-readiness-evidence.md).
 
-### Current requirements override — 2026-10-03
+Current **788 checked /354 unchecked**. Section42 backup/migration/rollback
+contracts and section82 applicable API contracts have local evidence. Provider
+and target measurements remain open in their relevant sections.
 
-The user confirmed that all new local UI changes are intentional: account forms
-open in dialogs, registration language choice is a one-time dialog, language
-preferences stay in profile settings, and catalog/search language pickers are
-removed. The fixed header and revised hover/shadow treatment are also retained.
-The original prompt is preserved unchanged. Earlier language-picker observations
-are historical evidence, not a requirement to restore removed controls. The previous 56/42 snapshot predates these changes; section 58 was reopened
-for comment-cache cleanup when both cross-tab mechanisms are unavailable. Combined UI source `e6a54dc`
-passed all nine CI jobs, including 56 live flows and 176 smoke checks.
-Exact-source CI on `29ac99b` then passed all nine jobs, including the database
-audit and browser-error collection: 206 backend tests, 166 frontend tests,
-179 smoke checks and 57 live flows. Social-form source `b466456` then passed
-all nine jobs: 206 backend tests, 172 frontend tests, 180 smoke checks and
-59 live flows. Silent-autofill source `1f4a773` also passed all nine jobs (one WebKit smoke
-retry); the subsequent social-validation `eca9298` live/release gate failed on
-an API-session assertion. Its corrected browser assertion and root-comment
-recovery passed all nine jobs on `8a5d31a` (206 backend, 192 frontend, 196 smoke
-with 12 skips, 64 live). Later report recovery `a9b3cc4` has local evidence
-but its gate failed on four report fixture-order cases and one old-document
-diagnostic request in WebKit. Corrections and reply/edit recovery now passed
-209 frontend tests and all 72 local live flows. Source `e6858a0` then passed all nine CI jobs (216 backend, 209 frontend, 196 smoke plus 12 skips, 72 live); the later query correction `8299cbf` passed all nine jobs (220 backend, 209 frontend, 72 live; smoke 194 passes plus two WebKit retries and 12 skips). Email and smoke-readiness source `94ee150` then passed all nine jobs (235 backend, 209 frontend, 200 smoke passes with 12 intentional skips and no retries, 72 live). Frontend-release source `b5ebaff` then passed all nine jobs (240 backend, 221 frontend, 200 smoke passes plus 12 intentional skips without retries, 72 live). Partial-settings source `7381042` then passed all nine jobs (240 backend, 226 frontend, 200 smoke passes plus 12 intentional skips without retries, 74 live). Editor hydration source `371dd1b` then passed all nine jobs (240 backend, 231 frontend, 200 smoke passes plus 12 intentional skips without retries, 76 live). Catalog/player source `6eaaf25` then passed all nine jobs (240 backend, 240 frontend, 200 smoke passes plus 12 intentional skips without retries, 78 live). Editor mutation source `6bcc3ef` failed CI (39 live passes, two failures, 40 not run; other checks/images and 200 smoke plus 12 skips passed). Own-draft upload continuity, isolated cleanup and player lifetime source `07d3e41` then failed one live WebKit page-error assertion (82 passes; other checks/images passed). Native editor URL/query sync, card lifetime and active-profile-tab corrections now pass 262 frontend tests and nine engine cases locally; their `bdd953b` gate failed on a password-change/late-analytics cookie race (82 live passes, one failure, three not run; smoke 199 passes/one retry/12 skips). Its cookie fix and notification/share guards now pass 273 frontend tests, 242 backend tests plus one container-only skip, 12 engine cases and a controlled cookie-race live journey locally. Source `82f2f07` passed all functional/image/foundation jobs (243 backend, 273 frontend, 200 smoke plus 12 skips without retries, 90 live); history/Release failed on two synthetic test-password findings. Generated test passwords and two exact historical exceptions then passed all nine jobs on `eca815d` (243 backend, 273 frontend, 200 smoke plus 12 skips without retries, 90 live). Subsequent profile loading/viewer/action source `438a452` passed 281 frontend tests and nine engine cases locally, but its gate failed one avatar keyboard assertion (91 live passes, one failure, one not run; other seven jobs and 200 smoke plus 12 skips without retries passed). A held activity response reproduced a changed tab order; the keyboard scenario now waits for the activity panel to settle and retains its focus/Enter/outline assertions. Keyboard/activity source `4b5e8e4` then passed all nine jobs (243 backend, 281 frontend, 200 smoke plus 12 skips without retries, 93 live). Account action ownership now passes 293 frontend tests, build/format and 12 real-stack/browser cases locally; accepted avatar/export responses cannot continue old UI work after departure. Account/session error timing also has focused unit evidence. Its new source requires its own CI. Player social actions now synchronously prevent duplicate like/follow and competing social requests; existing follow/archive/restore/delete lifetimes have dedicated unit controls, 302 full frontend tests, build/format and 12 related engine cases locally. New player source requires its own CI. Account source `808cb81` passed all nine jobs (243 backend, 293 frontend, 200 smoke plus 12 skips without retries, 95 live); player source `1a671eb` likewise passed (243 backend, 302 frontend, 200 smoke plus 12 skips without retries, 98 live). Missed explicit sign-out now has 305 frontend tests and eight engine cases locally; section 58 closes from those scoped storage results. A stricter final page-error run passed seven cases and failed one mobile WebKit case on rejected development chunks. The lazy feedback wrapper, session baselines, persisted-page handling and profile/account form corrections now pass 352 frontend tests, 247 backend tests plus one infrastructure-only skip, 36 strict four-engine cases without retries and two configured production-route probes locally. Independent correctness/security/coverage reviews found no remaining defect within that packet. Native BFCache/autofill/device and remaining form/control/API/load/operations evidence are still open; its exact-source CI remains pending. Remaining checklist bullets need individual evidence.
+### Accepted interface requirements
 
-### Continuation checkpoint — 2026-10-08
-
-Source `c1fc2d7772ce697cb0dcccc528da4ab126040223` passed all nine jobs in
-[CI 37697846802](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37697846802).
-The subsequent source `d4dd0b7a16bfbb5f02d7d9a266a9c686a74f5fd2` passed local
-363 backend / one infrastructure skip, 415 frontend and 24 strict four-engine
-preference/account cases. Its [CI 37703857269](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37703857269)
-failed newly reported Next.js production advisories; dependent jobs skipped.
-The bounded 16.3.8 patch installs cleanly and production npm audit is clear.
-New auth/editor corrections and request-size coverage now pass 382 backend tests
-plus one infrastructure skip and 469 frontend tests with lint/types/format.
-Strict current token/editor cases, quota-isolated token variants, production
-route/heading/canonical probes and sitemap walk pass; exact-source CI remains
-pending. The follow transaction defect is reproduced/fixed and independently reviewed;
-12 affected engine cases and six late business-graph rollback cases pass.
-Eleven section 82 contract bullets now have mapped local evidence, including
-actual oversized bodies and bounded reads; provider timeout remains open.
-Current total **787 checked / 355 unchecked**; the later reconciliation below the dated evidence closes section42 locally.
-Use the dated evidence and [continuation plan](production-readiness-continuation-plan.md)
-for preserved failures, exact commands and next tasks. Production readiness has
-not been established.
+The user retains account dialogs, one-time registration language onboarding,
+profile language preferences, removed catalog/search language pickers, fixed
+header and intentional hover/shadow treatment. On2026-10-08 the user chooses full
+profile-card text wrapping, mobile player variantB with the grid above controls,
+and cell font scaling with board width. These choices supersede older interface
+observations; the original prompt remains unchanged.
 
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,
   `frontend/tests/e2e`, and browser checks on the isolated `nebqa` stack.
@@ -195,7 +159,7 @@ not been established.
 - [x] 79. STATIC ASSETS — Verified before deployment: production candidate icon/social/static assets, normalized images, protected ZIP downloads, branding and case-sensitive routing were observed; external fonts, PWA manifest and standalone static documents are absent.
 - [x] 80. PUBLIC FILE EXPOSURE — Verified before deployment: current production server returned 404 for environment/Git, SQL backup, SQLite, private key, log and internal Next server probes; release image/context guards exclude sensitive files. Target edge/bucket smoke remains a rollout gate.
 - [x] 81. SOURCE MAPS — Verified before deployment: private map policy, production-image file inspection, HTTP probes, and CI guard.
-- [ ] 82. API READINESS — Partial: catalog search lengths, language choices and tag count/length are bounded; malformed ownership/sort filters return 400, while guest `mine=true` returns 401. Notifications validate `unread` and expose only supported list filters in OpenAPI. Auth, access, schema and common errors are covered by the current suite. An endpoint-by-endpoint matrix for timeouts, pagination, request limits, logging and idempotency remains.
+- [x] 82. API READINESS — Verified before deployment: the API verification matrix maps validation, authentication/authorization, quotas, schemas/errors, pagination, bounded bodies, safe logging, secret exclusion and required idempotency. Native client20s and SSR4s body deadlines, upload120s guards and actual Nginx10/60s upstream-read observations cover applicable local request paths. Real provider/edge capacity and deployment checks remain separate.
 - [ ] 83. CORS — Partial: QA preflight allows its configured origin with credentials and denies an outside origin; production rejects wildcard, HTTP, and local CSRF/CORS origins; staging target remains unspecified.
 - [x] 84. FEATURE FLAGS — Verified before deployment: complete runtime feature inventory, development-only Agentation, production debug/seed rejection and server staff permissions; remote flags are absent and no unfinished feature CTA is exposed.
 - [x] 85. DEBUG ARTIFACTS — Verified before deployment: runtime source and production build reviewed for console/debug/TODO/mock/fake-auth/seed/credential artifacts; retained local defaults are guarded development/configuration values rejected by production checks.

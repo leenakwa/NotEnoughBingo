@@ -7,7 +7,7 @@ types. The initial product does not need distributed business transactions or
 microservice operational overhead.
 
 - Next.js owns web rendering, navigation, accessible interaction, guest
-  progress, and the generated API client.
+  progress, and the typed API client with generated OpenAPI schema types.
 - Django and Django REST Framework own all business rules, persistence,
   permissions, validation, moderation, and API contracts.
 - PostgreSQL is the source of truth.
@@ -42,7 +42,8 @@ Browser ── HTTPS ───────▶│ ingress / proxy │
                  Celery worker/beat ─── PostgreSQL / Redis / S3 / Email
 ```
 
-Local development adds MinIO and Mailpit. Production should prefer managed
+Fresh local installs add SeaweedFS and Mailpit; retained legacy stacks use MinIO.
+Production should prefer managed
 PostgreSQL, Redis, object storage, mail delivery, TLS ingress, and centralized
 logs.
 

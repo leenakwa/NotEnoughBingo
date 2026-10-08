@@ -1520,7 +1520,7 @@ For every important API endpoint verify relevant:
 - [x] rate limiting;
 - [x] understandable error responses;
 - [x] stable response schema;
-- [ ] timeout;
+- [x] timeout;
 - [x] pagination;
 - [x] request-size limits;
 - [x] logging;

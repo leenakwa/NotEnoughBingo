@@ -95,12 +95,14 @@ CONFIRM_RESTORE=not-enough-bingo-local \
 
 The script:
 
-1. verifies confirmation and dump readability;
-2. stops backend, worker, and beat;
+1. verifies confirmation, dump readability, its archive listing and the adjacent
+   checksum when present;
+2. stops backend, worker, beat, frontend and proxy;
 3. drops/recreates the configured local database;
 4. restores with ownership/ACL portability options;
-5. runs migrations and Django deployment checks;
-6. restarts application processes.
+5. runs migrations and ordinary Django system checks;
+6. once stopped, restarts those services only after success; restore failure
+   leaves them stopped for inspection.
 
 Do not run the local script against production. Production restoration requires
 an incident/change record and provider-specific tooling.

@@ -53,15 +53,13 @@ and the editor inspector with Bold selected. Ten state/width combinations pass
 full-severity Axe, complete console-warning/error and page-error assertions,
 default large-heading/control text and visible control-border contrast of at
 least 3:1, computable native accent contrast, and one keyboard-modality 3 px
-focus-outline sample per state. Final log:
-`/tmp/neb-ui-contrast-loaded-reviewed-oct08.log`.
+focus-outline sample per state. Source-specific runs and failures are recorded
+in the [dated evidence](production-readiness-evidence.md).
 
 Default range accent computes to the ink color. The rendered Chromium native
 checked checkbox was separately inspected: its dominant blue `(0,117,255)` and
 white mark/background have 4.21:1 contrast; anti-aliased edge pixels are not the
-solid accent. Its screenshot/pixel record is
-`/tmp/neb-native-checkbox-colors-oct08.json`. Profile/editor screenshots remain
-under `frontend/.playwright-cli/artifacts/ui-contrast-loaded-reviewed-oct08`.
+solid accent.
 
 This supports reasonable default large-text/UI contrast, with explicit limits:
 author-controlled board colors/images, disabled controls, all OS-native widget
@@ -69,21 +67,9 @@ pixels, background-image/pseudo-element compositing, group opacity and every
 focus state are not certified by this probe. Normal text contrast has separate
 full-severity Axe evidence. The probe is not full WCAG certification.
 
-Early contrast attempts are retained. The first focused a Next development
-toolbar control; another command had an incorrect relative path and repeated
-the unchanged probe. Subsequent guessed account routes returned 404. The final
-probe uses the actual `/profile` route, waits for account/preferences/session
-loading to finish and focuses a product control in keyboard modality. An
-independent review identified the initial unasserted native-accent measurement;
-the final probe adds that assertion and separate native-checkbox visual evidence.
-
 ## Native browser capability limits
 
-The browser specialist created a dedicated Chrome tab, tried documented native
-app access by bundle ID and name, and both timed out. Command-plus/equal did not
-change the 1728×996 CSS viewport or DPR 2. The extension screenshot omits browser
-chrome; its viewport control does not prove native zoom. The specialist reset
-zoom with Command-0 and closed only its diagnostic tab. No application defect
-was reproduced, but actual 200% browser zoom and light/dark favicon visibility
-remain unchecked. They need working native browser controls and actual chrome
-screenshots; a CSS/device-scale proxy is insufficient.
+Actual200% browser zoom, light/dark browser-chrome favicon visibility, native
+screen-reader behavior and physical devices remain unchecked. Viewport or
+CSS/device-scale changes do not establish native zoom. Working native browser
+controls and browser-chrome screenshots are required for those observations.

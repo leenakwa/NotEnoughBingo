@@ -222,7 +222,7 @@ the current bingo. Maximum 15 tags is enforced server-side.
 - owner;
 - public ID;
 - purpose: avatar, cover, board background, cell image, export, data export;
-- state: pending, uploaded, scanning, ready, rejected, quarantined, deleted;
+- state: pending, uploaded, processing, ready, rejected, quarantined, deleted;
 - random object key and bucket identifier;
 - declared and detected MIME;
 - extension derived by the server;

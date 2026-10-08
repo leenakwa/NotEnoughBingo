@@ -5,94 +5,41 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Previous source `e6f6dfc` passes all nine
-[CI37723657862](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37723657862)
-jobs: backend383, frontend564/42 files, full-stack120, smoke303 plusone flaky
-WebKit signup case/12 intentional skips. Actual merge checkout shares HEAD
-tree90b707ea2317e7dcdee4d1341239bcf0fe8286c0. This is not a zero-retry smoke gate.
-The retained trace and deliberate delayed-JS reproduction confirm enabled SSR
-registration accepts input before hydration, then loses username/password on
-email correction. A valid SSR form also attempts native GET with credentials in
-query; dummy-only requests were intercepted before upstream. Independent security
-assessment is Medium; actual recipient/log/history exposure is not established,
-and repository Nginx logging strips queries. Working-tree initial-readiness gates
-for Register/Forgot pass37 auth cases and scoped independent reviews. Combined
-Node22 lint/types and581 tests/43 files pass including approved UI and API cancellation changes. Corrected delayed-JS browser cases
-pass16/16 with zero retries on nebqa development frontend18080. Their exact-source
-CI and configured production image gates remain pending. New editor/preference
-native coverage on606 records27 passes/21 failures; retained diagnoses correct
-native select/link and repeated-dialog assumptions. Request-owned focus restoration
-and the editor dirty-status equality guard are independently reviewed. Actual
-Firefox focus restoration passes all four profiles; all16 corrected editor cases
-pass. The final eight dirty-navigation scenarios pass8/8 on development18080
-with genuine keyboard/dialog assertions, retries zero. Reports across runs cover
-48 relevant cases, not one consolidated final48-case gate. Unchanged606 reproduces
-React185 twice on unpaced501-character input; exact guard-only optimized image
-b39b394 passes the same case. It is an experimental unattached commit, not the full
-current source. User-approved profile wrapping fits full long text at320 and1728;
-mobile board-first layout and width-scaled font are implemented after
-explicit choices. Four controlled layout cases and four actual SSR hydration cases
-pass across four profiles; bounded Chrome700/701 visibility and console checks pass.
-Native caller cancellation now preserves AbortError while reading the response body,
-with four useful regressions and an exact native object-identity confirmation. The full new source/image/CI gate remains pending.
+Latest observation —2026-10-08: source `5e71cd8` passes seven jobs in
+[CI37735197541](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37735197541).
+Backend383, frontend581/43 files, smoke372/12 intentional skips without flaky
+cases, foundation, secrets and both images pass. Full-stack122 pass/one Android
+failure; Release fails. The retained trace shows a test matched the catalog card
+heading before navigation completed. Corrected readiness waits pass the affected
+play controls across all five profiles. The first local packet has four passes
+and a later Firefox editor500 caused by an upstream connection reset; its
+separate unchanged-source repeat passes. Final corrected-source CI is required.
 
-Last strict continuation evidence (2026-10-08): `606ebb6` passes all nine
-[CI37720755955](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955)
-jobs: backend383, frontend564/42 files, smoke264/12 intentional skips with no
-flaky cases or retries, full-stack120, scans, foundation, both images and Release.
-Actual merge checkout shares HEAD treea620355dc1e77f3f241fe976654a40525be71638.
-Its exact configured optimized image passes53 cases:32 controlled profile native,
-16 controlled auth silent-fill and five real API upload cases. Build/runtime
-release match, zero app mounts and health200; Mac app keyboard setting restored.
+The exact configured optimized5e image passes156 controlled native cases and a
+separate nine-case real API/SSR packet, retries zero; matching build/runtime
+release IDs, no application mounts, health200. See the
+[candidate report](artifacts/frontend-candidate-5e71cd8-2026-10-08.json).
+User-approved profile full wrapping, mobile grid above controls and board-width
+font scaling have narrow/wide and hydration evidence. The
+[Nginx probe](artifacts/nginx-upstream-deadlines-2026-10-08.json) verifies local
+10/60s upstream-read deadlines with safe504 recovery.
 
-Historical `b0d3e7e` was all-nine green in
-[CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152):
-backend383, frontend503, smoke231 plusone flaky case/12 intentional skips and
-full-stack119. The flaky case is the same reset test; this was discovered by
-reviewing the retained job log. Earlier failed revisions remain in dated evidence.
-
-Its exact Git-archive configured optimized frontend image passes68 auth/control
-cases across four engines, retries zero; matching build/runtime release and
-health200. The asset archive now holds61 files, all checked over HTTP before
-candidate promotion. Original50-file promotion/rollback checks and compatible
-backend/worker rollout have separate sanitized evidence. Local images use
-loopback HTTP, development Django settings and an illustrative HTTPS origin.
-Sixteen optimized fresh/warm observations record152–165KB fresh JS and tiny CLS;
-284 aborted RSC reads mean that diagnostic is not a clean performance gate.
-
-The committed620 upload-progress packet passes Node22 lint/types and560
-tests and120 ordered live cases, with scoped reviews. Actual3MiB slow-storage
-progress/cancel/retry/processing/ready-attachment/reload proof passes;12 scoped
-cases across four engines also pass. Its exact configured optimized image passes
-one3MiB slow API PUT case and four API Blob/CSRF/processing/persistence cases,
-retries zero.620 CI failed the silent-fill test;606's enabled-field test
-precondition corrects that failure. Profile19 units/32 controlled browser cases
-are included in606. Subsequent working-tree scoped CSS corrects selected-tab
-hover contrast and44px tag-removal targets;16 browser regressions pass. Account
-native constraints/FormData coverage adds24 cases (amended16 plus unchanged8),
-without an account implementation change. The packet's e6 CI is green with the
-signup flake described above; its optimized-image gate is deferred while the
-confirmed initial-readiness source fix is verified.
-Real CDN, target capacity, native browser zoom/favicon/autofill/device
-evidence and other local requirements remain open. The checklist records787
-checked/355 unchecked;58 verified/40 partial/six N/A/one deployment-only.
-
-Use the current tracker and latest [dated evidence](production-readiness-evidence.md). All observations below
-remain historical; the current working tree is not a completed release gate.
+Current checklist:788 checked/354 unchecked;59 verified/39 partial/six N/A/
+one deployment-only. Counts describe evidence, not a product-readiness percentage.
+The [tracker](production-readiness-tracker.md) and
+[dated evidence](production-readiness-evidence.md) contain scope and open items.
 
 ## Decision
 
-Source606 passes its strict exact-source gate and bounded local image checks.
-Sourcee6 passes all CI jobs with one flaky smoke case. The subsequent hydration
-fix and editor/preference/browser coverage require their own final checks,
-exact-source CI and configured image verification before promotion. This is **not an authorized
-public
-deployment**. Images have not been promoted to a production registry or tested
-on the target platform.
-Production operator identity, private support contact, legal review, managed
-services, TLS/ingress, secrets, monitoring, and off-site recovery remain to be
-configured and verified for the target environment. See the
-[production deployment baseline](production-deployment.md).
+The latest source has an incomplete release gate. Target operator/support/legal
+choices, services, TLS/ingress, secrets, monitoring, CDN/capacity, native-device
+checks and off-site recovery remain to be verified. No production registry
+promotion or public deployment has occurred. See the
+[deployment baseline](production-deployment.md).
+
+The sections below retain the2026-09-29/30 baseline. Their old dependency versions,
+counts and interface observations do not describe the latest source; later
+explicit user choices and dated evidence supersede them.
 
 ## Test environment
 
@@ -106,7 +53,7 @@ configured and verified for the target environment. See the
   bases. These mutable tags are only inputs to the local check; record and
   promote immutable release image digests after CI succeeds.
 
-## Verified locally
+## Historical local baseline
 
 | Check | Result |
 | --- | --- |
@@ -134,7 +81,7 @@ the infrastructure file is outside that image. The separate infrastructure
 checks validate the template and rendered Nginx configuration; on a full
 repository CI checkout the assertion runs normally.
 
-## User-path notes
+## Historical user-path notes
 
 - Guest discovery and Explore showed public boards; a guest like led to Login
   with a return URL. At 320 px, sampled Discover and Support pages had no page
@@ -178,14 +125,9 @@ repository CI checkout the assertion runs normally.
 
 ## Remaining launch gates
 
-1. Review and merge the draft release PR when approved. GitHub Actions run
-   `36630667887` passed the `Release gate` on
-   `d629a7153c5b33ddf6ece438bdc98faf2d428067`, including clean-install
-   full-stack flows, image scanning, and SBOM generation; a later run also
-   passed on `056576509d87d41073d1af9796bc1a2098abe703`. Require the same
-   gate on the final PR head. Production registry
-   publication, signing/attestation, digest promotion, and platform rollback
-   still need a target deployment.
+1. Require every release-gate job to pass for the final source. Production
+   publication, signing/attestation, digest promotion and platform rollback need
+   a target deployment and authorization.
 2. Configure the actual operator name, private monitored support address, and
    review the Privacy Policy, Terms, and moderation process for the deployment.
 3. Provision and test the production domain, TLS edge, trusted proxy CIDR,

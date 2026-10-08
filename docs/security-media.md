@@ -23,8 +23,8 @@ Security-sensitive behavior must have executable tests.
   JavaScript cookies.
 - Passwords use Argon2id through Django's hasher interface, with parameters
   reviewed as hardware changes.
-- Password policy favors length and breached-password detection over arbitrary
-  composition rules.
+- Password validation requires at least 12 characters and rejects similar,
+  common, numeric-only and predictable starter-word passwords.
 - Email verification and reset tokens are random, single-use, short-lived, and
   stored only as digests.
 - Critical account changes generate security email.

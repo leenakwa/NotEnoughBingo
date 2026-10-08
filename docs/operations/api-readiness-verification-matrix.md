@@ -37,27 +37,25 @@ measure every endpoint at the actual provider. Nginx's common body ceiling is
 upload kinds apply smaller bounds. Gateway/unhandled 5xx may be non-JSON and are
 normalized safely by clients rather than promised to use a DRF envelope.
 
-Final local backend integration passes **382 tests / one infrastructure skip**;
-schema generation and generated client types match. The real local broker-failure
-probe retains registration 202/pending intent and delivers after manual normal
-broker republish. Outstanding: exact-source release gate; actual edge trust,
-remaining per-route network measurements, provider timeouts and scaled concurrent
-load. Section 82 stays partial until its relevant individual bullets are proved.
+The [dated evidence](production-readiness-evidence.md) records source-specific
+backend runs, schema comparison and broker-failure recovery. Independent item
+review maps all twelve section82 bullets to applicable local contracts.
 
+Seven request-size cases in `tests/test_request_size_limits.py` cover bounded
+reads without Content-Length, actual oversized PUTs without database/storage/
+enqueue changes, normalized UTF-8 bounds, retained draft/version/ETag and real-cap
+malformed bodies. The byte-cap test lowers its threshold because valid bounded
+fields cannot reach the real512KiB cap.
 
-Independent item review maps eleven section 82 bullets to observed local contracts:
-validation, authentication, authorization, quotas, readable errors, stable schemas,
-pagination, request sizes, logging, secret exclusion and required idempotency.
-The request-size gap is now covered by seven cases in
-`tests/test_request_size_limits.py`: bounded reads without Content-Length, actual
-oversized PUTs with no database/storage/enqueue changes, normalized UTF-8 exact/over
-limits with preserved draft/version/ETag, and real-cap malformed bodies. The exact
-byte-cap test explicitly lowers its threshold; valid bounded fields cannot reach
-the real 512 KiB cap. Independent coverage review found no remaining local gap in
-that scope, followed by the 370-pass PostgreSQL run. Provider/edge timeout and
-concurrent target measurements remain open; these eleven checkboxes do not make
-the complete section or deployment ready. Logs are recorded in the dated evidence.
-
+Native stalled HTTP200 bodies exercise the browser20s and SSR4s deadlines; current
+units also cover body cancellation, timeout classification and upload120s guards.
+The [actual Nginx report](artifacts/nginx-upstream-deadlines-2026-10-08.json) records
+three unchanged-template upstream read deadlines: health10.029s, API60.014s and
+auth60.022s. Every504 returns the original recovery HTML with no-store; one upstream
+request per probe. These are inactivity deadlines for an upstream that sends no
+headers, not a total-transfer limit. Connect/send/frontend120s and real provider/
+CDN/TLS latency, capacity and deployment remain unmeasured. This bounded local
+contract evidence closes section82 before deployment, not the overall release.
 
 Important transaction evidence is mapped across persisted publication/profile,
 credential/session/audit, registration/email/deletion intent and export graphs.
@@ -70,6 +68,6 @@ expired idempotency retention. Files: `test_follow_transactions.py`,
 `test_business_graph_rollback.py`, alongside `test_transaction_boundaries.py`,
 `test_credential_transactions.py`, `test_account_email_recovery.py` and
 `test_account_step_up_transactions.py`. Independent correctness/coverage review
-and the final 382-pass PostgreSQL suite support checking §42 transactions for
+and PostgreSQL fault-case results support checking §42 transactions for
 these relevant local business boundaries. Broker delivery, post-commit process
 failure and deployment/migration compatibility remain separately constrained.

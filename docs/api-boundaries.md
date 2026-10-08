@@ -8,8 +8,9 @@
 - Public IDs are opaque strings.
 - Unsafe requests use the authenticated server session plus a valid CSRF token.
 - Browser credentials are sent only to the same application origin.
-- The API is described by OpenAPI and the frontend client is generated from
-  that schema; duplicated handwritten DTOs are not authoritative.
+- The API is described by OpenAPI. Frontend schema types are generated from
+  it; the request client and some DTO interfaces are handwritten. Keep those
+  interfaces consistent with the schema.
 
 The API must never accept an internal database primary key from a public route.
 

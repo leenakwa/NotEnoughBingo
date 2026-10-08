@@ -1,0 +1,202 @@
+{
+  "probe": "actual_nginx_upstream_read_deadlines",
+  "harness_revision": 2,
+  "harness_sha256": "47f4bf930b0dacd74e3743f0f5c791b9b6fe3e936275dcee1df1aa1c465cc095",
+  "owner": "0d21c6d232fb4ba4ae8d3c9bcf947daa",
+  "repository_commit": "5e71cd8c8f722a3512d868401d3c0d99e49332a1",
+  "source_sha256": {
+    "html/service-unavailable.html": "c462ca951b8bd0222359a3a013762c8a6f1558b9482a87de886ddc4d131560ed",
+    "nginx.conf": "8981bf0ff440b6c6e9cba0390be447f64023823a1eda14f8f43e20e12a70dd95",
+    "templates/default.conf.template": "01f91fbbedd1201ea0939783b8460372931c405a70fa41f5454ef6459fa23775"
+  },
+  "compose_sha256": "d38aaccafdd3ad1877fe964a8522be37e522f6291a2938ba425e14ad7e17c45a",
+  "environment": {
+    "NGINX_CLIENT_MAX_BODY_SIZE": "16m",
+    "NGINX_TRUSTED_PROXY_CIDR": "127.0.0.1/32",
+    "NGINX_FORWARDED_PROTO": "http",
+    "NGINX_ADMIN_ALLOW_CIDR": "all",
+    "NGINX_HSTS_SECONDS": "0",
+    "NGINX_AUTH_BURST": "5",
+    "NGINX_ENVSUBST_FILTER": "^(NGINX_CLIENT_MAX_BODY_SIZE|NGINX_TRUSTED_PROXY_CIDR|NGINX_FORWARDED_PROTO|NGINX_ADMIN_ALLOW_CIDR|NGINX_HSTS_SECONDS|NGINX_AUTH_BURST)"
+  },
+  "bind": "127.0.0.1:18587",
+  "read_only_scope": "Owned isolated stalled listeners; GET only; no application/DB/auth state",
+  "limitations": [
+    "Local Docker Nginx, not real deployment/CDN/TLS",
+    "Connect/send/frontend 120-second timeouts are not measured",
+    "Upstream accepts connection but sends no response headers/body",
+    "Environment uses literal public Compose defaults, not production secrets/config"
+  ],
+  "results": [
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "status": 504,
+      "elapsed_seconds": 10.029,
+      "response_bytes": 1640,
+      "response_sha256": "c462ca951b8bd0222359a3a013762c8a6f1558b9482a87de886ddc4d131560ed",
+      "headers": {
+        "Server": "nginx",
+        "Date": "Thu, 08 Oct 2026 06:19:00 GMT",
+        "Content-Type": "text/html",
+        "Content-Length": "1640",
+        "Connection": "keep-alive",
+        "ETag": "\"6abce61e-668\"",
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        "Strict-Transport-Security": "max-age=0",
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
+      },
+      "configured_read_timeout_seconds": 10,
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bingos/",
+      "status": 504,
+      "elapsed_seconds": 60.014,
+      "response_bytes": 1640,
+      "response_sha256": "c462ca951b8bd0222359a3a013762c8a6f1558b9482a87de886ddc4d131560ed",
+      "headers": {
+        "Server": "nginx",
+        "Date": "Thu, 08 Oct 2026 06:19:50 GMT",
+        "Content-Type": "text/html",
+        "Content-Length": "1640",
+        "Connection": "keep-alive",
+        "ETag": "\"6abce61e-668\"",
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        "Strict-Transport-Security": "max-age=0",
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
+      },
+      "configured_read_timeout_seconds": 60,
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/login/",
+      "status": 504,
+      "elapsed_seconds": 60.022,
+      "response_bytes": 1640,
+      "response_sha256": "c462ca951b8bd0222359a3a013762c8a6f1558b9482a87de886ddc4d131560ed",
+      "headers": {
+        "Server": "nginx",
+        "Date": "Thu, 08 Oct 2026 06:19:50 GMT",
+        "Content-Type": "text/html",
+        "Content-Length": "1640",
+        "Connection": "keep-alive",
+        "ETag": "\"6abce61e-668\"",
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        "Strict-Transport-Security": "max-age=0",
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
+      },
+      "configured_read_timeout_seconds": 60,
+      "pass": true
+    }
+  ],
+  "cleanup": [
+    {
+      "kind": "container",
+      "name": "neb-timeout-0d21c6d232-proxy",
+      "removed": true
+    },
+    {
+      "kind": "container",
+      "name": "neb-timeout-0d21c6d232-stall",
+      "removed": true
+    },
+    {
+      "kind": "network",
+      "name": "neb-timeout-0d21c6d232",
+      "removed": true
+    }
+  ],
+  "images": {
+    "nginx:1.30.3-alpine": {
+      "id": "sha256:0d3b80406a13a767339fbe2f41406d6c7da727ab89cf8fae399e81f780f814d1",
+      "repo_digests": [
+        "nginx@sha256:0d3b80406a13a767339fbe2f41406d6c7da727ab89cf8fae399e81f780f814d1"
+      ]
+    },
+    "python:3.13-slim": {
+      "id": "sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b",
+      "repo_digests": [
+        "python@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b"
+      ]
+    }
+  },
+  "container_healthz_ready": true,
+  "loopback_healthz_ready": true,
+  "nginx_version": "nginx version: nginx/1.30.3",
+  "rendered_config_sha256": "cb9bd63e0972dcac8d881ca9ce0216ab471d67891bab0eee79ecbb8885dfed7e",
+  "official_envsubst_entrypoint_sha256": "00d6d14424342d6a3439f4d7af190bfc33b96f40221946b174a6c7385ee3b98c",
+  "entrypoint_verified_original_template_only_allowed_substitutions": true,
+  "startup_elapsed_seconds": 2.284,
+  "parallel_probe_elapsed_seconds": 60.077,
+  "observed_upstream_requests": [
+    {
+      "event": "accepted_without_response",
+      "port": 8000,
+      "method": "GET",
+      "path": "/api/v1/bingos/",
+      "monotonic_seconds": 29452.478458738,
+      "host": "timeout-probe.example.test",
+      "forwarded_proto": "http",
+      "has_request_id": true,
+      "canonical_client_headers_equal": true
+    },
+    {
+      "event": "accepted_without_response",
+      "port": 3000,
+      "method": "GET",
+      "path": "/api/health",
+      "monotonic_seconds": 29452.481758363,
+      "host": "timeout-probe.example.test",
+      "forwarded_proto": "http",
+      "has_request_id": true,
+      "canonical_client_headers_equal": true
+    },
+    {
+      "event": "accepted_without_response",
+      "port": 8000,
+      "method": "GET",
+      "path": "/api/v1/auth/login/",
+      "monotonic_seconds": 29452.481982738,
+      "host": "timeout-probe.example.test",
+      "forwarded_proto": "http",
+      "has_request_id": true,
+      "canonical_client_headers_equal": true
+    }
+  ],
+  "exactly_one_upstream_accept_per_probe_get": true,
+  "upstream_headers_and_listener_routing_match_template": true,
+  "pass": true,
+  "owned_container_state_before_cleanup": [
+    {
+      "name": "neb-timeout-0d21c6d232-stall",
+      "status": "running",
+      "exit_code": 0,
+      "oom_killed": false,
+      "error": ""
+    },
+    {
+      "name": "neb-timeout-0d21c6d232-proxy",
+      "status": "running",
+      "exit_code": 0,
+      "oom_killed": false,
+      "error": ""
+    }
+  ],
+  "total_elapsed_seconds": 63.623,
+  "source_still_current_after_run": true
+}

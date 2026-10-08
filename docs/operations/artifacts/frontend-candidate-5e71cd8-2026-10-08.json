@@ -1,0 +1,65 @@
+{
+  "source_commit": "5e71cd8c8f722a3512d868401d3c0d99e49332a1",
+  "frontend_tree": "9d7a98b7a08e25b2689c362d6536e665d435b747",
+  "image_id": "sha256:ce21d74b8e30d404cc788cd35af65a793482cce04d2e5356f0b0acf5677c965e",
+  "build_release": "5e71cd8c8f722a3512d868401d3c0d99e49332a1",
+  "runtime_release": "5e71cd8c8f722a3512d868401d3c0d99e49332a1",
+  "application_mounts": 0,
+  "frontend_health_status": 200,
+  "backend_ready_status": 200,
+  "reports": [
+    {
+      "scope": "controlled native controls",
+      "stats": {
+        "startTime": "2026-10-08T06:01:05.931Z",
+        "duration": 249383.953,
+        "expected": 156,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "raw_report_sha256": "580b5f5747f05550d1404c882e0ff7054e93a69c42c3193a1341b98910ad52a1",
+      "retries": 0
+    },
+    {
+      "scope": "real API uploads and SSR hydration",
+      "stats": {
+        "startTime": "2026-10-08T06:16:45.862Z",
+        "duration": 53363.822,
+        "expected": 9,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "raw_report_sha256": "97a6aad5a93f4981b56e375d29ce6c1e50c8b529be38c90c48cec7988a686a2d",
+      "retries": 0
+    }
+  ],
+  "total_passes_across_two_runs": 165,
+  "keyboard_preference_restored_verified": true,
+  "ci": {
+    "run_id": 37735197541,
+    "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37735197541",
+    "passed_jobs": 7,
+    "failed_jobs": [
+      "Full-stack product flows",
+      "Release gate"
+    ],
+    "backend_pass": 383,
+    "frontend_pass": 581,
+    "frontend_files": 43,
+    "smoke_pass": 372,
+    "smoke_skip": 12,
+    "smoke_flaky": 0,
+    "fullstack_pass": 122,
+    "fullstack_fail": 1
+  },
+  "limits": [
+    "Isolated local loopback environment with illustrative HTTPS public origin",
+    "Development Django backend c1 with compatible worker; not target production deployment",
+    "165 passes are two separate runs, not one combined suite",
+    "Subsequent four-line test readiness correction changes no runtime application source",
+    "Initial corrected-flow packet: four pass, Firefox create failed on HTTP500 ECONNRESET; independent unchanged-source Firefox repeat one pass",
+    "No provider/CDN/TLS/native-device capacity claim"
+  ]
+}

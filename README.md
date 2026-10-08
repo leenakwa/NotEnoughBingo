@@ -93,7 +93,7 @@ actions, reports, and admin moderation:
 ```bash
 cd frontend
 npm ci
-npx playwright install chromium webkit
+npx playwright install chromium firefox webkit
 cd ..
 make test-e2e-live
 ```

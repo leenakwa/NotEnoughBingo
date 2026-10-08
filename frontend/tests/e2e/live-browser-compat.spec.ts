@@ -31,6 +31,8 @@ test("browse, filter, play, share, and start a draft across browser engines", as
     .locator(".bingo-card__main")
     .click();
   await expect(page.getByRole("heading", { name: bingo.title })).toBeVisible();
+  await expect(page.getByRole("grid")).toBeVisible();
+  await expect(page.locator(".play-cell").first()).toBeEnabled();
   const markStyleDisclosure = page.locator(".play-mark-disclosure > summary");
   if (await markStyleDisclosure.isVisible()) await markStyleDisclosure.click();
   await page.getByRole("radio", { name: "Cross" }).check();
