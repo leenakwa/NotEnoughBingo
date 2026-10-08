@@ -6393,3 +6393,60 @@ and application files are unchanged. The full frontend format check then passes.
 The earlier601-test result retains its tested scope; the corrected source gate
 and built-image geometry remain pending. No failed/skipped job is counted as a
 pass and no assertion or timeout is changed.
+
+### 2026-10-08 — Accepted Follow reservation measured in the d8 image
+
+One seven-context Linux Chromium packet checks guest390 and registered390/1710
+with real unfollowed, controlled following and controlled503 author profiles.
+The actual frontend is d8fe89a/image945ce4d8232c6417865f73de66116a876e60afe32140cbca3a1d69e6e6af62ee;
+backend remains a2. Reviewed checkout cca43db differs only in test formatting and
+documentation, with application files unchanged; the runtime is not relabeled.
+
+All six registered observations complete geometry/accessibility checkpoints:
+real progress200 finishes and play is ready before the optional profile is
+released. Empty sizing slots are inaccessible and non-focusable, both button
+labels fit their reserved bounds, and error slots remain blank with play enabled.
+Header, slot, actions, heading and board rectangles have zero measured change
+before/after profile completion and from the first board frame to final state.
+Guest has no slot; no captured document overflow occurs. Mobile CLS0.00068559295
+attributes to a text node inside P.progress-status with equal reported rectangles;
+wide CLS is0 in this bounded capture. This is not a global zero-CLS verdict.
+
+The packet result is six successful scenarios and one failed console assertion.
+Registered1710 controlled503 independently records a real auth/session GET500
+and an unexpected console500. The console collector retained only whether its
+location exactly matched the profile URL, so direct console-to-session association
+and the server cause are not proved. Both intended profile503 console messages
+are precisely attributed and retained separately. No rerun or weakened assertion
+occurs. Ten observed telemetry writes are intercepted; business writes, page
+errors and harness-proxy errors are zero. Cleanup succeeds and container removal
+is checked; the later service-log inspection below covers the application proxy.
+
+Subsequent read-only service-log inspection finds Next.js failing to proxy the
+same session route with socket hang up/ECONNRESET at13:15:43.326488637Z, roughly
+6.5ms before the recorded500. Backend logs are empty in the retained window;
+its container has no restart or OOM evidence. The upstream connection reset is
+established, but its deeper cause and a backend HTTP500 are not. The controlled
+profile503 is later and separate. Sanitized findings and raw logs are archived;
+no replay or service change is used to dismiss the failed scenario.
+
+Raw proof, scripts and offline summary are archived outside the repository;
+the existing native-form artifact adds the scoped playerLoadingGeometryD8 result.
+Section5 and the corrected source gate remain open.
+
+### 2026-10-08 — Seeded header unread-count revalidation
+
+Source review exposes a consequence of header seeding: the initial public user
+starts an unread-count request, then successful session revalidation supplies a
+new same-account object and the old object-dependent effect fetches again and
+resets the badge. A failed second request can leave a previously known count at0.
+Two new tests fail before the correction. The effect now depends on the account
+ID and an explicit event refresh revision. Bootstrap/path session completion
+does not duplicate the count request; focus, auth events and persisted pageshow
+retain freshness. Optional refresh errors retain the known count, while logout
+and account changes clear it; active-effect/current-account checks reject stale
+results. Eight new cases and the existing prior-account case cover these paths.
+All609 frontend tests in43 files pass locally/19.16s and full ESLint passes;
+independent correctness review finds no meaningful issues. This source correction
+is later than the d8 image packet; its built-image/network and exact-source CI
+checks are pending, and the d8 packet is not relabeled as proving the correction.

@@ -190,6 +190,9 @@ export function AppHeader({
   const router = useRouter();
   const [user, setUser] = useState<HeaderUser | null>(initialUser ?? null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadRefresh, setUnreadRefresh] = useState(0);
+  const userId = user?.id ?? null;
+  const unreadUserId = useRef(userId);
   const [hasScrolled, setHasScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const currentUserId = useRef<string | null | undefined>(
@@ -232,7 +235,7 @@ export function AppHeader({
   }, []);
 
   const refreshUser = useCallback(
-    (redirectIfChanged = false) => {
+    (redirectIfChanged = false, refreshUnread = true) => {
       const version = ++refreshVersion.current;
       const applyUser = (next: AuthenticatedUser | null) => {
         if (version !== refreshVersion.current) return;
@@ -245,6 +248,9 @@ export function AppHeader({
           previousId !== nextId;
         currentUserId.current = nextId;
         setUser(next);
+        if (refreshUnread && nextId && previousId === nextId) {
+          setUnreadRefresh((previous) => previous + 1);
+        }
         if (
           accountChanged ||
           (nextId === null &&
@@ -285,25 +291,29 @@ export function AppHeader({
   );
 
   useEffect(() => {
-    void refreshUser();
+    // The pathname/account effect already refreshes counts during bootstrap and navigation.
+    void refreshUser(false, false);
   }, [pathname, refreshUser]);
 
   useEffect(() => {
     let active = true;
-    setUnreadCount(0);
-    if (!user) {
+    if (unreadUserId.current !== userId) {
+      unreadUserId.current = userId;
+      setUnreadCount(0);
+    }
+    if (!userId) {
       return;
     }
     api.notifications
       .unreadCount()
       .then(({ count }) => {
-        if (active) setUnreadCount(count);
+        if (active && currentUserId.current === userId) setUnreadCount(count);
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, [pathname, user]);
+  }, [pathname, userId, unreadRefresh]);
 
   useEffect(() => {
     const handleCurrentTabChange = () => void refreshUser();

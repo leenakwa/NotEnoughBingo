@@ -104,8 +104,11 @@ The subsequent d8 loading-layout fix seeds the header from the
 already obtained server account and reserves the accepted Follow slot. All601
 frontend tests, lint and TypeScript pass with independent code/auth reviews.
 Its CI37781920465 stops at formatting in one player test; the formatting-only
-correction passes the full format check. Built-image geometry and the corrected
-source gate remain pending; section5 stays partial and local checks do not close it.
+correction passes the full format check. One exact-d8 built-image packet records
+zero measured header/Follow/actions/heading/board movement in seven contexts,
+including optional profile errors. Six scenarios pass; one retains an unexpected
+console500 and real session GET500. The corrected cca source gate remains pending;
+section5 stays partial and scoped geometry does not close it.
 
 ### Accepted interface requirements
 

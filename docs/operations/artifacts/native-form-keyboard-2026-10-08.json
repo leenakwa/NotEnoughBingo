@@ -127,7 +127,7 @@
         "Save"
       ],
       "report": [
-        "×",
+        "\u00d7",
         "reason",
         "description",
         "Cancel",
@@ -147,7 +147,7 @@
       "Corrected WebKit keyboard-launched report dialog traps Tab and returns focus to its launcher after Escape."
     ],
     "console": "Expected intercepted progress404 and validation400 resource errors are retained; no empty-console claim.",
-    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher→Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
+    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher\u2192Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
     "pointerFocusObservation": {
       "engine": "webkit",
       "before": "TEXTAREA[name=comment_body]",
@@ -1319,7 +1319,389 @@
         "frontend/app/layout.tsx",
         "frontend/components/layout/app-header.tsx"
       ],
-      "implementationStatus": "Subsequent working-tree header seeding and user-accepted empty Follow reservation pass601 frontend tests/lint/types and independent reviews. This historical a2 packet remains the before state; new built-image geometry and exact-source CI are pending."
+      "implementationStatus": "Superseded for the affected layout by the d8 header seed and accepted empty Follow reservation; the historical a2 packet remains the before state. See playerLoadingGeometryD8 for measured after-state and its retained failure."
+    }
+  },
+  "playerLoadingGeometryD8": {
+    "runtimePreflight": {
+      "composePath": "/tmp/neb-rollout-a3/compose.json",
+      "frontend": {
+        "image": "sha256:945ce4d8232c6417865f73de66116a876e60afe32140cbca3a1d69e6e6af62ee",
+        "release": "d8fe89ac42613938ef65801b23a4a07b98264dd2",
+        "loopbackPort": 18584,
+        "publicRelease": "d8fe89ac42613938ef65801b23a4a07b98264dd2"
+      },
+      "backend": {
+        "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18585
+      }
+    },
+    "reviewedRepositoryHead": "cca43db8d46ff5e6b5d66dd8af10d7955d87c4a1",
+    "counts": {
+      "observations": 7,
+      "completed": 6,
+      "failures": 1,
+      "observedMutations": 10,
+      "interceptedTelemetry": 10,
+      "blockedBusinessMutations": 0,
+      "expected503ConsoleErrors": 2,
+      "unexpectedConsoleMessages": 1
+    },
+    "rawProofArchive": "/Users/Daniil/.codex/scratch/not-enough-bingo-production-readiness/evidence-d8fe89a-2026-10-08/follow-slot-after-once/proof.json",
+    "proofSha256": "8d4c4967e5540edd3f435dc93d68ade4adde9b3ea9cca626ac498865078d57c5",
+    "observations": [
+      {
+        "mode": "guest",
+        "width": 390,
+        "profileMode": "none",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": false,
+          "profile": false,
+          "followSlot": false
+        },
+        "progressReadyBeforeProfile": null,
+        "emptySlotAccessibleSnapshotEmpty": null,
+        "hiddenSizingLabelsNonfocusable": null,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": null,
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": null,
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": null,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 390,
+        "profileMode": "real-unfollowed",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 390,
+        "profileMode": "controlled-following",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 390,
+        "profileMode": "controlled-503",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [
+          {
+            "type": "error",
+            "message": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "exactProfileLocation": true,
+            "resource503": true,
+            "expectedControlled503": true
+          }
+        ],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 1710,
+        "profileMode": "real-unfollowed",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0.0,
+          "actions": 0.0,
+          "heading": 0,
+          "title": 0,
+          "board": 0.0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 1710,
+        "profileMode": "controlled-following",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0.0,
+          "actions": 0.0,
+          "heading": 0,
+          "title": 0,
+          "board": 0.0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 1710,
+        "profileMode": "controlled-503",
+        "completed": false,
+        "failure": {
+          "name": "AssertionError",
+          "message": "Unexpected console warning/error\n\n1 !== 0\n"
+        },
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0,
+        "consoleMessages": [
+          {
+            "type": "error",
+            "message": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "exactProfileLocation": false,
+            "resource503": false,
+            "expectedControlled503": false
+          },
+          {
+            "type": "error",
+            "message": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "exactProfileLocation": true,
+            "resource503": true,
+            "expectedControlled503": true
+          }
+        ],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0.0,
+          "actions": 0.0,
+          "heading": 0,
+          "title": 0,
+          "board": 0.0
+        }
+      }
+    ],
+    "cleanup": {
+      "evidenceSavedBeforeFinalCleanup": true,
+      "errors": []
+    },
+    "limits": [
+      "Exactly seven fresh contexts in one Linux Chromium packet; no physical-device/global readiness claim",
+      "Actual frontend runtime is d8fe89ac42613938ef65801b23a4a07b98264dd2/image945ce4d8232c6417865f73de66116a876e60afe32140cbca3a1d69e6e6af62ee; backend remains a2. Root verified application files unchanged between d8 runtime and reviewed cca43db8d46ff5e6b5d66dd8af10d7955d87c4a1 checkout, whose differences are test formatting/docs; runtime is not relabeled cca",
+      "Real unfollowed profile response continued unchanged; controlled following copies the real profile in memory and changes only is_following; controlled503 is synthetic, neither proves persisted follow/error",
+      "Only one matching own main-frame author profile GET held per registered observation, one-second ready checkpoint sample and5s hard cap; real progress GET unchanged",
+      "Initial SSR HTML read from the same navigation response in memory only; no additional navigation or raw HTML/private identity persistence",
+      "Hidden sizing labels measured without focus/click/role/DOM mutations; accessibility snapshot restricted to Follow slot and expected empty before completion",
+      "Every RAF sampled until freeze/25s cap and2000frames;200shift cap; raw attribution includes parent tags/classes for text-node sources, not content",
+      "No zero-CLS claim or automatic defect inference from intentional content expansion; all failures and unexpected console events preserved",
+      "All business writes blocked/fail packet, telemetry204 intercepted; no login, reseed, build, service, Mac or Cua actions",
+      "Unexpected console500 co-occurs with independently observed auth/session GET500; console location was retained only as exact-profile boolean, so direct URL association/server cause is not established",
+      "All six registered geometry/accessibility checkpoints completed even though one scenario ultimately failed its unexpected-console assertion; do not mark the packet7/7PASS",
+      "First-board\u2192final geometry and per-profile before\u2192after geometry calculated offline from frozen observations, with absent guest slot represented as null"
+    ],
+    "layoutShiftAttribution": "Each390 capture CLS0.0006855929487179487; nodeType3, parent P.progress-status, play-board-section, equal reported previous/current rect. All1710 captures CLS0.",
+    "sessionFailureEvidence": {
+      "scope": "Frozen ONE7 registered1710 controlled503 auth/session GET500; existing logs only, no requests or mutations",
+      "browserResponseEpochMs": 1791465343333,
+      "proxyFailureTimestamp": "2026-10-08T13:15:43.326488637Z",
+      "proven": {
+        "service": "candidate-frontend",
+        "route": "/api/v1/auth/session/",
+        "upstream": "candidate-backend:8000",
+        "message": "Failed to proxy; socket hang up",
+        "code": "ECONNRESET",
+        "deltaBeforeBrowserResponseMs": 6.511363,
+        "backendLogWindow": "2026-10-08T13:14:00Z through 2026-10-08T13:16:10Z",
+        "backendLogBytes": 0,
+        "backendContainer": {
+          "startedAt": "2026-10-08T11:19:17.327134459Z",
+          "restartCount": 0,
+          "oomKilled": false,
+          "status": "running"
+        }
+      },
+      "source": {
+        "rewrite": "frontend/next.config.ts:12-23 maps /api/v1 to API_BASE_URL",
+        "backendTransport": "backend/Dockerfile:92 configures 3 gunicorn workers, 2 threads, timeout60s, keep-alive5s",
+        "backendLogging": "backend/config/gunicorn.py:5-6 and config/settings/base.py:419-442 route error logs to console; no accesslog"
+      },
+      "limits": [
+        "Backend HTTP500 or session-view exception is not evidenced; frontend proxy failed its upstream socket",
+        "Exact cause of socket reset remains unproven: no backend logs in retained window, no request body/cookies or repeated request inspected",
+        "No evidence of backend container restart/OOM; individual worker/connection termination cannot be ruled out",
+        "Controlled author-profile503 is a separate later response; no proof that it caused this session failure"
+      ],
+      "rawFiles": [
+        {
+          "file": "logs.raw.txt",
+          "sha256": "5efe0ac51a711268e508ea86ad007aaf2115331dec9bfa125fe532721ea1782a",
+          "bytes": 657
+        },
+        {
+          "file": "backend-window.raw.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ]
     }
   }
 }

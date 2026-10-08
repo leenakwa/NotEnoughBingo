@@ -13,6 +13,7 @@ import {
 import type { AuthenticatedUser } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
+  pathname: "/bingo/test",
   replace: vi.fn(),
   refresh: vi.fn(),
   session: vi.fn(),
@@ -22,7 +23,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => {
   const router = { replace: mocks.replace, refresh: mocks.refresh };
   return {
-    usePathname: () => "/bingo/test",
+    usePathname: () => mocks.pathname,
     useRouter: () => router,
   };
 });
@@ -50,6 +51,7 @@ describe("AppHeader scroll shadow", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.pathname = "/bingo/test";
     mocks.session.mockResolvedValue(null);
     Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
   });
@@ -139,6 +141,7 @@ describe("AppHeader scroll shadow", () => {
 describe("AppHeader session expiry", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.pathname = "/bingo/test";
     window.history.replaceState({}, "", "/bingo/test");
     mocks.session.mockResolvedValue(user);
     mocks.unreadCount.mockResolvedValue({ count: 0 });
@@ -205,6 +208,88 @@ describe("AppHeader session expiry", () => {
       expect(mocks.session).toHaveBeenCalledTimes(2);
     },
   );
+
+  it("requests the unread count once when the seeded account passes startup revalidation", async () => {
+    mocks.session.mockResolvedValue({ ...user });
+    mocks.unreadCount.mockResolvedValue({ count: 7 });
+    await act(async () => render(<AppHeader initialUser={user} />));
+    expect(screen.getByRole("link", { name: "Notifications, 7 unread" })).toBeVisible();
+    expect(mocks.session).toHaveBeenCalledOnce();
+    expect(mocks.unreadCount).toHaveBeenCalledOnce();
+  });
+
+  it("retains a known badge when a same-account unread refresh fails", async () => {
+    mocks.unreadCount.mockResolvedValue({ count: 7 });
+    await act(async () => render(<AppHeader initialUser={user} />));
+    expect(screen.getByRole("link", { name: "Notifications, 7 unread" })).toBeVisible();
+
+    mocks.session.mockResolvedValueOnce({ ...user });
+    mocks.unreadCount.mockRejectedValueOnce(new Error("Optional count unavailable"));
+    await act(async () => window.dispatchEvent(new Event("focus")));
+    expect(screen.getByRole("link", { name: "Notifications, 7 unread" })).toBeVisible();
+  });
+
+  it.each(["focus", AUTH_CHANGED_EVENT, "pageshow"])(
+    "refreshes the unread count when %s confirms the same account",
+    async (eventName) => {
+      mocks.unreadCount.mockResolvedValue({ count: 7 });
+      await act(async () => render(<AppHeader initialUser={user} />));
+      mocks.session.mockResolvedValueOnce({ ...user });
+      mocks.unreadCount.mockResolvedValueOnce({ count: 9 });
+      const event = new Event(eventName);
+      if (eventName === "pageshow") Object.defineProperty(event, "persisted", { value: true });
+      await act(async () => window.dispatchEvent(event));
+      expect(screen.getByRole("link", { name: "Notifications, 9 unread" })).toBeVisible();
+      expect(mocks.unreadCount).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("retains the badge when session revalidation is temporarily unavailable", async () => {
+    mocks.unreadCount.mockResolvedValue({ count: 7 });
+    await act(async () => render(<AppHeader initialUser={user} />));
+    mocks.session.mockRejectedValueOnce(new Error("Session status temporarily unavailable"));
+    await act(async () => window.dispatchEvent(new Event("focus")));
+    expect(screen.getByRole("link", { name: "Notifications, 7 unread" })).toBeVisible();
+    expect(mocks.unreadCount).toHaveBeenCalledOnce();
+  });
+
+  it("refreshes the unread count once after a pathname change", async () => {
+    mocks.unreadCount.mockResolvedValue({ count: 7 });
+    let rerender!: ReturnType<typeof render>["rerender"];
+    await act(async () => {
+      ({ rerender } = render(<AppHeader initialUser={user} />));
+    });
+    mocks.pathname = "/notifications";
+    mocks.session.mockResolvedValueOnce({ ...user });
+    mocks.unreadCount.mockResolvedValueOnce({ count: 0 });
+    await act(async () => rerender(<AppHeader initialUser={user} />));
+    expect(screen.getByRole("link", { name: "Notifications" })).toBeVisible();
+    expect(mocks.unreadCount).toHaveBeenCalledTimes(2);
+  });
+
+  it("clears the badge on logout and discards a pending count across login", async () => {
+    mocks.unreadCount.mockResolvedValue({ count: 7 });
+    await act(async () => render(<AppHeader initialUser={user} />));
+    let resolveOld!: (value: { count: number }) => void;
+    mocks.unreadCount.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOld = resolve;
+      }),
+    );
+    await act(async () => window.dispatchEvent(new Event("focus")));
+    mocks.session.mockResolvedValueOnce(null);
+    await act(async () => window.dispatchEvent(new Event(AUTH_CHANGED_EVENT)));
+    expect(screen.getByRole("link", { name: "Log in" })).toBeVisible();
+    mocks.session.mockResolvedValueOnce({ ...user });
+    mocks.unreadCount.mockRejectedValueOnce(new Error("Optional count unavailable"));
+    await act(async () => window.dispatchEvent(new Event(AUTH_CHANGED_EVENT)));
+    await act(async () => resolveOld({ count: 19 }));
+    expect(screen.getByRole("link", { name: "Notifications" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Notifications, 7 unread" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Notifications, 19 unread" }),
+    ).not.toBeInTheDocument();
+  });
 
   it("keeps navigation and account access usable if unread counts are unavailable", async () => {
     mocks.unreadCount.mockRejectedValueOnce(new Error("Optional count unavailable"));
