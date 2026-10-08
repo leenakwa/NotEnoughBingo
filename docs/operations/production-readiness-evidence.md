@@ -6026,3 +6026,32 @@ reaches HTTP200 but not field readiness within the unchanged15s gate. All three
 fields remain disabled with correct credential metadata; console/page errors and
 writes are zero. Payload/retention/overflow are not reached. The separate hashed
 proof is retained externally; no causal attribution or further replay is made.
+
+
+### 2026-10-08 — Exact b77 backend gate catches logger-capture assumption
+
+[CI37768566296](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37768566296)
+for b77f1d7f2943b6be85523c77ae6bf4b578d53e0a has401 backend passes and one failure
+in test_unhandled_api_error_is_logged_and_hidden_from_public_response. Its root
+caplog handler no longer receives Django records after intentional propagation
+is disabled. Captured stderr nevertheless contains a safe django.request JSON
+ERROR/status500 with exception locations, while the response hiding checks pass.
+This failure remains part of the record; no same-source retry is used. Production
+formatter/propagation policies remain intact. The test must attach its capture
+handler to the actual named logger and remove it afterward, retaining the500,
+correlation, secret hiding and explicit logger/severity assertions.
+
+Both local immutable b77 production images build successfully. No migrations
+change relative to the existing a3 schema, and migrate --check passes read-only
+against the isolated fixture PostgreSQL. This backend image uses local development
+settings; no target production configuration/provider verification is claimed.
+No browser runtime is switched from these build results alone.
+
+The same isolated current-dependency test reproduces FAIL before correction.
+After explicit named-logger capture with finally cleanup, the combined
+cache/account/observability/client-error/unhandled set passes78 in4.83s;
+Ruff/diff-check and scoped mypy pass. The test now also requires django.request
+specifically. Its source SHA211f3b3c1bd983637d2b34492a0550701b12cd63ed20a2e2d2814a999b1183b1
+and raw fail/pass logs are retained externally. Exact CI for the corrected test
+is still required. Subsequent source supersedes the failed run; workflow
+concurrency may cancel its still-running smoke job, which is not a smoke PASS.
