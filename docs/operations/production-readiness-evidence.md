@@ -7535,3 +7535,98 @@ Independent static review passes; runtime verification of these additions awaits
 the next exact CI. Controlled failures do not prove provider failure handling
 or physical orphan-asset deletion. No production interface, limits, retries or
 timeouts change.
+
+### 2026-10-08 — Exact avatar and verification control gate passes
+
+Exact `38fd3d1331417f4a246ac7b55afe00a3206cbe46`
+[CI37829451235](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37829451235)
+passes all12 jobs:446 backend,619 frontend/44 files,380 smoke/12 intentional skips
+and125 full-stack cases, both images and Release. Extended avatar attachment/
+removal failure recovery passes9.3s; both Retry/Resend widths pass in all four
+profiles (eight new cases), with no reported flakes/retries. Tested merge
+`9972da023bd2eaa9e1743cfd96f983fa789045b3` and branch share full tree
+`28bf9d654eef1378420b357e127bd928d5285fd8`. Logs, all nine artifacts, metadata
+and verified checksums are privately archived; ZIP/gzip integrity passes.
+Existing preference-native accepted Discover→Back restoration, dismissed actual
+beforeunload and independent-context accepted reload cases also pass8/8 in this
+gate. The stale account matrix gap is corrected without duplicating these tests
+or adding a new per-document-marker requirement. Global dirty-form policy remains
+separate from this language-specific evidence.
+
+### 2026-10-08 — Export terminal and polling recovery
+
+Six route-controlled cases (failed, expired, processing exhaustion at320/1710)
+pass24/24 across Chromium/mobile Chromium/Firefox/WebKit against FE05d. They
+check held-pending native disable behavior, supplied/fallback errors, exactly41
+status reads followed by no further poll, re-enabled action, seven retained
+unsaved fields, retry→ready, no overflow/page exceptions, and native keyboard
+focus/Enter causing one exact locally fulfilled download GET. All API mutations
+are synthetic; no worker/provider/storage writes occur. Existing React guard
+units and real ZIP delivery remain separate. Native file delivery is unproved:
+the earlier WebKit synthetic attachment produced an interrupted frame without a
+download event; failed/intermediate artifacts are retained. Final tests measure
+anchor activation, not download-event compatibility or archive integrity.
+
+The same existing live export journey gains initial cookie/CSRF-bound creation503,
+one POST, zero status reads, retained drafts and restored availability before its
+unchanged real accepted-job/status503/retry flow. This addition awaits exact CI.
+Formatting/lint/TypeScript and independent reviews pass. No UI policy changes.
+
+### 2026-10-08 — Reused upstream reset and connection mitigation
+
+A bounded14-GET threshold packet reproduces an unread-count rewrite500 and
+matching ECONNRESET. A separate header-only TCP capture verifies actual upstream
+reuse but records only401s/graceful FIN. A final13-GET capture ties the failing
+frontend request to a reused upstream tuple: backend RST/ACK348µs after its
+request packet, approximately5.019s after the preceding response, followed by
+matching proxy500/log. This proves reuse→backend reset→proxy failure; the internal
+backend close reason and failure frequency remain unmeasured. Only unauthenticated
+GETs and TCP metadata are used; earlier negative evidence remains intact.
+
+An isolated same-image clone with Gunicorn keepalive0 returns401 for all seven
+threshold GETs. Its27 requests use27 upstream connections with FIN/noRST. The
+backend Docker CMD now selects0, removing persistent internal sockets rather
+than moving the timeout boundary or changing Next's unrelated HTTP agent. This
+also removes production Nginx-to-backend reuse.20 sequential GETs show medians
+4.43ms existing/15.17ms clone and means5.35/34.46ms; cold/unequal conditions
+prevent isolating keepalive cost or establishing capacity. Snapshot memory287MiB
+and no OOM are bounded observations only. Target latency/connection churn/
+throughput remain deployment checks. Both owned clones and secret env files are
+removed; scripts/proofs/checksums are archived privately.
+
+The clone initially retained its built rewrite destination despite a changed
+runtime API_BASE_URL. A destination-only manifest adaptation inside the disposable
+clone establishes traffic to the isolated backend; it changes no cached image or
+existing service. Deployment documentation now states this build/runtime boundary.
+Independent performance assessment supports the reversible same-host mitigation;
+its final source image and combined changes await the next exact CI.
+
+The local candidate backend subsequently applies only the same keepalive0 command
+in its task-owned Compose file, retaining the cached image and normalized media/
+PostgreSQL data mounts. Backend live/ready return200; five existing-frontend GETs
+across near-five-second gaps return401 with no window-associated reset logs.
+Only backend lifecycle events occur;19 original services remain running. Current
+environment matches unchanged Compose inputs/image defaults; raw old environment
+array inequality is not retrospective semantic-equality proof. This validates
+local configuration, not equivalence of the cached image to current source.
+
+### 2026-10-08 — Social maximum-text native boundary and layout
+
+Eight root-comment/reply/edit/report cases at320/1710 pass32/32 across Chromium,
+mobile Chromium, Firefox and WebKit in an isolated mocked development server.
+Typed owned-comment fixtures preserve existing helper behavior outside these
+cases. Trusted entry1999 ASCII units plus two characters stops at2000; a separate
+unbroken BMP Cyrillic/Chinese2000-unit draft fits the document/input horizontally,
+retains exact content after two controlled503 submissions, and targets the exact
+synthetic POST/PATCH payloads. Existing rendered2000-unit comment text and report
+dialog horizontal bounds also fit. This proves retention/resubmission, not
+successful recovery, server persistence or backend code-point limits.
+
+All unexpected business mutations are blocked; no real backend/auth/board/report
+writes occur. Server API target127.0.0.1:1 intentionally provides the unavailable
+SSR branch so browser mocks can supply the synthetic board; a real backend404
+would invoke notFound before those mocks. Installed webpack mode runs the isolated
+source copy; its server is stopped. Format/lint/TypeScript, checklist verification
+and independent review pass. Scripts/reports/patches/checksums are archived
+privately. Global sections7/26, vertical visibility, native devices and outstanding
+Explore/layout policy remain separate; final combined exact CI is pending.

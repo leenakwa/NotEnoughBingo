@@ -39,6 +39,28 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
+Latest completed green source `38fd3d1`
+[CI37829451235](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37829451235)
+passes all12 jobs:446 backend,619 frontend/44 files,380 smoke/12 intentional skips
+and125 full-stack cases, both images and Release. No reported flakes/retries.
+Extended avatar attachment/removal failure recovery passes9.3s; Retry/Resend
+competition at320/1710 passes in all four browser profiles. Tested merge and
+branch share tree `28bf9d654eef1378420b357e127bd928d5285fd8`. Original logs, all
+nine artifacts, metadata and checksums are archived privately. Subsequent export
+failure coverage and backend connection changes await the next exact-source gate.
+
+Previous green source `a164b1b`
+[CI37826157791](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37826157791)
+passes all12 jobs:446 backend,619 frontend/44 files,372 smoke/12 intentional skips
+and125 full-stack cases, both images and Release, with no reported flakes/retries.
+Dedicated avatar/deletion fixture state removes incidental registration traffic;
+both token-only recovery journeys pass together with avatar/deletion. Tested
+merge and branch share tree `a81c5eedab57dc28ce26ad12cac1a7fc663a0531`.
+The private archive retains logs, nine artifacts, metadata and checksums.
+No checklist counter is advanced by this gate alone.
+
+Earlier failed gates:
+
 Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)
 has ten passing jobs and failed full-stack/Release. Full-stack124 passes/one failure:
 new avatar/deletion and guest registration recovery pass, but email-change setup
@@ -51,8 +73,8 @@ has ten passing jobs, failed full-stack and failed Release:446 backend,619 front
 account deletion passes; later token-only registration recovery receives429 after
 the new anonymous setup consumes the shared verification quota. The trace and
 serial request inventory support fixture interference; isolation is being amended
-without changing production limits or guest recovery assertions. Latest completed
-green source is71a22ec/CI37812635002. No section is closed by this partial gate.
+without changing production limits or guest recovery assertions. At that point
+the latest completed green source was71a22ec/CI37812635002. No section is closed by this partial gate.
 
 Earlier source gates:
 

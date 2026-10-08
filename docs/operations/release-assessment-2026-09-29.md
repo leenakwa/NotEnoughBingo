@@ -5,7 +5,27 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)
+Latest completed gate —2026-10-08: Exact `38fd3d1`
+[CI37829451235](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37829451235)
+passes all12 jobs:446 backend,619 frontend/44 files,380 smoke/12 intentional skips
+and125 full-stack cases, with no reported flakes/retries. Both images and Release
+pass. Extended avatar failure/retry and all eight Retry/Resend cases pass. Branch
+and tested merge share tree `28bf9d654eef1378420b357e127bd928d5285fd8`; original
+logs/artifacts/metadata/checksums are archived privately. Earlier a164 fixture
+isolation passes the combined registration/email-change/deletion/avatar suite
+without relaxing production limits.
+
+A subsequent bounded packet captures frontend upstream socket reuse, backend RST
+and matching unread-count proxy500 near five seconds. A disposable keepalive0
+backend eliminates reuse:27 requests use27 connections with FIN/noRST; all seven
+threshold requests return401. The next backend image closes internal connections
+to avoid this mechanism. This also removes Nginx-to-backend reuse: actual target
+latency, connection churn and sustained throughput require deployment measurement.
+The cold/unequal clone latency sample is not a capacity result. Subsequent export
+coverage and this connection change await their own exact CI; no production
+deployment or broad readiness claim follows.
+
+Earlier observation —2026-10-08: Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)
 again fails full-stack and Release with ten jobs passing. Full-stack records124
 passes/one failure: new avatar validation/retry, confirmed deletion and guest
 token-only registration recovery pass; existing token-only email-change setup
@@ -32,7 +52,7 @@ shares full tree `6b844bdbeacead90a344bf5f477c2f638e5e2524` with the branch.
 The failed run and trace are preserved; a passing earlier gate does not cover
 this source. No deployment or readiness claim follows.
 
-Latest completed green gate —2026-10-08: Exact `71a22ec` passes all12 jobs in
+Earlier green gate —2026-10-08: Exact `71a22ec` passes all12 jobs in
 [CI37812635002](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37812635002):
 446 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack
 cases, with no reported smoke flakes. Both images and Release pass. Tested

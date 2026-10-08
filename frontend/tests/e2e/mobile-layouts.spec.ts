@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import type { Comment } from "../../lib/api/types";
 
 test.use({ viewport: { width: 320, height: 800 }, hasTouch: true });
 
@@ -43,7 +44,7 @@ const revision = {
   published_at: "2026-08-07T00:00:00Z",
 };
 
-async function mockLargeBingo(page: Page, reportable = false, size = 10) {
+async function mockLargeBingo(page: Page, reportable = false, size = 10, canComment = false) {
   const boardCells = cells.slice(0, size * size).map((cell, index) => ({
     ...cell,
     row: Math.floor(index / size),
@@ -116,7 +117,7 @@ async function mockLargeBingo(page: Page, reportable = false, size = 10) {
         current_revision: boardRevision,
         permissions: {
           can_edit: false,
-          can_comment: false,
+          can_comment: canComment,
           can_like: false,
           can_report: reportable,
         },
@@ -541,3 +542,179 @@ test("board-first mobile play keeps short labels readable and native mark contro
   }
   expect(pageErrors).toEqual([]);
 });
+
+for (const width of [320, 1710]) {
+  for (const action of ["root", "reply", "edit", "report"] as const) {
+    test(`social ${action} native 2000 limit and unbroken multilingual draft fit at ${width}`, async ({
+      page,
+    }) => {
+      const errors: string[] = [];
+      const writes: { method: string; path: string; body: unknown }[] = [];
+      const unexpectedWrites: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.setViewportSize({ width, height: 900 });
+      await mockLargeBingo(page, true, 10, true);
+      const commentId = "77777777-7777-4777-8777-777777777777";
+      const comment = {
+        id: commentId,
+        author: {
+          id: "66666666-6666-4666-8666-666666666666",
+          username: "viewer",
+          display_name: "Viewer",
+          avatar: null,
+        },
+        body: "x".repeat(2_000),
+        parent_id: null,
+        like_count: 0,
+        reply_count: 0,
+        is_liked: false,
+        replies: [],
+        edited_at: null,
+        deleted_at: null,
+        created_at: "2026-10-08T00:00:00Z",
+      } satisfies Comment;
+      const rootPath = `/api/v1/bingos/${bingoId}/comments/`;
+      const replyPath = `/api/v1/comments/${commentId}/replies/`;
+      const editPath = `/api/v1/comments/${commentId}/`;
+      const contextPath = `${editPath}context/`;
+      const writePath =
+        action === "root"
+          ? rootPath
+          : action === "reply"
+            ? replyPath
+            : action === "edit"
+              ? editPath
+              : "/api/v1/reports/";
+      const writeMethod = action === "edit" ? "PATCH" : "POST";
+      const message = "Controlled social submission is temporarily unavailable.";
+      const apiPattern = "**/api/v1/**";
+      await page.route(apiPattern, async (route) => {
+        const request = route.request();
+        const path = new URL(request.url()).pathname;
+        if (["/api/v1/interactions/", "/api/v1/client-errors/"].includes(path)) {
+          return route.fulfill({ status: 204 });
+        }
+        if (request.method() === "GET") {
+          if (path === "/api/v1/auth/csrf/")
+            return route.fulfill({ json: { csrf: "synthetic-social-csrf" } });
+          if (path === rootPath)
+            return route.fulfill({
+              json: { count: 1, next: null, previous: null, results: [comment] },
+            });
+          if (path === replyPath)
+            return route.fulfill({ json: { count: 0, next: null, previous: null, results: [] } });
+          if (path === contextPath)
+            return route.fulfill({ json: { bingo_id: bingoId, comment, parent: null } });
+          return route.fallback();
+        }
+        if (path === writePath && request.method() === writeMethod) {
+          expect(request.headers()["x-csrftoken"]).toBe("synthetic-social-csrf");
+          writes.push({ method: request.method(), path, body: request.postDataJSON() });
+          return route.fulfill({ status: 503, json: { error: { code: "unavailable", message } } });
+        }
+        unexpectedWrites.push(`${request.method()} ${path}`);
+        return route.fulfill({ status: 403, json: {} });
+      });
+      try {
+        await page.goto(`/bingo/${bingoId}`);
+        await expect(page.getByRole("heading", { name: revision.title })).toBeVisible();
+        const comments = page.locator("#comments");
+        const ownComment = page.locator(`#comment-${commentId}`);
+        await expect(ownComment).toBeVisible();
+        if (action === "reply" || action === "edit") {
+          await ownComment
+            .getByRole("button", { name: action === "reply" ? "Reply" : "Edit", exact: true })
+            .click();
+        } else if (action === "report") {
+          await page.getByRole("button", { name: "Report", exact: true }).click();
+        }
+        const scope =
+          action === "report" ? page.getByRole("dialog", { name: "Report bingo" }) : comments;
+        const label =
+          action === "root"
+            ? "Add a comment"
+            : action === "reply"
+              ? "Reply"
+              : action === "edit"
+                ? "Edit comment"
+                : "Additional context (optional)";
+        const input = scope.getByRole("textbox", { name: label, exact: true });
+        const form = scope.locator("form").filter({
+          has: page.getByRole("textbox", { name: label, exact: true }),
+        });
+        const submit = form.getByRole("button", {
+          name:
+            action === "root"
+              ? "Post comment"
+              : action === "reply"
+                ? "Post reply"
+                : action === "edit"
+                  ? "Save"
+                  : "Send report",
+          exact: true,
+        });
+        await expect(input).toHaveAttribute("maxlength", "2000");
+        // ASCII isolates the native HTML maxlength boundary; this is not a backend code-point claim.
+        await input.fill("a".repeat(1_999));
+        await input.press("End");
+        await input.pressSequentially("bc");
+        await expect(input).toHaveValue(`${"a".repeat(1_999)}b`);
+        expect(writes).toEqual([]);
+        // BMP multilingual text forms a separate unbroken 2000-unit layout/retention fixture.
+        const draft = "Ж漢".repeat(1_000);
+        await input.fill(draft);
+        const checkLayout = async () => {
+          const layout = await input.evaluate((element) => {
+            const box = element.getBoundingClientRect();
+            return {
+              viewport: document.documentElement.clientWidth,
+              pageWidth: document.documentElement.scrollWidth,
+              inputLeft: box.left,
+              inputRight: box.right,
+              inputWidth: element.clientWidth,
+              inputContentWidth: element.scrollWidth,
+            };
+          });
+          expect(layout.pageWidth).toBe(layout.viewport);
+          expect(layout.inputLeft).toBeGreaterThanOrEqual(0);
+          expect(layout.inputRight).toBeLessThanOrEqual(layout.viewport);
+          expect(layout.inputContentWidth).toBeLessThanOrEqual(layout.inputWidth);
+          const rendered = ownComment.locator(".comment__body");
+          if (action !== "edit")
+            expect(
+              await rendered.evaluate((element) => element.scrollWidth <= element.clientWidth),
+            ).toBe(true);
+          if (action === "report") {
+            const bounds = await scope.boundingBox();
+            expect(bounds).not.toBeNull();
+            expect(bounds!.x).toBeGreaterThanOrEqual(0);
+            expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(layout.viewport);
+          }
+        };
+        await checkLayout();
+        const expectedBody =
+          action === "report"
+            ? { target_type: "bingo", target_id: bingoId, reason: "spam", description: draft }
+            : { body: draft };
+        for (const attempt of [1, 2]) {
+          await submit.click();
+          await expect(scope.getByRole("alert")).toContainText(message);
+          await expect(input).toBeEnabled();
+          await expect(input).toHaveValue(draft);
+          await expect(submit).toBeEnabled();
+          expect(writes).toHaveLength(attempt);
+          expect(writes.at(-1)).toEqual({
+            method: writeMethod,
+            path: writePath,
+            body: expectedBody,
+          });
+          await checkLayout();
+        }
+        expect(unexpectedWrites).toEqual([]);
+        expect(errors).toEqual([]);
+      } finally {
+        await page.unroute(apiPattern);
+      }
+    });
+  }
+}

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
+import type { ExportJob } from "../../lib/api/types";
 
 // Real AccountSettings controls with explicitly injected API responses. These
 // cases establish browser behavior, not server persistence or password validity.
@@ -458,4 +459,213 @@ for (const width of [320, 1710]) {
       await page.unroute(endpoint, validation.handle);
     }
   });
+}
+
+for (const width of [320, 1710]) {
+  for (const outcome of ["failed", "expired", "processing"] as const) {
+    test(`account export ${outcome} stops polling and retries to ready at ${width}`, async ({
+      page,
+      browserName,
+    }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.clock.install({ time: new Date("2026-10-08T00:00:00Z") });
+      const creationEndpoint = "**/api/v1/auth/account-export/";
+      const jobId = "33333333-3333-4333-8333-333333333333";
+      const statusPath = `/api/v1/exports/${jobId}/`;
+      const downloadPath = `${statusPath}download/`;
+      const matchesStatus = (url: URL) => url.pathname === statusPath;
+      const matchesDownload = (url: URL) => url.pathname === downloadPath;
+      let creations = 0;
+      let statusReads = 0;
+      let downloadReads = 0;
+      let captureDownload!: () => void;
+      const downloadHandled = new Promise<void>((resolve) => {
+        captureDownload = resolve;
+      });
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let firstStatusHandler: Promise<void> | undefined;
+      const creationRoute = (route: Route) => {
+        expect(route.request().method()).toBe("POST");
+        expect(route.request().postData()).toBeNull();
+        expect(route.request().headers()["x-csrftoken"]).toBe("test");
+        creations += 1;
+        return route.fulfill({ status: 202, json: { job_id: jobId, status: "queued" } });
+      };
+      const statusRoute = async (route: Route) => {
+        expect(route.request().method()).toBe("GET");
+        statusReads += 1;
+        const fulfill = async () => {
+          const status = creations === 2 ? "ready" : outcome;
+          await route.fulfill({
+            json: {
+              id: jobId,
+              kind: "account_data",
+              format: "zip",
+              status,
+              error: status === "failed" ? "The controlled export worker failed." : null,
+              download_url: status === "ready" ? downloadPath : null,
+              created_at: "2026-10-08T00:00:00Z",
+            } satisfies ExportJob,
+          });
+        };
+        if (statusReads === 1) {
+          firstStatusHandler = held.then(fulfill);
+          return firstStatusHandler;
+        }
+        return fulfill();
+      };
+      const downloadRoute = async (route: Route) => {
+        expect(route.request().method()).toBe("GET");
+        downloadReads += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/zip",
+          headers: {
+            "Content-Disposition": 'attachment; filename="controlled-account-export.zip"',
+          },
+          body: "Controlled download fixture; archive contents are outside this test.",
+        });
+        captureDownload();
+      };
+      await page.route(creationEndpoint, creationRoute);
+      await page.route(matchesStatus, statusRoute);
+      await page.route(matchesDownload, downloadRoute);
+      try {
+        await openAccount(page, width);
+        await page.clock.pauseAt(new Date("2026-10-08T00:01:00Z"));
+        const profileForm = accountForm(page, "Profile details");
+        const emailForm = accountForm(page, "Change email");
+        const passwordForm = accountForm(page, "Change password");
+        const drafts = [
+          {
+            input: profileForm.getByLabel("Display name", { exact: true }),
+            value: "Unsaved export draft",
+          },
+          {
+            input: profileForm.getByLabel("Bio", { exact: true }),
+            value: "Keep these unsaved details.",
+          },
+          {
+            input: emailForm.getByLabel("New email address", { exact: true }),
+            value: "unsent-export@example.test",
+          },
+          {
+            input: emailForm.getByLabel("Current password for email change", { exact: true }),
+            value: "Unsent-email-password",
+          },
+          {
+            input: passwordForm.getByLabel("Current password", { exact: true }),
+            value: "Unsent-current-password",
+          },
+          {
+            input: passwordForm.getByLabel("New password", { exact: true }),
+            value: "Unsent-new-password!2026",
+          },
+          {
+            input: passwordForm.getByLabel("Confirm new password", { exact: true }),
+            value: "Unsent-new-password!2026",
+          },
+        ];
+        for (const { input, value } of drafts) await input.fill(value);
+        const card = page.locator(".settings-card").filter({
+          has: page.getByRole("heading", { name: "Export your data", exact: true }),
+        });
+        const requestButton = card.getByRole("button");
+        await requestButton.click();
+        await expect.poll(() => statusReads).toBe(1);
+        await expect(requestButton).toHaveText("Preparing export…");
+        await expect(requestButton).toBeDisabled();
+        await requestButton.evaluate((button: HTMLButtonElement) => button.click());
+        expect(creations).toBe(1);
+        await expectNoOverflow(page);
+        const firstStatus = page.waitForResponse(
+          (response) =>
+            new URL(response.url()).pathname === statusPath &&
+            response.request().method() === "GET",
+        );
+        release();
+        expect(await (await firstStatus).finished()).toBeNull();
+        await page.clock.runFor(0);
+        if (outcome === "processing") {
+          // Each second executes one normal polling interval, synchronized with its HTTP response.
+          for (let read = 2; read <= 41; read += 1) {
+            const nextStatus = page.waitForResponse(
+              (response) =>
+                new URL(response.url()).pathname === statusPath &&
+                response.request().method() === "GET",
+            );
+            await page.clock.runFor(1_000);
+            expect(await (await nextStatus).finished()).toBeNull();
+            await expect.poll(() => statusReads).toBe(read);
+            await page.clock.runFor(0);
+            if (read < 41) await expect(requestButton).toBeDisabled();
+          }
+          await expect(card.getByRole("status")).toHaveText(
+            "Your export is still processing. Check this page again shortly.",
+          );
+          await expect(card.getByRole("alert")).toHaveCount(0);
+        } else {
+          await expect(card.getByRole("alert")).toHaveText(
+            outcome === "failed"
+              ? "The controlled export worker failed."
+              : "The data export could not be prepared.",
+          );
+        }
+        const completedReads = outcome === "processing" ? 41 : 1;
+        await expect(requestButton).toBeEnabled();
+        await expect(requestButton).toHaveText("Request data export");
+        expect(statusReads).toBe(completedReads);
+        await page.clock.runFor(5_000);
+        expect(statusReads).toBe(completedReads);
+        for (const { input, value } of drafts) {
+          await expect(input).toBeEnabled();
+          await expect(input).toHaveValue(value);
+        }
+        await expectNoOverflow(page);
+        await requestButton.focus();
+        await page.keyboard.press("Enter");
+        const download = card.getByRole("link", { name: "Download data export", exact: true });
+        await expect(download).toBeVisible();
+        await expect(download).toHaveAttribute("href", downloadPath);
+        await expect(card.getByRole("status")).toHaveText("Your data export is ready to download.");
+        await expect(card.getByRole("alert")).toHaveCount(0);
+        expect(creations).toBe(2);
+        expect(statusReads).toBe(completedReads + 1);
+        await page.clock.resume();
+        await page.getByRole("checkbox", { name: "Optional product email", exact: true }).focus();
+        await page.keyboard.press(
+          browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
+        );
+        await expectKeyboardFocus(download);
+        // Existing dirty-profile guards prompt on this anchor; accept the observed navigation.
+        const navigationDialogs: string[] = [];
+        page.on("dialog", async (dialog) => {
+          navigationDialogs.push(dialog.type());
+          expect(["confirm", "beforeunload"]).toContain(dialog.type());
+          await dialog.accept();
+        });
+        // Observe native anchor activation at its exact GET; this case does not inspect archive contents.
+        await page.keyboard.press("Enter");
+        await downloadHandled;
+        expect(downloadReads).toBe(1);
+        expect(navigationDialogs).toContain("confirm");
+        for (const { input, value } of drafts) await expect(input).toHaveValue(value);
+        await expectNoOverflow(page);
+        expect(errors).toEqual([]);
+      } finally {
+        release();
+        try {
+          await firstStatusHandler;
+        } finally {
+          await page.unroute(creationEndpoint, creationRoute);
+          await page.unroute(matchesStatus, statusRoute);
+          await page.unroute(matchesDownload, downloadRoute);
+        }
+      }
+    });
+  }
 }

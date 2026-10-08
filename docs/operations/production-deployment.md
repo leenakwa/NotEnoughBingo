@@ -16,6 +16,12 @@ Internet HTTPS
 Only the CDN/load balancer is public. Django, Next.js, PostgreSQL, Redis,
 workers, Beat, and object-storage control endpoints stay on private networks.
 
+The backend web image uses Gunicorn `--keep-alive 0`: each internal API response
+closes its TCP connection. This avoids stale pooled sockets in Next's rewrite
+proxy, but also removes Nginx-to-backend connection reuse. Keep the applications
+near one another and measure target latency, connection churn and sustained
+throughput during rollout; local boundary probes do not establish capacity.
+
 ## Required configuration
 
 Start from `.env.example` only as a variable inventory; none of its local
@@ -31,6 +37,11 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check --deplo
 
 Provide secrets from a secret manager and configure at least:
 
+- a server-only `API_BASE_URL` ending in `/api/v1`, consistent at frontend build
+  and runtime. Next embeds external rewrite destinations in the built routes
+  manifest; changing only the runtime variable does not rebind those browser
+  proxy routes. Rebuild when that destination changes. Nginx sends `/api/`
+  directly to backend; SSR and the rewrite fallback must use the intended backend.
 - a unique `DJANGO_SECRET_KEY`, explicit `ALLOWED_HOSTS`, HTTPS
   `CSRF_TRUSTED_ORIGINS`, and `FRONTEND_URL`;
 - managed `DATABASE_URL`, `REDIS_URL`, Celery broker/result URLs, and a shared

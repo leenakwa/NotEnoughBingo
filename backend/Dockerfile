@@ -89,4 +89,5 @@ USER app
 
 EXPOSE 8000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["gunicorn", "config.wsgi:application", "--config", "python:config.gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--timeout", "60", "--graceful-timeout", "30", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--error-logfile", "-"]
+# Close internal responses to avoid stale pooled sockets in Next's rewrite proxy.
+CMD ["gunicorn", "config.wsgi:application", "--config", "python:config.gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--timeout", "60", "--graceful-timeout", "30", "--keep-alive", "0", "--max-requests", "1000", "--max-requests-jitter", "100", "--error-logfile", "-"]

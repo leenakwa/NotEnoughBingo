@@ -172,7 +172,7 @@ test("profile remains editable when its activity list fails and recovers", async
   }
 });
 
-test("accepted account export status failure preserves unsaved fields and allows real recovery", async ({
+test("account export creation and accepted status failures preserve unsaved fields and allow real recovery", async ({
   page,
 }) => {
   const pageErrors: string[] = [];
@@ -206,10 +206,72 @@ test("accepted account export status failure preserves unsaved fields and allows
     .getByLabel("Current password for email change", { exact: true })
     .fill(unsentPassword);
 
-  // Create/reuse an actual accepted job to know its exact status URL before routing.
-  // The subsequent real UI POST must reuse that same job; neither POST is mocked.
-  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  const cookies = await page.context().cookies();
+  const csrf = cookies.find((cookie) => cookie.name === "neb_csrf");
+  const ownedSession = cookies.find((cookie) => cookie.name === "neb_session");
   expect(csrf).toBeDefined();
+  expect(ownedSession).toBeDefined();
+  const creationMessage = "Data export creation is temporarily unavailable.";
+  let creationWrites = 0;
+  let prematureStatusReads = 0;
+  const unexpectedWrites: string[] = [];
+  const failurePattern = "**/api/v1/**";
+  const creationFailureRoute = async (route: Route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && path === "/api/v1/auth/account-export/") {
+      creationWrites += 1;
+      expect(signedIn.id).toBe(readLiveFixture().users.author.id);
+      const requestCookies = ((await request.headerValue("cookie")) ?? "")
+        .split(";")
+        .map((cookie) => cookie.trim());
+      expect(requestCookies).toContain(`${ownedSession!.name}=${ownedSession!.value}`);
+      expect(await request.headerValue("x-csrftoken")).toBe(csrf!.value);
+      expect(request.postData()).toBeNull();
+      return route.fulfill({
+        status: 503,
+        json: { error: { code: "unavailable", message: creationMessage } },
+      });
+    }
+    if (request.method() === "GET" && /^\/api\/v1\/exports\/[^/]+\/$/.test(path)) {
+      prematureStatusReads += 1;
+      return route.fulfill({ status: 503, json: {} });
+    }
+    if (["/api/v1/client-errors/", "/api/v1/interactions/"].includes(path)) {
+      return route.fulfill({ status: 204 });
+    }
+    if (!["GET", "HEAD"].includes(request.method())) {
+      unexpectedWrites.push(`${request.method()} ${path}`);
+      return route.fulfill({ status: 403, json: {} });
+    }
+    return route.continue();
+  };
+  await page.route(failurePattern, creationFailureRoute);
+  try {
+    const rejected = await waitForResponse(page, "/api/v1/auth/account-export/", "POST", () =>
+      exportCard.getByRole("button", { name: "Request data export", exact: true }).click(),
+    );
+    expect(rejected.status()).toBe(503);
+    await expect(exportCard.getByRole("alert")).toHaveText(creationMessage);
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
+    await expect(
+      exportCard.getByRole("button", { name: "Request data export", exact: true }),
+    ).toBeEnabled();
+    await expect(profileForm.getByLabel("Display name", { exact: true })).toHaveValue(displayName);
+    await expect(profileForm.getByLabel("Bio", { exact: true })).toHaveValue(bio);
+    await expect(account.getByLabel("New email address", { exact: true })).toHaveValue(email);
+    await expect(
+      account.getByLabel("Current password for email change", { exact: true }),
+    ).toHaveValue(unsentPassword);
+    expect(creationWrites).toBe(1);
+    expect(prematureStatusReads).toBe(0);
+    expect(unexpectedWrites).toEqual([]);
+  } finally {
+    await page.unroute(failurePattern, creationFailureRoute);
+  }
+
+  // Create/reuse an actual accepted job to know its exact status URL before routing.
+  // The subsequent real UI POST must reuse that same job; neither accepted POST is mocked.
   const accepted = await page.request.post("/api/v1/auth/account-export/", {
     headers: { "X-CSRFToken": csrf!.value },
   });
