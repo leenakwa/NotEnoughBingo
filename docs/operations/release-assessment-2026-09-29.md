@@ -5,7 +5,25 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exactbc38a5a passes all12 jobs in
+Latest observation —2026-10-08: Exact `b04fcad` passes all12 jobs in
+[CI37806507157](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37806507157):
+446 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack
+cases, with no reported smoke flakes. Both images and Release pass.
+Tested merge `6fa0f642403fb1cde3a528dbbf27e6803811cd9f` shares the full
+`53e9a4359bc76afa25f45add2e6fe2917aa4efb0` tree with `b04fcad`.
+This docs-only commit retains the previous activation source; the earlier
+WebKit crash remains recorded rather than explained by this passing run.
+A separate disposable25-board profile packet verifies actual API pages24+1
+and Next/page2/Previous/page1 at320 and1710px. Pagination disappears during
+loading; its UI treatment awaits the user.39 unattributed request aborts
+prevent a clean-network claim. Owned data/session cleanup is verified.
+A subsequent hidden-bio packet verifies owner-positive/guest-unrelated-negative
+API, raw HTML and actual gzip-decoded navigation RSC projection (nine bounded
+controls). Its clean-flow verdict and wrapper remain failed because six CDP
+body-read errors and37 request failures are retained. Owned cleanup passes;
+Flight decoding, all privacy fields and production cache behavior are unproved.
+
+Earlier observation —2026-10-08: Exactbc38a5a passes all12 jobs in
 [CI37802454204](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37802454204):
 446 backend,619 frontend,371 clean smoke/one recovered WebKit flake/12 skips
 and123 full-stack cases; both images and Release pass, with matching full

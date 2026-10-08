@@ -132,7 +132,17 @@ frontend,371 clean smoke/one recovered WebKit flake/12 skips and123 live flows,
 with matching full trees. The first reset-password trace records a WebKit
 network-process crash/failed second document; its initiator remains unproved. Trusted-localhost feedback/loading
 packets retain network-abort failures; feedback placement awaits the user and
-profile pagination lacks an existing next page. No section verdict changes.
+the earlier profile fixture lacked a next page. The subsequent disposable25-board
+packet verifies actual API pages24+1 and Next/page2/Previous/page1 at320/1710px;
+pagination disappears during loading and its treatment awaits the user.
+39 unattributed request aborts prevent a clean-network claim; owned cleanup
+passes. Exact docs-only `b04fcad` CI37806507157 passes all12 jobs with446 backend,
+619 frontend,372 smoke/12 intentional skips and123 full-stack cases, no reported
+smoke flakes and matching full tested/branch trees. Subsequent hidden-bio
+owner/guest/unrelated controls verify API, raw HTML and gzip-decoded navigation
+RSC projection; six CDP body-read errors and37 request failures keep the packet's
+clean-flow/wrapper verdict failed. Owned cleanup passes; no broader privacy or
+production cache claim follows. No section verdict changes.
 
 ### Accepted interface requirements
 

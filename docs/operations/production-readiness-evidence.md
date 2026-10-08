@@ -7054,3 +7054,133 @@ GitHub's commit API. Raw log, job metadata, tree proof and the WebKit failure
 report are archived outside the repository. Local FE05d/BEb6 remains a
 separate runtime; new activation behavior has scoped PostgreSQL and pinned
 CI evidence rather than a relabeled old backend container.
+
+
+### 2026-10-08 — Exact current gate and positive profile pagination fixture
+
+Exact `b04fcad` passes all12 jobs in
+[CI37806507157](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37806507157):
+446 backend/108.84s,619 frontend/44 files/25.67s,372 smoke passes with12
+intentional skips and no reported flakes, and123 full-stack/6.4min. Smoke
+Chromium96/4.0min, WebKit92+4 skips/6.3min, Firefox92+4/3.8min and mobile92+4/3.1min
+account for384 planned cases. Both production images and Release pass.
+Tested merge `6fa0f642403fb1cde3a528dbbf27e6803811cd9f` resolves through the
+GitHub commit API to tree `53e9a4359bc76afa25f45add2e6fe2917aa4efb0`, equal to
+branch `b04fcad`. Raw logs, metadata and tree proof are archived outside the repo.
+The commit changes only three existing evidence documents; its application
+source matches the previous activation gate. The earlier WebKit crash remains
+unexplained and is not removed by this subsequent passing run.
+
+One isolated packet creates a verified normal actor with25 private, text-only
+published boards. Credentials remain in process pipes and browser memory;
+a nonsecret ownership journal is fsynced before SQL commit. Root reads the
+complete packet and independent security review precedes its single execution.
+Actual FE05d/BEb6 runtime identities and selected source paths are checked;
+this does not relabel the backend as the newer activation release.
+
+At320x900 and1710x900, authenticated API pages contain24 and1 boards with
+count25, correct next/previous links and a union matching exact owned IDs.
+The browser visits the actual public username profile route, clicks Next,
+holds the actual successful page2 response for one second, completes page2
+and returns through Previous to page1. Tabs and panel top retain their document
+positions; captured document widths equal viewport widths. Pagination is
+absent while the panel loads, and panel height contracts to260px. Footer
+movement is measured rather than presented as a quantified CLS result or a
+requirement for fixed content height. The pager loading treatment awaits the
+user's choice; no UI change follows from this diagnostic.
+
+The browser/controller exit0 and no console/page or probe assertion errors
+are recorded.39 `ERR_ABORTED` failures (18 narrow/21 wide) have no retained
+request URL, so their causes cannot be attributed and clean-network success
+is not claimed. Telemetry writes receive guarded204 responses, not delivery.
+Rendered card counts/IDs and SSR HTML payloads are not separately asserted;
+credential login, owner-settings and Drafts UI remain outside this packet.
+Independent result review confirms these boundaries.
+
+Exact owned account/board/draft/revision/cell/idempotency/session metadata,
+durable/cached session, login event and actor throttle cleanup assertions pass;
+the owned browser container is absent. This proves cleanup at execution time,
+not guaranteed cleanup after a hard kill before journaling. Scripts, proof,
+masked screenshots, cleanup and the nonsecret ownership journal are archived
+outside the repository. No checklist item or section verdict is changed.
+
+
+### 2026-10-08 — Hidden-bio projection packet stopped before negative controls
+
+A separate two-actor fixture sets a unique owner bio marker and disables its
+public visibility; an exact owned Follow edge exposes the existing application
+profile link. Authentication uses explicit fixture sessions rather than
+credential login. The owner session/API/SSR HTML checks return200 and match
+owner identity; API and raw HTML contain the bio marker. HTML reports private,
+no-cache/no-store response policy. The subsequent RSC observation fails before
+a complete body result is recorded.16 request aborts include the target owner
+profile RSC request; no console error is recorded. The saved generic Error does
+not establish why the observation failed. Guest and unrelated negative controls
+are not executed, so this packet does not prove hidden-bio privacy.
+
+Browser/controller exit1 remains a failure. Exact owned accounts/profiles/privacy,
+Follow edge, login events, durable/cached sessions and actor-scoped user and
+session_status throttle keys pass cleanup assertions; the diagnostic container
+is absent. Scripts and original artifacts are archived outside the repository.
+An additional exact-key followup for the earlier pagination actor finds its
+session_status throttle key already absent; no cache deletion is needed.
+No source change, checklist tick or section closure follows from this packet.
+
+
+### 2026-10-08 — Hidden-bio API/HTML controls and incomplete RSC collection
+
+A distinct diagnostic retains the original failed packet and independently
+checks owner, guest and unrelated sessions. All three auth envelopes match;
+profile API and raw SSR HTML return200 with the correct target identity.
+The hidden bio marker is present for the owner and absent for guest/unrelated
+in both response surfaces. All three contexts click the existing Following
+profile link and render the expected target identity and bio visibility.
+This supplies bounded local API/HTML/DOM privacy evidence, not all profile
+fields or production ingress/cache verification.
+
+Six actual RSC responses (three prefetch and three navigation) report200,
+authentication-bound proxy requests, complete upstream bodies and downstream
+finish. Their raw proxy bytes match neither target identity nor bio marker.
+Content-Encoding is not recorded or decoded by this packet; RSC payload
+projection therefore remains unproved. Six browser body reads report
+Network.getResponseBody: No data found for resource with given identifier.
+35 request failures and zero console errors are retained. Both collection and
+clean-flow verdicts are false; browser/controller exit1 is not converted to a
+pass. Independent review confirms these limits and no application bug is
+established. Exact fixture/session/throttle cleanup passes and the owned
+browser container is absent. Original scripts/results are archived outside
+the repository; no checklist item or section verdict changes.
+
+
+### 2026-10-08 — Encoding-aware hidden-bio response projection
+
+A separate encoding-aware diagnostic preserves both earlier failed packets.
+It observes actual gzip Content-Encoding and decodes complete upstream RSC
+bodies in memory using Node's built-in zlib. Forwarded wire bytes and headers
+remain unchanged. Wire and decoded hashes/counts are recorded separately;
+no complete response body or session credential is persisted.
+
+Owner, guest and unrelated sessions pass all nine bounded controls: profile
+API, raw SSR HTML and full decoded navigation RSC return the expected target
+identity, with the hidden bio marker present only for the owner. All three
+contexts use the existing Following NextLink and render the expected target
+profile/bio visibility. The order is owner first, then guest and unrelated.
+Six RSC responses report200, exact expected cookie binding, complete gzip
+decoding, upstream completion and downstream finish. The three navigation
+responses contain target username and public ID; the three partial prefetch
+responses lack the ID and do not count as full witnesses. Independent result
+review confirms the bounded projection controls.
+
+Collection succeeds3/3, but clean-flow success remains false and browser/controller
+exit1 is retained: six CDP response-body reads fail with No data found for
+resource with given identifier,37 request failures remain, and no console
+error or guarded business write is observed. Decoding HTTP compression does
+not parse React Flight semantics or prove browser body retrieval/network
+cleanliness. This is one local profile field across specified surfaces, not
+all section76 privacy, production ingress/cache or credential-login coverage.
+No application source correction or checklist verdict change is justified.
+
+Exact owned accounts/profiles/privacy, Follow edge, session metadata/login events,
+durable/cached sessions and actor-scoped user/session_status throttle keys pass
+absence assertions; the diagnostic container is absent. Scripts/helper, hashes,
+structured observations and cleanup are archived outside the repository.
