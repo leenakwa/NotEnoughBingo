@@ -124,7 +124,10 @@ Subsequent optional-analytics and profile shared-result privacy corrections
 have scoped fail-before regressions and independent reviews. Their complete
 b6aabca source gate CI37796382333 passes all12 jobs:435 backend,619 frontend,
 372 smoke/12 skips and123 live flows, with matching full trees. Subsequent expiry
-test additions pass18 local PostgreSQL cases but need their committed-test gate. Trusted-localhost feedback/loading
+test additions pass18 local PostgreSQL cases and exact7534134 CI37799307071
+passes all12 jobs:437 backend,619 frontend,372 smoke/12 skips and123 live flows,
+with matching full trees. A separate real Redis probe verifies natural local
+expiry. Trusted-localhost feedback/loading
 packets retain network-abort failures; feedback placement awaits the user and
 profile pagination lacks an existing next page. No section verdict changes.
 

@@ -51,6 +51,7 @@ class Command(BaseCommand):
         play = InteractionEvent.objects.filter(
             actor_id=OuterRef("pk"),
             event_type=InteractionEvent.Type.START,
+            bingo_id__isnull=False,
             occurred_at__gte=OuterRef("date_joined"),
             occurred_at__lt=OuterRef("date_joined") + timedelta(days=7),
         )

@@ -90,6 +90,8 @@ class InteractionEventSerializer(serializers.ModelSerializer[InteractionEvent]):
             )
         metadata = attrs.get("metadata", {})
         event_type = attrs["event_type"]
+        if event_type == InteractionEvent.Type.START and attrs.get("bingo_id") is None:
+            raise serializers.ValidationError({"bingo_id": "A bingo is required for play starts."})
         search_only_keys = set(metadata) - {"surface", "action"}
         if search_only_keys and attrs["event_type"] != InteractionEvent.Type.SEARCH:
             raise serializers.ValidationError(

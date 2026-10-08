@@ -5,7 +5,22 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact b6aabca passes all12 jobs in
+Latest observation —2026-10-08: Exact7534134 passes all12 jobs in
+[CI37799307071](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37799307071):
+437 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack flows;
+both images and Release pass, with matching tested/branch full trees. This
+includes committed deterministic session/cookie expiry coverage. A separate
+real Redis/PostgreSQL probe verifies natural local expiry; native/deployed
+expiry and the final login-duration decision remain open. Read-only CDP
+contrast rules out Playwright interception as a necessary cause of observed
+post-header aborts, but their cancellation mechanism remains unproved.
+
+A subsequent activation-validity patch rejects START without a board and
+excludes historical unbound starts from cohort activation. It passes28 local
+PostgreSQL cases and independent correctness review; its exact source CI remains
+required. The metric still counts client-reported starts.
+
+Earlier observation —2026-10-08: Exact b6aabca passes all12 jobs in
 [CI37796382333](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37796382333):
 435 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack flows;
 both images and Release pass, with matching tested/branch full trees. Local
@@ -14,8 +29,10 @@ b6, both non-root/healthy. The bounded actual API/HTML projection packet has
 meaningful owner-positive/guest-other-negative private-board controls and
 matching authorized API/client props, with its stated fixture/surface gaps.
 Subsequent deterministic expiry coverage passes18 cases on isolated PostgreSQL
-and independent review, but requires its own committed-test gate. Final login
-duration remains a user choice; native/Redis/deployed expiry is not proved.
+and independent review; the later7534134 gate above covers these tests. Final login
+duration remains a user choice. A later isolated real Redis/PostgreSQL probe
+observes natural four-second expiry and rejects a retained cookie; local library
+versions differ from pinned runtime. Native/deployed expiry remains unproved.
 
 Earlier observation —2026-10-08: Exact5ed50c0 passes all12 jobs in
 [CI37790158585](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37790158585):

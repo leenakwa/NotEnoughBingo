@@ -6848,8 +6848,9 @@ then pass18 cases/10.65s on real local PostgreSQL, with no failures/skips. A uni
 isolated test database is absent before setup and dropped afterward. Ruff and
 format pass; independent test review finds no coverage/mock-realism issue.
 Local Python3.14.5/Django5.2.16/pytest8.4.2 and locmem differ from project-pinned
-CI/runtime. Redis natural expiry, actual browser cookie removal and deployed
-host/path/duration remain unverified. Code defaults30 days while example
+CI/runtime. The later real-Redis probe below covers natural local cache expiry;
+actual browser cookie removal and deployed host/path/duration remain unverified.
+Code defaults30 days while example
 configuration supplies14; the user is asked to select the final policy. No
 policy or section51 checkbox is silently changed. The added test-source gate
 remains required. Raw outcomes are archived outside the repository.
@@ -6877,3 +6878,103 @@ are archived. Other engines, real provider/history/ingress behavior and actual
 successful token consumption remain outside this observation; existing live
 email-change URL-stripping tests supply separate evidence. Section55/76 stays
 open for the registration-email query decision and remaining deployment scope.
+
+
+### 2026-10-08 — Natural local Redis/session expiry observation
+
+One reviewed isolated probe uses actual PostgreSQL, Django cached-db sessions
+and RedisCache with a four-second real lifetime, without a frozen clock or cache
+purge. Login cookie Max-Age4 and Expires agree with the durable deadline within
+1.5 seconds. Initial Redis TTL4 becomes absent(-2) after4.02 real seconds, while
+the SQL deadline elapses. A successful read before expiry does not renew it;
+a retained expired credential then returns401 and null session user. One case
+passes/8.21s. Independent test review finds no meaningful proof or isolation flaw.
+Cleanup removes only three keys bearing this run's UUID prefix;
+that prefix and the absent-before isolated test database are empty/absent afterward.
+
+No existing application sessions, fixtures, services or policy change. Raw log
+and reviewed runner/settings/test are archived outside the repository. The
+local Python3.14.5/Django5.2.16/pytest8.4.2 differs from locked CI/runtime; this
+establishes real local Redis transport/clock behavior, not deployed expiry or
+native browser cookie deletion. Final production duration remains the user's
+pending14/30-day decision. Test-source7534134 CI subsequently passes all12 jobs below;
+application code/images retain their verified05d/b6 identities and source equivalence.
+
+
+### 2026-10-08 — Request-specific CDP cancellation contrast
+
+One read-only Chromium diagnostic collects two fresh390×900 contexts for22
+seconds each on the existing shared result and configured05d/b6 runtime. LaneA
+uses Playwright interception for controlled telemetry204; laneB installs no
+Playwright routes and supplies204 at the proxy. Both collection contexts finish
+with no safety failures, business writes, page/console/proxy errors or remaining
+diagnostic container. This is collection success, not network success.
+
+Of35 CDP requests per lane, A records21 canceled ERR_ABORTED and14 finishes;
+B records15 cancellations and20 finishes. Each failed request first receives a
+same-request-ID response:20/14 RSC GET200 respectively and one telemetryPOST204
+each. Request-to-failure lifetimes are6–239ms; response-to-failure spans are
+0.283–214.509ms, before the20-second application deadline and cleanup. No
+intervening main navigation/pagehide is
+observed. Failures therefore also occur without Playwright interception. All
+observed RSC prefetch values are1; no2/3 or HMR flag is observed.
+
+The precise cancellation mechanism remains unproved. Independent source
+review maps the recorded RSC initiators to fetch/createFetch, not a cancellation
+site. Installed Next leaves in-flight requests running when prefetch tasks are
+canceled, and ordinary prefetch calls do not pass the byte limit needed for the
+examined bounded-reader cancellation. Analytics has no upstream abort signal;
+its20-second timer and successful204 decoding path do not explain the observed
+timing. Exact deployed analytics chunk frames also map to fetch,
+withRequestDeadline and performApiRequest initiation, not a cancellation site.
+The packet does not record whether the JavaScript fetch promise fulfills or
+rejects. These checks exclude those specific explanations without proving an
+application defect or an expected browser cancellation. Proxy-to-CDP
+candidate matches retain timing-race gaps explicitly instead of inventing
+associations. Existing strict network failures remain unchanged and are not
+waived. Raw reviewed scripts, proof and log are archived outside the repository.
+
+
+### 2026-10-08 — Complete expiry-test source gate
+
+Exact7534134 passes all12 jobs in [CI37799307071](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37799307071):
+437 backend cases/99.51s and619 frontend cases/44 files/22.59s. Chromium96/3.9min,
+mobile92+4 intentional skips/3.1min, Firefox92+4/4.0min and WebKit92+4/7.6min
+account for372 passes/12 skips/384 planned smoke cases. Full-stack123/9.3min,
+foundation/history secrets, both production images and Release pass. Test
+durations exclude setup/teardown. Raw checkout records tested merge
+f397a6a68d6deb87281a0189e7d6be9c33d8cefa; the GitHub commit API and local Git
+agree on full treee19e28066814d3056d3f60ee4ec9d29553727aa4. Raw logs, metadata
+and tree proof are archived. This proves the committed deterministic expiry
+tests on pinned CI; the separate natural Redis probe has its own local version
+scope. It does not prove production/native expiry or unresolved CDP attribution.
+
+
+### 2026-10-08 — Bind activation starts to an actual board
+
+A scoped source audit and independent correctness review expose a metric
+validity defect: authenticated START with omitted/null bingo_id is accepted and
+can activate an account without any board. Actual player first-cell events
+already carry board/revision IDs. START ingestion now requires a board while
+keeping revision optional; mature-cohort activation excludes historical unbound
+START. Raw activity counts retain those old events. No current board-status or
+deleted-state filter discards legitimate historical activation. Other event
+shapes and existing board-access checks remain intact.
+
+Before the fix, five regressions fail and five cases pass. Afterward,12 focused
+SQLite cases pass; a broader SQLite run retains23 passes/four existing
+PostgreSQL advisory-lock failures. The final same broader scope passes28 cases
+on actual local PostgreSQL/5.97s with no skips/failures. Its unique test database
+is absent before and after. Cases cover guest/authenticated omitted/null input,
+no writes on rejection, valid revision-less activation, ingestion retry and
+guest counter idempotency, multiple starts counting one activated account,
+legacy unbound exclusion, and archived/soft-deleted board states. Historical
+state tests mutate fields directly rather than executing deletion services.
+
+Independent correctness review and Ruff lint/format pass. Raw before/after
+logs and the isolated PostgreSQL runner are archived outside the repository;
+credentials remain only in process memory/environment. Local Python3.14.5/
+Django5.2.16/DRF3.16.1/pytest8.4.2 differs from locked CI. The report still uses
+client-reported starts and cannot establish independent play persistence. The
+new source requires its own exact CI gate; completed7534134 does not cover it.
+Section62's real-user/deployment dependencies remain open.
