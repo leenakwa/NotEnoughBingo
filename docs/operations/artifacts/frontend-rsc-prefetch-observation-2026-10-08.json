@@ -587,5 +587,50 @@
       "url": "https://fetch.spec.whatwg.org/#garbage-collection",
       "claim": "Browser-internal termination is possible in principle; not a demonstrated cause here."
     }
-  ]
+  ],
+  "a2OneFlowBodyCorrelation": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+    "counts": {
+      "rscRequests": 17,
+      "finished": 8,
+      "failed": 9,
+      "canceled": 9,
+      "pending": 0
+    },
+    "allAssociatedBodiesReachedEOF": 17,
+    "associatedReadFulfillments": 40,
+    "readRejections": 0,
+    "explicitCancelOrAbortHooks": 0,
+    "uniqueTemporalCorrelations": 17,
+    "destinationReady": true,
+    "clickToReadyMs": 301.029,
+    "requiredNavigationCdpCanceled": true,
+    "requiredNavigationReadBytes": 13364,
+    "pageErrors": 0,
+    "consoleErrors": 0,
+    "realBackendWrites": 0,
+    "cleanupErrors": 0,
+    "causeProven": false,
+    "limitations": [
+      "One flow/one Linux Chromium desktop viewport; not capacity acceptance",
+      "GET bridge and observation overhead remain potential capture interference",
+      "No pipeTo/pipeThrough propagation instrumentation; unassociated acquisitions/reads remain explicit coverage gaps",
+      "Settlement side observers retain original promise identities/results but can change unhandled-rejection bookkeeping",
+      "No private headers/query/cookies/body content saved; public paths replaced by route labels; segment headers SHA256 only",
+      "All evidence frozen before context/browser cleanup; later cleanup failures go to separate status file",
+      "Only analytics/client-error mutations204; GET/HEAD/OPTIONS pass through. Playwright routing can affect HTTP cache; this is not an uninstrumented performance baseline.",
+      "Temporal correlation is not a shared native request identifier."
+    ],
+    "rawProofs": [
+      {
+        "name": "proof.json",
+        "sha256": "cd5cd326b76b6c80f4e1c72d95b20cf815eaff68a95bb6b709f6ef7fa0a8801e"
+      },
+      {
+        "name": "correlation-summary.json",
+        "sha256": "fbf3038c02ad467579cb4c0080c3c2692344b777e26129eeee9a14bbf81193c3"
+      }
+    ]
+  }
 }

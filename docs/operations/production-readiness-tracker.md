@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-10-08: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-10-08: **59 verified**, **39 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -49,6 +49,13 @@ runs remain in the dated evidence. Private-API caching and framework/dev logging
 corrections have fail-before regressions and independent review. Exact optimized
 a2 registration/player/report/cache observations pass; backend uses local
 fixture development settings. CSRF copy and other UI choices remain open.
+The subsequent docs-only d330 gate also passes all nine jobs in
+[CI37771826483](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37771826483);
+its tested merge and branch share full tree084292971420002d40727b6f169ad8195601482c.
+Application source and the configured a2 runtime are unchanged.
+A later single a2 RSC flow reads all17 observed bodies to EOF while CDP marks9
+requests canceled, including the clicked navigation. The grid renders with no
+page/console errors; transport/capture causation remains unproven.
 
 The [exact configured Explore image](artifacts/explore-pending-submission-2026-10-08.json)
 passes nine controlled guard cases in Chromium/Firefox/WebKit, including repeated
@@ -73,8 +80,8 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **807 checked /335 unchecked**. Of those335,85 belong to the six
-explicitly N/A sections;250 are applicable unchecked bullets. The42 final
+Current **808 checked /334 unchecked**. Of those334,85 belong to the six
+explicitly N/A sections;249 are applicable unchecked bullets. The42 final
 execution bullets overlap earlier checks, so these counts are not independent
 tasks or a readiness percentage. Section42 backup/migration/rollback
 contracts and section82 applicable API contracts have local evidence. Provider
@@ -193,7 +200,7 @@ observations; the original prompt remains unchanged.
 - [x] 84. FEATURE FLAGS — Verified before deployment: complete runtime feature inventory, development-only Agentation, production debug/seed rejection and server staff permissions; remote flags are absent and no unfinished feature CTA is exposed.
 - [x] 85. DEBUG ARTIFACTS — Verified before deployment: runtime source and production build reviewed for console/debug/TODO/mock/fake-auth/seed/credential artifacts; retained local defaults are guarded development/configuration values rejected by production checks.
 - [ ] 86. TEST / DEMO ACCOUNTS — Partial: deterministic `.test` fixtures and elevated E2E moderator cannot be created by the seed command under production settings; verify the target database has none and is isolated from staging. Payments are absent.
-- [ ] 87. ADMIN PANEL — Partial: Django staff permissions, moderation audit, search/pagination, hard-delete guards, and confirmation for bounded moderation actions verified; external staff gateway remains.
+- [x] 87. ADMIN PANEL — Verified before deployment: known admin URLs reject guests/nonstaff; installed Django active/staff permissions, moderation audit, bounded search/pagination, hard-delete guards and confirmations have source/test/HTTP evidence. Populated multi-page rendering and target access controls are not claimed.
 - [ ] 88. SUPPORT — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 89. LEGAL / BUSINESS FOOTER — Partial: Privacy, Terms, Cookies, and current-year footer verified; a private contact and real operator/legal identity still need user-provided details and review.
 - [x] 90. FOOTER — Verified before deployment: current-year branded footer, five working internal links, contact destination page, intentional cookies anchor, responsive layout, and no broken placeholders; official social accounts are not configured for this release.

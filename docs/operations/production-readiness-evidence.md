@@ -6114,3 +6114,74 @@ remain separate. The exact local optimized packet retains its explicit backend
 fixture-settings boundary. Checklist807/335;85 unchecked are N/A,250 applicable;
 58 verified/40 partial/six N/A/one deployment-only. No deployment or final product
 readiness is inferred from this passing gate.
+
+
+### 2026-10-08 — Known admin URLs enforce permissions; exact documentation gate
+
+On configured a2 backend image, four actual GET requests to `/admin/` and
+`/admin/accounts/user/` as guest and existing active nonstaff user return302 to
+login with redirects disabled and empty response bodies. Actual account API
+checks establish guest401 versus authenticated200; read-only session metadata
+confirms the latter has neither staff nor superuser privileges. No auth/admin
+writes or new sessions were performed.
+
+An existing active staff superuser makes three actual GETs to the report
+changelist: first page, controlled special-character search and out-of-range
+page. All return200 with search/changelist/paginator structure and private
+no-store headers; the dummy search is retained correctly. All have no result
+table, so populated multi-page pagination and row rendering are unverified.
+Backend settings are local development fixture settings, not target production.
+
+Installed Django5.2.17 AdminSite checks active/staff status on the publicly known
+admin route. Existing tests in the402-test passing gate reject suspended staff
+login, deny hard deletion even to superusers, require moderation confirmation,
+record audits, and reject unbounded/oversized bulk moderation. Independent review
+of these results and the remaining section87 bullets supports its local verdict.
+Only the obscurity bullet changes:808 checked/334 unchecked, including85 N/A
+and249 applicable unchecked;59 verified/39 partial/six N/A/one deployment-only.
+Target access controls and a blanket admin security audit are not claimed.
+
+[Documentation-head CI37771826483](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37771826483)
+for d330dd5 completes all nine jobs successfully. Backend402/103.21s and
+frontend589/43 files pass, as do smoke/full-stack, both images, foundation,
+full-history secrets and Release. Raw checkout identifies tested merge
+f419fae2a53d85f6818407275e0a6e3fdd9c2aed; GitHub Git API and local Git agree
+on full tree084292971420002d40727b6f169ad8195601482c. This docs-only head has
+unchanged application/test source from a2; configured runtime remains a2.
+
+Raw sanitized admin packets/scripts and complete CI log are preserved in the
+external task evidence archive. No new repository plans, deployment, promotion
+or interface decisions accompany this update.
+
+
+### 2026-10-08 — One RSC flow reaches JavaScript EOF despite CDP aborts
+
+One anonymous Linux Chromium Discover-to-public-card flow on exact a2 waits10s
+before one click and freezes evidence before cleanup. CDP records17 RSC requests:
+8 finished and9 HTTP200 ERR_ABORTED/canceled, none pending. Seven abort while
+idle, one is the clicked non-prefetch navigation, one is a subsequent prefetch.
+The destination grid becomes visible about301ms after click. No page or console
+errors occur; two analytics POSTs are intercepted and backend writes remain zero.
+
+Passthrough instrumentation associates all17 response bodies and readers. All
+reach done:true with40 fulfilled reads, zero read rejection and zero observed
+cancel/controller/signal hooks. The clicked navigation consumes13,364 bytes.
+Independent source review confirms the installed production React Flight decoder
+reads until EOF; grid readiness alone would have been insufficient. Installed
+Next queue cancellation does not abort fetching, and its server-side unclosing
+stream utility does not transform this browser response path.
+
+All17 CDP/fetch pairs have unique temporal candidates within2ms using route and
+epoch data, without relying on independently numbered public-route labels. This
+is temporal correlation rather than a shared native request ID. Proxy forwarding,
+Playwright routing/cache effects, settlement observers and unassociated stream
+reads remain capture limitations. Complete JavaScript body consumption is proven
+for this packet; the reason CDP reports aborts is still unproven. No benign-abort,
+global network pass or checklist closure follows. No prefetch workaround or
+additional RSC browser run is justified by this packet.
+
+The initial harness import failed before any browser/proxy/navigation started.
+Its log is retained; correcting NODE_PATH permits exactly one actual flow.
+Cleanup reports zero errors and the disposable container is absent. Sanitized
+raw proof, correlation, script, logs and cleanup are archived outside the repo;
+the existing RSC artifact stores their hashes and bounded summary.

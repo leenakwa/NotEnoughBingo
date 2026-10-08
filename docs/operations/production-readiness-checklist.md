@@ -1587,7 +1587,7 @@ Verify:
 
 If an admin interface exists:
 
-- [ ] do not rely on obscurity;
+- [x] do not rely on obscurity;
 - [x] authenticate;
 - [x] authorize;
 - [x] log important admin actions where appropriate;

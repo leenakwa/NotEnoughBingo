@@ -826,5 +826,26 @@
       "completeTree": "15a3af87976ca42bc80a24dc2174c1efeb0414ec",
       "branchTreeMatches": true
     }
+  },
+  "adminKnownRouteBoundaryA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "anonymousAndNonstaffGetCases": 4,
+    "denialStatus": 302,
+    "existingStaffGetCases": 3,
+    "staffStatus": 200,
+    "realMutations": 0,
+    "populatedPaginationVerified": false,
+    "productionSettingsVerified": false,
+    "scope": "Known routes enforce auth/permissions; empty changelist search/paginator structure only. Existing CI covers destructive guards and moderation confirmation/audit.",
+    "rawProofs": [
+      {
+        "name": "neb-admin-a2-readonly-proof-oct08.json",
+        "sha256": "20b53f4c684439c0044969a939bdffd96f05fa2699cbe75f0f3d60c49f15a6b5"
+      },
+      {
+        "name": "neb-admin-a2-staff-readonly-proof-oct08.json",
+        "sha256": "5b5e6db16575b8680a6a822d37eb42fbd41b68398d217bcb3308728dc49bbefb"
+      }
+    ]
   }
 }
