@@ -697,6 +697,108 @@ describe("BingoPlayer", () => {
     expect(mocks.saveProgress).not.toHaveBeenCalled();
   });
 
+  it.each([false, true])(
+    "reserves the follow action while the optional profile loads (following: %s)",
+    async (following) => {
+      let resolveProfile!: (profile: UserProfile) => void;
+      mocks.getProfile.mockReturnValueOnce(
+        new Promise<UserProfile>((resolve) => {
+          resolveProfile = resolve;
+        }),
+      );
+      const { container } = render(
+        <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+      );
+      const slot = container.querySelector(".play-follow-slot");
+      expect(slot).not.toBeNull();
+      const sizingLabels = slot!.querySelectorAll(
+        ".play-action-placeholder[aria-hidden='true']",
+      );
+      expect(Array.from(sizingLabels, (label) => label.textContent)).toEqual([
+        "Follow author",
+        "Following",
+      ]);
+      expect(
+        screen.queryByRole("button", { name: /Follow author|Following/ }),
+      ).not.toBeInTheDocument();
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+      );
+      await act(async () => resolveProfile({ ...authorProfile, is_following: following }));
+      const button = screen.getByRole("button", {
+        name: following ? "Following" : "Follow author",
+      });
+      expect(button).toBeEnabled();
+      expect(button.parentElement).toBe(slot);
+      expect(slot!.querySelectorAll(".play-action-placeholder")).toHaveLength(2);
+    },
+  );
+
+  it("keeps the empty follow reservation after optional profile failure without blocking play", async () => {
+    let rejectProfile!: (error: Error) => void;
+    mocks.getProfile.mockReturnValueOnce(
+      new Promise<UserProfile>((_resolve, reject) => {
+        rejectProfile = reject;
+      }),
+    );
+    const { container } = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    const slot = container.querySelector(".play-follow-slot");
+    expect(slot).not.toBeNull();
+    await act(async () => rejectProfile(new Error("Optional profile unavailable")));
+    expect(container.querySelector(".play-follow-slot")).toBe(slot);
+    expect(
+      screen.queryByRole("button", { name: /Follow author|Following/ }),
+    ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+    );
+    expect(screen.queryByText("Optional profile unavailable")).not.toBeInTheDocument();
+  });
+
+  it.each(["guest", "author"] as const)(
+    "does not reserve a follow action for the %s",
+    async (mode) => {
+      const { container } = render(
+        <BingoPlayer
+          bingoId={bingo.id}
+          initialBingo={bingo}
+          initialViewer={mode === "guest" ? "guest" : { ...viewer, id: bingo.author.id }}
+        />,
+      );
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+      );
+      expect(container.querySelector(".play-follow-slot")).toBeNull();
+      expect(mocks.getProfile).not.toHaveBeenCalled();
+    },
+  );
+
+  it("removes the follow reservation on logout and ignores the departed profile response", async () => {
+    let resolveProfile!: (profile: UserProfile) => void;
+    mocks.getProfile.mockReturnValueOnce(
+      new Promise<UserProfile>((resolve) => {
+        resolveProfile = resolve;
+      }),
+    );
+    const { container } = render(
+      <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer={viewer} />,
+    );
+    expect(container.querySelector(".play-follow-slot")).not.toBeNull();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Open the board" })).toBeEnabled(),
+    );
+    mocks.getViewer.mockResolvedValueOnce(null);
+    await act(async () => window.dispatchEvent(new Event(AUTH_SIGNED_OUT_EVENT)));
+    expect(await screen.findByRole("link", { name: "Log in to like" })).toBeVisible();
+    await act(async () => resolveProfile(authorProfile));
+    expect(container.querySelector(".play-follow-slot")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Follow author|Following/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not allow empty marks to overwrite progress after an initial read failure and supports retry", async () => {
     const cellId = bingo.current_revision!.cells[0]!.id!;
     mocks.getProgress.mockRejectedValueOnce(

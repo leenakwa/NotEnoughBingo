@@ -30,7 +30,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-10-08: **59 verified**, **39 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-10-08: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -54,6 +54,11 @@ The later docs-only a4c5fb7 gate passes all nine jobs in
 [CI37774879912](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37774879912);
 its tested merge and branch share full tree9462cad5186e138b2ea30d698b1cb1ef2fe1d2ef.
 Application source and the configured a2 runtime are unchanged.
+The subsequent docs-only e57de31 gate also passes all nine jobs in
+[CI37777997102](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37777997102):
+402 backend/100.95s,589 frontend/43 files,372 smoke/12 intentional skips/12.3min
+and123 full-stack/7.8min. Tested merge9f85c085c21e24bef5cac2d2e97956e2efe821f3
+and branch e57 share complete treee70fc3bef993e410299b785e59f90a5dd2667e2f.
 A later single a2 RSC flow reads all17 observed bodies to EOF while CDP marks9
 requests canceled, including the clicked navigation. The grid renders with no
 page/console errors; transport/capture causation remains unproven.
@@ -81,8 +86,8 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **817 checked /325 unchecked**. Of those325,85 belong to the six
-explicitly N/A sections;240 are applicable unchecked bullets. The42 final
+Current **815 checked /327 unchecked**. Of those327,85 belong to the six
+explicitly N/A sections;242 are applicable unchecked bullets. The42 final
 execution bullets overlap earlier checks, so these counts are not independent
 tasks or a readiness percentage. The first nine section105 actions have actual
 local CI/runtime/search/configuration evidence; the deployment sequence and
@@ -95,6 +100,12 @@ round-trip fails; five endpoint regressions and13 scoped observability checks
 pass locally with independent review. The388-test Python3.13/PostgreSQL job and complete ceb source gate
 pass. Actual Redis is separate from the mocked endpoint regressions. The earlier configured frontend proofs above remain scoped to065.
 
+The subsequent working-tree loading-layout fix seeds the header from the
+already obtained server account and reserves the accepted Follow slot. All601
+frontend tests, lint and TypeScript pass with independent code/auth reviews.
+Built-image geometry and exact committed-source CI remain pending; section5
+stays partial and these local checks do not close it.
+
 ### Accepted interface requirements
 
 The user retains account dialogs, one-time registration language onboarding,
@@ -102,8 +113,10 @@ profile language preferences, removed catalog/search language pickers, fixed
 header and intentional hover/shadow treatment. On2026-10-08 the user chooses full
 profile-card text wrapping, mobile player variantB with the grid above controls,
 cell font scaling with board width, and a single report-dialog backdrop matching
-login. These choices supersede older interface
-observations; the original prompt remains unchanged.
+login. The user also chooses empty reserved space for Follow author while its
+optional profile loads, preserving both current follow labels without moving
+the player layout. These choices supersede older interface observations; the
+original prompt remains unchanged.
 
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,
   `frontend/tests/e2e`, and browser checks on the isolated `nebqa` stack.
@@ -142,7 +155,7 @@ observations; the original prompt remains unchanged.
 - [x] 23. KEYBOARD UX — Verified before deployment: navigation, Enter/Space/Escape, visible focus, and cross-browser report-dialog focus trap/return.
 - [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy now passes. Three unnamed editor sliders gained explicit accessible names and values, confirmed in the browser tree. The independent current ARIA/template inventory and two corrected semantics, ten live state/width Axe/contrast probes and native checkbox visual evidence pass; actual 200% browser zoom remains unavailable and unchecked. See accessibility-verification-matrix.md.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: placeholder inventory and product/auth names checked; legal operator copy and broader error-message exposure remain.
-- [x] 26. LONG-CONTENT TORTURE TEST — Verified before deployment: account/title limits, 254-character email, long URL/multilingual comment, profile/card/cell wrapping, and 320/1710 px layout.
+- [ ] 26. LONG-CONTENT TORTURE TEST — Partial: prior account/title limits, 254-character email, long URL/multilingual comment and profile/card/cell checks retain their scope. The exact-a2 maximum-content packet exposes horizontal overflow in Explore active-filter labels at320px with permitted80-character title/author and15 tags of50 characters. Wrapping and overflow are reopened; the user’s choice of full wrapping or ellipsis is pending. The packet does not establish a new temporal layout shift.
 - [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.
 - [x] 28. NUMBERS — Verified before deployment: bounded integer counts and percentages, invalid-number recovery guards, compact notation and decimal rounding; no currency capability in this release.
 - [x] 29. LOCALIZATION / INTERNATIONALIZATION — Verified before deployment: English UI and email, explicit content languages, persisted language preferences and supported filter URLs, local date/number formats, plural labels, and RTL text direction. Catalog/search language pickers are intentionally removed by the 2026-10-03 instruction; no translated UI routes or currency feature.

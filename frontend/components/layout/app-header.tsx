@@ -26,18 +26,21 @@ const navigation = [
   { href: "/explore", label: "Explore" },
 ];
 
+type HeaderUser = Pick<AuthenticatedUser, "id" | "display_name" | "avatar">;
+
 interface HeaderViewProps {
   avatarUrl?: string;
   headerRef?: RefObject<HTMLElement | null>;
   hasScrolled?: boolean;
   pathname: string;
-  user: AuthenticatedUser | null;
+  user: HeaderUser | null;
   unreadCount: number;
 }
 
 interface AppHeaderProps {
   variant?: "classic" | "modern";
   initialUserId?: string | null;
+  initialUser?: HeaderUser | null;
   initialLogoutEvent?: string | null;
 }
 
@@ -180,15 +183,18 @@ export function ModernAppHeader({
 export function AppHeader({
   variant = "classic",
   initialUserId,
+  initialUser,
   initialLogoutEvent,
 }: AppHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [user, setUser] = useState<HeaderUser | null>(initialUser ?? null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasScrolled, setHasScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
-  const currentUserId = useRef<string | null | undefined>(initialUserId);
+  const currentUserId = useRef<string | null | undefined>(
+    initialUser === undefined ? initialUserId : (initialUser?.id ?? null),
+  );
   const refreshVersion = useRef(0);
   const lastLogoutEvent = useRef<string | null | undefined>(initialLogoutEvent);
   const authenticationCheckInFlight = useRef(false);

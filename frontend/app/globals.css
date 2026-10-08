@@ -1547,6 +1547,14 @@ input[type="range"] {
   visibility: hidden;
 }
 
+.play-follow-slot {
+  display: inline-grid;
+}
+
+.play-follow-slot > * {
+  grid-area: 1 / 1;
+}
+
 .play-board {
   margin-inline: auto;
   touch-action: manipulation;

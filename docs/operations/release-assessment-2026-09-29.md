@@ -48,8 +48,8 @@ The subsequent cache-readiness correction has13 passing scoped observability
 checks and independent review. Its388-test Python3.13/PostgreSQL job passes;
 the complete ceb source gate passes. Earlier configured frontend observations remain scoped to065.
 
-Current checklist:817 checked/325 unchecked;59 verified/39 partial/six N/A/
-one deployment-only. Of325 unchecked bullets,85 belong to the six explicitly N/A sections;240 are
+Current checklist:815 checked/327 unchecked;58 verified/40 partial/six N/A/
+one deployment-only. Of327 unchecked bullets,85 belong to the six explicitly N/A sections;242 are
 applicable. The42 final-execution bullets overlap earlier checks. These counts
 describe evidence, not independent tasks or a product-readiness percentage.
 The [tracker](production-readiness-tracker.md) and

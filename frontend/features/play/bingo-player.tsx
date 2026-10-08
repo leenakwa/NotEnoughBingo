@@ -731,16 +731,26 @@ export function BingoPlayer({
             Log in to like
           </span>
         ) : null}
-        {viewer && viewer !== "guest" && viewer.id !== bingo.author.id && authorProfile ? (
-          <button
-            type="button"
-            className="button button--secondary"
-            aria-pressed={authorProfile.is_following}
-            disabled={!progressReady || Boolean(socialPending)}
-            onClick={() => void toggleFollow()}
-          >
-            {authorProfile.is_following ? "Following" : "Follow author"}
-          </button>
+        {viewer && viewer !== "guest" && viewer.id !== bingo.author.id ? (
+          <span className="play-follow-slot">
+            <span className="button button--secondary play-action-placeholder" aria-hidden="true">
+              Follow author
+            </span>
+            <span className="button button--secondary play-action-placeholder" aria-hidden="true">
+              Following
+            </span>
+            {authorProfile ? (
+              <button
+                type="button"
+                className="button button--secondary"
+                aria-pressed={authorProfile.is_following}
+                disabled={!progressReady || Boolean(socialPending)}
+                onClick={() => void toggleFollow()}
+              >
+                {authorProfile.is_following ? "Following" : "Follow author"}
+              </button>
+            ) : null}
+          </span>
         ) : null}
         {viewer && viewer !== "guest" && bingo.permissions.can_report ? (
           <button

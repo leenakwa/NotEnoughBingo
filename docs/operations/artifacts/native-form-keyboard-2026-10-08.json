@@ -1023,5 +1023,303 @@
       "name": "maximum-content-six-diagnostic/proof.json",
       "sha256": "d2e26f2624e5c48ce277cd7a4f5d9e0b797e226aa77f947e498068bf337995a6"
     }
+  },
+  "playerLoadingGeometryA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "runtime": {
+      "composePath": "/tmp/neb-rollout-a3/compose.json",
+      "frontend": {
+        "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18584,
+        "publicRelease": "a2c2d6f54b690f730c1186c1eb739ef414437e7c"
+      },
+      "backend": {
+        "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18585
+      }
+    },
+    "scope": "ONE guest390 CLS attribution and registered390/1710 pending-to-ready geometry diagnostic only",
+    "proofSha256": "df9aa4c55754db2c32c7f50601b022e56ec0dfaca07a4b1908bf5ca447a2110b",
+    "counts": {
+      "observations": 3,
+      "completed": 3,
+      "failures": 0,
+      "observedMutations": 3,
+      "interceptedTelemetry": 3,
+      "blockedBusinessMutations": 0
+    },
+    "summary": {
+      "counts": {
+        "observations": 3,
+        "completed": 3,
+        "failures": 0,
+        "observedMutations": 3,
+        "interceptedTelemetry": 3,
+        "blockedBusinessMutations": 0
+      },
+      "browserVersion": "149.0.7827.0",
+      "proxyErrors": 0,
+      "observations": [
+        {
+          "mode": "guest",
+          "width": 390,
+          "completed": true,
+          "frameCount": 189,
+          "clsMaxSessionWindow": 0.0006855929487179487,
+          "clsSumNoRecentInput": 0.0006855929487179487,
+          "heldBoardContinuity": null,
+          "progressHoldMs": null,
+          "realProgressResponse": null,
+          "firstPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "lastPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "shiftSourceClasses": [],
+          "unattributedShiftEntries": 1,
+          "pageErrorCount": 0,
+          "consoleWarningErrorCount": 0
+        },
+        {
+          "mode": "registered",
+          "width": 390,
+          "completed": true,
+          "frameCount": 253,
+          "clsMaxSessionWindow": 0.005395327635327636,
+          "clsSumNoRecentInput": 0.0060809205840455845,
+          "heldBoardContinuity": {
+            "framesObserved": 63,
+            "absentFrames": 0,
+            "notVisibleFrames": 0
+          },
+          "progressHoldMs": 1063,
+          "realProgressResponse": {
+            "status": 200,
+            "ownedRequest": true,
+            "bodyTransportFinished": true,
+            "transportError": null
+          },
+          "firstPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 54
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "lastPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "shiftSourceClasses": [
+            "account-nav",
+            "classic-header__center",
+            "button button--secondary"
+          ],
+          "unattributedShiftEntries": 1,
+          "pageErrorCount": 0,
+          "consoleWarningErrorCount": 0
+        },
+        {
+          "mode": "registered",
+          "width": 1710,
+          "completed": true,
+          "frameCount": 253,
+          "clsMaxSessionWindow": 0.03427796284184307,
+          "clsSumNoRecentInput": 0.03427796284184307,
+          "heldBoardContinuity": {
+            "framesObserved": 64,
+            "absentFrames": 0,
+            "notVisibleFrames": 0
+          },
+          "progressHoldMs": 1060,
+          "realProgressResponse": {
+            "status": 200,
+            "ownedRequest": true,
+            "bodyTransportFinished": true,
+            "transportError": null
+          },
+          "firstPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": -166.828125,
+              "height": 64
+            },
+            "actions": {
+              "x": -166.828125,
+              "y": 0,
+              "width": 166.828125,
+              "height": 0
+            },
+            "board": {
+              "x": 0.0,
+              "y": 88.34375,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "lastPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0.0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0.0,
+              "y": 0,
+              "width": 0.0,
+              "height": 0
+            },
+            "board": {
+              "x": 0.0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "shiftSourceClasses": [
+            "board-scroll-region",
+            "play-mark-controls",
+            "play-description",
+            "play-actions",
+            "classic-header__nav"
+          ],
+          "unattributedShiftEntries": 0,
+          "pageErrorCount": 0,
+          "consoleWarningErrorCount": 0
+        }
+      ],
+      "cleanup": {
+        "evidenceSavedBeforeFinalCleanup": true,
+        "errors": []
+      },
+      "completeGeometry": "Full frames, shift rectangles and original offline summary are retained in the external evidence archive, identified by proofSha256."
+    },
+    "limits": [
+      "Exactly guest390 plus registered390/1710; one Linux Chromium run, no physical-device or global readiness claim",
+      "CLS source attribution is observational; earlier small CLS need not recur and intentional content expansion is not classified as a defect",
+      "Every animation frame sampled until freeze or20s cap; buffered layout-shift observer captures reported sources only; offscreen/browsers without attribution can limit coverage",
+      "Real existing cookie/SSR/auth/progress GETs; progress GET held only for matching own main-frame fetch with5s hard cap, then original response continued; no fake GET response",
+      "GETprogress read safety reused from exact a2 source; all business writes blocked and treated as failures, telemetry POST204 intercepted",
+      "No bodies/cookies/identity/title/text/IDs persisted; only sanitized element tags/classes, rects, flags, event counts and safe errors",
+      "Registered identity checked through existing auth/me200 and verified-email boolean; staff status not re-read from an endpoint that omits it",
+      "No UI interactions, source/service/build/reseed/Mac/Cua actions; own disposable Linux container only"
+    ],
+    "verdict": "Three flows complete; early registered hydration geometry changes observed. Last-pending-to-ready stability does not establish whole-flow stability or global section5 pass. No UI change or rerun.",
+    "sourceAssessment": {
+      "player": "BingoPage supplies initialBingo/initialViewer but no initialAuthorProfile; optional client author-profile completion inserts Follow/Following and changes intrinsic action-column width. Button insertion/reflow coincide in frames; profile GET was not separately recorded.",
+      "header": "RootLayout has server snapshot but passes only user ID; header starts user=null and inserts Notifications after client session completion.",
+      "references": [
+        "frontend/app/bingo/[bingoId]/page.tsx",
+        "frontend/features/play/bingo-player.tsx",
+        "frontend/app/globals.css",
+        "frontend/app/layout.tsx",
+        "frontend/components/layout/app-header.tsx"
+      ],
+      "implementationStatus": "Subsequent working-tree header seeding and user-accepted empty Follow reservation pass601 frontend tests/lint/types and independent reviews. This historical a2 packet remains the before state; new built-image geometry and exact-source CI are pending."
+    }
   }
 }

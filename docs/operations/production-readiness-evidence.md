@@ -6296,3 +6296,86 @@ complete tree9462cad5186e138b2ea30d698b1cb1ef2fe1d2ef. Application/test source
 remains identical to a2 and configured local images remain exact a2. No
 additional application test rerun or image replacement is performed for these
 documentation-only changes. Complete raw log and job metadata are archived.
+
+
+### 2026-10-08 — Long-content verdict corrected against the observed failure
+
+Independent review maps the exact-a2 mobile Explore active-filter overflow to
+the original section26 relevant-field wrapping and overflow requirements.
+Those two marks are reopened and section26 returns to Partial; prior scoped
+long-content observations remain valid. Permitted80-character title/author and
+15 tags of50 characters are within the product limits. The pending user choice
+of wrapping or ellipsis does not resolve the observed defect. This packet does
+not establish a temporal layout shift, so the separate layout-stability mark
+is not automatically removed. No application change or test rerun occurs.
+Current counts are815 checked/327 unchecked, including85 N/A and242 applicable;
+section verdicts are58 verified/40 partial/six N/A/one deployment-only. Earlier
+dated counts remain historical observations, not the current snapshot.
+
+
+### 2026-10-08 — Exact e57 documentation gate completes
+
+[CI37777997102](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37777997102)
+passes all nine jobs:402 backend in100.95s,589 frontend in43 files,372 smoke
+with12 intentional skips in12.3min,123 full-stack in7.8min, foundation,
+full-history secrets, both images and Release. Raw checkout identifies merge
+9f85c085c21e24bef5cac2d2e97956e2efe821f3. GitHub commit API and local Git agree
+on complete treee70fc3bef993e410299b785e59f90a5dd2667e2f for the tested merge
+and branch e57de315277dbd5063b983f5ce397c3ce438a036. Raw log and completed-job
+metadata are archived outside the repository; watcher exits0. Application
+source remains a2 and configured local runtime is unchanged. This is the
+committed e57 gate, not a gate for subsequent uncommitted documentation edits.
+
+
+### 2026-10-08 — Three player loading observations expose an early registered shift
+
+One exact-a2 Linux Chromium packet observes guest390 and registered390/1710,
+with init-script buffered layout-shift sources and continuous frame geometry.
+Both registered progress GETs are owned main-frame fetches, held1063/1060ms,
+then released to real200 responses with completed bodies. The seeded board
+is present and visible in all63/64 held frames. All three flows complete.
+
+Last-pending to first-ready header/title/actions/board rectangles are unchanged,
+but this excludes earlier movement. First-pending to ready registered390 actions
+grow54px in height; at1710 title width falls166.828125px/height grows64px, actions
+widen166.828125px and board moves down88.34375px. The action-child inventory grows
+from four to five during pending. Source review finds that BingoPage does not
+provide initialAuthorProfile; player starts with no author profile, fetches it
+independently, then adds Follow/Following. The intrinsic-width actions column
+then reduces the adjacent heading width. The button insertion and reflow occur
+in the same recorded frame, providing strong source/frame attribution; the
+profile GET itself was not recorded by this harness. Header movement separately
+matches RootLayout passing only the server user ID while AppHeader starts with
+no user and later adds Notifications. Treatment remains pending; the global
+section5 mark stays open. Registered CLS maximum session values are0.00539532764 and
+0.03427796284; mobile sum is0.00608092058. Guest repeats0.00068559295, but its
+reported source has no tag and equal previous/current rectangles, limiting
+attribution. Guest measured rectangles stay unchanged.
+
+Only three telemetry POSTs are intercepted; business writes, page/console/proxy
+errors and observer overflows are zero. Cleanup succeeds and the disposable
+container is removed. Raw proof, offline summary, script, preflight and cleanup
+are archived outside the repository; the existing artifact records their scope.
+No physical-device or global layout-stability verdict follows. No source or
+UI change and no rerun occurs.
+
+
+### 2026-10-08 — Header seeding and accepted empty Follow reservation
+
+The working-tree patch passes601 frontend tests in43 files/17.32s, full ESLint
+and TypeScript. Header tests cover server markup, pending client revalidation,
+expiry, logout, account switches and obsolete responses/props. Independent auth
+review finds no meaningful findings: only id/display_name/avatar cross the new
+server/client boundary, initial state is mount-only, and existing response
+versions/session lifetimes stay unchanged. The optional Follow profile retains
+independence from progress. The user explicitly chooses empty reserved space;
+two hidden non-focusable labels size one shared grid cell for Follow author and
+Following, retaining the space after an optional profile error. Player tests
+cover both labels, pending/error behavior, guest/author exclusion and logout
+followed by a stale profile response. Independent code review passes.
+
+Worker-reported fail-before results are two header variants and three missing
+Follow-slot cases; root directly observes the complete601-test result and
+archives its raw log. The earlier exact-a2 browser packet remains the measured
+before state. Current optimized-image browser geometry and exact-source CI
+are pending; no global layout mark or section verdict is promoted.

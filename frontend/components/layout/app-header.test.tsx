@@ -1,4 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppHeader } from "@/components/layout/app-header";
@@ -75,6 +76,17 @@ describe("AppHeader scroll shadow", () => {
     },
   );
 
+  it.each(["classic", "modern"] as const)(
+    "includes authenticated controls in the %s server-rendered markup without a client request",
+    (variant) => {
+      const markup = renderToStaticMarkup(<AppHeader variant={variant} initialUser={user} />);
+      expect(markup).toContain('href="/notifications"');
+      expect(markup).toContain('aria-label="Profile for Test Player"');
+      expect(markup).not.toContain('aria-label="Log in"');
+      expect(mocks.session).not.toHaveBeenCalled();
+    },
+  );
+
   it("reads an already restored scroll position when mounted", async () => {
     Object.defineProperty(window, "scrollY", { configurable: true, value: 120 });
     await act(async () => render(<AppHeader />));
@@ -131,6 +143,68 @@ describe("AppHeader session expiry", () => {
     mocks.session.mockResolvedValue(user);
     mocks.unreadCount.mockResolvedValue({ count: 0 });
   });
+
+  it.each(["classic", "modern"] as const)(
+    "renders the server account in the %s header while client revalidation is pending",
+    async (variant) => {
+      let resolveSession!: (next: AuthenticatedUser | null) => void;
+      mocks.session.mockReturnValueOnce(
+        new Promise<AuthenticatedUser | null>((resolve) => {
+          resolveSession = resolve;
+        }),
+      );
+      const avatar = {
+        id: "avatar-id",
+        kind: "avatar" as const,
+        status: "ready" as const,
+        url: "https://media.example.test/avatar.png",
+        thumbnail_url: "https://media.example.test/avatar-small.png",
+        mime_type: "image/png",
+      };
+      const initialUser = { id: user.id, display_name: user.display_name, avatar };
+      const { container } = render(<AppHeader variant={variant} initialUser={initialUser} />);
+      expect(screen.getByRole("link", { name: "Notifications" })).toHaveAttribute(
+        "href",
+        "/notifications",
+      );
+      const profile = screen.getByRole("link", { name: "Profile for Test Player" });
+      expect(profile).toHaveAttribute("href", "/profile");
+      expect(profile.querySelector("img")).toHaveAttribute("src", avatar.thumbnail_url);
+      expect(container.querySelectorAll(".account-nav > a")).toHaveLength(2);
+      await act(async () => resolveSession({ ...user, avatar }));
+      expect(container.querySelectorAll(".account-nav > a")).toHaveLength(2);
+      expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
+    },
+  );
+
+  it.each([null, { ...user, id: "other-user-id", display_name: "Other Player" }])(
+    "does not restore the server account from an obsolete lookup or stale layout props after revalidation (%s)",
+    async (current) => {
+      let resolveOld!: (next: AuthenticatedUser | null) => void;
+      mocks.session.mockReturnValueOnce(
+        new Promise<AuthenticatedUser | null>((resolve) => {
+          resolveOld = resolve;
+        }),
+      );
+      const { rerender } = render(<AppHeader initialUser={user} initialLogoutEvent={null} />);
+      expect(screen.getByRole("link", { name: "Profile for Test Player" })).toBeVisible();
+      mocks.session.mockResolvedValueOnce(current);
+      await act(async () => window.dispatchEvent(new Event("focus")));
+      await act(async () => resolveOld(user));
+      rerender(<AppHeader initialUser={{ ...user }} initialLogoutEvent={null} />);
+      expect(
+        screen.queryByRole("link", { name: "Profile for Test Player" }),
+      ).not.toBeInTheDocument();
+      if (current) {
+        expect(screen.getByRole("link", { name: "Profile for Other Player" })).toBeVisible();
+        expect(screen.getByRole("link", { name: "Notifications" })).toBeVisible();
+      } else {
+        expect(screen.getByRole("link", { name: "Log in" })).toBeVisible();
+        expect(screen.queryByRole("link", { name: "Notifications" })).not.toBeInTheDocument();
+      }
+      expect(mocks.session).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it("keeps navigation and account access usable if unread counts are unavailable", async () => {
     mocks.unreadCount.mockRejectedValueOnce(new Error("Optional count unavailable"));
@@ -320,7 +394,7 @@ describe("AppHeader session expiry", () => {
       window.addEventListener(AUTH_SIGNED_OUT_EVENT, signedOut);
       try {
         await act(async () =>
-          render(<AppHeader initialUserId={user.id} initialLogoutEvent="older-logout-event" />),
+          render(<AppHeader initialUser={user} initialLogoutEvent="older-logout-event" />),
         );
         expect(signedOut).not.toHaveBeenCalled();
         expect(sessionEnded).not.toHaveBeenCalled();
@@ -387,8 +461,10 @@ describe("AppHeader session expiry", () => {
     window.addEventListener(AUTH_DIALOG_EVENT, openDialog);
     try {
       await act(async () =>
-        render(<AppHeader initialUserId={user.id} initialLogoutEvent="historical-logout-event" />),
+        render(<AppHeader initialUser={user} initialLogoutEvent="historical-logout-event" />),
       );
+      expect(screen.getByRole("link", { name: "Log in" })).toBeVisible();
+      expect(screen.queryByRole("link", { name: "Notifications" })).not.toBeInTheDocument();
       expect(sessionEnded).toHaveBeenCalledOnce();
       expect(signedOut).not.toHaveBeenCalled();
       expect(openDialog).not.toHaveBeenCalled();
@@ -404,7 +480,8 @@ describe("AppHeader session expiry", () => {
 
   it("detects an account switch from the server identity even when client bootstrap fails", async () => {
     mocks.session.mockRejectedValueOnce(new Error("Session status temporarily unavailable"));
-    await act(async () => render(<AppHeader initialUserId={user.id} initialLogoutEvent={null} />));
+    await act(async () => render(<AppHeader initialUser={user} initialLogoutEvent={null} />));
+    expect(screen.getByRole("link", { name: "Profile for Test Player" })).toBeVisible();
     mocks.session.mockImplementation(async (observe?: (event: string | null) => void) => {
       observe?.(null);
       return { ...user, id: "other-user-id", display_name: "Other Player" };
@@ -429,7 +506,7 @@ describe("AppHeader session expiry", () => {
     window.addEventListener(AUTH_DIALOG_EVENT, openDialog);
     try {
       await act(async () =>
-        render(<AppHeader initialUserId={user.id} initialLogoutEvent="historical-logout-event" />),
+        render(<AppHeader initialUser={user} initialLogoutEvent="historical-logout-event" />),
       );
       expect(sessionEnded).toHaveBeenCalledOnce();
       expect(signedOut).not.toHaveBeenCalled();
@@ -458,7 +535,7 @@ describe("AppHeader session expiry", () => {
     window.addEventListener(AUTH_SIGNED_OUT_EVENT, signedOut);
     try {
       await act(async () =>
-        render(<AppHeader initialUserId={null} initialLogoutEvent="historical-logout-event" />),
+        render(<AppHeader initialUser={null} initialLogoutEvent="historical-logout-event" />),
       );
       expect(screen.getByRole("link", { name: "Profile for Test Player" })).toBeVisible();
       expect(sessionEnded).not.toHaveBeenCalled();

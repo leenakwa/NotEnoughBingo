@@ -554,8 +554,8 @@ Test relevant fields with:
 
 Check:
 
-- [x] wrapping;
-- [x] overflow;
+- [ ] wrapping;
+- [ ] overflow;
 - [x] truncation;
 - [x] layout stability;
 - [x] useful tooltip/full-view behavior for truncated content where appropriate.

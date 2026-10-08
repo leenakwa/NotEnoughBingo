@@ -60,6 +60,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </a>
         <AppHeader
           initialUserId={session === null ? undefined : (session.user?.id ?? null)}
+          initialUser={
+            session === null
+              ? undefined
+              : session.user
+                ? {
+                    id: session.user.id,
+                    display_name: session.user.display_name,
+                    avatar: session.user.avatar,
+                  }
+                : null
+          }
           initialLogoutEvent={session?.logout_event}
         />
         <PageActivity />
