@@ -85,6 +85,64 @@ navigation does not consume the general anonymous allowance. The live-browser
 CI job sets `ANON_RATE_LIMIT=600/m` only for its many synthetic users sharing
 one source IP; determine production limits from real traffic and abuse data.
 
+## Retained frontend assets
+
+Before promoting a frontend, export its public Next.js static files from the
+trusted immutable image. Keep assets from the active release and rollback
+releases available at the same origin while their tabs may still be open.
+Next.js detects build changes and can reload a document, but this does not keep
+an old tab's CSS or JavaScript URLs available by itself.
+
+Resolve the image from the approved registry artifact to a full image ID or
+`repository@sha256:...` digest. Use its full Git release and an explicit archive
+budget; these values below must be supplied by the release operator:
+
+```bash
+python3 infra/scripts/retain-frontend-assets.py \
+  --image "$FRONTEND_IMAGE_DIGEST" --release "$FRONTEND_RELEASE" \
+  --asset-dir "$FRONTEND_ASSET_DIR" --max-bytes "$FRONTEND_ASSET_BUDGET_BYTES"
+```
+
+The command uses Docker to inspect and copy files from a stopped container; it
+does not run the image entrypoint. It checks the image revision label, embedded
+release and runtime declaration for consistency. These checks are metadata
+consistency checks; trusted registry provenance and approved source remain
+separate release requirements.
+
+Use an absolute canonical host directory owned by the sole publishing account,
+with no symlink ancestors. An empty directory is initialized with an ownership
+marker; an unowned nonempty directory is rejected. Public assets are placed in
+`public/_next/static`; private inventories and the publication lock stay outside
+the public root. The archive is append-only. Conflicting bytes at an existing
+URL, unsafe paths, source maps, special files, budget exhaustion or insufficient
+free space stop publication. An interrupted run may leave complete additional
+files; rerunning the same image is safe. Promotion requires exit status zero.
+
+Mount the same published archive read-only at `/srv/frontend-assets` on every
+Nginx replica. The repository Nginx template serves successful retained files
+with immutable cache headers and falls back to the current Next.js process for
+files absent from the archive. Missing-file and private-inventory responses
+must remain errors without immutable caching. For a local rehearsal, the
+`compose.frontend-assets.yml` overlay adds this read-only bind to the base
+Compose proxy and requires `FRONTEND_ASSET_DIR`; it is not a production topology.
+The production ingress must reproduce that mount or an equivalent public static
+store without mounting application source.
+
+Publish before changing frontend traffic, verify representative old and new
+asset hashes through every origin replica and the actual CDN, and repeat the
+checks after rollback. Keep both generations during rollback. The operator must
+choose the supported tab age, rollback window, storage budget, replication
+process and CDN negative-cache policy. This utility never prunes automatically:
+monitor storage and stop promotion at its configured budget. Any later pruning
+must explicitly preserve all releases still within the supported windows.
+
+The [local rehearsal](artifacts/frontend-assets-rehearsal-2026-10-08.json)
+verified all 50 assets from two immutable images before promotion, afterward
+and after rollback, including gzip, cache/security headers, empty-archive
+fallback and error paths. The [mixed-frontend rehearsal](artifacts/mixed-frontend-rehearsal-2026-10-08.json)
+verified one same-origin stale editor journey. Actual CDN replication and the
+chosen retention windows still require target evidence.
+
 ## Trusted proxy and HTTPS contract
 
 The supported chain is a controlled TLS edge followed by this repository's

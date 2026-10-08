@@ -22,3 +22,19 @@ its final eight token cases pass in four engines without retries. The a3e1c00 ga
 input/interaction sequences pass four engines each with retries zero; the
 next source still requires exact-SHA CI. The complete native-field label
 inventory is in accessibility-verification-matrix.md.
+
+## Current auth/guest packet — 2026-10-08
+
+| Controls | Executed evidence | Remaining applicable evidence |
+| --- | --- | --- |
+| Login/register/forgot/reset request ownership | Held success after actual client departure preserves route/search/hash across16 strict engine cases; successful departed login updates global auth. Scoped35 auth tests cover obsolete errors/callbacks/query identities and initialized reset controls. Four real Mailpit reset/reuse journeys pass after the initialization correction. | Exact new-source CI remains pending; native autofill/password manager and BFCache stay separate. |
+| Four auth forms' native controls | Sixteen cases across four engines at320/1710: required/invalid email/username min/max/pattern/password min, first invalid focus, Tab, Show/Hide with Space, Enter, one held POST, pending height/input geometry, retained error values and associated field feedback. | Mac WebKit link uses documented Option-Tab and app-only keyboard-navigation setting for buttons (restored afterward). Physical iOS and Linux CI path are not established by host emulation. |
+| Guest nickname/share | Native required/max50, whitespace rejection, associated error/focus, FormData DOM capture, Enter and synchronous duplicate lock, disabled nickname/Cancel, retained Unicode/literal-markup nickname across503→real201→share reload. Four engine cases pass; player36 unit cases include old success/error during same-mounted board handover. | OS autofill/paste remain native capability checks; other product control inventories remain open. |
+| Profile activity/export partial composition | Eight strict engine cases retain unsaved profile/email/password fields and unrelated usable controls while exact optional list/job GET fails; scoped real retries preserve identity and actual job IDs. | Actual provider/target performance and final full-stack gate remain separate. |
+
+Node22 lint/types/full501 frontend cases pass before the two added player
+regressions; their36-case scoped group passes afterward. No application source
+changed in that coverage addition. Full ordered119-case passes119/119; exact-source CI
+remains pending. Earlier native run6/10 fail and keyboard-setting run14/2 fail
+are retained; the final16-case run passes, retries zero. These map the four auth
+forms and guest share, not every native form in sections7/8.

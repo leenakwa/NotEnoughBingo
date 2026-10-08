@@ -4978,3 +4978,137 @@ observed results and their limits. Do not include credentials or session data.
   old frontend build correctly rejected a missing support email; a separately
   configured build with illustrative HTTPS origin/support succeeds. The known
   old Next release is used only in isolated loopback rehearsal, not promoted.
+
+### 2026-10-08 — Mixed frontend, stale tab and retained assets
+
+- Exact Git-archive production images for c1fc2d7 and15632b6 passed opposite
+  backend registration/Mailpit/login, draft/edit/publication and visibility:
+  three Chromium cases per combination, retries zero. New frontend/old backend
+  deliberately returns sitemap503/no-store/Retry-After300; backend-first rollout
+  remains required. New/new sitemap walks two parts/ten URLs after readiness.
+- The [mixed-frontend report](artifacts/mixed-frontend-rehearsal-2026-10-08.json)
+  records immutable images, source-tree equivalence and one strict stale-tab
+  browser case: two tabs in one context, offline Unicode recovery, frontend
+  promotion, real RSC/document reload and durable editor version1→2, followed by
+  old-web/frontend rollback with new worker/schema retained. Zero page errors or
+  HTTP failures;135 RSC aborts and two deliberate offline failures remain. This
+  does not prove unprefetched navigation, every lazy route or independent contexts.
+- New append-only publisher exports only public Next assets from a stopped
+  immutable image, verifies release metadata, rejects unsafe tar/path/file types,
+  private/maps, conflicts and insufficient budget/free space, and privately
+  inventories hashes. Thirteen boundary tests and independent scoped security
+  review pass under the trusted image/sole publisher/trusted filesystem contract.
+  Image metadata consistency is not source attestation.
+- Actual Nginx1.30.3 serves all50 files (2,011,929 bytes;17 old-only/17 new-only)
+  with matching hashes, successful immutable/security headers and gzip before
+  promotion, afterward and after rollback. Empty archive falls back to active
+  Next. Missing files/maps/private inventories/traversal remain400/404 without
+  immutable error caching. Repeated new-image publication adds zero files.
+  [Report](artifacts/frontend-assets-rehearsal-2026-10-08.json). Root13 unit tests,
+  Compose overlay validation and Nginx syntax pass. Every target replica/CDN,
+  supported tab age, rollback window, archive budget/replication and pruning
+  policy still need operator configuration and actual target evidence.
+- Section59 old-JS/new-HTML compatibility bullet is checked from these scoped
+  mixed-image/fallback/retention results, with the real CDN requirement still open.
+  Counters become773 checked/369 unchecked; section verdicts unchanged.
+
+### 2026-10-08 — Optimized-image freshness observations
+
+- [Sanitized report](artifacts/frontend-performance-2026-10-08.json): sixteen
+  serial Chromium fresh/warm observations, four routes at390/1710px, exact15632b6
+  production frontend image with old c1 backend/new worker/forward schema. Normal
+  browser caching; no seeding/application changes during the probe. Fresh JS
+  encoded transfer152,722–164,830 bytes; warm JS transfer zero. Gzipped documents
+  are200/no-store. CLS is zero except editor0.000775 mobile/0.000457 wide.
+- Two bounded editor session reads are present (header and editor). The probe
+  exits1 for284 GET RSC ERR_ABORTED events; no page error, console warning/error,
+  API/document failure, HTTP>=400 or probe-stage error occurred. Their cause and
+  server cost remain unverified. These are measured local observations, not a
+  clean unfiltered gate, target CDN proof or capacity test.
+
+### 2026-10-08 — Auth and guest form packet, verification in progress
+
+- Auth forms suppress obsolete callbacks/navigation/focus/errors on departure
+  or request-scope handover. Successful departed login still updates global auth
+  state. Reset consumes only its matching query token and preserves other query
+  keys/hash. Guest nickname uses native required/max50, Enter, synchronous
+  duplicate guard, scoped error/focus and pending controls; FormData captures
+  actual submitted DOM values. Scoped groups pass34 each; integrated Node22
+  frontend500 tests/40 files, lint/types pass. Backend app source unchanged.
+- Final departed-auth browser packet16/16 and guest failure/retry/Enter packet4/4
+  pass across Chromium, mobile WebKit, Firefox and desktop WebKit, retries zero.
+  Earlier strict geometry assumptions and one WebKit lost-input run remain in
+  logs; final tests assert meaningful form/height geometry, session initialization
+  and retained filled values without retry increases.
+- Pushed15632b6 CI37710181069 failed: seven jobs passed, full-stack115 pass/one
+  fail. The token-email setup was anonymous after the earlier password test
+  revoked the player fixture; the unchanged verification quota returned429.
+  Uncommitted setup now proves moderator identity before isolated registration.
+- First ordered117-case local run:94 pass/one guest alert selector failure/22 not
+  run. Selector matched the Next route announcer; scoped to main, then4/4 target
+  engines pass. Second run:113 pass/one reset-token reuse failure/three not run,
+  /tmp/neb-auth-share-full-ordered-reviewed-oct08.log. Trace shows the second reset
+  fill becoming empty before click and no POST. Source initializes/clears its
+  request scope after controls render enabled; a gated initialization correction
+  is in progress. Do not claim full-stack success or current release readiness.
+- Prepared auth native-control and profile/export partial-composition scenarios
+  still require execution. Exact new source CI and configured artifact remain
+  pending. Goal and continuation checkpoint stay active.
+
+### 2026-10-08 — Reset initialization and final local native/composition runs
+
+- Reset password, visibility toggle and submit now remain disabled until the
+  current UID/token request scope is initialized; a query identity change gates
+  controls immediately before clearing old text. A layout-effect observer checks
+  actual DOM availability before passive initialization, then current payload and
+  same-link value preservation. Scoped35 tests and independent reviewer pass.
+  Node22 full501 tests/40 files, lint/types pass:
+  /tmp/neb-auth-share-reset-final-frontend-oct08.log.
+- First composition trial exposed test defects: relative has selectors included
+  the account ancestor, duplicate initial activity GET let the second real200
+  bypass the held first request, and unroute raced fulfill. It ended two failed
+  cases/one real Chromium reset pass; root interrupted the remaining run (130).
+  Reviewed profile case settles initial Created then holds Drafts; handler
+  completion is awaited before unroute, without ignored exceptions. Final12/12
+  across four engines pass, retries zero: eight profile/export composition cases
+  plus four real Mailpit reset/reuse journeys. Log:
+  /tmp/neb-auth-reset-partial-composition-reviewed-browser-oct08.log.
+- Bounded inventory reconciliation finds no remaining meaningful independent
+  partial-read composition gap. Section4 partial bullet/section close locally;
+  counters774 checked/368 unchecked,57 verified/41 partial/six N/A/one
+  deployment-only. Surfaces with a single required read have no independent
+  partial-data composition. Other native form/control requirements remain open.
+- Native auth first run6 pass/10 fail: Username's wrapping accessible name
+  includes its helper, and macOS WebKit skipped buttons under its default keyboard
+  setting. Correct label lookup and app-only temporary keyboard navigation then
+  pass14/16; two failures are WebKit login recovery-link traversal. Apple documents
+  [Option-Tab for links](https://support.apple.com/en-gb/guide/safari/cpsh003/mac).
+  Only that native link step uses it on Mac WebKit; input/button steps retain Tab
+  and strict actual focus. Final16/16 passes, retries zero at320/1710, with native
+  validation/min/max/pattern, Space visibility, Enter/duplicate prevention, held
+  pending geometry and associated retained field errors. Log:
+  /tmp/neb-auth-native-controls-reviewed-browser-oct08.log. Original app preference
+  was absent and is confirmed restored. Physical iOS and Linux branch remain
+  unproven by this local host observation; CI must execute the Linux branch.
+- Independent bounded coverage review found no verified product bug/false-pass
+  blocker; added two parameterized guest share old-success/error board-handover
+  cases prove the old response cannot release the current pending lock or navigate.
+  Player36 tests plus scoped lint/format pass; no app source change.
+- Independent retention integration correctness/CI review passes. Root13 boundary
+  tests, overlay config, live Nginx syntax, Ruff lint/format, parsed nine-job model
+  and browser-source Gitleaks directory scan pass. Current full ordered119-case
+  browser run is in progress; no full-suite or exact-source CI pass is claimed.
+
+### 2026-10-08 — Final ordered auth/share packet before commit
+
+- Final stable-source real-stack ordered suite passes **119/119**, retries zero,
+  five existing live projects,5.8 minutes. The formerly failing reset/reuse and
+  quota-isolated token-email setup pass in their actual order; all quotas and
+  retry settings remain unchanged. Log /tmp/neb-auth-share-reset-full-ordered-oct08.log,
+  artifacts frontend/.playwright-cli/artifacts/auth-share-reset-full-ordered-oct08.
+- Node22 player36 (including both added board-handover regressions), final scoped
+  ESLint/Prettier, diff check and complete checklist validator pass. Sanitized
+  artifact-directory and browser-source Gitleaks scans find no leaks. The full501
+  frontend gate predates only those two added tests; their Node22 scoped run
+  passes afterward. Current source still requires all nine remote CI jobs and
+  its configured optimized image; no deployment or merge is authorized.

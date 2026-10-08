@@ -178,3 +178,132 @@ for (const scenario of [
     expect(pageErrors).toEqual([]);
   });
 }
+
+for (const scenario of [
+  {
+    path: "/login?next=%2Fsupport",
+    endpoint: "login/",
+    fields: { email: "departure@example.test", password: "Departure-Password!2026" },
+    status: 200,
+  },
+  {
+    path: "/register",
+    endpoint: "register/",
+    fields: {
+      email: "departure@example.test",
+      username: "departure_user",
+      password: "Departure-Password!2026",
+    },
+    status: 202,
+  },
+  {
+    path: "/forgot-password",
+    endpoint: "password-reset/",
+    fields: { email: "departure@example.test" },
+    status: 200,
+  },
+  {
+    path: "/reset-password?uid=departure-uid&token=departure-token",
+    endpoint: "password-reset/confirm/",
+    fields: { new_password: "Departure-Password!2026" },
+    status: 200,
+  },
+]) {
+  test(`departed ${scenario.endpoint} response preserves the new route and search`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.setViewportSize({ width: 1710, height: 900 });
+    const user = {
+      id: "11111111-1111-4111-8111-111111111111",
+      username: "departure_user",
+      display_name: "Departure User",
+      avatar: null,
+      email: "departure@example.test",
+      email_verified: true,
+      deletion_scheduled_for: null,
+    };
+    let signedIn = false;
+    await page.unroute("**/api/v1/auth/session/");
+    await page.route("**/api/v1/auth/session/", (route) =>
+      route.fulfill({ json: { user: signedIn ? user : null } }),
+    );
+    await page.route("**/api/v1/notifications/unread-count/", (route) =>
+      route.fulfill({ json: { count: 0 } }),
+    );
+    await page.route("**/api/v1/bingos/?*", (route) =>
+      route.fulfill({ json: { count: 0, next: null, previous: null, results: [] } }),
+    );
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let writes = 0;
+    const endpoint = `/api/v1/auth/${scenario.endpoint}`;
+    await page.route(`**${endpoint}`, async (route) => {
+      writes += 1;
+      await held;
+      if (scenario.endpoint === "login/") signedIn = true;
+      await route.fulfill({
+        status: scenario.status,
+        json: scenario.endpoint === "login/" ? { user } : { status: "verification_required" },
+      });
+    });
+    try {
+      const sessionReady = page.waitForResponse("**/api/v1/auth/session/");
+      await page.goto(scenario.path);
+      await sessionReady;
+      const form = page.locator("form.stack-form");
+      await expect(form).toBeVisible();
+      for (const [name, value] of Object.entries(scenario.fields)) {
+        await form.locator(`input[name="${name}"]`).fill(value!);
+      }
+      for (const [name, value] of Object.entries(scenario.fields)) {
+        await expect(form.locator(`input[name="${name}"]`)).toHaveValue(value!);
+      }
+      const submit = form.locator('button[type="submit"]');
+      const before = await submit.boundingBox();
+      const formBefore = await form.boundingBox();
+      await submit.click();
+      await expect.poll(() => writes).toBe(1);
+      await expect(submit).toBeDisabled();
+      const pending = await submit.boundingBox();
+      expect(pending?.height).toBe(before?.height);
+      expect(pending?.y).toBe(before?.y);
+      expect((await form.boundingBox())?.height).toBe(formBefore?.height);
+      await form.evaluate((element: HTMLFormElement) => element.requestSubmit());
+      expect(writes).toBe(1);
+      await page.locator("header").getByRole("link", { name: "Explore", exact: true }).click();
+      await expect(page).toHaveURL(/\/explore$/);
+      const search = page.getByRole("searchbox", { name: "Search by title" });
+      await search.fill("retained");
+      await search.press("Enter");
+      await expect(page).toHaveURL(/\/explore\?search=retained$/);
+      await page.evaluate(() => {
+        window.location.hash = "catalog";
+      });
+      const response = page.waitForResponse(
+        (item) => item.url().endsWith(endpoint) && item.request().method() === "POST",
+      );
+      release();
+      expect((await response).status()).toBe(scenario.status);
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          }),
+      );
+      if (scenario.endpoint === "login/") {
+        await expect(page.getByRole("link", { name: "Profile for Departure User" })).toBeVisible();
+      }
+      await expect(page).toHaveURL(/\/explore\?search=retained#catalog$/);
+      await expect(search).toHaveValue("retained");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      expect(writes).toBe(1);
+      expect(errors).toEqual([]);
+    } finally {
+      release();
+    }
+  });
+}

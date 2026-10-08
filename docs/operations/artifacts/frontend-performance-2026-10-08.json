@@ -1,0 +1,236 @@
+{
+  "date": "2026-10-08",
+  "sourceRelease": "15632b6d0b17a8b90d7634fe404a54dbcdcc4cc4",
+  "frontendImage": "sha256:401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd",
+  "frontendNext": "16.3.8",
+  "backendRelease": "c1fc2d7772ce697cb0dcccc528da4ab126040223",
+  "scope": "16serialChromium observations,390/1710,fresh/warm,normalcache,isolatedimmutableimages;browsertrafficonly",
+  "probe_exit_code": 1,
+  "retained_requestfailed_rsc_err_aborted": 284,
+  "page_errors": 0,
+  "console_warnings_errors": 0,
+  "http_status_ge400": 0,
+  "api_document_failed_requests": 0,
+  "prefetch_cancellation_cause_server_cost": "unverified",
+  "samples": [
+    {
+      "route": "discover",
+      "width": 390,
+      "phase": "fresh",
+      "apiCount": 3,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 155722,
+        "encodedBodySize": 152722,
+        "decodedBodySize": 507102
+      },
+      "cls": 0
+    },
+    {
+      "route": "discover",
+      "width": 390,
+      "phase": "warm",
+      "apiCount": 2,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 0,
+        "encodedBodySize": 152722,
+        "decodedBodySize": 507102
+      },
+      "cls": 0
+    },
+    {
+      "route": "explore-populated",
+      "width": 390,
+      "phase": "fresh",
+      "apiCount": 3,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 157014,
+        "encodedBodySize": 154014,
+        "decodedBodySize": 511893
+      },
+      "cls": 0
+    },
+    {
+      "route": "explore-populated",
+      "width": 390,
+      "phase": "warm",
+      "apiCount": 2,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 0,
+        "encodedBodySize": 154014,
+        "decodedBodySize": 511893
+      },
+      "cls": 0
+    },
+    {
+      "route": "guest-public-play",
+      "width": 390,
+      "phase": "fresh",
+      "apiCount": 4,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 164708,
+        "encodedBodySize": 161708,
+        "decodedBodySize": 541686
+      },
+      "cls": 0
+    },
+    {
+      "route": "guest-public-play",
+      "width": 390,
+      "phase": "warm",
+      "apiCount": 3,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 0,
+        "encodedBodySize": 161708,
+        "decodedBodySize": 541686
+      },
+      "cls": 0
+    },
+    {
+      "route": "existing-editor",
+      "width": 390,
+      "phase": "fresh",
+      "apiCount": 6,
+      "jsTotals": {
+        "resources": 11,
+        "transferSize": 168130,
+        "encodedBodySize": 164830,
+        "decodedBodySize": 551665
+      },
+      "cls": 0.000775112533269244
+    },
+    {
+      "route": "existing-editor",
+      "width": 390,
+      "phase": "warm",
+      "apiCount": 6,
+      "jsTotals": {
+        "resources": 11,
+        "transferSize": 0,
+        "encodedBodySize": 164830,
+        "decodedBodySize": 551665
+      },
+      "cls": 0.000775112533269244
+    },
+    {
+      "route": "discover",
+      "width": 1710,
+      "phase": "fresh",
+      "apiCount": 3,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 155722,
+        "encodedBodySize": 152722,
+        "decodedBodySize": 507102
+      },
+      "cls": 0
+    },
+    {
+      "route": "discover",
+      "width": 1710,
+      "phase": "warm",
+      "apiCount": 2,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 0,
+        "encodedBodySize": 152722,
+        "decodedBodySize": 507102
+      },
+      "cls": 0
+    },
+    {
+      "route": "explore-populated",
+      "width": 1710,
+      "phase": "fresh",
+      "apiCount": 3,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 157014,
+        "encodedBodySize": 154014,
+        "decodedBodySize": 511893
+      },
+      "cls": 0
+    },
+    {
+      "route": "explore-populated",
+      "width": 1710,
+      "phase": "warm",
+      "apiCount": 2,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 0,
+        "encodedBodySize": 154014,
+        "decodedBodySize": 511893
+      },
+      "cls": 0
+    },
+    {
+      "route": "guest-public-play",
+      "width": 1710,
+      "phase": "fresh",
+      "apiCount": 4,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 164708,
+        "encodedBodySize": 161708,
+        "decodedBodySize": 541686
+      },
+      "cls": 0
+    },
+    {
+      "route": "guest-public-play",
+      "width": 1710,
+      "phase": "warm",
+      "apiCount": 3,
+      "jsTotals": {
+        "resources": 10,
+        "transferSize": 0,
+        "encodedBodySize": 161708,
+        "decodedBodySize": 541686
+      },
+      "cls": 0
+    },
+    {
+      "route": "existing-editor",
+      "width": 1710,
+      "phase": "fresh",
+      "apiCount": 6,
+      "jsTotals": {
+        "resources": 11,
+        "transferSize": 168130,
+        "encodedBodySize": 164830,
+        "decodedBodySize": 551665
+      },
+      "cls": 0.0004571057253052273
+    },
+    {
+      "route": "existing-editor",
+      "width": 1710,
+      "phase": "warm",
+      "apiCount": 6,
+      "jsTotals": {
+        "resources": 11,
+        "transferSize": 0,
+        "encodedBodySize": 164830,
+        "decodedBodySize": 551665
+      },
+      "cls": 0.0004571057253052273
+    }
+  ],
+  "bounded_duplicate": "Editor2GETauth/session eachload,header+editor independentreads;913additionalencodedbytes,no demonstratedbottleneck",
+  "only_mutations": "16normalanalyticsPOSTs,noeditorwrites",
+  "limits": [
+    "16 serial observations; no production latency/capacity claim",
+    "Browser/CDP excludes server-side API fetches",
+    "No response bodies, cookies, authorization headers or query values retained",
+    "Diagnostic messages retained as SHA256 fingerprints and types; no raw sensitive console payloads",
+    "Analytics may perform normal writes; no editor interactions or fixture mutations"
+  ],
+  "raw_local_report": "/tmp/neb-rollout-build-prepared/candidate-15632b6/frontend/.perf-diag/result.json",
+  "raw_sha256": "41bb81ad97d4743c188adb178ce9649dbce656bf5e938e28f7f71b8fd76d1b2e"
+}

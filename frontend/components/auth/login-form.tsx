@@ -59,10 +59,21 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const submissionInFlight = useRef(false);
+  const requestOwner = useRef<{ onPendingChange?: (pending: boolean) => void } | null>(null);
   const [error, setError] = useState("");
   const [sessionStatus, setSessionStatus] = useState<"checking" | "guest" | "error">("checking");
   const next = searchParams.get("next");
-  const notice = loginNotice(reason === undefined ? searchParams.get("reason") : reason);
+  const loginReason = reason === undefined ? searchParams.get("reason") : reason;
+  const notice = loginNotice(loginReason);
+
+  useEffect(() => {
+    const owner = { onPendingChange };
+    requestOwner.current = owner;
+    if (submissionInFlight.current) onPendingChange?.(true);
+    return () => {
+      if (requestOwner.current === owner) requestOwner.current = null;
+    };
+  }, [loginReason, next, onPendingChange, onSuccess, presentation]);
 
   useEffect(() => {
     let active = true;
@@ -88,7 +99,8 @@ export function LoginForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submissionInFlight.current) return;
+    const owner = requestOwner.current;
+    if (!owner || submissionInFlight.current) return;
     const data = new FormData(event.currentTarget);
     const submittedEmail = String(data.get("email") ?? "").trim();
     const submittedPassword = String(data.get("password") ?? "");
@@ -98,8 +110,14 @@ export function LoginForm({
     setPending(true);
     onPendingChange?.(true);
     setError("");
+    const ownsResponse = () => requestOwner.current === owner;
     try {
       const { user } = await api.auth.login({ email: submittedEmail, password: submittedPassword });
+      if (!ownsResponse()) {
+        // The session changed even if this form was replaced while the request was pending.
+        notifySignedIn();
+        return;
+      }
       if (onSuccess) onSuccess();
       else {
         router.replace(safeNext(next));
@@ -108,11 +126,17 @@ export function LoginForm({
       notifySignedIn();
       openRegistrationOnboarding(user.id);
     } catch (caught) {
+      if (!ownsResponse()) return;
       submissionInFlight.current = false;
       setError(errorMessage(caught));
       setPending(false);
     } finally {
-      onPendingChange?.(false);
+      if (ownsResponse()) onPendingChange?.(false);
+      else if (requestOwner.current) {
+        submissionInFlight.current = false;
+        setPending(false);
+        requestOwner.current.onPendingChange?.(false);
+      }
     }
   }
 

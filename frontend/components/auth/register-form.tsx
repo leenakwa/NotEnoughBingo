@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordField } from "@/components/auth/password-field";
@@ -24,13 +24,21 @@ export function RegisterForm({
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const submissionInFlight = useRef(false);
+  const active = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<RegistrationField, string>>>({});
 
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submissionInFlight.current) return;
+    if (!active.current || submissionInFlight.current) return;
     const data = new FormData(event.currentTarget);
     const submitted = {
       email: String(data.get("email") ?? "").trim(),
@@ -47,9 +55,11 @@ export function RegisterForm({
     setFieldErrors({});
     try {
       await api.auth.register(submitted);
+      if (!active.current) return;
       if (onRegistered) onRegistered(submitted.email);
       else router.replace(`/verify-email?email=${encodeURIComponent(submitted.email)}`);
     } catch (caught) {
+      if (!active.current) return;
       submissionInFlight.current = false;
       const errors: Partial<Record<RegistrationField, string>> = {};
       for (const field of ["email", "username", "password"] as const) {
@@ -67,7 +77,7 @@ export function RegisterForm({
       }
       setPending(false);
     } finally {
-      onPendingChange?.(false);
+      if (active.current) onPendingChange?.(false);
     }
   }
 

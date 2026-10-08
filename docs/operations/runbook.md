@@ -108,7 +108,10 @@ supported UI state if all curated boards are later archived.
 1. CI passes lint, formatting, typecheck, unit/integration and browser tests,
    dependency/secret/image scans, OpenAPI/migration/config validation,
    non-root image assertions, and SBOM generation.
-2. Build frontend/backend once and publish by immutable digest.
+2. Build frontend/backend once and publish by immutable digest. Publish the
+   selected frontend's retained static assets before promotion, using the
+   [asset publication procedure](production-deployment.md#retained-frontend-assets).
+   Every origin replica must read the same archive; keep active/rollback assets.
 3. Deploy compatible additive migrations before application rollout.
 4. Start one release/migration job; never run migrations concurrently in every
    web replica.
@@ -128,6 +131,8 @@ migrate --noinput` as the explicit one-shot release command instead.
 
 - Restore the compatible prior frontend image first, then the web image, using
   recorded immutable digests and their non-secret configuration manifest.
+- Keep the retained frontend asset archive throughout rollback. Do not replace
+  it with only the restored image's files: newer tabs may still request them.
 - Do not reverse a destructive migration during an incident.
 - Keep the forward schema only after its compatibility with the selected prior
   web release has been rehearsed; an additive migration alone is not proof.

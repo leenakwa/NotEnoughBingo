@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { useLayoutEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LoginForm } from "@/components/auth/login-form";
@@ -14,11 +15,14 @@ const mocks = vi.hoisted(() => ({
   resetPassword: vi.fn(),
   resendVerification: vi.fn(),
   replace: vi.fn(),
+  refresh: vi.fn(),
+  notifySignedIn: vi.fn(),
+  openRegistrationOnboarding: vi.fn(),
   query: "uid=example-uid&token=example-token",
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: mocks.replace, refresh: vi.fn() }),
+  useRouter: () => ({ replace: mocks.replace, refresh: mocks.refresh }),
   useSearchParams: () => new URLSearchParams(mocks.query),
 }));
 
@@ -31,11 +35,22 @@ vi.mock("@/lib/api/client", () => ({
   ) => error.fieldErrors?.[field] ?? null,
 }));
 
+vi.mock("@/lib/auth-events", () => ({
+  notifySignedIn: mocks.notifySignedIn,
+  notifyAuthChanged: vi.fn(),
+}));
+
+vi.mock("@/lib/registration-onboarding", () => ({
+  openRegistrationOnboarding: mocks.openRegistrationOnboarding,
+  markRegistrationVerified: vi.fn(),
+}));
+
 describe("auth submission safety", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.query = "uid=example-uid&token=example-token";
     mocks.session.mockResolvedValue(null);
+    window.history.replaceState(null, "", `/reset-password?${mocks.query}`);
   });
 
   it.each([
@@ -92,6 +107,339 @@ describe("auth submission safety", () => {
         fireEvent.submit(form);
       });
       expect(mocks[method]).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("enables reset controls only after initialization and resets safely for a new link", async () => {
+    const availability: Array<{ password: boolean; visibility: boolean; submit: boolean }> = [];
+    function ObservedResetForm() {
+      useLayoutEffect(() => {
+        availability.push({
+          password: (screen.getByLabelText("New password") as HTMLInputElement).disabled,
+          visibility: (screen.getByRole("button", { name: "Show" }) as HTMLButtonElement).disabled,
+          submit: (screen.getByRole("button", { name: "Update password" }) as HTMLButtonElement)
+            .disabled,
+        });
+      });
+      return <ResetPasswordForm />;
+    }
+
+    const view = render(<ObservedResetForm />);
+    expect(availability[0]).toEqual({ password: true, visibility: true, submit: true });
+    const password = screen.getByLabelText("New password");
+    expect(password).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Show" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Update password" })).toBeEnabled();
+    fireEvent.change(password, { target: { value: "Old-link-password-42" } });
+
+    mocks.query = "uid=fresh-uid&token=fresh-token";
+    window.history.replaceState(null, "", `/reset-password?${mocks.query}`);
+    view.rerender(<ObservedResetForm />);
+    expect(availability.at(-1)).toEqual({ password: true, visibility: true, submit: true });
+    expect(password).toHaveValue("");
+    expect(password).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Update password" })).toBeEnabled();
+
+    mocks.resetPassword.mockRejectedValueOnce(new Error("Test submission rejected."));
+    fireEvent.change(password, { target: { value: "Current-link-password-42" } });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("button", { name: "Update password" }).closest("form")!);
+    });
+    expect(mocks.resetPassword).toHaveBeenCalledOnce();
+    expect(mocks.resetPassword).toHaveBeenCalledWith({
+      uid: "fresh-uid",
+      token: "fresh-token",
+      new_password: "Current-link-password-42",
+    });
+    expect(password).toHaveValue("Current-link-password-42");
+    view.rerender(<ObservedResetForm />);
+    expect(availability.at(-1)).toEqual({ password: false, visibility: false, submit: false });
+    expect(password).toHaveValue("Current-link-password-42");
+  });
+
+  it("completes the current login and opens pending registration onboarding", async () => {
+    mocks.login.mockResolvedValueOnce({ user: { id: "verified-registration-user" } });
+    const onSuccess = vi.fn();
+    const onPendingChange = vi.fn();
+    render(<LoginForm onSuccess={onSuccess} onPendingChange={onPendingChange} />);
+    fireEvent.change(await screen.findByLabelText("Email"), {
+      target: { value: "verified@example.test" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "Valid-looking-password-42" },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("button", { name: "Log in" }).closest("form")!);
+    });
+    expect(onSuccess).toHaveBeenCalledOnce();
+    expect(onPendingChange.mock.calls).toEqual([[true], [false]]);
+    expect(mocks.notifySignedIn).toHaveBeenCalledOnce();
+    expect(mocks.openRegistrationOnboarding).toHaveBeenCalledWith("verified-registration-user");
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it.each(
+    (["next", "reason", "presentation", "onSuccess", "onPendingChange"] as const).flatMap(
+      (identity) => (["success", "error"] as const).map((result) => [identity, result] as const),
+    ),
+  )("keeps the current login owner when %s changes before an old %s", async (identity, result) => {
+    let finish!: (value: { user: { id: string } }) => void;
+    let reject!: (error: Error) => void;
+    mocks.login.mockImplementationOnce(
+      () =>
+        new Promise((resolve, fail) => {
+          finish = resolve;
+          reject = fail;
+        }),
+    );
+    mocks.query = "next=%2Fdiscover%3Fsort%3Dpopular";
+    window.history.replaceState(null, "", `/login?${mocks.query}`);
+    const oldSuccess = vi.fn();
+    const currentSuccess = vi.fn();
+    const oldPending = vi.fn();
+    const currentPending = vi.fn();
+    const initialProps = {
+      presentation: "page" as "page" | "dialog",
+      reason: null as string | null,
+      onSuccess: identity === "next" ? undefined : oldSuccess,
+      onPendingChange: oldPending,
+    };
+    const view = render(<LoginForm {...initialProps} />);
+    fireEvent.change(await screen.findByLabelText("Email"), {
+      target: { value: "owner@example.test" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "Valid-looking-password-42" },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("button", { name: "Log in" }).closest("form")!);
+    });
+    expect(oldPending).toHaveBeenCalledWith(true);
+
+    const currentProps = { ...initialProps };
+    if (identity === "next") {
+      mocks.query = "next=%2Fdiscover%3Ftag%3Dretained%23results";
+      window.history.replaceState(null, "", `/login?${mocks.query}#current-owner`);
+    } else if (identity === "reason") currentProps.reason = "session-expired";
+    else if (identity === "presentation") currentProps.presentation = "dialog";
+    else if (identity === "onSuccess") currentProps.onSuccess = currentSuccess;
+    else currentProps.onPendingChange = currentPending;
+    view.rerender(<LoginForm {...currentProps} />);
+    const currentUrl = window.location.href;
+    const submit = screen.getByRole("button", { name: "Logging in…" });
+    expect(submit).toBeDisabled();
+    await act(async () => {
+      fireEvent.submit(submit.closest("form")!);
+    });
+    expect(mocks.login).toHaveBeenCalledOnce();
+    oldPending.mockClear();
+    currentPending.mockClear();
+    await act(async () => {
+      if (result === "success") finish({ user: { id: "old-request-user" } });
+      else reject(new Error("The old login was rejected."));
+    });
+
+    expect(oldSuccess).not.toHaveBeenCalled();
+    expect(currentSuccess).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(mocks.refresh).not.toHaveBeenCalled();
+    expect(mocks.openRegistrationOnboarding).not.toHaveBeenCalled();
+    expect(mocks.notifySignedIn).toHaveBeenCalledTimes(result === "success" ? 1 : 0);
+    expect(window.location.href).toBe(currentUrl);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Log in" })).toBeEnabled();
+    expect(screen.getByLabelText("Password")).toHaveValue("Valid-looking-password-42");
+    if (identity === "onPendingChange") {
+      expect(oldPending).not.toHaveBeenCalled();
+      expect(currentPending.mock.calls).toEqual([[false]]);
+    } else expect(oldPending.mock.calls).toEqual([[false]]);
+  });
+
+  it.each([
+    ["registration", "success", RegisterForm, "register"],
+    ["registration", "error", RegisterForm, "register"],
+    ["login", "success", LoginForm, "login"],
+    ["login", "error", LoginForm, "login"],
+    ["reset request", "success", ForgotPasswordForm, "requestPasswordReset"],
+    ["reset request", "error", ForgotPasswordForm, "requestPasswordReset"],
+    ["reset confirmation", "success", ResetPasswordForm, "resetPassword"],
+    ["reset confirmation", "error", ResetPasswordForm, "resetPassword"],
+  ] as const)(
+    "keeps the new destination when a departed %s request finishes with %s",
+    async (_label, result, Form, method) => {
+      let finish!: (value: { user: { id: string } }) => void;
+      let reject!: (error: Error) => void;
+      mocks[method].mockImplementationOnce(
+        () =>
+          new Promise((resolve, fail) => {
+            finish = resolve;
+            reject = fail;
+          }),
+      );
+      const onSuccess = vi.fn();
+      const onRegistered = vi.fn();
+      const onPendingChange = vi.fn();
+      const view = render(
+        Form === LoginForm ? (
+          <LoginForm onSuccess={onSuccess} onPendingChange={onPendingChange} />
+        ) : Form === RegisterForm ? (
+          <RegisterForm onRegistered={onRegistered} onPendingChange={onPendingChange} />
+        ) : Form === ForgotPasswordForm ? (
+          <ForgotPasswordForm onPendingChange={onPendingChange} />
+        ) : (
+          <ResetPasswordForm />
+        ),
+      );
+      if (Form !== ResetPasswordForm) {
+        fireEvent.change(await screen.findByLabelText("Email"), {
+          target: { value: "departed@example.test" },
+        });
+      }
+      if (Form === RegisterForm) {
+        fireEvent.change(screen.getByRole("textbox", { name: /^Username/ }), {
+          target: { value: "departed_author" },
+        });
+      }
+      if (Form !== ForgotPasswordForm) {
+        fireEvent.change(
+          screen.getByLabelText(Form === ResetPasswordForm ? "New password" : "Password"),
+          { target: { value: "Valid-looking-password-42" } },
+        );
+      }
+      const submit = screen
+        .getAllByRole("button")
+        .find((button) => button.getAttribute("type") === "submit")!;
+      await act(async () => {
+        fireEvent.submit(submit.closest("form")!);
+      });
+      expect(mocks[method]).toHaveBeenCalledOnce();
+      expect(submit).toBeDisabled();
+      if (Form !== ResetPasswordForm) expect(onPendingChange).toHaveBeenCalledWith(true);
+
+      view.unmount();
+      window.history.pushState(null, "", "/new-destination?keep=filters#details");
+      render(<input aria-label="Destination input" />);
+      const destination = screen.getByLabelText("Destination input");
+      destination.focus();
+      onPendingChange.mockClear();
+      await act(async () => {
+        if (result === "success") finish({ user: { id: "signed-in-user" } });
+        else {
+          reject(
+            Object.assign(new Error("The old form was rejected."), {
+              fieldErrors: {
+                username: "The old username is unavailable.",
+                new_password: "The old password is too common.",
+              },
+            }),
+          );
+        }
+      });
+
+      expect(window.location.pathname + window.location.search + window.location.hash).toBe(
+        "/new-destination?keep=filters#details",
+      );
+      expect(destination).toHaveFocus();
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(onRegistered).not.toHaveBeenCalled();
+      expect(onPendingChange).not.toHaveBeenCalled();
+      expect(mocks.replace).not.toHaveBeenCalled();
+      expect(mocks.refresh).not.toHaveBeenCalled();
+      expect(mocks.openRegistrationOnboarding).not.toHaveBeenCalled();
+      expect(mocks.notifySignedIn).toHaveBeenCalledTimes(
+        method === "login" && result === "success" ? 1 : 0,
+      );
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    },
+  );
+
+  it.each([
+    ["uid", "success"],
+    ["uid", "error"],
+    ["token", "success"],
+    ["token", "error"],
+  ] as const)(
+    "keeps the current reset request when an old %s finishes with %s",
+    async (changedIdentity, result) => {
+      let finishOld!: () => void;
+      let rejectOld!: (error: Error) => void;
+      let finishCurrent!: () => void;
+      mocks.resetPassword
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve, reject) => {
+              finishOld = resolve;
+              rejectOld = reject;
+            }),
+        )
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              finishCurrent = resolve;
+            }),
+        );
+      const currentForm = () => (
+        <>
+          <ResetPasswordForm />
+          <input aria-label="Current destination input" />
+        </>
+      );
+      const view = render(currentForm());
+      fireEvent.change(screen.getByLabelText("New password"), {
+        target: { value: "Old-credential-password-42" },
+      });
+      await act(async () => {
+        fireEvent.submit(screen.getByRole("button", { name: "Update password" }).closest("form")!);
+      });
+
+      const uid = changedIdentity === "uid" ? "fresh-uid" : "example-uid";
+      const token = changedIdentity === "token" ? "fresh-token" : "example-token";
+      mocks.query = `uid=${uid}&token=${token}&keep=filters`;
+      window.history.replaceState(null, "", `/reset-password?${mocks.query}#current-link`);
+      view.rerender(currentForm());
+      const password = screen.getByLabelText("New password");
+      const submit = screen.getByRole("button", { name: "Update password" });
+      expect(password).toHaveValue("");
+      expect(submit).toBeEnabled();
+      fireEvent.change(password, { target: { value: "Current-credential-password-42" } });
+      await act(async () => {
+        fireEvent.submit(submit.closest("form")!);
+        fireEvent.submit(submit.closest("form")!);
+      });
+      expect(mocks.resetPassword).toHaveBeenCalledTimes(2);
+      expect(mocks.resetPassword).toHaveBeenLastCalledWith({
+        uid,
+        token,
+        new_password: "Current-credential-password-42",
+      });
+      const destination = screen.getByLabelText("Current destination input");
+      destination.focus();
+      await act(async () => {
+        if (result === "success") finishOld();
+        else {
+          rejectOld(
+            Object.assign(new Error("Old reset rejected."), {
+              fieldErrors: { new_password: "The old password is too common." },
+            }),
+          );
+        }
+      });
+      expect(submit).toBeDisabled();
+      expect(destination).toHaveFocus();
+      expect(password).toHaveValue("Current-credential-password-42");
+      expect(password).not.toHaveAttribute("aria-invalid");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(window.location.search + window.location.hash).toBe(`?${mocks.query}#current-link`);
+
+      await act(async () => {
+        finishCurrent();
+      });
+      expect(screen.getByRole("status")).toHaveTextContent("Password changed");
+      expect(window.location.search + window.location.hash).toBe("?keep=filters#current-link");
+      mocks.query = "keep=filters";
+      view.rerender(currentForm());
+      expect(screen.getByRole("status")).toHaveTextContent("Password changed");
+      expect(screen.getByRole("button", { name: "Update password" })).toBeDisabled();
     },
   );
 
@@ -209,6 +557,9 @@ describe("auth submission safety", () => {
     );
     render(<ResetPasswordForm />);
     const password = screen.getByLabelText("New password");
+    const minimumHint = screen.getByText("Use at least 12 characters.");
+    expect(password).toHaveAttribute("minlength", "12");
+    expect(password.getAttribute("aria-describedby")?.split(" ")).toContain(minimumHint.id);
     fireEvent.change(password, { target: { value: "common-password-42" } });
     await act(async () => {
       fireEvent.submit(screen.getByRole("button", { name: "Update password" }).closest("form")!);

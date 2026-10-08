@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-08",
+  "scope": "Local immutable-image rehearsal; loopback HTTP, illustrative HTTPS canonical origin, development backend settings, one Chromium browser context/two tabs; no target ingress/CDN or production provider",
+  "revisions": {
+    "old": "c1fc2d7772ce697cb0dcccc528da4ab126040223",
+    "new_frontend": "15632b6d0b17a8b90d7634fe404a54dbcdcc4cc4",
+    "new_backend_worker": "a3e1c00e945855df82be25191207610ef861e148"
+  },
+  "images": {
+    "old_frontend": "sha256:1935c3c2036bd70db362f780ff2ab10dba51303a147aa782f70b6a74cf2705c9",
+    "new_frontend": "sha256:401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd",
+    "old_backend": "sha256:4323d02fefbe5820ec6305d1767269fa51e435d98379a1758ae5f8ac4a7ed53d",
+    "new_backend_worker": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568"
+  },
+  "backend_source_trees": {
+    "a3e1c00": "db16171ede68e4fb990742e51c35b4c1a5952322",
+    "15632b6": "db16171ede68e4fb990742e51c35b4c1a5952322"
+  },
+  "actual_rollback_images": {
+    "old-web": "sha256:4323d02fefbe5820ec6305d1767269fa51e435d98379a1758ae5f8ac4a7ed53d",
+    "old-frontend": "sha256:1935c3c2036bd70db362f780ff2ab10dba51303a147aa782f70b6a74cf2705c9",
+    "new-worker": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568"
+  },
+  "core_matrix": {
+    "old_frontend_new_backend": {
+      "passed": 3,
+      "retries": 0
+    },
+    "new_frontend_old_backend": {
+      "passed": 3,
+      "retries": 0,
+      "sitemap": {
+        "status": 503,
+        "retry_after": "300",
+        "cache_control": "no-store",
+        "empty_xml": false
+      }
+    },
+    "new_frontend_new_backend_sitemap": {
+      "parts": 2,
+      "urls": 10,
+      "bytes": 1808
+    }
+  },
+  "stale_tab": {
+    "passed": 1,
+    "retries": 0,
+    "tabs": 2,
+    "browser_contexts": 1,
+    "saved_baseline_version": 1,
+    "unsaved_owner_scoped_recovery_preserved": true,
+    "unicode_newlines_preserved": true,
+    "recovered_saved_version": 2,
+    "rollback_saved_version": 2,
+    "session_identity_checked_in_both_tabs": true,
+    "support_prefetched_before_flip": [
+      {
+        "phase": "initial-old",
+        "page": "retained-old",
+        "type": "response",
+        "method": "GET",
+        "url": "http://localhost:18580/support?_rsc=tVJyimtvQYAiffBj",
+        "status": 200,
+        "navigation": false,
+        "headers": {
+          "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+          "contentType": "text/x-component"
+        }
+      },
+      {
+        "phase": "initial-old",
+        "page": "retained-old",
+        "type": "requestfailed",
+        "method": "GET",
+        "url": "http://localhost:18580/support?_rsc=tVJyimtvQYAiffBj",
+        "failure": {
+          "errorText": "net::ERR_ABORTED"
+        }
+      }
+    ],
+    "actual_support_document_navigation_after_new_rsc": true,
+    "new_script_set_differs": true,
+    "rollback_script_set_matches_old": true,
+    "page_errors": 0,
+    "http_status_ge_400": 0,
+    "console_errors_intentional_offline": 2,
+    "request_failures_total": 137,
+    "rsc_gets_err_aborted": 135,
+    "intentional_offline_requests": 2,
+    "aborted_by_phase": {
+      "initial-old": 16,
+      "new-frontend-retained-old": 83,
+      "compatible-rollback": 36
+    }
+  },
+  "retention_limit": "This flow does not establish availability of unloaded old lazy assets or CDN invalidation. Static-asset retention implementation/rehearsal is pending.",
+  "raw_evidence_sha256": "d1fbabb678939f98b74665e2ee73404b80d33a05721af7b36060800a3f0c435d",
+  "raw_evidence_local_path": "/tmp/neb-stale-tab-rollout-oct08/evidence.json",
+  "logs": [
+    "/tmp/neb-rollout-old-front-new-back-browser-oct08.log",
+    "/tmp/neb-rollout-new-front-old-back-browser-oct08.log",
+    "/tmp/neb-rollout-new-front-new-back-sitemap-oct08.log",
+    "/tmp/neb-rollout-new-front-new-back-sitemap-ready-oct08.log",
+    "/tmp/neb-stale-tab-rollout-oct08/run.log"
+  ],
+  "startup_limit": "The immediate new-web startup sitemap request got503; readiness was then required before the separately logged passing traversal. Frontend immediate startup also closed one connection before readiness."
+}

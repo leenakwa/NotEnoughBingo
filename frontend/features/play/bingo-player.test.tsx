@@ -1,4 +1,5 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoPlayer } from "@/features/play/bingo-player";
@@ -323,9 +324,291 @@ describe("BingoPlayer", () => {
     await act(async () => share.click());
     await act(async () => screen.getByRole("button", { name: "Create share link" }).click());
     expect(mocks.createShare).toHaveBeenCalledTimes(1);
+    expect(mocks.createShare).toHaveBeenCalledWith(
+      bingo.id,
+      { revision_id: bingo.current_revision!.id, selected_cells: [] },
+      expect.any(String),
+    );
     view.unmount();
     await act(async () => resolveShare({ id: "old-share" }));
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it.each(["success", "failure"] as const)(
+    "ignores an old guest share %s while the next board's share remains pending",
+    async (outcome) => {
+      let resolveOldShare!: (value: { id: string }) => void;
+      let rejectOldShare!: (error: Error) => void;
+      let resolveCurrentShare!: (value: { id: string }) => void;
+      mocks.createShare.mockReturnValueOnce(
+        new Promise<{ id: string }>((resolve, reject) => {
+          resolveOldShare = resolve;
+          rejectOldShare = reject;
+        }),
+      );
+      mocks.createShare.mockReturnValueOnce(
+        new Promise<{ id: string }>((resolve) => {
+          resolveCurrentShare = resolve;
+        }),
+      );
+      const user = userEvent.setup();
+      const view = render(
+        <BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />,
+      );
+      const oldShare = screen.getByRole("button", { name: "Share result" });
+      await waitFor(() => expect(oldShare).toBeEnabled());
+      await user.click(oldShare);
+      await user.type(screen.getByRole("textbox", { name: "Your nickname" }), "Old guest");
+      act(() =>
+        screen.getByRole<HTMLFormElement>("form", { name: "Share this result" }).requestSubmit(),
+      );
+      expect(mocks.createShare).toHaveBeenCalledOnce();
+
+      const next = {
+        ...bingo,
+        id: "next-board",
+        title: "Next board",
+        current_revision: {
+          ...bingo.current_revision!,
+          id: "next-revision",
+          title: "Next board",
+        },
+      };
+      mocks.getBingo.mockResolvedValueOnce(next);
+      mocks.getViewer.mockResolvedValueOnce(null);
+      view.rerender(<BingoPlayer bingoId={next.id} />);
+      await screen.findByRole("heading", { name: "Next board" });
+      const currentShare = screen.getByRole("button", { name: "Share result" });
+      await waitFor(() => expect(currentShare).toBeEnabled());
+      await user.click(currentShare);
+      const input = screen.getByRole("textbox", { name: "Your nickname" });
+      expect(input).toHaveValue("");
+      await user.type(input, "Current guest");
+      const form = screen.getByRole<HTMLFormElement>("form", { name: "Share this result" });
+      act(() => form.requestSubmit());
+      expect(mocks.createShare).toHaveBeenCalledTimes(2);
+      expect(mocks.createShare).toHaveBeenLastCalledWith(
+        next.id,
+        {
+          revision_id: next.current_revision.id,
+          selected_cells: [],
+          display_name: "Current guest",
+        },
+        expect.any(String),
+      );
+
+      await act(async () => {
+        if (outcome === "success") resolveOldShare({ id: "obsolete-share" });
+        else rejectOldShare(new Error("Obsolete share failure"));
+      });
+      expect(mocks.push).not.toHaveBeenCalled();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(input).toHaveValue("Current guest");
+      expect(input).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Creating link…" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+      act(() => {
+        fireEvent.submit(form);
+        fireEvent.submit(form);
+      });
+      expect(mocks.createShare).toHaveBeenCalledTimes(2);
+
+      await act(async () => resolveCurrentShare({ id: "current-share" }));
+      expect(mocks.push).toHaveBeenCalledOnce();
+      expect(mocks.push).toHaveBeenCalledWith(`/share/${next.id}/current-share`);
+      expect(mocks.createShare).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each(["", "   "])(
+    "keeps a guest's %j nickname error beside the focused input without creating a share",
+    async (value) => {
+      const user = userEvent.setup();
+      render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+      const share = screen.getByRole("button", { name: "Share result" });
+      await waitFor(() => expect(share).toBeEnabled());
+      await user.click(share);
+      const input = screen.getByRole("textbox", { name: "Your nickname" });
+      expect(input).toBeRequired();
+      expect(input).toHaveAttribute("maxlength", "50");
+      expect(input).toHaveAccessibleDescription("Required. Up to 50 characters.");
+      fireEvent.change(input, { target: { value } });
+      await user.click(screen.getByRole("button", { name: "Create share link" }));
+
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Enter a nickname to create a guest share link.",
+      );
+      expect(input).toHaveFocus();
+      expect(input).toHaveAttribute("aria-invalid", "true");
+      expect(input).toHaveAccessibleDescription(
+        "Required. Up to 50 characters. Enter a nickname to create a guest share link.",
+      );
+      expect(mocks.createShare).not.toHaveBeenCalled();
+      fireEvent.change(input, { target: { value: "Corrected nickname" } });
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(input).toHaveAttribute("aria-invalid", "false");
+    },
+  );
+
+  it("creates one guest share with a trimmed Unicode nickname when Enter submits the form", async () => {
+    const user = userEvent.setup();
+    mocks.createShare.mockResolvedValueOnce({ id: "guest-share" });
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+    const share = screen.getByRole("button", { name: "Share result" });
+    await waitFor(() => expect(share).toBeEnabled());
+    await user.click(share);
+    await user.type(screen.getByRole("textbox", { name: "Your nickname" }), "  Мила 🦊  {Enter}");
+
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/share/${bingo.id}/guest-share`));
+    expect(mocks.createShare).toHaveBeenCalledOnce();
+    expect(mocks.createShare).toHaveBeenCalledWith(
+      bingo.id,
+      {
+        revision_id: bingo.current_revision!.id,
+        selected_cells: [],
+        display_name: "Мила 🦊",
+      },
+      expect.any(String),
+    );
+  });
+
+  it("submits a silently filled nickname from the form rather than the empty React state", async () => {
+    const user = userEvent.setup();
+    mocks.createShare.mockResolvedValueOnce({ id: "autofilled-share" });
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+    const share = screen.getByRole("button", { name: "Share result" });
+    await waitFor(() => expect(share).toBeEnabled());
+    await user.click(share);
+    const input = screen.getByRole<HTMLInputElement>("textbox", { name: "Your nickname" });
+    const form = screen.getByRole<HTMLFormElement>("form", { name: "Share this result" });
+    input.value = "  Автозаполнение 🦊  ";
+    await act(async () => form.requestSubmit());
+
+    expect(mocks.createShare).toHaveBeenCalledOnce();
+    expect(mocks.createShare).toHaveBeenCalledWith(
+      bingo.id,
+      {
+        revision_id: bingo.current_revision!.id,
+        selected_cells: [],
+        display_name: "Автозаполнение 🦊",
+      },
+      expect.any(String),
+    );
+    expect(mocks.push).toHaveBeenCalledWith(`/share/${bingo.id}/autofilled-share`);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("keeps and retries the visible submitted nickname after silent replacement and a request failure", async () => {
+    let rejectShare!: (error: Error) => void;
+    mocks.createShare.mockReturnValueOnce(
+      new Promise<{ id: string }>((_resolve, reject) => {
+        rejectShare = reject;
+      }),
+    );
+    mocks.createShare.mockResolvedValueOnce({ id: "retried-autofilled-share" });
+    const user = userEvent.setup();
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+    const share = screen.getByRole("button", { name: "Share result" });
+    await waitFor(() => expect(share).toBeEnabled());
+    await user.click(share);
+    const input = screen.getByRole<HTMLInputElement>("textbox", { name: "Your nickname" });
+    const form = screen.getByRole<HTMLFormElement>("form", { name: "Share this result" });
+    await user.type(input, "Previous React nickname");
+    input.value = "  Current visible nickname  ";
+    act(() => form.requestSubmit());
+
+    expect(mocks.createShare).toHaveBeenCalledOnce();
+    expect(mocks.createShare).toHaveBeenLastCalledWith(
+      bingo.id,
+      {
+        revision_id: bingo.current_revision!.id,
+        selected_cells: [],
+        display_name: "Current visible nickname",
+      },
+      expect.any(String),
+    );
+    expect(input).toHaveValue("  Current visible nickname  ");
+    await act(async () => rejectShare(new Error("Sharing temporarily unavailable.")));
+    expect(screen.getByRole("alert")).toHaveTextContent("Sharing temporarily unavailable.");
+    expect(input).toHaveValue("  Current visible nickname  ");
+    await act(async () => form.requestSubmit());
+
+    expect(mocks.createShare).toHaveBeenCalledTimes(2);
+    expect(mocks.createShare).toHaveBeenLastCalledWith(
+      bingo.id,
+      {
+        revision_id: bingo.current_revision!.id,
+        selected_cells: [],
+        display_name: "Current visible nickname",
+      },
+      expect.any(String),
+    );
+    expect(mocks.push).toHaveBeenCalledWith(`/share/${bingo.id}/retried-autofilled-share`);
+  });
+
+  it("locks duplicate submits and cancellation until share creation settles, keeping a failed nickname", async () => {
+    let rejectShare!: (error: Error) => void;
+    mocks.createShare.mockReturnValueOnce(
+      new Promise<{ id: string }>((_resolve, reject) => {
+        rejectShare = reject;
+      }),
+    );
+    const user = userEvent.setup();
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+    const share = screen.getByRole("button", { name: "Share result" });
+    await waitFor(() => expect(share).toBeEnabled());
+    await user.click(share);
+    const input = screen.getByRole("textbox", { name: "Your nickname" });
+    fireEvent.change(input, { target: { value: "Guest waiting" } });
+    const form = screen.getByRole("form", { name: "Share this result" });
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    act(() => {
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+      cancel.click();
+    });
+    expect(mocks.createShare).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "Creating link…" })).toBeDisabled();
+    expect(cancel).toBeDisabled();
+    expect(input).toBeDisabled();
+    expect(form).toBeVisible();
+
+    await act(async () => rejectShare(new Error("The service could not create this link.")));
+    expect(screen.getByRole("alert")).toHaveTextContent("The service could not create this link.");
+    expect(input).toHaveValue("Guest waiting");
+    expect(input).toBeEnabled();
+    expect(cancel).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Create share link" })).toBeEnabled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    mocks.createShare.mockRejectedValueOnce(new Error("The retry also failed."));
+    await user.click(screen.getByRole("button", { name: "Create share link" }));
+    expect(mocks.createShare).toHaveBeenCalledTimes(2);
+    expect(mocks.createShare).toHaveBeenLastCalledWith(
+      bingo.id,
+      {
+        revision_id: bingo.current_revision!.id,
+        selected_cells: [],
+        display_name: "Guest waiting",
+      },
+      expect.any(String),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("The retry also failed.");
+    await user.click(cancel);
+    expect(screen.queryByRole("form", { name: "Share this result" })).not.toBeInTheDocument();
+    await waitFor(() => expect(share).toHaveFocus());
+  });
+
+  it("cancels an unsubmitted guest share and returns focus without sending a request", async () => {
+    const user = userEvent.setup();
+    render(<BingoPlayer bingoId={bingo.id} initialBingo={bingo} initialViewer="guest" />);
+    const share = screen.getByRole("button", { name: "Share result" });
+    await waitFor(() => expect(share).toBeEnabled());
+    await user.click(share);
+    await user.type(screen.getByRole("textbox", { name: "Your nickname" }), "Guest not sharing");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("form", { name: "Share this result" })).not.toBeInTheDocument();
+    await waitFor(() => expect(share).toHaveFocus());
+    expect(mocks.createShare).not.toHaveBeenCalled();
   });
 
   it("does not apply an old like response to the next board", async () => {

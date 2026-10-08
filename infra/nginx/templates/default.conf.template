@@ -151,6 +151,35 @@ server {
     expires 1h;
   }
 
+  # Retain assets from earlier releases for open tabs and frontend rollback.
+  # An absent archive (local development) falls through to the active frontend.
+  location ^~ /_next/static/ {
+    root /srv/frontend-assets/public;
+    disable_symlinks on;
+    try_files $uri @frontend_static;
+    # Location headers replace inherited ones on stable Nginx releases.
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy $neb_referrer_policy always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Strict-Transport-Security "max-age=${NGINX_HSTS_SECONDS}" always;
+  }
+
+  location @frontend_static {
+    proxy_pass http://frontend_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Request-ID $request_id;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto ${NGINX_FORWARDED_PROTO};
+    proxy_set_header Connection "";
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 120s;
+  }
+
   location / {
     proxy_pass http://frontend_upstream;
     proxy_http_version 1.1;

@@ -59,6 +59,7 @@ export function BingoPlayer({
   const [saving, setSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [nickname, setNickname] = useState("");
+  const [nicknameError, setNicknameError] = useState("");
   const [sharing, setSharing] = useState(false);
   const [socialPending, setSocialPending] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
@@ -73,8 +74,10 @@ export function BingoPlayer({
   const skipNextSync = useRef(false);
   const resetInFlight = useRef(false);
   const socialActionInFlight = useRef(false);
+  const shareInFlight = useRef(false);
   const completedRevision = useRef<string | null>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
+  const nicknameRef = useRef<HTMLInputElement>(null);
   const initialBingoConsumed = useRef(false);
   const guestSelectionToSync = useRef<string[] | null>(null);
   const mutationLifetime = useRef(0);
@@ -85,6 +88,7 @@ export function BingoPlayer({
     saveChain.current = Promise.resolve();
     resetInFlight.current = false;
     socialActionInFlight.current = false;
+    shareInFlight.current = false;
   }, []);
 
   useEffect(() => {
@@ -131,6 +135,7 @@ export function BingoPlayer({
       setSaving(false);
       setShareOpen(false);
       setNickname("");
+      setNicknameError("");
       setSharing(false);
       setSocialPending("");
       setReportOpen(false);
@@ -540,23 +545,29 @@ export function BingoPlayer({
     }
   }
 
-  async function share() {
+  async function share(form: HTMLFormElement) {
     const revision = bingo?.current_revision;
-    if (!revision || sharing) return;
-    if (viewer === "guest" && !nickname.trim()) {
-      setProgressError("Enter a nickname to create a guest share link.");
+    if (!revision || !hydrated.current || sharing || shareInFlight.current) return;
+    const submittedNickname =
+      viewer === "guest" ? String(new FormData(form).get("nickname") ?? "") : "";
+    if (viewer === "guest") setNickname(submittedNickname);
+    if (viewer === "guest" && !submittedNickname.trim()) {
+      setNicknameError("Enter a nickname to create a guest share link.");
+      nicknameRef.current?.focus();
       return;
     }
+    shareInFlight.current = true;
     setSharing(true);
     const lifetime = mutationLifetime.current;
     setProgressError("");
+    setNicknameError("");
     try {
       const result = await api.shares.create(
         bingoId,
         {
           revision_id: revision.id,
           selected_cells: [...selected],
-          ...(viewer === "guest" ? { display_name: nickname.trim() } : {}),
+          ...(viewer === "guest" ? { display_name: submittedNickname.trim() } : {}),
         },
         makeIdempotencyKey(),
       );
@@ -564,13 +575,16 @@ export function BingoPlayer({
       router.push(`/share/${bingoId}/${result.id}`);
     } catch (caught) {
       if (lifetime !== mutationLifetime.current) return;
+      shareInFlight.current = false;
       setProgressError(errorMessage(caught));
       setSharing(false);
     }
   }
 
   function closeSharePanel() {
+    if (shareInFlight.current) return;
     setShareOpen(false);
+    setNicknameError("");
     window.setTimeout(() => shareButtonRef.current?.focus(), 0);
   }
 
@@ -798,37 +812,67 @@ export function BingoPlayer({
       ) : null}
 
       {playable && shareOpen ? (
-        <section id="share-result-panel" className="share-panel" aria-labelledby="share-title">
+        <form
+          id="share-result-panel"
+          className="share-panel"
+          aria-labelledby="share-title"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void share(event.currentTarget);
+          }}
+        >
           <div>
             <h2 id="share-title">Share this result</h2>
             <p>A permanent read-only snapshot will use this published revision.</p>
           </div>
           {viewer === "guest" ? (
             <label className="field">
-              <span>Your nickname</span>
+              <span id="share-nickname-label">Your nickname</span>
               <input
+                ref={nicknameRef}
+                name="nickname"
                 value={nickname}
+                required
                 maxLength={50}
                 autoComplete="nickname"
                 autoFocus
-                onChange={(event) => setNickname(event.target.value)}
+                disabled={sharing}
+                aria-labelledby="share-nickname-label"
+                aria-invalid={Boolean(nicknameError)}
+                aria-describedby={
+                  nicknameError ? "share-nickname-hint share-nickname-error" : "share-nickname-hint"
+                }
+                onInvalid={(event) => {
+                  setNicknameError("Enter a nickname to create a guest share link.");
+                  event.currentTarget.focus();
+                }}
+                onChange={(event) => {
+                  setNickname(event.target.value);
+                  setNicknameError("");
+                }}
               />
+              <small id="share-nickname-hint">Required. Up to 50 characters.</small>
+              {nicknameError ? (
+                <small id="share-nickname-error" className="form-message--error" role="alert">
+                  {nicknameError}
+                </small>
+              ) : null}
             </label>
           ) : null}
           <div className="inline-actions">
-            <button type="button" className="button button--secondary" onClick={closeSharePanel}>
-              Cancel
-            </button>
             <button
               type="button"
-              className="button button--primary"
+              className="button button--secondary"
               disabled={sharing}
-              onClick={() => void share()}
+              onClick={closeSharePanel}
             >
+              Cancel
+            </button>
+            <button type="submit" className="button button--primary" disabled={sharing}>
               {sharing ? "Creating link…" : "Create share link"}
             </button>
           </div>
-        </section>
+        </form>
       ) : null}
 
       {playable && viewer ? <CommentsPanel bingoId={bingo.id} viewer={viewer} /> : null}

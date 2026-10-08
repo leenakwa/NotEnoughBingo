@@ -125,7 +125,7 @@ For every component that loads or manipulates data, verify relevant states:
 - [x] loading;
 - [x] loaded;
 - [x] empty;
-- [ ] partial;
+- [x] partial;
 - [x] error;
 - [x] offline;
 - [x] retrying;
@@ -1143,7 +1143,7 @@ Verify:
 
 - [x] HTML is not accidentally cached forever;
 - [x] hashed assets may be cached aggressively;
-- [ ] old JS/new HTML incompatibility is prevented;
+- [x] old JS/new HTML incompatibility is prevented;
 - [x] service worker does not pin obsolete builds;
 - [ ] CDN invalidation/update strategy works;
 - [x] private API responses are not publicly cached;

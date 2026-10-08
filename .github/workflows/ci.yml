@@ -33,11 +33,16 @@ jobs:
       - name: Verify isolated release rehearsal boundaries
         run: python3 -m unittest discover -s infra/scripts -p 'test_rehearse_mixed_release.py' -v
 
+      - name: Verify retained frontend asset boundaries
+        run: python3 -m unittest discover -s infra/scripts -p 'test_retain_frontend_assets.py' -v
+
       - name: Validate Compose model
         run: |
           set -o pipefail
           docker compose --env-file .env.example config --quiet
           COMPOSE_FILE=compose.yml docker compose --env-file .env.example config --quiet
+          FRONTEND_ASSET_DIR=/tmp/neb-frontend-assets docker compose --env-file .env.example \
+            -f compose.yml -f compose.frontend-assets.yml config --quiet
           COMPOSE_FILE=compose.yml docker compose --env-file .env.example config --format json \
             | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["minio-init"]["command"][0])' \
             | sh -n
@@ -411,9 +416,23 @@ jobs:
           push: false
           load: true
           tags: not-enough-bingo-${{ matrix.name }}:${{ github.sha }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
           build-args: ${{ matrix.build_args }}
+
+      - name: Export and validate immutable frontend assets
+        if: ${{ matrix.name == 'frontend' }}
+        env:
+          IMAGE_REF: not-enough-bingo-frontend:${{ github.sha }}
+          EXPECTED_RELEASE: ${{ github.sha }}
+        run: |
+          asset_dir="$(mktemp -d)"
+          trap 'rm -rf "$asset_dir"' EXIT
+          image_id="$(docker image inspect "$IMAGE_REF" --format '{{.Id}}')"
+          python3 infra/scripts/retain-frontend-assets.py \
+            --image "$image_id" --release "$EXPECTED_RELEASE" \
+            --asset-dir "$asset_dir" --max-bytes 268435456
 
       - name: Verify the production process is non-root
         env:

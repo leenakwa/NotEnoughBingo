@@ -23,6 +23,304 @@ const cellImagePng = Buffer.from(
 let moderationReportId = "";
 const socialFormBoards = new WeakMap<Page, string>();
 
+test("profile remains editable when its activity list fails and recovers", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await authenticateAs(page, "author");
+  const identity = await page.request.get("/api/v1/auth/me/");
+  expect(identity.status()).toBe(200);
+  const signedIn = (await identity.json()) as { id: string; email: string };
+  expect(signedIn.id).toBe(readLiveFixture().users.author.id);
+  const profileResponse = await page.request.get("/api/v1/profiles/me/");
+  expect(profileResponse.status()).toBe(200);
+  const savedProfile = (await profileResponse.json()) as {
+    id: string;
+    username: string;
+    display_name: string;
+    bio: string;
+  };
+  expect(savedProfile.id).toBe(signedIn.id);
+
+  const activityPath = `/api/v1/profiles/${encodeURIComponent(savedProfile.username)}/bingos/`;
+  const matchesActivity = (url: URL) =>
+    url.pathname === activityPath &&
+    url.searchParams.get("page") === "1" &&
+    url.searchParams.get("status") === "draft";
+  const message = "Profile activity is temporarily unavailable.";
+  let releaseFailure!: () => void;
+  const heldFailure = new Promise<void>((resolve) => {
+    releaseFailure = resolve;
+  });
+  let captureFailure!: () => void;
+  const failureCaptured = new Promise<void>((resolve) => {
+    captureFailure = resolve;
+  });
+  let activityReads = 0;
+  const unaffectedReads = { identity: 0, profile: 0 };
+  page.on("request", (request) => {
+    if (request.method() !== "GET") return;
+    const path = new URL(request.url()).pathname;
+    if (path === "/api/v1/auth/me/") unaffectedReads.identity += 1;
+    if (path === "/api/v1/profiles/me/") unaffectedReads.profile += 1;
+  });
+  let heldActivityHandler: Promise<void> | undefined;
+  const activityRoute = async (route: Route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    activityReads += 1;
+    if (activityReads !== 1) return route.continue();
+    heldActivityHandler = (async () => {
+      captureFailure();
+      await heldFailure;
+      await route.fulfill({
+        status: 503,
+        json: { error: { code: "unavailable", message } },
+      });
+    })();
+    return heldActivityHandler;
+  };
+  await page.route(matchesActivity, activityRoute);
+  try {
+    await page.goto("/profile");
+    const activity = page.getByRole("region", { name: "Profile activity", exact: true });
+    const account = page.getByRole("region", { name: "Account settings", exact: true });
+    const profileForm = page.locator("form.settings-card").filter({
+      has: page.getByRole("heading", { name: "Profile details", exact: true }),
+    });
+    const signedInCard = account.locator(".settings-card").filter({
+      has: page.getByRole("heading", { name: "Signed-in account", exact: true }),
+    });
+    await expect(profileForm.getByLabel("Username", { exact: true })).toHaveValue(
+      savedProfile.username,
+    );
+    await expect(signedInCard.getByText(signedIn.email, { exact: true })).toBeVisible();
+    await expect(activity.getByRole("tabpanel")).toHaveAttribute("aria-busy", "false");
+    await activity.getByRole("tab", { name: "Drafts", exact: true }).click();
+    await failureCaptured;
+    await expect(activity.getByRole("status")).toContainText("Loading profile activity");
+    const displayName = "Unsubmitted profile activity draft 🎲";
+    const bio = "Unsubmitted bio\nActivity errors must not discard this text.";
+    const email = `partial-profile-${randomUUID()}@example.test`;
+    await profileForm.getByLabel("Display name", { exact: true }).fill(displayName);
+    await profileForm.getByLabel("Bio", { exact: true }).fill(bio);
+    await account.getByLabel("New email address", { exact: true }).fill(email);
+    releaseFailure();
+    await expect(activity.getByRole("alert")).toContainText(message);
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
+
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 989 });
+      await expect(
+        page.getByRole("heading", {
+          name: savedProfile.display_name || savedProfile.username,
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(profileForm.getByLabel("Display name", { exact: true })).toBeEnabled();
+      await expect(profileForm.getByLabel("Display name", { exact: true })).toHaveValue(
+        displayName,
+      );
+      await expect(profileForm.getByLabel("Bio", { exact: true })).toHaveValue(bio);
+      await expect(account.getByLabel("New email address", { exact: true })).toBeEnabled();
+      await expect(account.getByLabel("New email address", { exact: true })).toHaveValue(email);
+      await expect(
+        account.getByRole("button", { name: "Change password", exact: true }),
+      ).toBeEnabled();
+      await expect(
+        signedInCard.getByRole("button", { name: "Log out", exact: true }),
+      ).toBeEnabled();
+      await expect(activity.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+
+    const beforeRetry = { ...unaffectedReads };
+    const recovered = await waitForResponse(page, activityPath, "GET", () =>
+      activity.getByRole("button", { name: "Try again", exact: true }).click(),
+    );
+    expect(recovered.status()).toBe(200);
+    const collection = (await recovered.json()) as {
+      results: Array<{ id: string; title: string }>;
+    };
+    await expect(activity.getByRole("alert")).toHaveCount(0);
+    await expect(activity.getByRole("tabpanel")).toHaveAttribute("aria-busy", "false");
+    if (collection.results.length) {
+      const first = collection.results[0]!;
+      const card = activity.locator(`a.bingo-card__main[href="/create?bingo=${first.id}"]`);
+      await expect(
+        card.getByRole("heading", { name: first.title.trim() || "Untitled bingo", exact: true }),
+      ).toBeVisible();
+    } else {
+      await expect(
+        activity.getByRole("heading", { name: "No drafts yet", exact: true }),
+      ).toBeVisible();
+    }
+    expect(activityReads).toBe(2);
+    expect(unaffectedReads).toEqual(beforeRetry);
+    await expect(profileForm.getByLabel("Display name", { exact: true })).toHaveValue(displayName);
+    await expect(profileForm.getByLabel("Bio", { exact: true })).toHaveValue(bio);
+    await expect(account.getByLabel("New email address", { exact: true })).toHaveValue(email);
+    const unchanged = await page.request.get("/api/v1/profiles/me/");
+    expect(unchanged.status()).toBe(200);
+    expect((await unchanged.json()).display_name).toBe(savedProfile.display_name);
+    expect(pageErrors).toEqual([]);
+  } finally {
+    releaseFailure();
+    await heldActivityHandler;
+    await page.unroute(matchesActivity, activityRoute);
+  }
+});
+
+test("accepted account export status failure preserves unsaved fields and allows real recovery", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await authenticateAs(page, "author");
+  const identity = await page.request.get("/api/v1/auth/me/");
+  expect(identity.status()).toBe(200);
+  const signedIn = (await identity.json()) as { id: string; email: string };
+  expect(signedIn.id).toBe(readLiveFixture().users.author.id);
+  await page.goto("/profile");
+  const account = page.getByRole("region", { name: "Account settings", exact: true });
+  const exportCard = account.locator(".settings-card").filter({
+    has: page.getByRole("heading", { name: "Export your data", exact: true }),
+  });
+  const profileForm = page.locator("form.settings-card").filter({
+    has: page.getByRole("heading", { name: "Profile details", exact: true }),
+  });
+  await expect(account.getByRole("button", { name: "Change password", exact: true })).toBeEnabled();
+  await expect(account.getByText("Loading active sessions…", { exact: true })).toHaveCount(0);
+  await expect(account.getByText("Loading notification preferences…", { exact: true })).toHaveCount(
+    0,
+  );
+  const displayName = "Unsubmitted export status draft 🎲";
+  const bio = "Unsaved export context\nKeep profile edits while export status fails.";
+  const email = `partial-export-${randomUUID()}@example.test`;
+  const unsentPassword = "Unsubmitted email password value";
+  await profileForm.getByLabel("Display name", { exact: true }).fill(displayName);
+  await profileForm.getByLabel("Bio", { exact: true }).fill(bio);
+  await account.getByLabel("New email address", { exact: true }).fill(email);
+  await account
+    .getByLabel("Current password for email change", { exact: true })
+    .fill(unsentPassword);
+
+  // Create/reuse an actual accepted job to know its exact status URL before routing.
+  // The subsequent real UI POST must reuse that same job; neither POST is mocked.
+  const csrf = (await page.context().cookies()).find((cookie) => cookie.name === "neb_csrf");
+  expect(csrf).toBeDefined();
+  const accepted = await page.request.post("/api/v1/auth/account-export/", {
+    headers: { "X-CSRFToken": csrf!.value },
+  });
+  expect(accepted.status()).toBe(202);
+  const acceptedJob = (await accepted.json()) as { job_id: string; status: string };
+  expect(acceptedJob.job_id).toMatch(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i);
+  expect(["queued", "processing", "ready"]).toContain(acceptedJob.status);
+  const statusPath = `/api/v1/exports/${acceptedJob.job_id}/`;
+  const matchesStatus = (url: URL) => url.pathname === statusPath;
+  const message = "Data export status is temporarily unavailable.";
+  let statusReads = 0;
+  let releaseFailure!: () => void;
+  const heldFailure = new Promise<void>((resolve) => {
+    releaseFailure = resolve;
+  });
+  let captureFailure!: () => void;
+  const failureCaptured = new Promise<void>((resolve) => {
+    captureFailure = resolve;
+  });
+  let heldStatusHandler: Promise<void> | undefined;
+  const statusRoute = async (route: Route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    statusReads += 1;
+    if (statusReads !== 1) return route.continue();
+    heldStatusHandler = (async () => {
+      captureFailure();
+      await heldFailure;
+      await route.fulfill({
+        status: 503,
+        json: { error: { code: "unavailable", message } },
+      });
+    })();
+    return heldStatusHandler;
+  };
+  await page.route(matchesStatus, statusRoute);
+  try {
+    const requested = await waitForResponse(page, "/api/v1/auth/account-export/", "POST", () =>
+      exportCard.getByRole("button", { name: "Request data export", exact: true }).click(),
+    );
+    expect(requested.status()).toBe(202);
+    expect((await requested.json()).job_id).toBe(acceptedJob.job_id);
+    await failureCaptured;
+    await expect(
+      exportCard.getByRole("button", { name: "Preparing export…", exact: true }),
+    ).toBeDisabled();
+    await expect(profileForm.getByLabel("Display name", { exact: true })).toBeEnabled();
+    await expect(profileForm.getByLabel("Display name", { exact: true })).toHaveValue(displayName);
+    releaseFailure();
+    await expect(exportCard.getByRole("alert")).toContainText(message);
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
+    for (const width of [320, 1710]) {
+      await page.setViewportSize({ width, height: 989 });
+      await expect(profileForm.getByLabel("Display name", { exact: true })).toBeEnabled();
+      await expect(profileForm.getByLabel("Display name", { exact: true })).toHaveValue(
+        displayName,
+      );
+      await expect(profileForm.getByLabel("Bio", { exact: true })).toHaveValue(bio);
+      await expect(account.getByLabel("New email address", { exact: true })).toBeEnabled();
+      await expect(account.getByLabel("New email address", { exact: true })).toHaveValue(email);
+      await expect(
+        account.getByLabel("Current password for email change", { exact: true }),
+      ).toHaveValue(unsentPassword);
+      await expect(
+        account.getByRole("button", { name: "Change password", exact: true }),
+      ).toBeEnabled();
+      await expect(account.getByRole("button", { name: "Log out", exact: true })).toBeEnabled();
+      await expect(
+        exportCard.getByRole("button", { name: "Request data export", exact: true }),
+      ).toBeEnabled();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+
+    const realStatus = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === statusPath &&
+        response.request().method() === "GET" &&
+        response.status() === 200,
+    );
+    const retried = await waitForResponse(page, "/api/v1/auth/account-export/", "POST", () =>
+      exportCard.getByRole("button", { name: "Request data export", exact: true }).click(),
+    );
+    expect(retried.status()).toBe(202);
+    expect((await retried.json()).job_id).toBe(acceptedJob.job_id);
+    const recoveredStatus = await realStatus;
+    expect((await recoveredStatus.json()).id).toBe(acceptedJob.job_id);
+    await expect(
+      exportCard.getByRole("link", { name: "Download data export", exact: true }),
+    ).toBeVisible({ timeout: 45_000 });
+    await expect(exportCard.getByRole("status")).toHaveText(
+      "Your data export is ready to download.",
+    );
+    await expect(exportCard.getByRole("alert")).toHaveCount(0);
+    expect(statusReads).toBeGreaterThanOrEqual(2);
+    await expect(profileForm.getByLabel("Display name", { exact: true })).toHaveValue(displayName);
+    await expect(profileForm.getByLabel("Bio", { exact: true })).toHaveValue(bio);
+    await expect(account.getByLabel("New email address", { exact: true })).toHaveValue(email);
+    await expect(
+      account.getByLabel("Current password for email change", { exact: true }),
+    ).toHaveValue(unsentPassword);
+    const stillSignedIn = await page.request.get("/api/v1/auth/me/");
+    expect(stillSignedIn.status()).toBe(200);
+    expect((await stillSignedIn.json()).id).toBe(signedIn.id);
+    expect(pageErrors).toEqual([]);
+  } finally {
+    releaseFailure();
+    await heldStatusHandler;
+    await page.unroute(matchesStatus, statusRoute);
+  }
+});
+
 test("catalog stays usable when suggestions and unread counts fail", async ({ page }) => {
   const fixture = readLiveFixture();
   const pageErrors: string[] = [];
@@ -3455,6 +3753,94 @@ test.describe("live full-stack product flows", () => {
     await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toBe(page.url());
   });
 
+  test("guest share validates nickname, submits with Enter, and retries one held write", async ({
+    page,
+  }) => {
+    const bingo = readLiveFixture().bingos.public;
+    const endpoint = `/api/v1/bingos/${bingo.id}/shares/`;
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    let writes = 0;
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const nickname = "  Гость 😀 <&>  ";
+    await page.route(`**${endpoint}`, async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      writes += 1;
+      expect(route.request().postDataJSON().display_name).toBe(nickname.trim());
+      if (writes === 1) {
+        return route.fulfill({
+          status: 503,
+          json: { error: { code: "unavailable", message: "Sharing temporarily unavailable." } },
+        });
+      }
+      await held;
+      return route.continue();
+    });
+    try {
+      await page.goto(`/bingo/${bingo.id}`);
+      await expect(page.getByRole("heading", { name: bingo.title })).toBeVisible();
+      await page.getByRole("button", { name: "Share result" }).click();
+      const form = page.locator("form#share-result-panel");
+      const name = form.getByLabel("Your nickname");
+      const submit = form.getByRole("button", { name: "Create share link" });
+      await expect(name).toHaveAttribute("required", "");
+      await expect(name).toHaveAttribute("maxlength", "50");
+      await expect(form.getByText("Required. Up to 50 characters.")).toBeVisible();
+      await submit.click();
+      await expect(name).toBeFocused();
+      await expect(name).toHaveAttribute("aria-invalid", "true");
+      await expect(form.getByRole("alert")).toHaveText(
+        "Enter a nickname to create a guest share link.",
+      );
+      await name.fill("   ");
+      await name.press("Enter");
+      await expect(name).toBeFocused();
+      await expect(form.getByRole("alert")).toBeVisible();
+      expect(writes).toBe(0);
+      await name.fill(nickname);
+      const rejected = page.waitForResponse(
+        (response) => response.url().endsWith(endpoint) && response.request().method() === "POST",
+      );
+      await name.press("Enter");
+      expect((await rejected).status()).toBe(503);
+      await expect(page.locator("main").getByRole("alert")).toHaveText(
+        "Sharing temporarily unavailable.",
+      );
+      await expect(name).toHaveValue(nickname);
+      await expect(submit).toBeEnabled();
+      const created = page.waitForResponse(
+        (response) => response.url().endsWith(endpoint) && response.request().method() === "POST",
+      );
+      await name.press("Enter");
+      await expect.poll(() => writes).toBe(2);
+      await expect(form.getByRole("button", { name: "Creating link…" })).toBeDisabled();
+      await expect(form.getByRole("button", { name: "Cancel" })).toBeDisabled();
+      await expect(name).toBeDisabled();
+      await form.evaluate((element: HTMLFormElement) => element.requestSubmit());
+      expect(writes).toBe(2);
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+        await expect(form.getByRole("button", { name: "Creating link…" })).toBeInViewport();
+      }
+      release();
+      expect((await created).status()).toBe(201);
+      await expect(page).toHaveURL(new RegExp(`/share/${bingo.id}/[^/]+$`));
+      await expect(page.getByText(`Shared by ${nickname.trim()}`)).toBeVisible();
+      await page.reload();
+      await expect(page.getByText(`Shared by ${nickname.trim()}`)).toBeVisible();
+      expect(writes).toBe(2);
+      expect(errors).toEqual([]);
+    } finally {
+      release();
+    }
+  });
+
   test("registered progress is saved on the server and reset", async ({ page }) => {
     const fixture = readLiveFixture();
     const bingo = fixture.bingos.public;
@@ -4166,6 +4552,7 @@ test.describe("live full-stack product flows", () => {
 
     await page.goto(`${link.pathname}${link.search}`);
     await page.getByLabel("New password", { exact: true }).fill(nextPassword);
+    await expect(page.getByLabel("New password", { exact: true })).toHaveValue(nextPassword);
     const repeated = page.waitForResponse(
       (response) =>
         response.url().includes("/api/v1/auth/password-reset/confirm/") &&
@@ -5357,8 +5744,14 @@ test("deletion cancellation shows scoped progress and retries for an isolated ac
 for (const mode of ["registration", "email-change"] as const) {
   test(`token-only ${mode} retries an outage with its original Mailpit link`, async ({ page }) => {
     const api = page.context().request;
-    // Setup verification belongs to a fixture actor; the registration retry itself stays anonymous.
-    if (mode === "email-change") await authenticateAs(page, "player");
+    // The player session was revoked by an earlier credential test; setup needs a live actor.
+    // Registration retry itself stays anonymous and keeps the unchanged verification quota.
+    if (mode === "email-change") {
+      await authenticateAs(page, "moderator");
+      const actor = await api.get("/api/v1/auth/me/");
+      expect(actor.status()).toBe(200);
+      expect((await actor.json()).id).toBe(readLiveFixture().users.moderator.id);
+    }
     const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
     const email = `e2e-token-${nonce}@example.test`;
     const password = `QA-${randomUUID()}-verification`;
@@ -5380,14 +5773,11 @@ for (const mode of ["registration", "email-change"] as const) {
     ).toBe(202);
     let link = new URL(await verificationLink(api, email));
     if (mode === "email-change") {
-      expect(
-        (
-          await api.post("/api/v1/auth/verify-email/", {
-            headers: await csrfHeaders(),
-            data: { token: link.searchParams.get("token") },
-          })
-        ).ok(),
-      ).toBe(true);
+      const setupVerification = await api.post("/api/v1/auth/verify-email/", {
+        headers: await csrfHeaders(),
+        data: { token: link.searchParams.get("token") },
+      });
+      expect(setupVerification.status()).toBe(200);
       expect(
         (
           await api.post("/api/v1/auth/login/", {

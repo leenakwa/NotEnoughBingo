@@ -5,27 +5,35 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Current continuation evidence (2026-10-08): source `c1fc2d7` passed all nine CI
-jobs. The subsequent `d4dd0b7` gate failed new Next.js production advisories.
-The corrected `a3e1c00` passed backend/frontend quality, both production images,
-foundation and secrets, but failed two browser expectations and the release
-gate (199 smoke passes, 12 skips; 110 full-stack passes, five not run).
-Both failures were reproduced and corrected without changing product behavior
-or weakening focus/geometry assertions; final scoped four-engine runs pass.
-Current local frontend checks pass 470 tests and lint/types/format. Backend
-source remains covered by 382 PostgreSQL tests and one infrastructure skip.
-Independent ARIA/label and default UI contrast evidence is mapped; native browser
-zoom/favicon chrome remain unverified. A separate immutable old/new backend
-rehearsal verifies forward-schema, queued legacy/new mail and old-web rollback
-with compatible new workers. Its sanitized artifact is saved in the repository.
-The next source still needs all nine exact-SHA jobs and remaining local batches.
+Current continuation evidence (2026-10-08): last all-nine green source remains
+`c1fc2d7`. Subsequent failures are retained in the dated evidence. Current pushed
+`15632b6` failed CI37710181069: seven jobs passed, full-stack115 pass/one fail,
+Release failed. The uncommitted packet corrects revoked fixture ownership without
+changing verification limits, adds departed-auth/guest-form safeguards, and passes
+500 frontend tests with Node22 lint/types. Actual auth departure16 and guest
+share4 engine cases pass, retries zero. The next ordered run ended113 pass/one
+reset-token reuse failure/three not run. The reset initialization gate correction
+now passes meaningful regression/review and four real engine journeys. Eight
+profile/export partial-composition engine cases and16 native auth-control cases
+also pass; full ordered119-case verification passes, retries zero. Backend source remains covered by382 PostgreSQL passes/one skip.
+
+Immutable old/new frontend and backend combinations, compatible worker rollback,
+one same-context stale-tab editor journey and all50 retained static assets across
+promotion/rollback now have sanitized local artifacts. Sixteen optimized-image
+fresh/warm samples record152–165KB fresh JS transfer and tiny measured CLS;284
+aborted RSC reads mean that diagnostic is not a clean unfiltered performance gate.
+Real CDN, target capacity, native browser zoom/favicon/autofill/device evidence
+and remaining local requirements stay open. The checklist currently records
+774 checked/368 unchecked;57 verified/41 partial/six N/A/one deployment-only.
+
 Use the [continuation checkpoint](production-readiness-continuation-plan.md) and
-latest [dated evidence](production-readiness-evidence.md); observations below
-remain historical, including earlier audit counts.
+latest [dated evidence](production-readiness-evidence.md). All observations below
+remain historical; the current working tree is not a completed release gate.
 
 ## Decision
 
-The working tree passes the local code and product-flow checks below. A prior
+The historical source passed the local checks below. Current browser verification
+has an open failure, as recorded above. A prior
 pushed revision passed its exact-commit CI gate; every subsequent revision
 must pass again before promotion. This is **not an authorized public
 deployment**. Images have not been promoted to a production registry or tested
