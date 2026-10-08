@@ -622,6 +622,7 @@ h3 {
 
 .bingo-card-preview {
   position: relative;
+  content-visibility: auto;
   display: grid;
   grid-template-columns: repeat(var(--preview-size), minmax(0, 1fr));
   grid-template-rows: repeat(var(--preview-size), minmax(0, 1fr));

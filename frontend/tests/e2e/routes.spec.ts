@@ -252,6 +252,174 @@ test("bingo card keeps tags with actions and handles guest likes without an API 
   await expect(page.getByText("Authentication credentials were not provided.")).toHaveCount(0);
 });
 
+test("offscreen dense previews retain their content and layout when scrolling and resizing", async ({
+  page,
+}) => {
+  const boards = Array.from({ length: 24 }, (_, boardIndex) => ({
+    id: `11111111-1111-4111-8111-${String(boardIndex).padStart(12, "0")}`,
+    title: `Dense preview board ${boardIndex + 1}`,
+    description: "",
+    language: "en",
+    author: {
+      id: "22222222-2222-4222-8222-222222222222",
+      username: "author",
+      display_name: "Author",
+      avatar: null,
+    },
+    cover: null,
+    preview: {
+      size: 10,
+      board_background: null,
+      cells: Array.from({ length: 100 }, (_, cellIndex) => ({
+        id: `33333333-3333-4333-8333-${String(boardIndex * 100 + cellIndex).padStart(12, "0")}`,
+        position: cellIndex,
+        row: Math.floor(cellIndex / 10),
+        column: cellIndex % 10,
+        text: `Board ${boardIndex + 1}, cell ${cellIndex + 1}: Read a new book, take a walk, and share a favorite moment with a friend.`.slice(
+          0,
+          100,
+        ),
+        text_color: "#17324d",
+        bold: cellIndex % 2 === 0,
+        italic: cellIndex % 3 === 0,
+        underline: cellIndex % 5 === 0,
+        strikethrough: cellIndex % 7 === 0,
+        background_color: cellIndex % 2 === 0 ? "#dbeafe" : "#fef3c7",
+        background_opacity: 0.8,
+        image_asset_id: null,
+        image: null,
+        image_alt: "",
+        image_opacity: 1,
+        border_color: "#17324d",
+        border_width: 1,
+        border_style: "solid",
+      })),
+    },
+    tags: [{ id: "44444444-4444-4444-8444-444444444444", name: "Design", slug: "design" }],
+    size: 10,
+    status: "published",
+    visibility: "public",
+    completion_style: "checkmark",
+    stats: { likes: 4, comments: 2, plays: 0, shares: 0, views: 0 },
+    liked_by_me: false,
+    published_at: "2026-07-20T00:00:00Z",
+    updated_at: "2026-07-20T00:00:00Z",
+  }));
+  await page.route("**/api/v1/feeds/discover/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: boards.length, next: null, previous: null, results: boards }),
+    }),
+  );
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/discover");
+  const cards = page.getByRole("article");
+  await expect(cards).toHaveCount(24);
+  const lastPreview = cards.last().getByRole("img");
+  expect(
+    await lastPreview.evaluate((element) => element.getBoundingClientRect().top),
+  ).toBeGreaterThan(900);
+
+  const checkPreview = async (boardIndex: number) => {
+    const board = boards[boardIndex]!;
+    const card = cards.nth(boardIndex);
+    const preview = card.getByRole("img", {
+      name: `Preview of ${board.title}, 10 by 10 bingo`,
+      exact: true,
+    });
+    await expect(preview).toBeVisible();
+    await expect(card.getByRole("heading", { name: board.title, exact: true })).toBeVisible();
+    const cells = preview.locator(".bingo-card-preview__cell");
+    await expect(cells).toHaveCount(100);
+    expect(await cells.locator(".bingo-card-preview__text").allTextContents()).toEqual(
+      board.preview.cells.map((cell) => cell.text),
+    );
+    expect(
+      await cells.evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("title")),
+      ),
+    ).toEqual(board.preview.cells.map((cell) => cell.text));
+    await expect
+      .poll(async () =>
+        card.evaluate((element) => {
+          const preview = element.querySelector<HTMLElement>(".bingo-card-preview")!;
+          const tags = element.querySelector<HTMLElement>(".bingo-card__tags")!;
+          const actions = element.querySelector<HTMLElement>(".bingo-card__actions")!;
+          const box = preview.getBoundingClientRect();
+          const fits = (inner: DOMRect, outer: DOMRect) =>
+            inner.width > 0 &&
+            inner.height > 0 &&
+            inner.left >= outer.left - 1 &&
+            inner.right <= outer.right + 1 &&
+            inner.top >= outer.top - 1 &&
+            inner.bottom <= outer.bottom + 1;
+          return {
+            square: box.width > 0 && Math.abs(box.width - box.height) <= 1,
+            cellsAndTextFit: Array.from(
+              preview.querySelectorAll<HTMLElement>(".bingo-card-preview__cell"),
+            ).every((cell) => {
+              const cellBox = cell.getBoundingClientRect();
+              return (
+                fits(cellBox, box) &&
+                fits(
+                  cell.querySelector(".bingo-card-preview__text")!.getBoundingClientRect(),
+                  cellBox,
+                )
+              );
+            }),
+            tagsFollowPreview: Math.abs(tags.getBoundingClientRect().top - box.bottom) <= 1,
+            actionsFollowTags:
+              actions.previousElementSibling === tags &&
+              Math.abs(actions.getBoundingClientRect().top - tags.getBoundingClientRect().bottom) <=
+                1,
+          };
+        }),
+      )
+      .toEqual({
+        square: true,
+        cellsAndTextFit: true,
+        tagsFollowPreview: true,
+        actionsFollowTags: true,
+      });
+  };
+
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      window.scrollTo(0, 0);
+    });
+    const lastLink = cards.last().locator(".bingo-card__main");
+    await expect(lastLink).toHaveAttribute("href", `/bingo/${boards[23]!.id}`);
+    // Native focus must reveal the distant card without a preceding locator scroll.
+    await lastLink.evaluate((element) => (element as HTMLElement).focus());
+    await expect(lastLink).toBeFocused();
+    await expect(lastLink).toBeInViewport();
+    await expect(lastPreview).toBeInViewport();
+    await checkPreview(23);
+    for (let pass = 0; pass < 2; pass += 1) {
+      await cards.first().locator(".bingo-card__main").scrollIntoViewIfNeeded();
+      await checkPreview(0);
+      await lastPreview.scrollIntoViewIfNeeded();
+      await checkPreview(23);
+    }
+    await expect(cards).toHaveCount(24);
+    expect(
+      await page.locator(".bingo-card-preview").evaluateAll((elements) =>
+        elements.every((element) => {
+          const box = element.getBoundingClientRect();
+          return box.width > 0 && Math.abs(box.width - box.height) <= 1;
+        }),
+      ),
+    ).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+  }
+});
+
 test("authenticated header keeps notification and profile actions", async ({ page }) => {
   await page.unroute("**/api/v1/auth/session/");
   await page.route("**/api/v1/auth/session/", (route) =>

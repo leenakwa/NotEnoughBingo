@@ -8132,3 +8132,159 @@ not a proven privacy finding or privacy pass. Protected-body/cache-header/
 Referer/downstream-URL assertions remain open; source and archived successful
 lifecycle evidence above retain their separate scope. Section76 and counts do
 not advance.
+
+
+### 2026-10-09 — Direct-runner bounded account and dummy-recovery transport
+
+The earlier three failed CLI captures are diagnosed as a synchronous response
+callback ReferenceError: the CLI run-code VM has no global URL. Direct installed
+Playwright in an owned Node/headless Chrome process completes the bounded packet;
+no dependency change. This supersedes capture unavailability within the following
+scope, preserving the failed attempts. `evidence-network-transport44-2026-10-09/`
+retains report, private captures and cleanup; independent review passes, with29
+artifact hashes verified. Optimized frontend44 uses configured localhost18584
+and cachedb6 backend; exact source/runtime equivalence is bounded, not a claim
+that cached backend is a newly built current image.
+
+Guest, author and player runs observe673 requests and36 public/nonowner API
+bodies. Literal known fixture emails/raw session keys have zero public-body or
+URL/Referer matches. Protected own auth/profile/session reads return200 with
+private/no-store; own-session email projections and own email in authenticated
+public-board HTML are expected, with private/no-store document headers. All343
+captured RSC header sets have no-store; streamed RSC bodies are unread. Exactly
+one sensitive-key URL is the expected initial dummy invalid-recovery token;
+recovery document has no-referrer, zero observed downstream literal token-bearing
+Referer, and final Discover query is empty. No real token lifecycle is attempted.
+
+Own logins/logout204 preserve author ten/player two baseline active-session IDs.
+Last-seen metadata/public analytics may advance. The owned Node process is stopped
+after completed evidence when outer close stalls; no owned process/browser
+descendants remain. Raw private artifacts use0600. Matching is literal substring
+against known values, not exhaustive percent-encoded equivalents or unknown
+secrets; direct API reads supplement UI observations and do not create UI Referer.
+RSC-body projection, registration/email-change/reset success lifecycle, exports,
+media credentials and actual ingress/CDN/provider/cache remain unverified. No
+privacy vulnerability, universal transport-isolation or section76 pass is claimed.
+
+### 2026-10-09 — Ordinary default24 Explore client rendering envelope
+
+`evidence-default24-client44-2026-10-09/summary.json` records four owned guest
+headless Chromium cases on directly verified optimized frontend44/image541b1fca,
+nextjs user/zero mounts, while repository HEAD is subsequent0341e774. Ordinary
+Explore search requests the UI default24; catalog APIcap100 is a separate envelope.
+Only the exact diagnostic catalog search is fulfilled with archived response
+bytes; other GETs pass through and diagnostic/analytics writes are suppressed.
+At390/1440, ASCII1,615,050-byte JSON read+parse takes3.9/3.6ms, observed2rAF
+completion148.5/182.7ms, with113/142ms long tasks. Shared-media Unicode4,251,426
+bytes takes18.3/18.4ms, completion434.6/477.8ms, with69+307/71+337ms long tasks.
+All four render24 cards, no page/console errors or horizontal overflow, and pass
+scroll-to-last-card programmatic focusability/href. The probe uses link.focus(),
+not Tab traversal or keyboard navigation. Narrow first-screen visible count is zero
+because the search form occupies the viewport;24 DOM cards and scroll access pass.
+
+Read+parse includes body reading;2rAF completion includes layout/paint opportunity
+and automation, not isolated normalization. Long tasks are not attributed to JSON parsing or React; repeatability remains
+unmeasured. Single local cases establish no SLO,
+repeatability, memory peak or mandatory reduction/product failure. Reused synthetic
+PNG serves only fixture image URLs; actual media/network/compression/CDN is untested.
+Fixture board IDs are absent in the local backend, so actual board navigation is
+not attempted. Feed SSR is unmeasured. An early overlapping measurement is discarded
+and the corrected timing retained. Owned contexts/browser close; no user profiles
+used. Section76 and all checklist/section counts remain unchanged.
+
+
+### 2026-10-09 — Completed committed034 gate and pending export patch
+
+[CI37853375991](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37853375991)
+finishes SUCCESS on workflow_dispatch exact
+`0341e77428c441423151aa6fd51f5892ae6dbcaa`, full tree
+`ea58350e492f21afe4f2f836c5d5ce1fb9ee4407`; this is not a tested PR merge.
+All12 jobs pass:446 backend,625 frontend/45 files,448 smoke/12 intentional skips
+and125 full-stack cases, no reported flakes/retries, both images and Release.
+The root watch completes exit0. Private original logs/artifacts/API metadata and
+checksums are archived under `evidence-0341e77-2026-10-09/ci/`; root independently
+verifies all27 hashes, exact tree and12 successful API job results. Subsequent
+account export aria-live/aria-atomic and preview content-visibility CSS/test changes
+are not covered; earlier optimized44 observations retain their image/runtime scope.
+
+### 2026-10-09 — Native autofill and account-control state evidence
+
+`evidence-native-autofill44-2026-10-09/report.json` verifies native Password Manager
+UI Add/Save seed with exact origin/username readback in an isolated Linux
+Chromium149 persistent basic-store profile. Change email current-password is
+natively autofilled before typing; after a repaired keyboard replacement
+precondition, intended new email survives focus/blur/FormData and the saved
+password remains present without typing that current password. The first
+append-to-already-filled email attempt is retained as an invalid precondition.
+Independent review passes25 hashes. Password/deletion/register forms do not commit
+a native fill; no defect inferred. No third-party manager, Mac vault/device,
+generated-password or real account submission evidence. Mocked reads/analytics
+avoid backend writes; owned context/profile/forwarder/container are removed.
+Section7 and counts remain unchanged.
+
+`evidence-account-controls44-2026-10-09/summary.json` records36 actual optimized44
+rendered states in isolated synthetic contexts: native Tab focus, normal/hover/
+held press/pending controls, no horizontal overflow or clipping. Root verifies40
+hashes. Narrow notification focus/feedback may sit below the initial viewport;
+width/status-placement choices remain pending. Held export preparation lacks
+live feedback in optimized44. The scoped source fix adds aria-live=polite and
+aria-atomic=true to the existing export request button. Existing account tests
+extended for these attributes pass43; typecheck/scoped lint/format and independent
+correctness review pass. Actual3194 development DOM/AX packet
+`evidence-account-export-livepatch-2026-10-09/` passes15 verified hashes: pending
+button disabled with polite/atomic live metadata, completion download link/status,
+unchanged geometry/styles and no overflow/clipping. This source-preview verification
+does not prove assistive-technology speech or a new optimized image/deployment;
+committed034 CI above excludes this subsequent source/test patch.
+
+### 2026-10-09 — Repeated default24 layout risk and external secret-check gap
+
+`evidence-default24-repeat44-2026-10-09/summary.json` repeats each maximum ASCII
+and shared-media Unicode default24 fixture three times at390x900 under mocked
+local delivery. All render24 cards without page/console errors; native Tab after
+completion reaches Clear all filters. Unicode long tasks302/312/304ms repeat,
+with dominant single Layout257–266ms and timer delays; a small one-card real
+baseline has no long task. Independent scoped review and21 hashes pass. This
+establishes a local main-thread blocking risk for the legal maximum fixture, not
+an isolated parse/React cause, real-device perceived freeze, actual delivery/SLO
+or mandatory product change. No permanent CSS experiment or performance budget
+is adopted from this packet; section76 remains Partial.
+
+Direct GitHub API observation records GitGuardian check113571385792 on exact034
+as FAILURE,6 findings over123 commits,0 API annotations and dashboard-only details.
+The user is asked for those details; their validity/severity/secret ownership remain
+unverified. Repository secret CI passes independently. Historical incident37737208
+is one proven test fixture and cannot classify the six current findings. No secret
+values are recorded here, no generalized false-positive conclusion or section41
+closure follows, and no checklist/section counts change.
+
+
+### 2026-10-09 — Preview layout fix and dense offscreen regression
+
+The source fix adds only content-visibility:auto to the existing preview-grid CSS
+rule, following repeated default24 maximum-fixture layout blocking. Independent
+performance/source review passes. `evidence-content-visibility-matrix44-2026-10-09/`
+records24 paired control/candidate flows: Chrome/Firefox/WebKit ×390/1440 ×ASCII/
+styled shared-media. Root verifies218 hashes. DOM/style/labels/full titles/hrefs
+are preserved; Firefox/WebKit neutral resize checks at both widths cover ASCII
+only. The original Unicode raster difference remains unexplained and retained.
+Three candidate maximum-fixture runs reduce maximum Layout to30.065–40.670ms
+versus257–266ms controls, initial long tasks69–73ms versus302–312ms, with zero
+recorded long tasks across eight jumps per run. This does not prove compositor
+first-frame behavior, native Find, assistive-technology, full WebKit keyboard
+coverage, real devices or a production SLO.
+
+One regression in routes.spec.ts uses24 styled10x10 previews, verifies offscreen
+content/full text/tooltips/geometry with scroll, programmatic DOM.focus and resize
+at390/1440. All four configured browser profiles pass on isolated webpack3195
+tracked034 plus the source patches:10.7/5.2/7.6/19.8s,52.4s total, zero retries,
+one worker. Programmatic focus is not Tab traversal or raster proof. The retained
+runner log/results, config and four-file source/test diff are archived under
+`evidence-preview-sourcepatch-2026-10-09/` with eight verified hashes; parent034
+and development-preview scope are explicit. The owned3195 preview closes exit0.
+A strict-index test type error is corrected; final
+typecheck/scoped lint/format pass. Full frontend625 tests/45 files pass14.15s and
+full lint passes. Source CSS/export changes retain scoped review evidence, but
+committed034 CI and the latest optimized44 image do not cover these subsequent
+patches. No new optimized-image/deployment or global section76 claim follows;
+checklist817/325 and sections59 Verified/39 Partial/6 N/A/1 deployment-only remain.

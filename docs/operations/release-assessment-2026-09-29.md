@@ -5,15 +5,17 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest completed gate: exact `44edf0ed0d930ed0d0aedd99fe46783a6cdf0320`
-[CI37849732326](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37849732326)
-passes all12 jobs:446 backend,625 frontend/45 files,448 smoke/12 intentional skips
-and125 full-stack cases, with no reported flakes/retries. Tested merge
-`50e7b23bd2ad8b2754f8ba881b08f47f07049988` and branch44 share full tree
-`0ce5a18e785aad40c482919ce085c4b2b7c42891`. This covers the header-prefetch
-correction, both production images and Release; the canonical configured-origin
-local flow also passes at1440x1000/390x844. See the
-[dated gate evidence](production-readiness-evidence.md#2026-10-09--completed-exact44-gate-and-native-200-zoom-requirement)
+Latest completed committed-source gate: exact
+`0341e77428c441423151aa6fd51f5892ae6dbcaa`
+[CI37853375991](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37853375991)
+finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,448 smoke/12
+intentional skips and125 full-stack cases; no reported flakes/retries. This is a
+workflow_dispatch on exact034 full tree
+`ea58350e492f21afe4f2f836c5d5ce1fb9ee4407`, not a PR merge gate. Both production
+images and Release pass. The subsequent export live-region and preview content-visibility CSS/test
+patches are not covered by this gate. Earlier exact44 canonical local/native packets
+retain their recorded image/runtime scope. See the
+[dated034 evidence](production-readiness-evidence.md#2026-10-09--completed-committed034-gate-and-pending-export-patch)
 and [canonical/RSC limits](production-readiness-evidence.md#2026-10-09--canonical-local44-header-flow-and-bounded-rsc-attribution).
 
 The current representative native Chrome154/macOS200% packet verifies the
@@ -26,16 +28,52 @@ Section24 is Verified before deployment; checklist817/325 and section totals
 Section76 remains Partial: canonical guest URLs and unchanged-source privacy
 contracts have bounded evidence, but archived CI reports contain no raw transport
 captures and cannot prove account/recovery headers, response projection or Referer
-isolation. A subsequent capture fails on three CLI session closures, with author10/
-player2 baseline sessions preserved; no privacy finding or transport assertion is
-established. A separate isolated101-board packet records42 HTTP200 responses:
+isolation. A later direct-runner packet supersedes the three failed CLI attempts
+within its cachedb6-backend scope:673 requests/36 public-nonowner API bodies show
+zero literal known-fixture email/raw-key matches in public bodies or URL/Referer;
+protected own APIs return200 private/no-store and343 RSC headers include no-store.
+RSC bodies are unread. Own email in authenticated board HTML is expected and
+private/no-store. Dummy recovery is no-referrer with no observed downstream literal
+token; own logout204 preserves author10/player2 baseline sessions. This does not
+prove encoded/unknown-secret absence, real-token lifecycle, exports or deployment. A separate isolated101-board packet records42 HTTP200 responses:
 catalog requests100/101 return100 cards/10,000 cells, while feed100 returns24.
 Catalog ASCII/Unicode/shared normalized-media examples measure6,729,104/
 15,282,104/17,714,004 rendered JSON bytes (offline gzip6:2,129,922/476,862/
 530,464), with5/5/12 SQL queries. These scoped examples are not absolute legal
 maxima, wire/CDN, browser or production concurrency/SLO evidence. The email-query
-choice and target ingress/provider behavior remain open.
-No global production-readiness claim follows from these local results.
+choice and target ingress/provider behavior remain open. Four mocked Explore
+client checks consume the actual default24 payload size, render24 cards at390/1440
+and pass scroll/programmatic card focusability/href, overflow and error checks.
+Programmatic link.focus() does not prove Tab traversal or keyboard navigation. JSON read/parse is
+3.6–3.9ms for ASCII and18.3–18.4ms for shared-media Unicode; single-case observed
+completion148.5–477.8ms includes layout/automation, with long tasks observed.
+These are bounded local mocked-delivery measurements, not feed SSR, actual board
+navigation/media/wire, isolated normalization, repeatability or production SLOs.
+No mandatory reduction, product failure or global production-readiness claim
+follows from these local results.
+
+Current follow-up evidence adds one verified isolated native Chromium149 password-
+manager seed and Change email current-password autofill with intended new email
+preserved; other forms remain unverified, with no product defect or section7
+closure. Thirty-six actual account-control visual states include true Tab focus,
+hover/press/pending states, with no overflow/clipping; width/feedback placement
+choices remain pending. Optimized44 lacks pending export live feedback. A narrow
+aria-live/aria-atomic source patch passes43 account tests, typecheck/scoped
+lint/format and independent review; actual3194 development DOM/AX shows polite,
+atomic pending feedback and unchanged styles/geometry. This is not a new optimized
+image, final source gate, deployment or screen-reader speech verification.
+Three repeated maximum24 mocked Unicode/shared-media controls show layout-dominant
+~300ms long tasks. The subsequent one-declaration content-visibility:auto preview
+fix reduces candidate maximum Layout to30–41ms, with no recorded long tasks during
+eight jumps/run. A24-flow Chrome/Firefox/WebKit matrix and dense-preview regression
+in all four configured profiles preserve content/scroll/focus/resize behavior;
+raster/native Find/assistive-technology and real-device/SLO limits remain. Final
+source625 unit tests, typecheck/lint/format pass; optimized image remains44 and
+committed034 CI excludes these later CSS/export source/test changes.
+GitGuardian check113571385792 on committed034 reports FAILURE with6 findings
+across123 commits and0 API annotations; details are dashboard-only and remain
+unverified pending user-provided findings. Repository secret CI passes; the older
+single proven fixture false positive cannot classify these six findings.
 
 Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
 finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke

@@ -39,15 +39,17 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-09
 
-Latest completed gate: exact `44edf0ed0d930ed0d0aedd99fe46783a6cdf0320`
-[CI37849732326](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37849732326)
-passes all12 jobs:446 backend,625 frontend/45 files,448 smoke/12 intentional skips
-and125 full-stack cases, with no reported flakes/retries. Tested merge
-`50e7b23bd2ad8b2754f8ba881b08f47f07049988` and branch44 share full tree
-`0ce5a18e785aad40c482919ce085c4b2b7c42891`. This covers the header-prefetch
-correction, both production images and Release; the canonical configured-origin
-local flow also passes at1440x1000/390x844. See the
-[dated gate evidence](production-readiness-evidence.md#2026-10-09--completed-exact44-gate-and-native-200-zoom-requirement)
+Latest completed committed-source gate: exact
+`0341e77428c441423151aa6fd51f5892ae6dbcaa`
+[CI37853375991](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37853375991)
+finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,448 smoke/12
+intentional skips and125 full-stack cases; no reported flakes/retries. This is a
+workflow_dispatch on exact034 full tree
+`ea58350e492f21afe4f2f836c5d5ce1fb9ee4407`, not a PR merge gate. Both production
+images and Release pass. The subsequent export live-region and preview content-visibility CSS/test
+patches are not covered by this gate. Earlier exact44 canonical local/native packets
+retain their recorded image/runtime scope. See the
+[dated034 evidence](production-readiness-evidence.md#2026-10-09--completed-committed034-gate-and-pending-export-patch)
 and [canonical/RSC limits](production-readiness-evidence.md#2026-10-09--canonical-local44-header-flow-and-bounded-rsc-attribution).
 
 Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
@@ -342,7 +344,7 @@ original prompt remains unchanged.
 - [x] 73. TESTS — Verified before deployment: sourcea2c2d6f passes402 backend,589 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky summary. Earlier source preparation cancellation and same-source failed-job repeat are retained. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on dated optimized local builds, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
-- [ ] 76. NETWORK PANEL — Partial:16 optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. Canonical exact44 guest flow is clean at both widths, removes the current-Discover prefetch and retains other-route prefetch; its115 request observations contain no credential/contact query keys. Bounded RSC comparison separates navigation phases but cannot establish cancellation causality or backend amplification. The subsequent isolated101-board packet records42 HTTP200 responses: catalog requests100/101 clamp to100 cards/10,000 cells; feed100 clamps to24. Catalog ASCII/Unicode/shared normalized-media examples measure6,729,104/15,282,104/17,714,004 JSON bytes (offline gzip6:2,129,922/476,862/530,464), with5/5/12 SQL queries. These are not absolute legal maxima, wire/CDN, browser or concurrency/SLO measurements. Unchanged-source projections, query retention/retry and no-referrer configuration have bounded evidence, but nine archivedc74 CI artifacts contain no raw network/HAR/trace proof of account/recovery transport privacy. A subsequent transport capture fails on three CLI session closures and proves no privacy finding; author10/player2 baseline sessions remain unchanged. Protected response bodies/headers, downstream URLs/Referer, the standalone email-query decision and target ingress/provider behavior remain open. Exact44 source gate and canonical-origin refresh pass; no section76 closure.
+- [ ] 76. NETWORK PANEL — Partial:16 optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. Canonical exact44 guest flow is clean at both widths, removes the current-Discover prefetch and retains other-route prefetch; its115 request observations contain no credential/contact query keys. Bounded RSC comparison separates navigation phases but cannot establish cancellation causality or backend amplification. The subsequent isolated101-board packet records42 HTTP200 responses: catalog requests100/101 clamp to100 cards/10,000 cells; feed100 clamps to24. Catalog ASCII/Unicode/shared normalized-media examples measure6,729,104/15,282,104/17,714,004 JSON bytes (offline gzip6:2,129,922/476,862/530,464), with5/5/12 SQL queries. These are not absolute legal maxima, wire/CDN, browser or concurrency/SLO measurements. Unchanged-source projections, query retention/retry and no-referrer configuration have bounded evidence, but nine archivedc74 CI artifacts contain no raw network/HAR/trace proof of account/recovery transport privacy. A subsequent direct-runner transport packet supersedes the three failed CLI attempts within a cachedb6-backend scope:673 requests and36 inspected public/nonowner API bodies have zero literal known-fixture email/raw-key URL/Referer or public-body matches; protected own APIs return200 private/no-store and343 RSC responses have no-store headers, with RSC bodies unread. Own email in authenticated board HTML is expected and private/no-store; dummy recovery uses no-referrer and no observed downstream literal token. Baseline author10/player2 sessions remain unchanged after own logout204. Matching is literal, not an encoded/unknown-secret guarantee. Four mocked Explore default24 checks render24 cards at390/1440 with programmatic card focusability/href and scrolling, no overflow/errors and measured long tasks; APIcap100 is not the ordinary UI page size. Full lifecycle/export/RSC-body coverage, actual delivery/media/concurrency/SLO, the standalone email-query decision and target ingress/provider behavior remain open. Exact44 source gate and canonical-origin refresh pass; no section76 closure.
 - [x] 77. HTTP STATUS CODES — Verified before deployment: the root's intentional 307 redirect resolves to canonical Discover HTTP 200; direct valid and missing pages return 200/404, trailing-slash normalization returns 308 with the query preserved, a guest on protected API routes receives 401 with a Session challenge, and authenticated forbidden or CSRF-invalid requests still receive 403. Real-domain edge status handling remains for rollout.
 - [ ] 78. REDIRECTS — Partial: login/logout, root, and trailing-slash redirects work with preserved query and no loop; public HTTP→HTTPS, host alias, and legacy URL policy need a domain.
 - [x] 79. STATIC ASSETS — Verified before deployment: production candidate icon/social/static assets, normalized images, protected ZIP downloads, branding and case-sensitive routing were observed; external fonts, PWA manifest and standalone static documents are absent.
@@ -373,16 +375,45 @@ original prompt remains unchanged.
 - [ ] 104. ROLLBACK — Partial: additive migrations and an existing-data downgrade/upgrade rehearsal support backward compatibility; no remote feature flags exist. The isolated immutable c1fc2d7/a3e1c00 backend rehearsal restores old web while retaining forward schema/new worker and checks durable records plus existing/fresh sessions. Its sanitized artifact and reusable command are saved; actual prior deployment, registry/config retention and the target-platform rollback command remain unproven.
 - [ ] 105. FINAL EXECUTION SEQUENCE — Partial: sourcea2c2d6f passes the complete CI gate and a bounded exact-image registration/player/report/cache packet; earlier configured065 checks retain their scope. Remaining applicable local requirements and the target deployment sequence stay open.
 
+Current follow-up evidence adds one verified isolated native Chromium149 password-
+manager seed and Change email current-password autofill with intended new email
+preserved; other forms remain unverified, with no product defect or section7
+closure. Thirty-six actual account-control visual states include true Tab focus,
+hover/press/pending states, with no overflow/clipping; width/feedback placement
+choices remain pending. Optimized44 lacks pending export live feedback. A narrow
+aria-live/aria-atomic source patch passes43 account tests, typecheck/scoped
+lint/format and independent review; actual3194 development DOM/AX shows polite,
+atomic pending feedback and unchanged styles/geometry. This is not a new optimized
+image, final source gate, deployment or screen-reader speech verification.
+Three repeated maximum24 mocked Unicode/shared-media controls show layout-dominant
+~300ms long tasks. The subsequent one-declaration content-visibility:auto preview
+fix reduces candidate maximum Layout to30–41ms, with no recorded long tasks during
+eight jumps/run. A24-flow Chrome/Firefox/WebKit matrix and dense-preview regression
+in all four configured profiles preserve content/scroll/focus/resize behavior;
+raster/native Find/assistive-technology and real-device/SLO limits remain. Final
+source625 unit tests, typecheck/lint/format pass; optimized image remains44 and
+committed034 CI excludes these later CSS/export source/test changes.
+GitGuardian check113571385792 on committed034 reports FAILURE with6 findings
+across123 commits and0 API annotations; details are dashboard-only and remain
+unverified pending user-provided findings. Repository secret CI passes; the older
+single proven fixture false positive cannot classify these six findings.
+
 ## Remaining local and operator work
 
-Section76 still needs bounded current-origin account/recovery response-body,
-cache-header and downstream URL/Referer observations; successful CI reports
-cannot supply absent transport captures. The standalone email-query choice,
+Section76 now has scoped direct-runner public/nonowner body, protected own-cache
+and dummy-recovery URL/Referer observations; the three failed CLI attempts remain
+historical. RSC bodies, encoded/unknown-secret matching, real recovery lifecycle,
+exports and target ingress/provider delivery remain unverified. Default24 Explore
+client rendering has bounded mocked-delivery evidence; actual wire/media/default
+feed SSR, repeatability and agreed performance targets remain separate. The
+standalone email-query choice,
 recovery-link/session/chip layout choices and both-theme native favicon visibility
 remain unresolved. Continue the applicable unchecked bullets with their recorded
 source/runtime limits; domain, delivery, ingress/cache and provider evidence
-require the real deployment or operator inputs. Exact44 CI and the canonical
-header-flow refresh are complete.
+require the real deployment or operator inputs. Committed034 CI and the earlier canonical
+header-flow refresh are complete. The subsequent export live-region and preview CSS/test patches still
+need their final committed-source gate/optimized verification. GitGuardian findings
+need dashboard details and classification; no production-secret status is inferred.
 
 ## Deployment handoff, separate from predeployment completion
 

@@ -881,6 +881,8 @@ export function AccountSettings({
               type="button"
               className="button button--secondary"
               disabled={Boolean(pending)}
+              aria-live="polite"
+              aria-atomic="true"
               onClick={() => void requestExport()}
             >
               {pending === "export" ? "Preparing export…" : "Request data export"}

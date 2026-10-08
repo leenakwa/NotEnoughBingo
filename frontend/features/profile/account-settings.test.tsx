@@ -1114,14 +1114,25 @@ describe("AccountSettings deletion grace period", () => {
     });
     render(<AccountSettings profile={profile} onProfileChange={vi.fn()} />);
     const button = await screen.findByRole("button", { name: "Request data export" });
+    expect(button).toHaveAttribute("aria-live", "polite");
+    expect(button).toHaveAttribute("aria-atomic", "true");
     vi.useFakeTimers();
     try {
       await act(async () => fireEvent.click(button));
+      const pendingButton = screen.getByRole("button", { name: "Preparing export…" });
+      expect(pendingButton).toBe(button);
+      expect(pendingButton).toBeDisabled();
+      expect(pendingButton).toHaveAttribute("aria-live", "polite");
+      expect(pendingButton).toHaveAttribute("aria-atomic", "true");
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1000);
       });
       expect(mocks.getExport).toHaveBeenCalledTimes(2);
       expect(screen.getByText("Your data export is ready to download.")).toBeVisible();
+      expect(screen.getByText("Your data export is ready to download.")).toHaveAttribute(
+        "role",
+        "status",
+      );
       expect(screen.getByRole("link", { name: "Download data export" })).toHaveAttribute(
         "href",
         "/api/v1/exports/export-job/download/",
