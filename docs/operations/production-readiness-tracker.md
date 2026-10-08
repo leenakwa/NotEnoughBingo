@@ -39,7 +39,25 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
-Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
+Exact `0d2d96b` [CI37841457182](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37841457182)
+passes all12 jobs:446 backend,619 frontend/44 files,436 smoke/12 intentional skips
+and125 full-stack cases, with no reported flakes/retries. Both production images
+and Release pass. Export creation503 recovery, synchronized password-reset
+logout/login and public-profile Unfollow503→keyboard retry→real204/API/reload
+at320/1710 pass. Tested merge `52ef38f97db3b4bcade5c552c07929111815484a`
+shares HEAD's full tree `b2a2f5a587ce3f401018a18a8cade1cf29c57576`.
+Original logs, all nine artifacts, metadata, integrity checks and checksums are
+archived privately under `evidence-0d2d96b-2026-10-08/ci/result.json`.
+
+Two subsequently applied, reviewed patches change only existing account-native
+and live-product tests. Synthetic empty-session states pass8/8 at320/1710 across
+Chromium/mobile Chromium/Firefox/WebKit. The added held logout503→actual204/login
+and real owned current-session revocation assertions await the next exact CI;
+this completed gate does not verify those additions. No application behavior,
+rate limits, timeouts or retries change. No deployment or broad readiness claim
+follows.
+
+Earlier failed gate —2026-10-08: Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
 finishes with ten successful jobs and failed full-stack/Release. All four smoke
 profiles and both production images pass:446 backend,619 frontend/44 files,436
 smoke/12 intentional skips; live120 pass, two fail and three do not run. Each
@@ -50,13 +68,13 @@ uses a success-only response helper; it throws on the intended503 before its
 remaining assertions. The password-reset journey interrupts logout with hard
 navigation approximately3.8ms after the POST starts; the aborted request leaves a
 session-expired dialog intercepting final login. Trace shows no final login POST.
-Both test synchronization corrections are prepared without changing application
-behavior, timeouts, retries or rate limits; their runtime awaits the next gate.
-A public-profile Unfollow503→keyboard retry→real204/API/reload extension also
-awaits that gate. Previous green38fd does not cover these additions.
+Both test synchronization corrections and the public-profile Unfollow503→keyboard
+retry→real204/API/reload extension subsequently pass exact0d CI above. The failed
+run remains historical evidence; application behavior, timeouts, retries and rate
+limits are unchanged.
 
 
-Latest completed green source `38fd3d1`
+Earlier green source `38fd3d1`
 [CI37829451235](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37829451235)
 passes all12 jobs:446 backend,619 frontend/44 files,380 smoke/12 intentional skips
 and125 full-stack cases, both images and Release. No reported flakes/retries.
@@ -64,8 +82,8 @@ Extended avatar attachment/removal failure recovery passes9.3s; Retry/Resend
 competition at320/1710 passes in all four browser profiles. Tested merge and
 branch share tree `28bf9d654eef1378420b357e127bd928d5285fd8`. Original logs, all
 nine artifacts, metadata and checksums are archived privately. Subsequent export
-failure coverage and backend connection changes are included in the failed761
-gate above; its corrections await the next exact-source gate.
+failure coverage and backend connection changes first reach failed761; the
+corrections subsequently pass exact0d above.
 
 Previous green source `a164b1b`
 [CI37826157791](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37826157791)
@@ -248,7 +266,7 @@ original prompt remains unchanged.
 - [ ] 21. RESPONSIVE DESIGN — Partial: 320–2560 px board/editor gate, mobile WebKit, landscape/short-height inspector, and simulated keyboard-sized modal passed; real address-bar, keyboard, and iPhone safe-area behavior still need device evidence.
 - [x] 22. TOUCH UX — Verified before deployment: 44 px mobile touch targets, tap navigation/language/play/editor actions, optional drag alternatives, and no hover/tooltip-only critical controls.
 - [x] 23. KEYBOARD UX — Verified before deployment: navigation, Enter/Space/Escape, visible focus, and cross-browser report-dialog focus trap/return.
-- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy now passes. Three unnamed editor sliders gained explicit accessible names and values, confirmed in the browser tree. The independent current ARIA/template inventory and two corrected semantics, ten live state/width Axe/contrast probes and native checkbox visual evidence pass; actual 200% browser zoom remains unavailable and unchecked. See accessibility-verification-matrix.md.
+- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy now passes. Three unnamed editor sliders gained explicit accessible names and values, confirmed in the browser tree. The independent current ARIA/template inventory and two corrected semantics, ten live state/width Axe/contrast probes and native checkbox visual evidence pass; native Chrome200% guest discovery/play/login/register/auth-gate observations now pass within a bounded cached-image scope; authenticated settings/editor/recovery/report zoom remains unchecked. See accessibility-verification-matrix.md.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: placeholder inventory and product/auth names checked; legal operator copy and broader error-message exposure remain.
 - [ ] 26. LONG-CONTENT TORTURE TEST — Partial: prior account/title limits, 254-character email, long URL/multilingual comment and profile/card/cell checks retain their scope. The exact-a2 maximum-content packet exposes horizontal overflow in Explore active-filter labels at320px with permitted80-character title/author and15 tags of50 characters. Wrapping and overflow are reopened; the user’s choice of full wrapping or ellipsis is pending. The packet does not establish a new temporal layout shift.
 - [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.

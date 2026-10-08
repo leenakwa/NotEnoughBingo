@@ -5,7 +5,34 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
+Exact `0d2d96b` [CI37841457182](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37841457182)
+passes all12 jobs:446 backend,619 frontend/44 files,436 smoke/12 intentional skips
+and125 full-stack cases, with no reported flakes/retries. Both production images
+and Release pass. Export creation503 recovery, synchronized password-reset
+logout/login and public-profile Unfollow503→keyboard retry→real204/API/reload
+at320/1710 pass. Tested merge `52ef38f97db3b4bcade5c552c07929111815484a`
+shares HEAD's full tree `b2a2f5a587ce3f401018a18a8cade1cf29c57576`.
+Original logs, all nine artifacts, metadata, integrity checks and checksums are
+archived privately under `evidence-0d2d96b-2026-10-08/ci/result.json`.
+
+Two subsequently applied, reviewed patches change only existing account-native
+and live-product tests. Synthetic empty-session states pass8/8 at320/1710 across
+Chromium/mobile Chromium/Firefox/WebKit. The added held logout503→actual204/login
+and real owned current-session revocation assertions await the next exact CI;
+this completed gate does not verify those additions. No application behavior,
+rate limits, timeouts or retries change. No deployment or broad readiness claim
+follows.
+
+Native Chrome200% is now observed in one owned Guest window on local18584 with
+cached frontend05d148a: Discover/game reflow and keyboard interactions, login and
+registration lower-control focus/internal scrolling/Escape return, readable
+support text and the guest Create auth gate. Chrome Reset confirms100% before
+only that Guest window closes. No form values, submissions or authentication
+occur. This is bounded cached-image evidence; authenticated settings/editor,
+recovery/report zoom and exact CSS viewport remain unchecked. Global section24
+stays partial; support-placeholder delivery remains an operator check.
+
+Earlier failed gate —2026-10-08: Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
 finishes with ten successful jobs and failed full-stack/Release. All four smoke
 profiles and both production images pass:446 backend,619 frontend/44 files,436
 smoke/12 intentional skips; live120 pass, two fail and three do not run. Each
@@ -16,12 +43,12 @@ uses a success-only response helper; it throws on the intended503 before its
 remaining assertions. The password-reset journey interrupts logout with hard
 navigation approximately3.8ms after the POST starts; the aborted request leaves a
 session-expired dialog intercepting final login. Trace shows no final login POST.
-Both test synchronization corrections are prepared without changing application
-behavior, timeouts, retries or rate limits; their runtime awaits the next gate.
-A public-profile Unfollow503→keyboard retry→real204/API/reload extension also
-awaits that gate. Previous green38fd does not cover these additions.
+Both test synchronization corrections and the public-profile Unfollow503→keyboard
+retry→real204/API/reload extension subsequently pass exact0d CI above. The failed
+run remains historical evidence; application behavior, timeouts, retries and rate
+limits are unchanged.
 
-Latest completed green gate —2026-10-08: Exact `38fd3d1`
+Earlier green gate —2026-10-08: Exact `38fd3d1`
 [CI37829451235](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37829451235)
 passes all12 jobs:446 backend,619 frontend/44 files,380 smoke/12 intentional skips
 and125 full-stack cases, with no reported flakes/retries. Both images and Release
@@ -38,8 +65,8 @@ threshold requests return401. The next backend image closes internal connections
 to avoid this mechanism. This also removes Nginx-to-backend reuse: actual target
 latency, connection churn and sustained throughput require deployment measurement.
 The cold/unequal clone latency sample is not a capacity result. The subsequent761
-gate builds both images but fails two full-stack tests; corrections await their
-own exact CI. No production
+gate builds both images but fails two full-stack tests; the corrections
+subsequently pass exact0d CI. No production
 deployment or broad readiness claim follows.
 
 Earlier observation —2026-10-08: Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)

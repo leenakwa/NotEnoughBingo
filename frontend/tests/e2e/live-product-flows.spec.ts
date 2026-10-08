@@ -5074,6 +5074,84 @@ test.describe("live full-stack product flows", () => {
           async () => (await fetch("/api/v1/auth/me/", { credentials: "same-origin" })).status,
         ),
       ).toBe(200);
+      const accountCard = page.locator(".settings-card").filter({
+        has: page.getByRole("heading", { name: "Signed-in account", exact: true }),
+      });
+      const logoutCookies = await page.context().cookies(page.url());
+      const logoutSession = logoutCookies.find((cookie) => cookie.name === "neb_session");
+      const logoutCsrf = logoutCookies.find((cookie) => cookie.name === "neb_csrf");
+      expect(logoutSession).toBeDefined();
+      expect(logoutCsrf).toBeDefined();
+      const profileUrl = page.url();
+      const logoutOrigin = new URL(profileUrl).origin;
+      const matchesLogout = (url: URL) =>
+        url.origin === logoutOrigin && url.pathname === "/api/v1/auth/logout/" && !url.search;
+      const logoutMessage = "Unable to log out right now. Please try again.";
+      let logoutWrites = 0;
+      let releaseLogout!: () => void;
+      const heldLogout = new Promise<void>((resolve) => {
+        releaseLogout = resolve;
+      });
+      let logoutHandler: Promise<void> | undefined;
+      const failedLogout = (route: Route) => {
+        const outgoing = route.request();
+        if (outgoing.method() !== "POST") return route.continue();
+        logoutWrites += 1;
+        logoutHandler = (async () => {
+          const requestCookies = ((await outgoing.headerValue("cookie")) ?? "")
+            .split(";")
+            .map((cookie) => cookie.trim());
+          expect(requestCookies.includes(`${logoutSession!.name}=${logoutSession!.value}`)).toBe(
+            true,
+          );
+          expect((await outgoing.headerValue("x-csrftoken")) === logoutCsrf!.value).toBe(true);
+          await heldLogout;
+          await route.fulfill({
+            status: 503,
+            json: { error: { code: "unavailable", message: logoutMessage } },
+          });
+        })();
+        return logoutHandler;
+      };
+      await page.route(matchesLogout, failedLogout);
+      try {
+        const rejectedLogout = page.waitForResponse(
+          (response) =>
+            matchesLogout(new URL(response.url())) && response.request().method() === "POST",
+        );
+        await accountCard.getByRole("button", { name: "Log out", exact: true }).click();
+        await expect.poll(() => logoutWrites).toBe(1);
+        const loggingOut = accountCard.getByRole("button", { name: "Logging out…", exact: true });
+        await expect(loggingOut).toBeDisabled();
+        await loggingOut.evaluate((button: HTMLButtonElement) => {
+          button.click();
+          button.click();
+        });
+        expect(logoutWrites).toBe(1);
+        await expect(page).toHaveURL(profileUrl);
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        releaseLogout();
+        expect((await rejectedLogout).status()).toBe(503);
+        await logoutHandler;
+        await expect(accountCard.getByRole("alert")).toHaveText(logoutMessage);
+        await expect(page.locator(".account-settings").getByRole("alert")).toHaveCount(1);
+        await expect(
+          accountCard.getByRole("button", { name: "Log out", exact: true }),
+        ).toBeEnabled();
+        expect(logoutWrites).toBe(1);
+        await expect(page).toHaveURL(profileUrl);
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        const stillSignedIn = await page.request.get("/api/v1/auth/me/");
+        expect(stillSignedIn.status()).toBe(200);
+        expect((await stillSignedIn.json()).id).toBe(fixture.users.player.id);
+      } finally {
+        releaseLogout();
+        try {
+          await logoutHandler;
+        } finally {
+          await page.unroute(matchesLogout, failedLogout);
+        }
+      }
       const signedOut = await waitForResponse(page, "/api/v1/auth/logout/", "POST", () =>
         page.getByRole("button", { name: "Log out", exact: true }).click(),
       );
@@ -5926,6 +6004,7 @@ for (const preference of ["privacy", "notification"] as const) {
 test("session sign-out shows scoped progress and retries without losing credential work", async ({
   page,
   playwright,
+  browser,
 }) => {
   await authenticateAs(page, "author");
   const marker = `NEB isolated session ${randomUUID()}`;
@@ -5935,6 +6014,8 @@ test("session sign-out shows scoped progress and retries without losing credenti
   });
   let release: () => void = () => undefined;
   let targetId = "";
+  let journeyFailed = false;
+  let currentContext: BrowserContext | undefined;
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
   try {
@@ -6018,19 +6099,145 @@ test("session sign-out shows scoped progress and retries without losing credenti
     expect(revoked.status()).toBe(200);
     expect((await revoked.json()).user).toBeNull();
     targetId = "";
+
+    // Two distinct revocations need two real logins to this same disposable context.
+    expect((await secondary.get("/api/v1/auth/csrf/")).status()).toBe(200);
+    const reloginCsrf = (await secondary.storageState()).cookies.find(
+      (cookie) => cookie.name === "neb_csrf",
+    );
+    expect(reloginCsrf).toBeDefined();
+    const relogin = await secondary.post("/api/v1/auth/login/", {
+      headers: { "X-CSRFToken": reloginCsrf!.value },
+      data: { email: fixture.users.author.email, password: E2E_FIXTURE_PASSWORD },
+    });
+    expect(relogin.status()).toBe(200);
+    expect((await relogin.json()).user.id).toBe(fixture.users.author.id);
+    const ownedSessions = await secondary.get("/api/v1/auth/sessions/");
+    expect(ownedSessions.status()).toBe(200);
+    const ownedMetadata = (await ownedSessions.json()) as {
+      results: { id: string; user_agent: string; current: boolean }[];
+    };
+    const current = ownedMetadata.results.filter((item) => item.current);
+    expect(current).toHaveLength(1);
+    expect(current[0]!.user_agent).toBe(marker);
+    expect(current[0]!.id).not.toBe(target!.id);
+    targetId = current[0]!.id;
+    const authenticatedState = await secondary.storageState();
+    const ownedCookie = authenticatedState.cookies.find((cookie) => cookie.name === "neb_session");
+    expect(ownedCookie?.value).toBeTruthy();
+    expect((await secondary.get("/api/v1/auth/me/")).status()).toBe(200);
+    currentContext = await browser.newContext({
+      baseURL: test.info().project.use.baseURL,
+      userAgent: marker,
+      storageState: authenticatedState,
+    });
+    const currentPage = await currentContext.newPage();
+    currentPage.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+    await currentPage.goto("/profile");
+    const currentSection = currentPage.locator(".settings-card").filter({
+      has: currentPage.getByRole("heading", { name: "Active sessions", exact: true }),
+    });
+    const currentRow = currentSection.getByRole("listitem").filter({ hasText: marker });
+    await expect(currentRow).toHaveCount(1);
+    await expect(currentRow.getByText("This device", { exact: true })).toBeVisible();
+    const currentPath = `/api/v1/auth/sessions/${targetId}/`;
+    const currentRevoked = await waitForResponse(currentPage, currentPath, "DELETE", () =>
+      currentRow.getByRole("button", { name: "Sign out", exact: true }).press("Enter"),
+    );
+    expect(currentRevoked.status()).toBe(204);
+    const sentCookies = (await currentRevoked.request().headerValue("cookie")) ?? "";
+    expect(sentCookies.split("; ")).toContain(`neb_session=${ownedCookie!.value}`);
+    await expect(currentPage).toHaveURL(/\/login$/);
+    await expect(currentPage.getByRole("heading", { name: "Log in", exact: true })).toBeVisible();
+    await expect(
+      currentPage.getByRole("region", { name: "Account settings", exact: true }),
+    ).toHaveCount(0);
+    await expect(currentPage.getByLabel("New email address", { exact: true })).toHaveCount(0);
+    const currentGuest = await secondary.get("/api/v1/auth/session/");
+    expect(currentGuest.status()).toBe(200);
+    expect((await currentGuest.json()).user).toBeNull();
+    expect((await secondary.get("/api/v1/auth/me/")).status()).toBe(401);
+    const primaryIdentity = await page.context().request.get("/api/v1/auth/me/");
+    expect(primaryIdentity.status()).toBe(200);
+    expect((await primaryIdentity.json()).id).toBe(fixture.users.author.id);
+    const primarySession = await page.context().request.get("/api/v1/auth/session/");
+    expect(primarySession.status()).toBe(200);
+    expect((await primarySession.json()).user.id).toBe(fixture.users.author.id);
+    await expect(page).toHaveURL(/\/profile$/);
+    await expect(destination).toHaveValue("unsent-session-test@example.test");
+    targetId = "";
     expect(errors).toEqual([]);
+  } catch (error) {
+    journeyFailed = true;
+    throw error;
   } finally {
     release();
-    if (targetId) {
-      const api = page.context().request;
-      const csrf = (await api.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
-      expect(csrf).toBeDefined();
-      const cleaned = await api.delete(`/api/v1/auth/sessions/${targetId}/`, {
-        headers: { "X-CSRFToken": csrf!.value },
-      });
-      expect(cleaned.status()).toBe(204);
+    const cleanupErrors: unknown[] = [];
+    let sessionCleanupComplete = false;
+    try {
+      if (targetId) {
+        const api = page.context().request;
+        const remaining = await api.get("/api/v1/auth/sessions/");
+        expect(remaining.status()).toBe(200);
+        const metadata = (await remaining.json()) as {
+          results: { id: string; user_agent: string; current: boolean }[];
+        };
+        const owned = metadata.results.find((item) => item.id === targetId);
+        if (owned) {
+          expect(owned.user_agent).toBe(marker);
+          expect(owned.current).toBe(false);
+          const csrf = (await api.storageState()).cookies.find(
+            (cookie) => cookie.name === "neb_csrf",
+          );
+          expect(csrf).toBeDefined();
+          const cleaned = await api.delete(`/api/v1/auth/sessions/${owned.id}/`, {
+            headers: { "X-CSRFToken": csrf!.value },
+          });
+          expect(cleaned.status()).toBe(204);
+        }
+        sessionCleanupComplete = true;
+      }
+    } catch (error) {
+      cleanupErrors.push(error);
     }
-    await secondary.dispose();
+    // A login can set its owned cookie before metadata retrieval or assertions fail.
+    // This fresh context only ever received disposable logins, never fixture cookies.
+    if (journeyFailed && !sessionCleanupComplete) {
+      try {
+        let state = await secondary.storageState();
+        if (state.cookies.some((cookie) => cookie.name === "neb_session" && cookie.value)) {
+          if (!state.cookies.some((cookie) => cookie.name === "neb_csrf" && cookie.value)) {
+            expect((await secondary.get("/api/v1/auth/csrf/")).status()).toBe(200);
+            state = await secondary.storageState();
+          }
+          const csrf = state.cookies.find((cookie) => cookie.name === "neb_csrf");
+          expect(csrf?.value).toBeTruthy();
+          const logout = await secondary.post("/api/v1/auth/logout/", {
+            headers: { "X-CSRFToken": csrf!.value },
+          });
+          expect([204, 401]).toContain(logout.status());
+        }
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    try {
+      await currentContext?.close();
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
+      await secondary.dispose();
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    if (cleanupErrors.length) {
+      if (!journeyFailed) throw new AggregateError(cleanupErrors, "Owned session cleanup failed.");
+      test.info().annotations.push({
+        type: "cleanup",
+        description: `${cleanupErrors.length} owned-session cleanup operation(s) failed; original journey failure preserved.`,
+      });
+    }
   }
 });
 

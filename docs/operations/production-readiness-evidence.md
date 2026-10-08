@@ -7670,3 +7670,67 @@ reentrancy. No extra login/registration/seed traffic, local shared-fixture run,
 application/UI changes or weakened browser assertions are introduced. External
 TypeScript/lint/format and independent patch review pass; combined exact CI must
 prove the runtime and downstream compatibility. No global checkbox is advanced.
+
+
+### 2026-10-09 — Completed exact0d gate and applied account-test additions
+
+Exact `0d2d96b` [CI37841457182](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37841457182)
+passes all12 jobs:446 backend,619 frontend/44 files,436 smoke/12 intentional skips
+and125 full-stack cases, with no reported flakes/retries. Both production images
+and Release pass. Export creation503 recovery, synchronized password-reset
+logout/login and public-profile Unfollow503→keyboard retry→real204/API/reload
+at320/1710 pass. Tested merge `52ef38f97db3b4bcade5c552c07929111815484a`
+shares HEAD's full tree `b2a2f5a587ce3f401018a18a8cade1cf29c57576`.
+Original logs, all nine artifacts, metadata, integrity checks and checksums are
+archived privately under `evidence-0d2d96b-2026-10-08/ci/result.json`.
+
+Two subsequently applied, reviewed patches change only existing account-native
+and live-product tests. Synthetic empty-session states pass8/8 at320/1710 across
+Chromium/mobile Chromium/Firefox/WebKit. The added held logout503→actual204/login
+and real owned current-session revocation assertions await the next exact CI;
+this completed gate does not verify those additions. No application behavior,
+rate limits, timeouts or retries change. No deployment or broad readiness claim
+follows.
+
+The new logout branch stays inside the original password-reset journey. It holds
+cookie/CSRF-bound503, checks disabled native click suppression, scoped error and
+unchanged authentication, then awaits real logout204 and application login.
+The session journey retains existing non-current held503/actual retry, then uses
+one additional disposable same-author login, a separate owned browser context
+and transferred own cookie to revoke its actual current session by exact-ID
+DELETE204. The old secondary cookie becomes guest401; the primary session and
+unsubmitted profile draft remain untouched. This is applied test source, not
+runtime proof. Failed setup now attempts exact owned cleanup and, when metadata
+cleanup is incomplete, own secondary logout without masking the original error;
+owned context closure/disposal are independent. Failure-path server cleanup can
+still fail and is not runtime verified. No callback-level reentrancy claim follows
+from disabled native `.click()` suppression.
+
+External `/tmp/neb-current-session-empty-oct08/checks.json` records8/8 synthetic
+empty-session cases at320/1710 in all four profiles, retries0, plus successful
+format/lint/typecheck/collection/apply checks. The added live assertions and
+cleanup paths remain unrun until next exact-source CI. Their one additional login
+has unmeasured full-suite runtime/rate interaction; limits, retries and timeouts
+are unchanged. No checklist counter or section verdict is advanced.
+
+### 2026-10-09 — Bounded native Chrome200% guest observations
+
+The root's native CUA observes actual Chrome200% in browser-chrome accessibility
+state and screenshots on local18584 with cached frontend05d148a. In an owned
+Guest window, Discover header/catalog reflow and keyboard opening of E2E Revision
+Board pass. Fresh coffee click then Space untoggle and Right→Sunny window retain
+full cell text and restore marked count0. Login lower buttons show visible Tab
+focus with internal vertical scrolling; last→Close and Shift+Tab Close→last wrap,
+and Escape restores the trigger. Support text wraps readably; the configured
+support placeholder's delivery remains an operator check. Guest Create shows a
+readable authentication gate, not an authenticated editor. Registration's lower
+Log In link is reached after six Tabs with visible focus/internal scrolling;
+Escape returns to Create account.
+
+No form values, submissions or authentication occur. Chrome Reset confirms100%
+before only the owned Guest window closes. This supersedes the earlier native
+zoom-unavailable observation only within this guest/cached-image scope. Exact
+CSS viewport, current full-image equivalence, authenticated settings/editor,
+recovery/report zoom, and all-flow200% certification remain unverified. Global
+section24 remains unchecked; no counters, UI requirements or deployment claims
+change.

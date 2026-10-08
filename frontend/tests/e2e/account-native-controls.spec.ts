@@ -175,6 +175,26 @@ async function expectPendingGuard(page: Page, form: Locator, requests: unknown[]
 }
 
 for (const width of [320, 1710]) {
+  // Synthetic empty-list rendering only; this does not establish server session state.
+  test(`account empty sessions render without actions at ${width}`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await openAccount(page, width);
+    const sessions = page.locator(".settings-card").filter({
+      has: page.getByRole("heading", { name: "Active sessions", exact: true }),
+    });
+    await expect(
+      sessions.getByText("No active sessions were returned.", { exact: true }),
+    ).toBeVisible();
+    await expect(sessions.getByRole("list")).toHaveCount(0);
+    await expect(sessions.getByRole("listitem")).toHaveCount(0);
+    await expect(sessions.getByRole("button", { name: /^Sign(?:ing)? out/ })).toHaveCount(0);
+    await expect(sessions.getByText("Loading active sessions…", { exact: true })).toHaveCount(0);
+    await expect(sessions.getByRole("alert")).toHaveCount(0);
+    await expectNoOverflow(page);
+    expect(errors).toEqual([]);
+  });
+
   test(`account email native constraints, keyboard, and raw FormData at ${width}`, async ({
     page,
   }) => {

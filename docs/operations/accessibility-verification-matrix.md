@@ -69,7 +69,23 @@ full-severity Axe evidence. The probe is not full WCAG certification.
 
 ## Native browser capability limits
 
-Actual200% browser zoom, light/dark browser-chrome favicon visibility, native
-screen-reader behavior and physical devices remain unchecked. Viewport or
-CSS/device-scale changes do not establish native zoom. Working native browser
-controls and browser-chrome screenshots are required for those observations.
+Native Chrome200% zoom is now observed through browser-chrome accessibility
+state and screenshots in one owned Guest window on local18584, using cached
+frontend05d148a. This is bounded guest evidence, not a current full-application
+image or an exact CSS viewport measurement. Discover header/catalog reflow and
+keyboard opening of E2E Revision Board pass; game cell click/Space untoggle,
+Right-arrow movement, full text and restored zero count are observed.
+
+Login's lower buttons retain visible keyboard focus and internal vertical
+scrolling; Tab from last control wraps to Close, Shift+Tab returns to the last
+control, and Escape restores trigger focus. Support text wraps readably; delivery
+through the configured support placeholder remains an operator check. Guest
+Create shows a readable authentication gate. The registration dialog's lower
+Log In link is reached after six Tabs with visible focus/internal scrolling;
+Escape returns to Create account. No form values, submissions or authentication
+are used. Chrome Reset confirms100% before only the owned Guest window closes.
+
+Authenticated settings/editor, recovery and report zoom remain unchecked;
+global section24 remains partial. Light/dark browser-chrome favicon visibility,
+native screen-reader behavior and physical devices also remain unchecked.
+Viewport or CSS/device-scale changes do not establish native zoom.
