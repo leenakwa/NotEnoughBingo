@@ -80,10 +80,12 @@
     "frontend_test_files": 40,
     "browser_smoke_passed": 231,
     "browser_smoke_intentional_skips": 12,
-    "full_stack_passed": 119
+    "full_stack_passed": 119,
+    "browser_smoke_flaky": 1,
+    "flaky_case": "WebKit actual filled input values survive rejection on reset-password; passed only after existing retries."
   },
   "limitations": [
     "Production origin, registry provenance/retention, ingress, providers and actual replicas/CDN remain unverified.",
-    "Source b0d3e7e only; new upload-progress working tree is separate and uncommitted."
+    "Source b0d3e7e only; later upload-progress source620 has separate evidence and failed CI."
   ]
 }

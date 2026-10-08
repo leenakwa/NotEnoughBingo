@@ -31,15 +31,43 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
 ### Source and exact-source gate
 
 - Branch: `sk/production-readiness`; pushed HEAD:
-  `b0d3e7e3f3dfb0e695c6f93e0b174c822fa1be26`.
+  `62066472a28eebe46800e05fba9c59a785f3a726` (upload progress/checkpoint packet).
 - Draft PR: https://github.com/leenakwa/NotEnoughBingo/pull/18.
+- Current [CI37718675809](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809)
+  completes with seven jobs passing and smoke/Release failing. Backend383,
+  frontend560/42 files and full-stack120 pass; smoke231 pass/one reset silent-fill
+  failure/12 intentional skips. Actual merge checkout
+  111df2a0bca9dd481899c369267d5d090a1c4f1b has the same tree as620 HEAD:
+  33cc8da8e46b131ad4b623a24e3a2e40f431b319, verified through GitHub's API.
+  Exact Git-archive configured production frontend build passes, context
+  /tmp/neb-rollout-build-prepared/candidate-6206647/frontend, image tag
+  neb-rollout-frontend:new-6206647, log
+  /tmp/neb-frontend-6206647-production-build-oct08.log. Actual image ID:
+  sha256:c4f6ce3460eb71419482c43b8cb7be43f1bf695d8499c02c89184c6a786dfe54.
+  Candidate18584 runs this image with matching release and zero app mounts;
+  frontend health200. Its first real browser POST received403 because the
+  isolated old-web trusted-origin allowlist omitted18584. Private Compose now
+  adds only that loopback origin; CSRF remains enabled. Failure retained in
+  /tmp/neb-frontend-6206647-upload-browser-oct08.log. Real same-origin API PUT
+  large-image/cancel/retry/processing/persistence case then passes19.6 seconds:
+  /tmp/neb-frontend-6206647-upload-browser-reviewed-oct08.log. This runner adapts
+  transfer counters/status to real API PUT202; app image source remains exact.
+  Four-engine optimized API Blob/CSRF/processing/ready/reload cases pass4/4,
+  retries zero: /tmp/neb-frontend-6206647-api-upload-browser-reviewed-oct08.log.
+  First four failures used a changing file-input label during pending; the stable
+  inspector/input locator corrects only the diagnostic runner. App image unchanged.
+  Sanitized image/transfer/CI report:
+  artifacts/frontend-candidate-6206647-2026-10-08.json.
+- Last all-nine green source remains `b0d3e7e` (previous packet), below.
 - [CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152)
   **passes all nine jobs**: backend383, frontend503/40 files, browser smoke231
-  plus12 intentional skips, full-stack119, foundation, secret scan, both
+  plusone flaky reset silent-fill case and12 intentional skips, full-stack119,
+  foundation, secret scan, both
   production images and Release gate. Linux native-auth branch passed in smoke.
+  Do not describe its smoke result as a strict zero-retry pass.
 - Actual CI checkout `480beb3dc0c4706b64e1412bf995046d059cf4fd` is the PR merge
-  commit. Its tree equals HEAD's `4ac79078c07e8f412f190c826d8c066d11a7d8ac`,
-  verified through GitHub's commit API. Image labels use their actual build SHA;
+  commit. Its tree equals b0 source's `4ac79078c07e8f412f190c826d8c066d11a7d8ac`,
+  verified through GitHub's commit API for b0. Image labels use their actual build SHA;
   do not confuse merge identity with the head image identity.
 - Earlier15632b6 CI37710181069 failed (seven jobs pass, full-stack115 pass/one
   fail, Release failed). It reused a revoked player session for token-email
@@ -86,7 +114,7 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
   gzip-probe failures remain logged. Sanitized report:
   artifacts/frontend-candidate-b0d3e7e-2026-10-08.json.
 
-### Current uncommitted upload-progress packet
+### Committed6206647 upload-progress packet
 
 - Transport and UI workers are complete and **source-frozen**. Shared contract:
   onProgress(UploadProgress{loaded:number,total:number|null}). New XHR transfer
@@ -129,8 +157,14 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
   artifacts/upload-progress-rehearsal-2026-10-08.json. Scoped format/lint/types,
   diff/checklist and browser-source Gitleaks directory scan pass.
 - Separate next-packet worker owns only profile-view.test.tsx; frozen19/19 unit
-  cases (+4), lint/format pass. No app change. Exclude that file from the current
-  upload commit; its new native browser evidence remains for next packet.
+  cases (+4), lint/format pass. Root Node22 scoped19/19 pass. No app change; excluded
+  from620. New profile-native-controls.spec.ts passes32/32 static route-controlled
+  cases at320/1710 in four profiles (three engine families), retries zero.
+  Native constraints, optional blank name/bio, Tab/Enter/pending duplicate guard,
+  actual trimmed payload and scoped field/multiple-error focus/retention are proved.
+  Optional-field amendment passes8/8 affected cases. No real backend persistence
+  is claimed by those controlled responses. Mac app-only keyboard setting restored.
+  Independent coverage review finds no blocker; packet remains separate from620.
 - Installed Chromium-only CDP transfer contract and primary docs were verified
   by upload_progress_contract; root actual runtime pacing is now observed.
   The test restores unlimited network conditions and detaches in finally.
@@ -143,7 +177,7 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
 - Shared `nebqa` origin18080, Mailpit18025, existing QA volumes preserved.
 - Isolated `nebrollout-a3`, private `/tmp/neb-rollout-a3`, currently frontend15632
   port18580, old web18581, new worker, PG/Redis/Mailpit18525. Asset proxies18582/3
-  and b0 candidate18584 remain. Archive `/private/tmp/neb-frontend-assets-oct08`
+  and620 candidate18584 remain. Archive `/private/tmp/neb-frontend-assets-oct08`
   is append-only. Private credentials remain in mode600 temp files.
 - Source images have no app mounts. Loopback HTTP, development Django settings
   and illustrative HTTPS origin are local evidence, not the target deployment.
@@ -157,13 +191,20 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
 
 ### Ordered next steps
 
-1. Persist this checkpoint, exact b0 CI/image evidence and PR description.
-2. **Complete locally:** stable-source120/120 ordered upload gate,12/12 scoped
-   engine cases, genuine slow-storage proof, sanitized numeric artifact and
-   independent reviews. Preserve failures and unchanged retries/limits.
-3. Address independent review findings, run relevant gates, review final diff,
-   commit/push this packet and obtain all-nine CI plus configured optimized-image
-   evidence for that source. Update checklist only for requirements actually proved.
+1. Persist current620 CI failure and configured-image proof, correcting previous
+   b0 smoke evidence to include its one flaky case. Keep prompt/request hashes.
+2. **Completed:** stable-source120/120 ordered upload gate,12/12 scoped engine
+   cases, genuine slow-storage proof, sanitized artifact, independent reviews,
+   commit/push620 and configured optimized-image5/5 cases. Retain all failures.
+3. **Current:** commit reviewed profile evidence and minimal auth test correction.
+   Integrated Node22 lint/types564 tests/42 files, format/checklist/diff and
+   browser/artifact secret scans pass. Browser debugger proves all
+   three CI traces and local original5/5 failures assign values while reset input
+   is disabled; initialization clears them and no POST occurs. Awaiting each
+   filled field enabled passes diagnostic5/5 and final four-profile16/16,
+   retries zero. Only auth-forms.spec.ts changes, +3 lines; no app-source fix.
+   Obtain all-nine CI for the resulting exact tree; no retry/limit increases.
+   User.codex changes remain excluded. No premature readiness claim.
 4. Next control observation at320/1710: .format-button, .size-control button,
    .tag-chips button, .card-action, .active-filters > button,
    .download-control > div button, .icon-button, profile-tabs roles,
@@ -172,16 +213,20 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
    async Like/download/upload/preferences. Synchronous loading is N/A. Section8
    still needs hover/active/loading/intended-form ownership mapping; section5
    needs duplicate and pending→error→retry→success geometry mapping per action.
-   Section7's next gaps are profile native constraints/first-error order, account
+   Section7's next gaps are account
    keyboard/normalization/dirty policy, editor required/title-language order,
    preference keyboard/dirty departure and social inventory reconciliation.
    profile_native_form_gaps confirms profile constraints already exist:
    required username3–30/ASCII-underscore/padded trim + backend lowercase,
    optional name80/bio500, hints, FormData and ordered error focus. No source bug
-   established. Next worker owns profile-view.test.tsx only for three field
+   established. Frozen worker owns profile-view.test.tsx only for three field
    rejections, multiple-error order, sibling retention and field-only clearing;
-   root adds real native clamps/Tab/Enter/newline/heldPATCH/save-reload evidence.
-   Native clipboard/autofill remain separate. Preserve deliberate hover/shadow
+   profile_native_browser_cases owns only new profile-native-controls.spec.ts:
+   32 static route-controlled cases at320/1710 in four profiles; final run passes.
+   First missing analytics route, saving-button name and Mac WebKit End caret
+   assumptions were corrected, with failed logs preserved. Routes are controlled
+   responses, not server persistence; native clipboard/autofill remain separate.
+   Root still maps actual backend/live normalization/persistence evidence. Preserve deliberate hover/shadow
    and product decisions.
 5. Continue other mapped local requirements. Merge, public deploy and registry
    promotion require separate authorization; commits/pushes are authorized.

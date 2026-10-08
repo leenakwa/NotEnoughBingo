@@ -5,11 +5,19 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Current continuation evidence (2026-10-08): pushed `b0d3e7e` passes all nine
-jobs in [CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152):
-backend383, frontend503, smoke231/12 intentional skips, full-stack119, both
-production images, scans and Release gate. The actual PR merge checkout has the
-same tree as HEAD. Earlier failed revisions remain in the dated evidence.
+Current continuation evidence (2026-10-08): pushed `6206647` completes
+[CI37718675809](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809)
+with seven passing jobs and failed smoke/Release gates. Backend383, frontend560
+and full-stack120 pass; smoke231 pass/one reset silent-fill failure/12 intentional
+skips. Actual merge checkout has the same tree as620 HEAD. The test assigns DOM
+text before the reset control is enabled; a minimal test-only precondition passes
+16/16 scoped four-profile cases without retries and awaits its own CI.
+
+Last all-nine green remains `b0d3e7e` in
+[CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152):
+backend383, frontend503, smoke231 plusone flaky case/12 intentional skips and
+full-stack119. The flaky case is the same reset test; this was discovered by
+reviewing the retained job log. Earlier failed revisions remain in dated evidence.
 
 Its exact Git-archive configured optimized frontend image passes68 auth/control
 cases across four engines, retries zero; matching build/runtime release and
@@ -20,10 +28,13 @@ loopback HTTP, development Django settings and an illustrative HTTPS origin.
 Sixteen optimized fresh/warm observations record152–165KB fresh JS and tiny CLS;
 284 aborted RSC reads mean that diagnostic is not a clean performance gate.
 
-The separate uncommitted upload-progress packet passes Node22 lint/types and560
+The committed620 upload-progress packet passes Node22 lint/types and560
 tests and120 ordered live cases, with scoped reviews. Actual3MiB slow-storage
 progress/cancel/retry/processing/ready-attachment/reload proof passes;12 scoped
-cases across four engines also pass. New CI/immutable-image gates remain pending.
+cases across four engines also pass. Its exact configured optimized image passes
+one3MiB slow API PUT case and four API Blob/CSRF/processing/persistence cases,
+retries zero. This does not override failed CI. Separate profile evidence passes
+19 unit and32 controlled browser cases; no profile implementation change.
 Real CDN, target capacity, native browser zoom/favicon/autofill/device
 evidence and other local requirements remain open. The checklist records775
 checked/367 unchecked;57 verified/41 partial/six N/A/one deployment-only.
@@ -34,9 +45,9 @@ remain historical; the current working tree is not a completed release gate.
 
 ## Decision
 
-The committed source above passes its exact-source CI and bounded local image
-gates. Every subsequent revision must pass again before promotion; the separate
-working-tree packet is not a completed release gate. This is **not an authorized
+Current620 source fails its exact-source CI gate despite passing bounded local
+image checks. The test-only correction and profile evidence need their own CI
+before promotion. This is **not an authorized
 public
 deployment**. Images have not been promoted to a production registry or tested
 on the target platform.

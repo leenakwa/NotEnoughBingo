@@ -5182,3 +5182,68 @@ observed results and their limits. Do not include credentials or session data.
   proving per-field/multiple-error association, focus, retained siblings and
   field-specific clearing. No profile implementation change; not included in the
   upload packet's560 tests or its commit. Root native profile browser proof remains.
+
+### 2026-10-08 —620 CI result and optimized upload candidate
+
+- Pushed62066472a28eebe46800e05fba9c59a785f3a726 completes
+  [CI37718675809](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809):
+  seven jobs pass; smoke and Release fail. Backend383, frontend560/42 files and
+  full-stack120 pass. Smoke231 pass/one WebKit reset silent-fill failure/12
+  intentional skips. Actual merge111df2a0bca9dd481899c369267d5d090a1c4f1b
+  shares HEAD tree33cc8da8e46b131ad4b623a24e3a2e40f431b319, verified with GitHub's
+  commit API. Full retained job log /tmp/neb-ci-6206647-reviewed-oct08.log.
+- Review of previous b0 job log corrects earlier incomplete smoke summaries:
+  **231 passed, one flaky reset silent-fill case,12 skips**. All nine jobs were
+  green, but that case needed existing retries. Its sanitized artifact now
+  records the flaky result; no retry configuration or limit changed.
+- Exact Git-archive configured620 production image builds and runs with no app
+  mounts, matching release and health200. Actual image
+  sha256:c4f6ce3460eb71419482c43b8cb7be43f1bf695d8499c02c89184c6a786dfe54.
+  First browser draft POST403 came from omitted isolated loopback18584 origin;
+  private Compose adds only that origin and retains CSRF. Corrected real3MiB
+  API PUT/cancel/retry/processing/persistence case passes, retries zero; native
+  percentages1→100, real202, no same-origin preflight. Separate shared QA proves
+  real MinIO POST204/CORS. Four actual API Blob/CSRF/pending/ready/reload cases
+  pass across Chromium/mobile WebKit/Firefox/desktop WebKit at320/1710. Their
+  first4FAIL used an input label changed during pending; only the diagnostic
+  locator was corrected. Logs and limits remain in
+  [sanitized620 candidate report](artifacts/frontend-candidate-6206647-2026-10-08.json).
+
+### 2026-10-08 — Native profile controls and silent-fill test readiness
+
+- Profile implementation already has native constraints and ordered field-error
+  behavior; no app source change. Profile unit packet19/19 passes on Node22,
+  adding four cases for per-field/multiple-error focus, associated hints/errors,
+  sibling-value retention and editing only the current field's error.
+  /tmp/neb-profile-native-fields-node22-oct08.log.
+- New profile-native-controls.spec.ts passes32/32 at320/1710 in four profiles
+  (Chromium/mobile Pixel7 Chromium/Firefox/WebKit, three engine families), retries
+  zero. Actual native validation/keyboard maximums, optional blank name/bio,
+  Tab order/textarea Enter, trimmed submitted FormData, held pending duplicate
+  guards and username/name/bio/multiple422 focus and retention are proved.
+  Routes use controlled responses; these cases do not prove server persistence.
+  Independent behavioral review has no blocker; optional-blank addition passes
+  8/8 affected cases. Mac app-only keyboard preference is restored. Logs:
+  /tmp/neb-profile-native-controls-final-oct08.log and
+  /tmp/neb-profile-native-optional-fields-reviewed-oct08.log. Lint/format/types pass.
+- Browser debugger examines all three620 CI traces: test assigns reset password
+  while input disabled, initialization clears it before click, and no POST
+  occurs. Unchanged local WebKit scenario fails5/5 with retries zero. Ignored
+  diagnostic awaiting fields enabled passes5/5. Minimal tracked correction
+  awaits each scenario field enabled before unchanged silent DOM assignment;
+  final four-profile16/16 pass, retries zero, retaining payload/error/value
+  assertions. Logs /tmp/neb-reset-silent-fill-original-oct08.log,
+  /tmp/neb-reset-enabled-proof-oct08.log and
+  /tmp/neb-auth-silent-fill-enabled-four-profiles-oct08.log. No product defect
+  established by the disabled-control assignment; password managers remain open.
+- Root integrated Node22 lint/types and **564 tests/42 files pass**:
+  /tmp/neb-profile-auth-integrated-node22-reviewed-oct08.log. First check stopped
+  on an ESLint warning in the browser debugger's ignored temporary configuration;
+  its two diagnostic files are preserved under /tmp and removed from the app
+  directory. Reviewed full check and scoped format pass; browser/artifact
+  Gitleaks directory scans and checklist/diff checks pass. No test/retry/limit
+  setting was changed to obtain these results.
+- Checklist775/367 and section verdicts remain unchanged. Profile/control
+  inventory and continuation checkpoint are updated; original prompt/request
+  hashes remain unchanged and native goal active. Exact-source CI remains pending.
+  No merge or deployment is authorized.

@@ -206,42 +206,108 @@ it("submits silently filled profile values and retains them for a failed save an
   expect(screen.getByRole("heading", { name: submitted.display_name })).toBeVisible();
 });
 
-it("focuses a rejected filled field after enabling the profile form and keeps the other entries", async () => {
-  let rejectSave!: (error: Error) => void;
-  mocks.update.mockReturnValueOnce(
-    new Promise((_resolve, reject) => {
-      rejectSave = reject;
-    }),
-  );
-  mocks.fieldValidationMessage.mockImplementation((_caught, field) =>
-    field === "username" ? "This username is unavailable." : null,
-  );
-  render(<ProfileView initialProfile={first} />);
-  const username = screen.getByLabelText("Username") as HTMLInputElement;
-  const name = screen.getByLabelText("Display name") as HTMLInputElement;
-  const bio = screen.getByLabelText("Bio") as HTMLTextAreaElement;
-  username.value = "taken_username";
-  name.value = "Retained name";
-  bio.value = "Retained Unicode bio 😊";
-  const save = screen.getByRole("button", { name: "Save profile" });
-  save.focus();
-  fireEvent.submit(username.closest("form")!);
-  expect(username).toBeDisabled();
-  await act(async () => rejectSave(new Error("Duplicate username")));
+const profileFieldCases = {
+  username: {
+    hint: "3–30 characters. Letters, numbers, and underscores.",
+    message: "This username is unavailable.",
+    value: "taken_username",
+    correction: "available_username",
+  },
+  display_name: {
+    hint: "Optional. Up to 80 characters.",
+    message: "This display name is unavailable.",
+    value: "Retained name <>& 😊",
+    correction: "Corrected display name",
+  },
+  bio: {
+    hint: "Optional. Up to 500 characters.",
+    message: "This bio is not allowed.",
+    value: "Retained Unicode bio 😊\nSecond line <>&",
+    correction: "Corrected bio",
+  },
+} as const;
+type ProfileFieldCase = keyof typeof profileFieldCases;
 
-  expect(username).toBeEnabled();
-  expect(username).toHaveFocus();
-  expect(username).toHaveAttribute("aria-invalid", "true");
-  expect(username).toHaveAccessibleDescription(
-    "3–30 characters. Letters, numbers, and underscores. This username is unavailable.",
-  );
-  expect(username).toHaveValue("taken_username");
-  expect(name).toHaveValue("Retained name");
-  expect(bio).toHaveValue("Retained Unicode bio 😊");
-  fireEvent.change(username, { target: { value: "available_username" } });
-  expect(username).toHaveAttribute("aria-invalid", "false");
-  expect(screen.queryByText("This username is unavailable.")).not.toBeInTheDocument();
-});
+it.each([
+  { rejectedFields: ["username"], focusedField: "username" },
+  { rejectedFields: ["display_name"], focusedField: "display_name" },
+  { rejectedFields: ["bio"], focusedField: "bio" },
+  { rejectedFields: ["bio", "display_name", "username"], focusedField: "username" },
+  { rejectedFields: ["bio", "display_name"], focusedField: "display_name" },
+] as const)(
+  "focuses $focusedField after rejecting $rejectedFields and clears only the edited field's error",
+  async ({ rejectedFields, focusedField }) => {
+    const rejection = Object.fromEntries(
+      rejectedFields.map((field) => [field, [profileFieldCases[field].message]]),
+    );
+    let rejectSave!: (error: typeof rejection) => void;
+    mocks.update.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    mocks.fieldValidationMessage.mockImplementation(
+      (caught: typeof rejection, field: ProfileFieldCase) => caught[field]?.[0] ?? null,
+    );
+    render(<ProfileView initialProfile={first} />);
+    const fields = {
+      username: screen.getByLabelText("Username") as HTMLInputElement,
+      display_name: screen.getByLabelText("Display name") as HTMLInputElement,
+      bio: screen.getByLabelText("Bio") as HTMLTextAreaElement,
+    };
+    const entries = Object.entries(profileFieldCases) as [
+      ProfileFieldCase,
+      (typeof profileFieldCases)[ProfileFieldCase],
+    ][];
+    for (const [field, details] of entries) fields[field].value = details.value;
+    const save = screen.getByRole("button", { name: "Save profile" });
+    save.focus();
+    fireEvent.submit(fields.username.closest("form")!);
+    for (const input of Object.values(fields)) expect(input).toBeDisabled();
+    expect(save).toBeDisabled();
+    await act(async () => rejectSave(rejection));
+
+    expect(save).toBeEnabled();
+    expect(fields[focusedField]).toBeEnabled();
+    expect(fields[focusedField]).toHaveFocus();
+    expect(mocks.update).toHaveBeenCalledOnce();
+    expect(mocks.update).toHaveBeenCalledWith(
+      Object.fromEntries(entries.map(([field, details]) => [field, details.value])),
+    );
+    for (const [field, details] of entries) {
+      const invalid = rejectedFields.some((rejectedField) => rejectedField === field);
+      expect(fields[field]).toBeEnabled();
+      expect(fields[field]).toHaveValue(details.value);
+      expect(fields[field]).toHaveAttribute("aria-invalid", String(invalid));
+      expect(fields[field]).toHaveAccessibleDescription(
+        invalid ? `${details.hint} ${details.message}` : details.hint,
+      );
+      if (invalid) expect(screen.getByText(details.message)).toHaveAttribute("role", "alert");
+      else expect(screen.queryByText(details.message)).not.toBeInTheDocument();
+    }
+    expect(screen.getAllByRole("alert")).toHaveLength(rejectedFields.length);
+    expect(screen.queryByText("Profile service unavailable.")).not.toBeInTheDocument();
+
+    fireEvent.change(fields[focusedField], {
+      target: { value: profileFieldCases[focusedField].correction },
+    });
+    for (const [field, details] of entries) {
+      const invalid =
+        field !== focusedField && rejectedFields.some((rejectedField) => rejectedField === field);
+      expect(fields[field]).toHaveValue(
+        field === focusedField ? details.correction : details.value,
+      );
+      expect(fields[field]).toHaveAttribute("aria-invalid", String(invalid));
+      expect(fields[field]).toHaveAccessibleDescription(
+        invalid ? `${details.hint} ${details.message}` : details.hint,
+      );
+      if (invalid) expect(screen.getByText(details.message)).toHaveAttribute("role", "alert");
+      else expect(screen.queryByText(details.message)).not.toBeInTheDocument();
+    }
+    expect(screen.queryAllByRole("alert")).toHaveLength(rejectedFields.length - 1);
+    expect(mocks.update).toHaveBeenCalledOnce();
+  },
+);
 
 it("accepts and preserves a bio up to the server's 500-character limit", async () => {
   const existing = { ...first, bio: "Б".repeat(500) };

@@ -163,6 +163,9 @@ for (const scenario of [
     await page.goto(scenario.route);
     const form = page.locator("form.stack-form");
     await expect(form).toBeVisible();
+    for (const name of Object.keys(scenario.fields)) {
+      await expect(form.locator(`input[name="${name}"]`)).toBeEnabled();
+    }
     await form.evaluate((element: HTMLFormElement, fields) => {
       for (const [name, value] of Object.entries(fields)) {
         const input = element.elements.namedItem(name) as HTMLInputElement;
