@@ -5795,14 +5795,11 @@ test("session sign-out shows scoped progress and retries without losing credenti
 test("isolated avatar validation blocks writes and the same file retries an intent outage", async ({
   page,
 }) => {
-  await authenticateAs(page, "moderator");
   const api = page.context().request;
-  const bootstrapActor = await api.get("/api/v1/auth/me/");
-  expect(bootstrapActor.status()).toBe(200);
-  expect((await bootstrapActor.json()).id).toBe(readLiveFixture().users.moderator.id);
-  const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
-  const email = `e2e-avatar-${nonce}@example.test`;
-  const password = `QA-${randomUUID()}-account`;
+  const fixture = readLiveFixture();
+  const actorFixture = fixture.users.avatar;
+  const email = actorFixture.email;
+  const password = E2E_FIXTURE_PASSWORD;
   let ownedId = "";
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
@@ -5856,29 +5853,6 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
     expect(
       (
-        await api.post("/api/v1/auth/register/", {
-          headers: await csrfHeaders(),
-          data: { email, username: `e2e_avatar_${nonce}`, password },
-        })
-      ).status(),
-    ).toBe(202);
-    const token = new URL(await verificationLink(api, email)).searchParams.get("token");
-    expect(token).toBeTruthy();
-    expect(
-      (
-        await api.post("/api/v1/auth/verify-email/", {
-          headers: await csrfHeaders(),
-          data: { token },
-        })
-      ).status(),
-    ).toBe(200);
-    // Drop only this browser's bootstrap cookies so logging in as the fresh
-    // actor does not flush the persisted moderator fixture session.
-    await page.context().clearCookies();
-    expect((await api.get("/api/v1/auth/me/")).status()).toBe(401);
-    expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
-    expect(
-      (
         await api.post("/api/v1/auth/login/", {
           headers: await csrfHeaders(),
           data: { email, password },
@@ -5889,18 +5863,14 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     expect(identity.status()).toBe(200);
     const actor = (await identity.json()) as { id: string; email: string };
     expect(actor.email).toBe(email);
-    expect(actor.id).toBeTruthy();
-    expect(Object.values(readLiveFixture().users).map((user) => user.id)).not.toContain(actor.id);
+    expect(actor.id).toBe(actorFixture.id);
+    expect(
+      Object.entries(fixture.users)
+        .filter(([role]) => role !== "avatar")
+        .map(([, user]) => user.id),
+    ).not.toContain(actor.id);
     ownedId = actor.id;
     expect((await ownedProfile()).avatar).toBeNull();
-    expect(
-      (
-        await api.patch("/api/v1/profiles/me/", {
-          headers: await csrfHeaders(),
-          data: { preferred_languages: ["en"] },
-        })
-      ).status(),
-    ).toBe(200);
     page.on("request", (request) => {
       const path = new URL(request.url()).pathname;
       if (path === intentPath && request.method() === "POST") {
@@ -6055,14 +6025,11 @@ test("confirmed account deletion signs out an isolated account and can be cancel
   page,
   playwright,
 }) => {
-  await authenticateAs(page, "moderator");
   const api = page.context().request;
-  const bootstrapActor = await api.get("/api/v1/auth/me/");
-  expect(bootstrapActor.status()).toBe(200);
-  expect((await bootstrapActor.json()).id).toBe(readLiveFixture().users.moderator.id);
-  const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
-  const email = `e2e-deletion-${nonce}@example.test`;
-  const password = `QA-${randomUUID()}-account`;
+  const fixture = readLiveFixture();
+  const actorFixture = fixture.users.deletion;
+  const email = actorFixture.email;
+  const password = E2E_FIXTURE_PASSWORD;
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
   let ownedId = "";
@@ -6086,27 +6053,6 @@ test("confirmed account deletion signs out an isolated account and can be cancel
   }
   try {
     expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
-    const registered = await api.post("/api/v1/auth/register/", {
-      headers: await csrfHeaders(),
-      data: { email, username: `e2e_deletion_${nonce}`, password },
-    });
-    expect(registered.status()).toBe(202);
-    const link = new URL(await verificationLink(api, email));
-    const token = link.searchParams.get("token");
-    expect(token).toBeTruthy();
-    expect(
-      (
-        await api.post("/api/v1/auth/verify-email/", {
-          headers: await csrfHeaders(),
-          data: { token },
-        })
-      ).status(),
-    ).toBe(200);
-    // Drop only this browser's bootstrap cookies so logging in as the fresh
-    // actor does not flush the persisted moderator fixture session.
-    await page.context().clearCookies();
-    expect((await api.get("/api/v1/auth/me/")).status()).toBe(401);
-    expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
     expect(
       (
         await api.post("/api/v1/auth/login/", {
@@ -6119,18 +6065,14 @@ test("confirmed account deletion signs out an isolated account and can be cancel
     expect(identity.status()).toBe(200);
     const actor = (await identity.json()) as { id: string; email: string };
     expect(actor.email).toBe(email);
-    expect(actor.id).toBeTruthy();
-    expect(Object.values(readLiveFixture().users).map((user) => user.id)).not.toContain(actor.id);
+    expect(actor.id).toBe(actorFixture.id);
+    expect(
+      Object.entries(fixture.users)
+        .filter(([role]) => role !== "deletion")
+        .map(([, user]) => user.id),
+    ).not.toContain(actor.id);
     ownedId = actor.id;
     expect((await ownedAccount()).deletion_scheduled_for).toBeNull();
-    expect(
-      (
-        await api.patch("/api/v1/profiles/me/", {
-          headers: await csrfHeaders(),
-          data: { preferred_languages: ["en"] },
-        })
-      ).status(),
-    ).toBe(200);
     // Keep the original authenticated cookies to prove server-side revocation,
     // independently of the browser clearing its current session on sign-out.
     revokedSession = await playwright.request.newContext({

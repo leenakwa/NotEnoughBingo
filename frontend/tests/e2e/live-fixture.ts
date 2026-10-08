@@ -26,6 +26,8 @@ export interface LiveFixture {
     author: FixtureUser;
     player: FixtureUser;
     moderator: FixtureUser;
+    avatar: FixtureUser;
+    deletion: FixtureUser;
   };
   bingos: {
     public: FixtureBingo;

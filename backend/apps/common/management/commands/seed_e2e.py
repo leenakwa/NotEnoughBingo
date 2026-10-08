@@ -37,6 +37,8 @@ FIXTURE_EMAILS = (
     "e2e-author@example.test",
     "e2e-player@example.test",
     "e2e-moderator@example.test",
+    "e2e-avatar@example.test",
+    "e2e-deletion@example.test",
 )
 
 
@@ -241,6 +243,30 @@ class Command(BaseCommand):
             moderator=True,
         )
 
+        avatar = _upsert_user(
+            email=FIXTURE_EMAILS[3],
+            username="e2e_avatar",
+            display_name="E2E Avatar",
+            password=password,
+        )
+        deletion = _upsert_user(
+            email=FIXTURE_EMAILS[4],
+            username="e2e_deletion",
+            display_name="E2E Deletion",
+            password=password,
+        )
+
+        for actor in (avatar, deletion):
+            actor.profile.preferred_languages = ["en"]
+            actor.profile.language_preferences_confirmed = True
+            actor.profile.save(
+                update_fields=(
+                    "preferred_languages",
+                    "language_preferences_confirmed",
+                    "updated_at",
+                )
+            )
+
         fixture_specs = {
             "public": {
                 "title": "E2E Public Board",
@@ -403,6 +429,18 @@ class Command(BaseCommand):
                     "email": moderator.email,
                     "username": moderator.username,
                     "display_name": moderator.profile.display_name,
+                },
+                "avatar": {
+                    "id": str(avatar.public_id),
+                    "email": avatar.email,
+                    "username": avatar.username,
+                    "display_name": avatar.profile.display_name,
+                },
+                "deletion": {
+                    "id": str(deletion.public_id),
+                    "email": deletion.email,
+                    "username": deletion.username,
+                    "display_name": deletion.profile.display_name,
                 },
             },
             "bingos": bingos,

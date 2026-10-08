@@ -39,6 +39,12 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
+Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)
+has ten passing jobs and failed full-stack/Release. Full-stack124 passes/one failure:
+new avatar/deletion and guest registration recovery pass, but email-change setup
+verification receives Nginx HTML429. Moderator isolation does not bypass the
+shared-IP authentication limiter; dedicated fixture actors are being prepared. No counters are advanced.
+
 Exact `a55a2b1` [CI37818441348](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37818441348)
 has ten passing jobs, failed full-stack and failed Release:446 backend,619 frontend,
 372 smoke/12 intentional skips; full-stack123 passes/one failure. New confirmed

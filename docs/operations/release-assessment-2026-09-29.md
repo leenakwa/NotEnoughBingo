@@ -5,7 +5,18 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact `a55a2b1` fails the full-stack and Release
+Latest observation —2026-10-08: Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)
+again fails full-stack and Release with ten jobs passing. Full-stack records124
+passes/one failure: new avatar validation/retry, confirmed deletion and guest
+token-only registration recovery pass; existing token-only email-change setup
+verification receives429. Moderator bootstrap isolation is insufficient; the
+failure trace is HTML429 from Nginx, without Retry-After or a structured Django error.
+Full inventory finds only three moderator verification attempts; the five/hour
+Django quota does not explain this response. Dedicated seeded actor isolation is
+prepared and passes local checks/review; its exact integration gate is pending. Application
+limits/recovery assertions remain unchanged; this is not a passing release.
+
+Earlier observation —2026-10-08: Exact `a55a2b1` fails the full-stack and Release
 jobs in [CI37818441348](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37818441348).
 Ten jobs pass:446 backend,619 frontend and372 smoke cases/12 intentional skips;
 full-stack records123 passes and one failure. The new confirmed-account-deletion

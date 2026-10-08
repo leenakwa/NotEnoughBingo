@@ -7,8 +7,9 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
+from django.utils import timezone
 
-from apps.accounts.models import User
+from apps.accounts.models import AccountDeletionRequest, User
 from apps.bingos.models import Bingo, BingoRevision
 from apps.plays.models import SharedResult
 from apps.social.models import Comment
@@ -53,7 +54,7 @@ def test_seed_e2e_can_be_rerun_without_duplicate_fixture_state(monkeypatch) -> N
 
     manifests = []
     database_counts = []
-    for _ in range(2):
+    for iteration in range(2):
         output = io.StringIO()
         call_command("seed_e2e", "--json", stdout=output)
         manifests.append(json.loads(output.getvalue()))
@@ -66,11 +67,36 @@ def test_seed_e2e_can_be_rerun_without_duplicate_fixture_state(monkeypatch) -> N
                 "comments": Comment.objects.filter(bingo__title__startswith="E2E ").count(),
             }
         )
+        for role in ("avatar", "deletion"):
+            actor = User.objects.get(public_id=manifests[-1]["users"][role]["id"])
+            assert actor.is_active
+            assert actor.is_email_verified
+            assert not actor.is_staff
+            assert not actor.is_superuser
+            assert actor.check_password(FIXTURE_VALUE)
+            assert actor.profile.avatar_id is None
+            assert actor.profile.preferred_languages == ["en"]
+            assert actor.profile.language_preferences_confirmed
+            assert actor.deletion_requested_at is None
+            assert actor.deletion_scheduled_for is None
+            assert not actor.deletion_requests.exists()
+            assert not actor.bingos.exists()
+            if iteration == 0:
+                requested_at = timezone.now()
+                actor.is_staff = True
+                actor.is_superuser = True
+                actor.email_verified_at = None
+                actor.deletion_requested_at = requested_at
+                actor.deletion_scheduled_for = requested_at
+                actor.save()
+                AccountDeletionRequest.objects.create(user=actor, scheduled_for=requested_at)
 
     assert database_counts == [
-        {"users": 3, "bingos": 5, "revisions": 5, "shares": 1, "comments": 30},
-        {"users": 3, "bingos": 5, "revisions": 5, "shares": 1, "comments": 30},
+        {"users": 5, "bingos": 5, "revisions": 5, "shares": 1, "comments": 30},
+        {"users": 5, "bingos": 5, "revisions": 5, "shares": 1, "comments": 30},
     ]
+    assert set(manifests[1]["users"]) == {"author", "player", "moderator", "avatar", "deletion"}
+    assert len({actor["id"] for actor in manifests[1]["users"].values()}) == 5
     assert [manifest["schema_version"] for manifest in manifests] == [1, 1]
     assert set(manifests[1]["bingos"]) == {"public", "unlisted", "private", "revision", "social"}
     assert (

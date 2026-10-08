@@ -7366,3 +7366,94 @@ and cumulative-quota integration remains pending the next exact-source CI gate.
 The control matrices now explicitly allow equivalent shared-style browser evidence
 and retain unmatched custom/focus/clipping/async contexts; the original checklist
 does not require separate rectangle measurements for every equivalent control.
+
+### 2026-10-08 — Avatar/deletion pass; moderator bootstrap quota still fails CI
+
+Exact `678240f` [CI37821941465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37821941465)
+finishes with ten passing jobs and failed full-stack/Release. All four smoke jobs
+and both images pass. Full-stack124 passes/one failure in6.5minutes: new avatar
+validation/same-file intent503 recovery passes5.5seconds, confirmed deletion passes
+3.3seconds, existing cancellation and guest token-only registration recovery pass.
+The existing token-only email-change case fails its setup verification200 assertion
+with429 before its outage/recovery assertions execute. The retained response is Nginx HTML429 with no Retry-After or structured Django
+error; this differs from the earlier JSON throttle. Source inventory finds three
+moderator verification attempts, so Django five/hour exhaustion is not supported.
+Nginx limits the combined authentication routes by IP at10/minute (CI burst30);
+bootstrap isolation by user does not avoid that shared limiter.
+Cookie clearing preserved the shared actor, but does not establish quota headroom.
+Further full-bucket inventory and correction remain pending. Application limits,
+original token-recovery assertions, retries and timeouts are unchanged. Earlier
+failed runs remain recorded; this run does not establish a successful Release gate.
+Tested merge `a8fde0d8fa747c94132f6a50fe299f39a78ef71b` matches branch tree
+`c8ac731368c2dc96784202387d328505e3e74c10`. All446 backend,619 frontend and
+372 smoke cases/12 intentional skips pass with no reported flakes/retries.
+The failed email-change POST carries the same session cookie as its preceding
+authenticated `/auth/me/`200 (compared in RAM; only a hashed actor witness is
+archived). No matching rate-limit log is captured. Raw logs, metadata, report/
+trace, sanitized facts and checksums are preserved privately outside the repo.
+
+### 2026-10-08 — Dedicated avatar/deletion fixture isolation prepared
+
+The existing DEBUG/test-only, explicit E2E opt-in seed command now supplies two
+dedicated normal verified actors, avatar and deletion. Its existing exact-email
+reset inventory includes both; they own no board/social fixtures and start with
+null avatar/deletion state and confirmed English preferences. The new tests use
+their real API login, exact manifest ID/email and inequality to every other actor
+before assigning cleanup ownership. Incidental register/Mailpit verification and
+language PATCH setup are removed. Genuine anonymous registration and token-only
+outage/reuse journeys, all avatar/deletion behavior assertions, server-cookie
+revocation and exact owned cleanup remain unchanged. This proves isolated fixture
+state, not newly allocated actor IDs or physical media/account cleanup.
+
+Global setup and its three saved authentication roles remain unchanged; new
+tests begin in independent anonymous contexts. Neither production API nor rate
+limits, retry/timeouts, shared-cache behavior or dependencies change. The expanded
+existing seed regression corrupts privileges/verification/deletion state between
+two runs and proves restoration, five distinct stable actors and no duplicate
+fixture content. `DATABASE_URL=sqlite:///:memory:` with test settings runs only
+`apps/common/tests/test_seed_e2e.py`:3 pass in1.96seconds, isolated from candidate
+PostgreSQL/cache. Targeted Ruff/format, frontend Prettier/ESLint/TypeScript,
+checklist verifier and diff checks pass; independent source review passes. The
+next exact-source CI must still establish serial integration recovery.
+
+### 2026-10-08 — Danger and Show/Hide custom appearance observation
+
+A source-guarded FE05d/BEb6 disposable-account packet records14 states at each
+of320/1710px: custom Show/Hide normal/hover/held press/actual Tab focus/toggles,
+danger normal/hover/held press/actual Tab focus, both disabled during a held owned
+deletion request, and controlled422 completion. Exact cookie/password interception
+and browser/proxy write guards prevent real scheduling. Toggle values remain
+unchanged with no submit; completion retains the input and restores password focus.
+The danger palette inverts white/red to red/white on hover/press, with shared1px
+press transform. Computed opaque contrast is8.144; element opacity/ancestor
+compositing are excluded, so rendered disabled contrast/compliance is unproved.
+Show/Hide retains its box/colors/transform across hover/press; its focus outline
+changes. No authored hover treatment is added while the user's choice is pending.
+
+Measured control/form/error box clipping and document/body horizontal overflow
+are absent. Root visual inspection of all12 card-only screenshots confirms masked
+passwords even in visible-text mode, visible Show/Hide focus outline and contained
+card/button/error layout. This is a bounded masked-card observation, not a global
+aesthetic verdict or unmasked password readability test.
+
+Collection succeeds with28 measurements, but browser/controller and clean-flow
+remain failed: zero probe errors,30 request failures and three console errors
+(two controlled422s and one actual500 at1710px). Candidate frontend logs within
+the execution window record `/api/v1/notifications/unread-count/` proxy failure
+with `read ECONNRESET`; this strongly attributes the500 to optional unread-count
+transport, not the controlled deletion request. Exact browser-request correlation
+and reset cause remain unproved; no backend exception is established. Independent
+result review confirms the limits. Exact unchanged
+deletion state and owned actor/profile/preferences/session/event/cache/throttle
+cleanup pass with exit0; the diagnostic container is absent. Scripts, results,
+12 images and checksums are preserved in the private external scratch archive.
+
+A separate bounded transport comparison makes12 unauthenticated unread-count GET
+attempts: three completed and three deliberately cancelled through each of the
+candidate frontend and direct backend. All six completed requests return401;
+all six cancellation attempts are recorded. Collection completes in471ms with
+unchanged observed Gunicorn process IDs and no window-associated frontend reset
+log. No cookies, seed writes, settings changes or restarts occur. This negative
+reproduction does not match authenticated handler load, exclude transient worker
+recycling or explain the earlier500. Runtime inspection finds no container
+restart/OOM; WARNING logging does not prove absence of worker lifecycle events.

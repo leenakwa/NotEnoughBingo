@@ -11,6 +11,11 @@ For applicable visual states, reuse browser evidence only when inspected shared
 styles and markup are equivalent. Verify unmatched custom styles, surrounding
 focus/clipping contexts and asynchronous label/feedback transitions separately.
 Individual rectangle measurements are not an additional checklist requirement.
+The dated danger/Show-Hide packet adds28 bounded custom-state observations and
+12 masked card screenshots at320/1710px. Collection succeeds;30 request failures
+and three console errors, including a500 strongly attributed to optional unread
+count proxy `ECONNRESET` (exact correlation/cause unproved), retain failed clean-flow
+and wrapper verdicts. It does not establish network health or close section8.
 
 | Controls and form ownership | Executed or static evidence | Remaining applicable evidence |
 | --- | --- | --- |
