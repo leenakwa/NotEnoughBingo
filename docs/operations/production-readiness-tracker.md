@@ -63,7 +63,8 @@ The user retains account dialogs, one-time registration language onboarding,
 profile language preferences, removed catalog/search language pickers, fixed
 header and intentional hover/shadow treatment. On2026-10-08 the user chooses full
 profile-card text wrapping, mobile player variantB with the grid above controls,
-and cell font scaling with board width. These choices supersede older interface
+cell font scaling with board width, and a single report-dialog backdrop matching
+login. These choices supersede older interface
 observations; the original prompt remains unchanged.
 
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,

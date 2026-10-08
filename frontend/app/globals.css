@@ -1820,9 +1820,7 @@ input[type="range"] {
   padding: clamp(20px, 4vw, 34px);
   border: var(--line-heavy);
   background: var(--paper);
-  box-shadow:
-    var(--shadow),
-    0 0 0 100vmax rgb(0 0 0 / 46%);
+  box-shadow: var(--shadow);
   transform: translate(-50%, -50%);
 }
 

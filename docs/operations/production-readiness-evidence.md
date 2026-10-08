@@ -5557,3 +5557,16 @@ client/gateway/provider scope.
   CDN/TLS or target load. Item closes within the tracker predeployment definition;
   checklist788/354,59 verified/39 partial/six N/A/one deployment-only. Final
   corrected-source CI and real deployment remain separate gates.
+
+### 2026-10-08 — Approved consistent report backdrop
+
+Native Chrome comparison shows report-dialog had both46% native backdrop and a
+46% full-screen spread shadow; auth-dialog has only the native46% backdrop. The
+user chooses the same single backdrop as login. The report keeps its original
+small window shadow; only the redundant spread layer is removed. Eight browser
+cases pass across Chromium/mobile/Firefox/WebKit, retries/skips/flaky zero:
+320/1728 modal fit without page overflow, computed single backdrop/shadow, keyboard
+focus stays inside, Escape closes and focus returns to Report. Mac keyboard
+setting restored and verified. This is current-source private development proof;
+optimized-image and final-source CI remain separate. Narrow/wide screenshots are
+in artifacts/ui-review-2026-10-08/report-approved-single-backdrop-{320,1728}.jpg.
