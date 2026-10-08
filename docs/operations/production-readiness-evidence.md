@@ -7311,5 +7311,58 @@ UI cancellation with persisted restoration. Failure cleanup checks exact fresh
 ID/email before canceling any remaining schedule and logging out; it restores
 the disposable actor rather than claiming physical account removal. Independent
 source review, targeted ESLint/Prettier and TypeScript checks pass. Application
-source is unchanged. Runtime execution and the new exact-source CI gate remain
-pending; earlier123-flow CI does not cover this added test.
+source is unchanged. The subsequent runtime result is recorded below;
+earlier123-flow CI does not cover this added test.
+
+### 2026-10-08 — Deletion passes; cumulative verification quota fails CI
+
+Exact `a55a2b1` [CI37818441348](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37818441348)
+finishes with ten passing jobs, failed full-stack and failed Release. Backend446,
+frontend619 and smoke372/12 intentional skips pass without reported smoke flakes.
+Full-stack records123 passes/one failure. The new confirmed deletion case passes
+in4.8seconds, including its real scheduling, revoked cookie, grace login and UI
+cancellation assertions. The existing token-only registration recovery fails its
+expected200 assertion with429 after the controlled503 is released to the backend.
+
+The archived trace records application-shaped `throttled`, Retry-After3321 and
+the same structured retry duration. Source inventory establishes six anonymous
+verification/resend requests against unchanged `auth_verify` five/hour: initial
+registration resend and verification, email-change bootstrap verification, new
+deletion bootstrap verification, existing cancellation bootstrap verification,
+then token-only registration recovery. DRF keys authenticated requests by user ID
+and anonymous requests by resolved client IP. Exact CI cache history/key was not
+captured; trace and serial call inventory support fixture interference with high
+confidence. Neither production limits nor original recovery assertions are relaxed.
+
+Tested merge `8280dd4f708197e77a610bc98c8a3ffc0dbdfc4e` matches branch tree
+`6b844bdbeacead90a344bf5f477c2f638e5e2524`. Original run evidence and the failed
+report/trace are preserved in the private external scratch archive. A bootstrap
+isolation amendment and avatar validation/retry coverage remain pending; the
+failed Release gate does not establish readiness.
+
+### 2026-10-08 — Quota-isolated setup and avatar retry coverage prepared
+
+The two new disposable-account tests perform registration and real Mailpit token
+verification under the verified moderator fixture identity, then clear only their
+browser context cookies, assert anonymous401, fetch fresh CSRF and log in as their
+fresh actor. This avoids consuming the anonymous verification quota and avoids
+Django cross-account login flushing the persisted moderator fixture session.
+Existing guest token-only recovery/reuse assertions and application limits remain
+unchanged. Independent review caught and corrected the shared-session risk before
+runtime submission; the final source review passes.
+
+The new avatar case at320px rejects SVG MIME and a5MiB+1 source file with scoped
+errors, reset enabled input, no intent or profile writes, and unchanged null avatar.
+A held intent503 disables selection, resets the input and performs no attachment.
+Reselecting the identical PNG name/MIME/bytes requires a real201 intent, real upload,
+real200 attachment with exact asset ID, persisted reload, then UI removal200 and
+persisted null avatar. Cleanup checks the exact fresh ID/email before touching its
+avatar or logging out. This tests programmatic file selection, not native OS chooser
+cancellation, provider availability or physical asset/account erasure.
+
+Targeted Prettier, ESLint with zero warnings, TypeScript and diff checks pass;
+the105-section/1142-item verifier passes. Runtime coverage for the amended tests
+and cumulative-quota integration remains pending the next exact-source CI gate.
+The control matrices now explicitly allow equivalent shared-style browser evidence
+and retain unmatched custom/focus/clipping/async contexts; the original checklist
+does not require separate rectangle measurements for every equivalent control.

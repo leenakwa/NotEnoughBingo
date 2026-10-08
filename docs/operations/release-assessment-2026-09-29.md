@@ -5,7 +5,23 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Exact `71a22ec` passes all12 jobs in
+Latest observation —2026-10-08: Exact `a55a2b1` fails the full-stack and Release
+jobs in [CI37818441348](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37818441348).
+Ten jobs pass:446 backend,619 frontend and372 smoke cases/12 intentional skips;
+full-stack records123 passes and one failure. The new confirmed-account-deletion
+browser case passes. The existing token-only registration retry receives an actual
+429 after its controlled503: the trace records `throttled` and Retry-After3321.
+Source inspection identifies six serial anonymous verification/resend requests
+against the shared five-per-hour quota, including the added deletion bootstrap;
+the recovery retry is sixth. Exact cache history was not captured; trace and source
+inventory support fixture interference with high confidence. Test bootstrap
+isolation is being corrected; application limits and original
+retry assertions are unchanged. Tested merge `8280dd4f708197e77a610bc98c8a3ffc0dbdfc4e`
+shares full tree `6b844bdbeacead90a344bf5f477c2f638e5e2524` with the branch.
+The failed run and trace are preserved; a passing earlier gate does not cover
+this source. No deployment or readiness claim follows.
+
+Latest completed green gate —2026-10-08: Exact `71a22ec` passes all12 jobs in
 [CI37812635002](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37812635002):
 446 backend,619 frontend,372 smoke/12 intentional skips and123 full-stack
 cases, with no reported smoke flakes. Both images and Release pass. Tested

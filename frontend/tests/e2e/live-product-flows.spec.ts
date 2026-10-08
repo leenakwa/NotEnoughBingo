@@ -5792,11 +5792,274 @@ test("session sign-out shows scoped progress and retries without losing credenti
   }
 });
 
+test("isolated avatar validation blocks writes and the same file retries an intent outage", async ({
+  page,
+}) => {
+  await authenticateAs(page, "moderator");
+  const api = page.context().request;
+  const bootstrapActor = await api.get("/api/v1/auth/me/");
+  expect(bootstrapActor.status()).toBe(200);
+  expect((await bootstrapActor.json()).id).toBe(readLiveFixture().users.moderator.id);
+  const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
+  const email = `e2e-avatar-${nonce}@example.test`;
+  const password = `QA-${randomUUID()}-account`;
+  let ownedId = "";
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+  async function csrfHeaders() {
+    const csrf = (await api.storageState()).cookies.find((cookie) => cookie.name === "neb_csrf");
+    expect(csrf).toBeDefined();
+    return { "X-CSRFToken": csrf!.value };
+  }
+  async function ownedProfile() {
+    const identity = await api.get("/api/v1/auth/me/");
+    expect(identity.status()).toBe(200);
+    const actor = (await identity.json()) as { id: string; email: string };
+    expect(actor.id).toBe(ownedId);
+    expect(actor.email).toBe(email);
+    const current = await api.get("/api/v1/profiles/me/");
+    expect(current.status()).toBe(200);
+    const profile = (await current.json()) as {
+      id: string;
+      avatar: { id: string } | null;
+    };
+    expect(profile.id).toBe(ownedId);
+    return profile;
+  }
+  let releaseIntent: () => void = () => undefined;
+  let heldHandler: Promise<void> | undefined;
+  let intentWrites = 0;
+  let profileWrites = 0;
+  const submittedIntents: unknown[] = [];
+  const heldIntent = new Promise<void>((resolve) => {
+    releaseIntent = resolve;
+  });
+  const intentPath = "/api/v1/uploads/intents/";
+  const intentRoute = async (route: Route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    if (intentWrites !== 1) return route.continue();
+    heldHandler = (async () => {
+      await heldIntent;
+      await route.fulfill({
+        status: 503,
+        json: {
+          error: {
+            code: "unavailable",
+            message: "Avatar upload intent temporarily unavailable.",
+          },
+        },
+      });
+    })();
+    return heldHandler;
+  };
+  try {
+    expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
+    expect(
+      (
+        await api.post("/api/v1/auth/register/", {
+          headers: await csrfHeaders(),
+          data: { email, username: `e2e_avatar_${nonce}`, password },
+        })
+      ).status(),
+    ).toBe(202);
+    const token = new URL(await verificationLink(api, email)).searchParams.get("token");
+    expect(token).toBeTruthy();
+    expect(
+      (
+        await api.post("/api/v1/auth/verify-email/", {
+          headers: await csrfHeaders(),
+          data: { token },
+        })
+      ).status(),
+    ).toBe(200);
+    // Drop only this browser's bootstrap cookies so logging in as the fresh
+    // actor does not flush the persisted moderator fixture session.
+    await page.context().clearCookies();
+    expect((await api.get("/api/v1/auth/me/")).status()).toBe(401);
+    expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
+    expect(
+      (
+        await api.post("/api/v1/auth/login/", {
+          headers: await csrfHeaders(),
+          data: { email, password },
+        })
+      ).status(),
+    ).toBe(200);
+    const identity = await api.get("/api/v1/auth/me/");
+    expect(identity.status()).toBe(200);
+    const actor = (await identity.json()) as { id: string; email: string };
+    expect(actor.email).toBe(email);
+    expect(actor.id).toBeTruthy();
+    expect(Object.values(readLiveFixture().users).map((user) => user.id)).not.toContain(actor.id);
+    ownedId = actor.id;
+    expect((await ownedProfile()).avatar).toBeNull();
+    expect(
+      (
+        await api.patch("/api/v1/profiles/me/", {
+          headers: await csrfHeaders(),
+          data: { preferred_languages: ["en"] },
+        })
+      ).status(),
+    ).toBe(200);
+    page.on("request", (request) => {
+      const path = new URL(request.url()).pathname;
+      if (path === intentPath && request.method() === "POST") {
+        intentWrites += 1;
+        submittedIntents.push(request.postDataJSON());
+      }
+      if (path === "/api/v1/profiles/me/" && request.method() === "PATCH") profileWrites += 1;
+    });
+    await page.route(`**${intentPath}`, intentRoute);
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto("/profile");
+    const avatarCard = page.locator(".settings-card").filter({
+      has: page.getByRole("heading", { name: "Avatar", exact: true }),
+    });
+    const input = avatarCard.locator('input[name="avatar"]');
+    for (const invalid of [
+      {
+        file: {
+          name: "avatar.svg",
+          mimeType: "image/svg+xml",
+          buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'),
+        },
+        message: "Use a JPEG, PNG, WebP, or AVIF image.",
+      },
+      {
+        file: {
+          name: "oversized.png",
+          mimeType: "image/png",
+          buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 1),
+        },
+        message: "The image must be no larger than 5 MB.",
+      },
+    ]) {
+      await input.setInputFiles(invalid.file);
+      await expect(avatarCard.getByRole("alert")).toHaveText(invalid.message);
+      await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
+      await expect(input).toBeEnabled();
+      await expect(input).toHaveValue("");
+      await expect(avatarCard.getByRole("button", { name: "Remove", exact: true })).toHaveCount(0);
+      expect((await ownedProfile()).avatar).toBeNull();
+      expect(intentWrites).toBe(0);
+      expect(profileWrites).toBe(0);
+    }
+    const valid = {
+      name: "avatar-retry.png",
+      mimeType: "image/png",
+      buffer: cellImagePng,
+    };
+    const failedIntent = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === intentPath && response.request().method() === "POST",
+    );
+    await input.setInputFiles(valid);
+    await expect.poll(() => intentWrites).toBe(1);
+    await expect(input).toBeDisabled();
+    await expect(input).toHaveValue("");
+    expect(profileWrites).toBe(0);
+    releaseIntent();
+    expect((await failedIntent).status()).toBe(503);
+    await expect(avatarCard.getByRole("alert")).toHaveText(
+      "Avatar upload intent temporarily unavailable.",
+    );
+    await expect(input).toBeEnabled();
+    await expect(input).toHaveValue("");
+    expect((await ownedProfile()).avatar).toBeNull();
+    expect(profileWrites).toBe(0);
+
+    // Reuse the identical name, MIME, and bytes; the input reset must allow reselection.
+    const createdIntent = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === intentPath && response.request().method() === "POST",
+    );
+    const attached = waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      input.setInputFiles(valid),
+    );
+    const created = await createdIntent;
+    expect(created.status()).toBe(201);
+    const upload = (await created.json()) as { id: string };
+    expect(upload.id).toBeTruthy();
+    const attachment = await attached;
+    expect(attachment.status()).toBe(200);
+    expect(attachment.request().postDataJSON()).toEqual({
+      avatar_id: upload.id,
+    });
+    expect(intentWrites).toBe(2);
+    expect(submittedIntents).toEqual(
+      [0, 1].map(() => ({
+        kind: "avatar",
+        file_name: valid.name,
+        content_type: valid.mimeType,
+        size: valid.buffer.length,
+      })),
+    );
+    expect(profileWrites).toBe(1);
+    await expect(avatarCard.getByRole("status")).toHaveText("Avatar updated.");
+    await expect(input).toBeEnabled();
+    await expect(input).toHaveValue("");
+    expect((await ownedProfile()).avatar?.id).toBe(upload.id);
+    await page.reload();
+    await expect(avatarCard.getByRole("button", { name: "Remove", exact: true })).toBeVisible();
+    expect((await ownedProfile()).avatar?.id).toBe(upload.id);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    const removed = await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
+      avatarCard.getByRole("button", { name: "Remove", exact: true }).click(),
+    );
+    expect(removed.status()).toBe(200);
+    expect(removed.request().postDataJSON()).toEqual({ avatar_id: null });
+    await expect(avatarCard.getByRole("status")).toHaveText("Avatar removed.");
+    expect((await ownedProfile()).avatar).toBeNull();
+    await page.reload();
+    await expect(avatarCard.getByRole("button", { name: "Remove", exact: true })).toHaveCount(0);
+    expect((await ownedProfile()).avatar).toBeNull();
+    expect(errors).toEqual([]);
+  } finally {
+    releaseIntent();
+    await heldHandler;
+    await page.unroute(`**${intentPath}`, intentRoute);
+    if (ownedId) {
+      expect(
+        (
+          await api.post("/api/v1/auth/login/", {
+            headers: await csrfHeaders(),
+            data: { email, password },
+          })
+        ).status(),
+      ).toBe(200);
+      if ((await ownedProfile()).avatar) {
+        expect(
+          (
+            await api.patch("/api/v1/profiles/me/", {
+              headers: await csrfHeaders(),
+              data: { avatar_id: null },
+            })
+          ).status(),
+        ).toBe(200);
+        expect((await ownedProfile()).avatar).toBeNull();
+      }
+      expect(
+        (
+          await api.post("/api/v1/auth/logout/", {
+            headers: await csrfHeaders(),
+          })
+        ).status(),
+      ).toBe(204);
+    }
+  }
+});
+
 test("confirmed account deletion signs out an isolated account and can be cancelled after login", async ({
   page,
   playwright,
 }) => {
+  await authenticateAs(page, "moderator");
   const api = page.context().request;
+  const bootstrapActor = await api.get("/api/v1/auth/me/");
+  expect(bootstrapActor.status()).toBe(200);
+  expect((await bootstrapActor.json()).id).toBe(readLiveFixture().users.moderator.id);
   const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
   const email = `e2e-deletion-${nonce}@example.test`;
   const password = `QA-${randomUUID()}-account`;
@@ -5839,6 +6102,11 @@ test("confirmed account deletion signs out an isolated account and can be cancel
         })
       ).status(),
     ).toBe(200);
+    // Drop only this browser's bootstrap cookies so logging in as the fresh
+    // actor does not flush the persisted moderator fixture session.
+    await page.context().clearCookies();
+    expect((await api.get("/api/v1/auth/me/")).status()).toBe(401);
+    expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
     expect(
       (
         await api.post("/api/v1/auth/login/", {

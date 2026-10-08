@@ -39,6 +39,17 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
+Exact `a55a2b1` [CI37818441348](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37818441348)
+has ten passing jobs, failed full-stack and failed Release:446 backend,619 frontend,
+372 smoke/12 intentional skips; full-stack123 passes/one failure. New confirmed
+account deletion passes; later token-only registration recovery receives429 after
+the new anonymous setup consumes the shared verification quota. The trace and
+serial request inventory support fixture interference; isolation is being amended
+without changing production limits or guest recovery assertions. Latest completed
+green source is71a22ec/CI37812635002. No section is closed by this partial gate.
+
+Earlier source gates:
+
 Source `a2c2d6f` passes all nine jobs in
 [CI37769102508](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508):
 backend402/105.73s on Python3.13.16/PostgreSQL, frontend589/43 files,
