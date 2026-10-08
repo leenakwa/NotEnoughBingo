@@ -10,7 +10,8 @@ sequence and definition of done, remains authoritative.
 ## How to read this tracker
 
 This is a **before-deployment** assessment of the actual NotEnoughBingo
-repository and its locally running production-equivalent services. A section
+repository and scoped local/CI observations. Each result retains its source,
+runtime settings and verification limits. A section
 can be marked verified before deployment when every applicable item has
 observed evidence and any deployment-specific value has a safe configuration
 contract. Do not hold the entire product at zero merely because the public
@@ -49,9 +50,9 @@ runs remain in the dated evidence. Private-API caching and framework/dev logging
 corrections have fail-before regressions and independent review. Exact optimized
 a2 registration/player/report/cache observations pass; backend uses local
 fixture development settings. CSRF copy and other UI choices remain open.
-The subsequent docs-only d330 gate also passes all nine jobs in
-[CI37771826483](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37771826483);
-its tested merge and branch share full tree084292971420002d40727b6f169ad8195601482c.
+The later docs-only a4c5fb7 gate passes all nine jobs in
+[CI37774879912](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37774879912);
+its tested merge and branch share full tree9462cad5186e138b2ea30d698b1cb1ef2fe1d2ef.
 Application source and the configured a2 runtime are unchanged.
 A later single a2 RSC flow reads all17 observed bodies to EOF while CDP marks9
 requests canceled, including the clicked navigation. The grid renders with no
@@ -80,10 +81,12 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **808 checked /334 unchecked**. Of those334,85 belong to the six
-explicitly N/A sections;249 are applicable unchecked bullets. The42 final
+Current **817 checked /325 unchecked**. Of those325,85 belong to the six
+explicitly N/A sections;240 are applicable unchecked bullets. The42 final
 execution bullets overlap earlier checks, so these counts are not independent
-tasks or a readiness percentage. Section42 backup/migration/rollback
+tasks or a readiness percentage. The first nine section105 actions have actual
+local CI/runtime/search/configuration evidence; the deployment sequence and
+Definition of Done remain open. Section42 backup/migration/rollback
 contracts and section82 applicable API contracts have local evidence. Provider
 and target measurements remain open in their relevant sections.
 

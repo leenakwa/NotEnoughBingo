@@ -1800,15 +1800,15 @@ Do not merely read this list.
 
 Actually perform as much of the following sequence as the environment permits:
 
-- [ ] 1. perform clean dependency installation;
-- [ ] 2. run lint;
-- [ ] 3. run typecheck;
-- [ ] 4. run tests;
-- [ ] 5. run the production build;
-- [ ] 6. run production build locally if possible;
-- [ ] 7. test all major routes;
-- [ ] 8. search repository for localhost/TODO/FIXME/mocks/test credentials/secrets/debugging leftovers;
-- [ ] 9. inspect configuration and environment assumptions;
+- [x] 1. perform clean dependency installation;
+- [x] 2. run lint;
+- [x] 3. run typecheck;
+- [x] 4. run tests;
+- [x] 5. run the production build;
+- [x] 6. run production build locally if possible;
+- [x] 7. test all major routes;
+- [x] 8. search repository for localhost/TODO/FIXME/mocks/test credentials/secrets/debugging leftovers;
+- [x] 9. inspect configuration and environment assumptions;
 - [ ] 10. deploy to the real production environment if deployment is part of your task and credentials/access are available;
 - [ ] 11. open the actual production URL;
 - [ ] 12. test as an anonymous user;

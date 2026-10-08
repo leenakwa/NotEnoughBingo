@@ -6185,3 +6185,114 @@ Its log is retained; correcting NODE_PATH permits exactly one actual flow.
 Cleanup reports zero errors and the disposable container is absent. Sanitized
 raw proof, correlation, script, logs and cleanup are archived outside the repo;
 the existing RSC artifact stores their hashes and bounded summary.
+
+
+### 2026-10-08 — Map completed local final actions without repeating the gate
+
+The original section105 requests actions as the environment permits. Its first
+nine action bullets now map to actual results: fresh CI npm ci/backend locked
+installs; frontend/backend lint and types;402 backend,589 frontend,372 smoke
+with12 intentional skips and123 live tests; Next and both production image
+builds; exact a2 optimized local runtime; the named live20-page-route case;
+tracked-source leftover searches; and configuration/environment inspection.
+
+The complete a2/d330 logs prove command execution and results, not just test
+counts. The live major-route scenario in live-product-flows.spec.ts:2704 covers
+18 guest routes plus authenticated profile/notifications/create at320/1710.
+It passes in both gates. Exact a2 frontend has no source mounts and responds200;
+backend Gunicorn live/ready respond200 with development fixture settings.
+These scopes differ: the route pass uses the full-stack development images,
+and the exact optimized browser packet has fewer flows. Configuration evidence
+includes actual Compose/Nginx checks,17 frontend environment tests and10 backend
+production-configuration tests; target provider settings remain unverified.
+
+A current a4 tracked-tree search covers loopback/TODO/FIXME/mock/test-credential/
+secret/debug categories and saves only counts and filename-list hashes. Matches
+are retained as context-dependent findings, not proof that all leftovers or
+secrets are absent. Production guards and existing scoped inventory distinguish
+development/QA markers. The current secret CI job passes independently.
+The corrected inventory uses literal-character regex classes; its earlier
+escaped version is retained separately. Independent review supports all nine
+local action marks. Checklist817/325 includes85 N/A and240 applicable unchecked.
+Section105 stays partial; verdicts59/39/six N/A/one deployment-only are unchanged.
+The subsequent deployment sequence and Definition of Done remain open.
+
+### 2026-10-08 — Missing long-input packet exposes mobile active-filter overflow
+
+One exact-a2 Linux Chromium packet runs28 cases at320/1710:21 pass and7 remain
+unverified. Fourteen auth/account cases retain254-character email and/or
+representative100-character passwords after controlled400 responses; shown and
+hidden password states fit. Six reply/edit/report cases retain2000-character
+text and fit. Wide Explore passes80-character title/author and15 tags of50 each.
+Mobile Explore form fits, but its17 active-filter buttons cause document
+overflow. Root visual inspection confirms long labels extend beyond the right
+edge; the user is asked to choose full wrapping or ellipsis. No UI change is
+applied while that choice is pending.
+
+Guest nickname50 and editor image-alt160/bulk text100 fit initially at both
+widths, but their six post-rejection checks fail at an alert visibility assertion.
+Retained values after rejection are not proven by those failed checks. The
+packet records only the first assertion line, so it does not establish whether
+feedback is absent, the locator is ambiguous, or another condition caused the
+assertion failure.
+
+All44 observed mutations are intercepted, guard backend writes are zero, page
+errors are zero, and cleanup has zero errors.32 console-error events remain;
+message text was not captured, so their exact cause is not established. This
+is controlled-response layout evidence, not persistence or a clean-console
+verdict. Four narrow/wide Explore/Report screenshots, script, raw proof and
+cleanup are archived outside the repo; the existing native artifact stores
+scoped results and the proof hash. Section7 long-layout remains unchecked.
+
+Two separate anonymous direct-backend GET measurements return catalog200 with
+9054 bytes/two boards18 preview cells, and largest returned detail200 with8838
+bytes/3x3 board. Both use identity transfer despite requesting gzip. Detail
+preview and revision cell arrays are equal; preview contributes3473 canonical
+JSON bytes, around39% of that detail. These are small sparse fixtures: the
+default24-board page,10x10/media workload and target ingress compression remain
+unverified. No oversized-response defect, optimization or global network mark
+follows from these measurements.
+
+The user confirms that no production domain or hosting is planned yet. Provider
+alternatives and a budget question are presented; no provider is selected and
+no purchase/deployment occurs. Existing interface choices remain pending.
+
+
+### 2026-10-08 — Six retained-value diagnostics identify an assertion ambiguity
+
+One six-case diagnostic preserves the original global alert assertion,400
+fixtures and timeouts. All six original assertions still fail: Playwright
+reports a strict-mode violation because it finds application feedback and
+Next's shadow-DOM route announcer. Installed Next app-router-announcer.js
+creates that role=alert shadow element. A document-only alert inventory misses
+it; the full sanitized Playwright failure retains both matches. This is a
+proven locator ambiguity, not proof that application feedback is absent.
+
+Independent observations establish all six POST/PUT400 responses completed,
+the intended controlled-error feedback is visible, nickname50/image-alt160/
+bulk text100 are retained exactly, both selected bulk cells retain100, and
+before/after document and panel geometry fit with reachable controls at320/1710.
+Guest auth/me is not requested; observed session/header/form state stays stable.
+No source, mock-envelope or timeout change is used to obtain these observations.
+The original28-case packet remains21 passed/7 unverified; this separate packet
+resolves the six missing property observations without rewriting its failures.
+Mobile active-filter overflow and its user choice remain open.
+
+Eight observed mutations are intercepted, backend guard writes are zero, page
+errors are zero and cleanup succeeds. Six console-error events retain unknown
+exact causes. No persistence, physical-device or clean-console verdict follows.
+Sanitized proof/script/log/cleanup are archived; the existing artifact records
+its hash, six independent observations and six unchanged failed assertions.
+
+### 2026-10-08 — Exact a4 documentation gate completes
+
+[CI37774879912](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37774879912)
+for a4c5fb74f110c396f27100f6eac0d3366647e657 passes all nine jobs:402 backend
+in104.94s,589 frontend in43 files,372 smoke with12 intentional skips in18.4min
+and123 full-stack in6.3min. Both production images, foundation, full-history
+secrets and Release pass. Raw checkout identifies merge
+0f00578db345e19bd3265cd842e2a33c7a85d58e; GitHub Git API and local Git agree on
+complete tree9462cad5186e138b2ea30d698b1cb1ef2fe1d2ef. Application/test source
+remains identical to a2 and configured local images remain exact a2. No
+additional application test rerun or image replacement is performed for these
+documentation-only changes. Complete raw log and job metadata are archived.

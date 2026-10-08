@@ -16,9 +16,9 @@ runs remain in the dated evidence. Private-API caching and framework/dev logging
 corrections have fail-before regressions and independent review. Exact optimized
 a2 registration/player/report/cache observations pass; backend uses local
 fixture development settings. CSRF copy and other UI choices remain open.
-The subsequent docs-only d330 gate also passes all nine jobs in
-[CI37771826483](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37771826483);
-its tested merge and branch share full tree084292971420002d40727b6f169ad8195601482c.
+The later docs-only a4c5fb7 gate passes all nine jobs in
+[CI37774879912](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37774879912);
+its tested merge and branch share full tree9462cad5186e138b2ea30d698b1cb1ef2fe1d2ef.
 Application source and the configured a2 runtime are unchanged.
 A later single a2 RSC flow reads all17 observed bodies to EOF while CDP marks9
 requests canceled, including the clicked navigation. The grid renders with no
@@ -48,8 +48,8 @@ The subsequent cache-readiness correction has13 passing scoped observability
 checks and independent review. Its388-test Python3.13/PostgreSQL job passes;
 the complete ceb source gate passes. Earlier configured frontend observations remain scoped to065.
 
-Current checklist:808 checked/334 unchecked;59 verified/39 partial/six N/A/
-one deployment-only. Of334 unchecked bullets,85 belong to the six explicitly N/A sections;249 are
+Current checklist:817 checked/325 unchecked;59 verified/39 partial/six N/A/
+one deployment-only. Of325 unchecked bullets,85 belong to the six explicitly N/A sections;240 are
 applicable. The42 final-execution bullets overlap earlier checks. These counts
 describe evidence, not independent tasks or a product-readiness percentage.
 The [tracker](production-readiness-tracker.md) and

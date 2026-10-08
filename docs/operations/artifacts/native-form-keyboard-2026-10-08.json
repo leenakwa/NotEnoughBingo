@@ -847,5 +847,181 @@
         "sha256": "5b5e6db16575b8680a6a822d37eb42fbd41b68398d217bcb3308728dc49bbefb"
       }
     ]
+  },
+  "maximumContentA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+    "counts": {
+      "cases": 28,
+      "verified": 21,
+      "unverified": 7,
+      "failures": 7,
+      "observedMutationRequests": 44,
+      "interceptedMutations": 44,
+      "backendWritesFromGuards": 0,
+      "mutationCoverageComplete": true
+    },
+    "pageErrors": 0,
+    "consoleErrorEvents": 32,
+    "consoleEventCauseEstablished": false,
+    "viewports": [
+      320,
+      1710
+    ],
+    "verifiedScope": "14 auth/account, 6 reply/edit/report cases and wide Explore; controlled error retention/layout.",
+    "unverified": [
+      {
+        "kind": "guest-nickname50",
+        "width": 320,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "explore-title80-author80-tags15x50",
+        "width": 320,
+        "errorName": "AssertionError",
+        "check": "document-overflow"
+      },
+      {
+        "kind": "editor-image-alt160",
+        "width": 320,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "editor-bulk-shared-text100",
+        "width": 320,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "guest-nickname50",
+        "width": 1710,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "editor-image-alt160",
+        "width": 1710,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "editor-bulk-shared-text100",
+        "width": 1710,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      }
+    ],
+    "otherFailedCasesInitialLayoutFit": true,
+    "activeFiltersMobileOverflowConfirmed": true,
+    "pendingUserChoice": "Full wrapping or ellipsis for long active-filter values; no source changes.",
+    "limits": [
+      "One Linux Chromium engine, two viewports; no physical-device claim",
+      "All business mutations return controlled400, telemetry204; no backend persistence or capacity claim",
+      "Password100 is a representative long valid input, not a product maximum",
+      "Existing moderator cookie only reused for SSR/social, never printed or persisted into proof",
+      "Current UI limits500/40/50 remain unchanged; no assertion that API1000/50/80 must be adopted",
+      "Only listed missing fields; prior profile/editor maximum packets remain independent evidence"
+    ],
+    "rawProof": {
+      "name": "maximum-content/proof.json",
+      "sha256": "e4dc4654302fe462b4b44e5235276784cecb16fa039e85193bde463ed6600312"
+    }
+  },
+  "directApiResponseSizesA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+    "cases": [
+      {
+        "case": "normal-default-catalog",
+        "status": 200,
+        "requestedAcceptEncoding": "gzip",
+        "responseContentEncoding": "identity",
+        "wireBodyBytes": 9054,
+        "decodedJsonBytes": 9054,
+        "contentLengthHeader": "9054",
+        "contentType": "application/json",
+        "cacheControl": null,
+        "redirected": false,
+        "totalAvailableCount": 2,
+        "resultCount": 2,
+        "hasNext": false,
+        "configuredDefaultPageSize": 24,
+        "previewCellCount": 18,
+        "mediaMetadataOccurrences": 0,
+        "previewContributionCanonicalBytes": 6933,
+        "descriptionContributionCanonicalBytes": 116
+      },
+      {
+        "case": "largest-preview-board-on-returned-page",
+        "status": 200,
+        "requestedAcceptEncoding": "gzip",
+        "responseContentEncoding": "identity",
+        "wireBodyBytes": 8838,
+        "decodedJsonBytes": 8838,
+        "contentLengthHeader": "8838",
+        "contentType": "application/json",
+        "cacheControl": null,
+        "redirected": false,
+        "boardSize": 3,
+        "previewCellCount": 9,
+        "revisionCellCount": 9,
+        "mediaMetadataOccurrences": 0,
+        "previewContributionCanonicalBytes": 3473,
+        "currentRevisionContributionCanonicalBytes": 4095,
+        "previewCellsEqualRevisionCells": true,
+        "editableDraftPresent": false
+      }
+    ],
+    "limits": [
+      "Catalog fixture has fewer than24 results.",
+      "Largest returned fixture is smaller than10x10.",
+      "Field contributions use compact UTF8 JSON serialization, excluding field-key/separator overhead; they are not independently compressed transfer sizes.",
+      "Direct backend compression differs from final ingress/CDN policy.",
+      "No IDs/names/user fields/query values/response bodies persisted."
+    ],
+    "globalRequirementClosed": false,
+    "rawProof": {
+      "name": "neb-response-size-a2-once-oct08.json",
+      "sha256": "05f7e3c3e95c8c4238f712593801b7525b4d0ab08a62566c58f526a1ba7e807e"
+    }
+  },
+  "maximumContentAlertDiagnosticA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+    "counts": {
+      "cases": 6,
+      "flowsCompleted": 6,
+      "globalAssertionPassed": 0,
+      "globalAssertionFailed": 6,
+      "observedMutationRequests": 8,
+      "interceptedMutations": 8,
+      "backendWritesFromGuards": 0,
+      "mutationCoverageComplete": true
+    },
+    "cause": "The unchanged global alert assertion matches application feedback and Next shadow-DOM route announcer, producing a strict-mode violation in all six cases.",
+    "independentObservationsVerified": 6,
+    "allControlled400Completed": true,
+    "allIntendedFeedbackVisible": true,
+    "allInputValuesRetained": true,
+    "bulkBothCellsRetained": true,
+    "allBeforeAfterGeometryFits": true,
+    "pageErrors": 0,
+    "consoleErrorEvents": 6,
+    "consoleEventCauseEstablished": false,
+    "originalGlobalAssertionsRemainFailed": true,
+    "limits": [
+      "ONE six-case diagnostic only, Linux Chromium at320/1710; no repeat28/Explore/RSC",
+      "Original global alert assertion retained, controlled400 fixtures and15000/20000 action/navigation timeouts unchanged",
+      "Passive auth event observations do not instrument React viewer/mutationLifetime references; zero events alone do not prove every lifecycle transition",
+      "No response bodies, private headers/query/cookies/IDs/email or form values recorded; only structural classes/flags/length/equality",
+      "All writes intercepted; no backend persistence or real-device claim",
+      "Failure DOM text/URLs/IDs/emails/value attributes sanitized; original packet preserved separately"
+    ],
+    "rawProof": {
+      "name": "maximum-content-six-diagnostic/proof.json",
+      "sha256": "d2e26f2624e5c48ce277cd7a4f5d9e0b797e226aa77f947e498068bf337995a6"
+    }
   }
 }
