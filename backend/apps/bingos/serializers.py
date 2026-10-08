@@ -14,7 +14,7 @@ from apps.bingos.models import Bingo, BingoCell, BingoRevision, Draft, Tag
 from apps.bingos.services import create_bingo
 from apps.bingos.validators import normalize_draft_document
 from apps.media_assets.models import MediaAsset
-from apps.media_assets.serializers import MediaAssetSerializer
+from apps.media_assets.serializers import MediaAssetPreviewSerializer, MediaAssetSerializer
 
 PUBLIC_SITEMAP_BUCKET_SIZE = 10_000
 PUBLIC_SITEMAP_MAX_PK = 2**63 - 1
@@ -256,9 +256,15 @@ class BingoRevisionSerializer(serializers.ModelSerializer):
         return [{"name": item.name, "slug": item.slug} for item in obj.revision_tags.all()]
 
 
+class BingoPreviewCellSerializer(BingoCellSerializer):
+    image = MediaAssetPreviewSerializer(read_only=True, allow_null=True)
+
+
 class BingoCardPreviewSerializer(serializers.ModelSerializer):
-    board_background = MediaAssetSerializer(source="background", read_only=True, allow_null=True)
-    cells = BingoCellSerializer(many=True, read_only=True)
+    board_background = MediaAssetPreviewSerializer(
+        source="background", read_only=True, allow_null=True
+    )
+    cells = BingoPreviewCellSerializer(many=True, read_only=True)
 
     class Meta:
         model = BingoRevision

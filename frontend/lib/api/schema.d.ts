@@ -1245,8 +1245,8 @@ export interface components {
         };
         BingoCardPreview: {
             size: number;
-            readonly board_background: components["schemas"]["MediaAsset"] | null;
-            readonly cells: components["schemas"]["BingoCell"][];
+            readonly board_background: components["schemas"]["MediaAssetPreview"] | null;
+            readonly cells: components["schemas"]["BingoPreviewCell"][];
         };
         BingoCell: {
             /** Format: uuid */
@@ -1366,6 +1366,31 @@ export interface components {
             readonly can_comment: boolean;
             readonly can_like: boolean;
             readonly can_report: boolean;
+        };
+        BingoPreviewCell: {
+            /** Format: uuid */
+            readonly id: string;
+            position: number;
+            row: number;
+            column: number;
+            text?: string;
+            text_color?: string;
+            bold?: boolean;
+            italic?: boolean;
+            underline?: boolean;
+            strikethrough?: boolean;
+            background_color?: string;
+            /** Format: double */
+            background_opacity?: number;
+            /** Format: uuid */
+            readonly image_asset_id: string | null;
+            readonly image: components["schemas"]["MediaAssetPreview"] | null;
+            image_alt?: string;
+            /** Format: double */
+            image_opacity?: number;
+            border_color?: string;
+            border_width?: number;
+            border_style?: components["schemas"]["BorderStyleEnum"];
         };
         BingoRevision: {
             /** Format: uuid */
@@ -1766,6 +1791,14 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly ready_at: string | null;
+        };
+        MediaAssetPreview: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly width: number | null;
+            readonly height: number | null;
+            readonly url: string | null;
+            readonly thumbnail_url: string | null;
         };
         /**
          * @description * `pending` - Pending upload

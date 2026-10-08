@@ -73,10 +73,12 @@ export interface BingoSummary {
   updated_at: string;
 }
 
+export type PreviewMedia = Pick<MediaAsset, "id" | "width" | "height" | "url" | "thumbnail_url">;
+
 export interface BingoCardPreview {
   size: number;
-  board_background: MediaAsset | null;
-  cells: RevisionCell[];
+  board_background: PreviewMedia | null;
+  cells: (Omit<RevisionCell, "image"> & { image: PreviewMedia | null })[];
 }
 
 export interface RevisionCell {

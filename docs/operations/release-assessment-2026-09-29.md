@@ -5,7 +5,24 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest observation —2026-10-08: Source `a2c2d6f` passes all nine jobs in
+Latest observation —2026-10-08: Exact5f28e03 passes all12 jobs in
+[CI37786669037](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37786669037):
+414 backend,609 frontend,372 smoke/12 intentional skips and123 full-stack flows;
+both images and Release pass. Tested merge and branch full trees match. The
+configured optimized pair has matching5f release identities and real guest/auth
+GETs retain full revisions/catalog previews while removing duplicate detail
+preview. Backend still uses local fixture development settings.
+
+The subsequent slim-preview-media patch passes46 scoped backend and610 frontend
+cases, lint/types/format/schema checks and independent review. One isolated
+maximum-field shared-media fixture measures default24-card JSON falling
+5,140,890→4,246,290 bytes, approximately17.40%, while retaining complete cell
+content/styles and full detail media. Responses remain large; PostgreSQL distinct
+media scalability, ingress compression and target latency are not proved. This
+new patch requires its own committed-source gate. Follow geometry has scoped
+seven-context stability evidence, with one unexplained session proxy500 retained.
+
+Earlier observation —2026-10-08: Source `a2c2d6f` passes all nine jobs in
 [CI37769102508](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508):
 backend402/105.73s on Python3.13.16/PostgreSQL, frontend589/43 files,
 smoke372/12 intentional skips17.3min and full-stack123/8.2min; foundation,
@@ -57,7 +74,9 @@ The [tracker](production-readiness-tracker.md) and
 
 ## Decision
 
-Source a2 has a complete CI gate covering registration metadata, private-response
+Source5f has the complete source gate summarized above; the subsequent slim
+preview patch still requires its own gate. Source a2 has historical evidence for
+registration metadata, private-response
 caching and development/framework logging corrections. Scoped checks and
 independent review pass. Its exact optimized packet passes registration/player/
 report and actual private/public cache header checks.

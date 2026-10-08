@@ -6536,3 +6536,101 @@ Root also runs the combined email/API-boundary/draft-revision suite against the
 locked network-disabled SQLite test runtime:61 pass/8.38s. Full backend Ruff
 check/format pass. This combined local result does not substitute for the required
 Python3.13/PostgreSQL complete source gate.
+
+Both exact5f28e03 optimized replacement images build and run with matching
+release labels, non-root users and baked source. Frontend built release/origin
+match the configured values. The isolated frontend/backend live-health GETs
+return200. Four real guest/registered API GETs confirm detail has no preview and
+retains all nine revision cells, while both catalog responses retain preview
+fields for the same two fixture boards. Guest detail is5,354 bytes and registered
+detail5,351; catalog is9,054. Authenticated responses retain private, no-store.
+Backend keeps development settings and its existing /app/media data volume;
+there are no source bind mounts. An initial preflight incorrectly forbids that
+data volume and stops before HTTP; the corrected guard explicitly preserves it.
+This is recorded as a harness correction, not a product pass. Build/runtime/API
+proofs are archived outside the repository. The complete exact5f28e03 source gate subsequently passes as recorded below;
+target production configuration remains unverified.
+
+
+### 2026-10-08 — Complete four-project source gate for5f28e03
+
+[CI37786669037](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37786669037)
+finishes with all12 jobs successful for5f28e0312eba22f5a1741c896ea9a9216ea386a4.
+Backend passes414 cases/81.21s on Python3.13/PostgreSQL; frontend passes609
+cases/43 files. Chromium passes96/4.2min; mobile92+4 intentional skips/2.6min;
+Firefox92+4/4.8min; WebKit92+4/6.3min. Aggregate smoke is372 passed/12 skipped,
+all384 planned cases accounted for. Full-stack flows pass123/8.7min. Foundation,
+full-history secrets, both production images and Release also pass. These are
+test execution times; job setup and teardown add time. Existing assertions,
+workers, retries and timeouts remain unchanged.
+
+Tested merge cbd2e1c7a0e0cdb7c4ccf6b5e95200ce8e892764 has full tree
+3ca5954401762e8cd3bbf0f5e39a22a89b530d00, identical to branch5f28e03. Raw log,
+job metadata and tree proof are archived outside the repository. The earlier CCA
+job-limit cancellation and d8 format failure remain recorded. This complete gate
+covers the header, Follow reservation, unread-count and detail-preview changes;
+it does not cover the subsequent uncommitted slim-preview-media patch. No target
+deployment, native device or unexplained-session500 requirement is closed.
+
+### 2026-10-08 — Maximum-field catalog payload before slim preview media
+
+An isolated locked-runtime probe publishes100 independent10×10 boards after
+input serializer and publishable-document validation. Each has100-character
+cell text,160-character image descriptions,70-character title,1,000-character
+description and15 tags of50 characters, using multi-byte Unicode. Normalized
+input is150,418 UTF-8 bytes under the524,288-byte document limit. The corrected
+fixture shares100 ready cell images plus cover/background/avatar and thumbnails
+across boards. It measures actual anonymous, uncompressed JSON responses for
+exact5f28e03: default24 cards5,140,890 bytes; explicit24 cards5,140,903;
+100 cards21,420,053; requested101 is capped to100 with the same byte count.
+Detail has100 full revision cells, no preview, and224,635 bytes. One isolated
+SQLite test passes/28.78s; this confirms response bytes for this fixture.
+
+An initial distinct-media fixture fails before measurement with SQLite expression
+depth1000 while prefetching2,400 distinct cell image references for the default
+page. This is not a PostgreSQL result. The raw initial failure log was replaced
+by a sanitized summary; only that summary and first_failure metadata remain.
+The shared-media correction preserves per-board content maxima but does not
+verify distinct-media query scalability. This is a representative maximum-field
+shape, not an absolute response ceiling, production compression or latency proof.
+Section76 remains open; unused nested media metadata is addressed separately.
+
+
+### 2026-10-08 — Retain rendering fields while slimming catalog media
+
+Nested preview cell images and board backgrounds now serialize only id, width,
+height, url and thumbnail_url. Full detail/revision/upload/cover/avatar media keep
+17 fields. All19 cell fields, complete text/image descriptions and styling stay;
+the frontend renderer changes only its type annotation. Shared URL and thumbnail
+readiness methods remain unchanged. This intentionally changes the predeployment
+card-preview API contract; unknown external-client compatibility is not claimed.
+OpenAPI and generated TypeScript schema update together with the explicit types.
+
+A valid fail-before regression observes17 media keys rather than five. After the
+patch,46 focused backend cases/6.23s,10 card cases, typecheck, targeted lint,
+Ruff and schema validation pass; root's final frontend lint/types/full suite
+passes610 tests/43 files/17.19s and full format passes. Independent correctness
+review finds no blocking issue. Initial fixture setup and expected
+trailing-whitespace normalization corrections are test preparation, not product
+failures. Schema generation uses network-isolated PostgreSQL metadata so unrelated
+SQLite integer-limit drift does not enter the committed contract.
+
+Root reviews one AFTER script using a tracked backend snapshot of base5f28e03
+and diff SHA256 a6cc40188816dc4791e5ab4d662b76acf256f6c1dd37e21ca3f6e1438ed2de4f.
+The same shared-media100-board fixture runs once: one test passes/15.16s.
+Default24 cards fall5,140,890→4,246,290 bytes; explicit24 falls
+5,140,903→4,246,303. Requested100 and capped101 fall
+21,420,053→17,692,553. This removes894,600 bytes per24-card response or
+3,727,500 per100-card response, approximately17.40%. Detail remains224,635
+bytes. Assertions retain all100 validated/published boards, all19 cell fields,
+full text/image descriptions/style and full media descriptors outside preview.
+
+Logs, comparison, snapshot diff and final execution status are archived outside
+the repository. The original preparation manifest remains prepared-only; a
+separate execution record identifies the single passing run and verified diff.
+Responses remain large. Shared-media SQLite timing is not a benchmark; distinct
+media/PostgreSQL query cost, actual ingress compression and target latency remain
+unverified. The existing Nginx configuration enables gzip for application/json,
+but this uncompressed serializer measurement does not execute that ingress.
+No section76 bullet or global performance verdict is promoted. The exact new
+committed-source complete gate remains required.

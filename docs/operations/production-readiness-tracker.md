@@ -112,8 +112,11 @@ including123 live flows, but its smoke job hits the20-minute limit after352 pass
 and12 intentional skips, leaving20 cases without results; Release fails.
 The subsequent022 unread-count correction passes609 tests and a two-width
 controlled browser packet. Four-project smoke CI preserves all384 discovered
-cases and the existing limits; the coordinated detail-payload correction and its
-final source gate remain pending. Section5 stays partial.
+cases and the existing limits. Exact5f28e03 CI37786669037 passes all12 jobs:
+414 backend,609 frontend,372 smoke/12 intentional skips and123 full-stack flows,
+including both images and Release. Tested merge and branch full trees match.
+The subsequent slim-preview-media patch requires its own source gate. Section5
+stays partial because the unexplained session500 and other scoped gaps remain.
 
 ### Accepted interface requirements
 

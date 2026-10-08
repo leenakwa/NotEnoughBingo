@@ -2766,13 +2766,13 @@ components:
           minimum: 0
         board_background:
           allOf:
-          - $ref: '#/components/schemas/MediaAsset'
+          - $ref: '#/components/schemas/MediaAssetPreview'
           readOnly: true
           nullable: true
         cells:
           type: array
           items:
-            $ref: '#/components/schemas/BingoCell'
+            $ref: '#/components/schemas/BingoPreviewCell'
           readOnly: true
       required:
       - board_background
@@ -3137,6 +3137,85 @@ components:
       - can_edit
       - can_like
       - can_report
+    BingoPreviewCell:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        position:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        row:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        column:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        text:
+          type: string
+          maxLength: 100
+        text_color:
+          type: string
+          maxLength: 7
+        bold:
+          type: boolean
+        italic:
+          type: boolean
+        underline:
+          type: boolean
+        strikethrough:
+          type: boolean
+        background_color:
+          type: string
+          maxLength: 7
+        background_opacity:
+          type: number
+          format: double
+          maximum: 10
+          minimum: -10
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        image_asset_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        image:
+          allOf:
+          - $ref: '#/components/schemas/MediaAssetPreview'
+          readOnly: true
+          nullable: true
+        image_alt:
+          type: string
+          maxLength: 160
+        image_opacity:
+          type: number
+          format: double
+          maximum: 10
+          minimum: -10
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        border_color:
+          type: string
+          maxLength: 7
+        border_width:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        border_style:
+          $ref: '#/components/schemas/BorderStyleEnum'
+      required:
+      - column
+      - id
+      - image
+      - image_asset_id
+      - position
+      - row
     BingoRevision:
       type: object
       properties:
@@ -4183,6 +4262,35 @@ components:
       - thumbnail_url
       - url
       - variant
+      - width
+    MediaAssetPreview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        url:
+          type: string
+          nullable: true
+          readOnly: true
+        thumbnail_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - height
+      - id
+      - thumbnail_url
+      - url
       - width
     MediaAssetStatus:
       enum:

@@ -72,6 +72,12 @@ class MediaAssetSerializer(serializers.ModelSerializer):
         return f"/api/v1/media/{thumbnail_id}/" if thumbnail_id else None
 
 
+class MediaAssetPreviewSerializer(MediaAssetSerializer):
+    class Meta(MediaAssetSerializer.Meta):
+        fields = ("id", "width", "height", "url", "thumbnail_url")
+        read_only_fields = fields
+
+
 class UploadInstructionSerializer(serializers.Serializer):
     method = serializers.ChoiceField(choices=("PUT", "POST"), read_only=True)
     url = serializers.CharField(read_only=True)

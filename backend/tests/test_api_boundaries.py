@@ -19,6 +19,7 @@ from apps.bingos.services import create_bingo, publish_bingo, save_draft
 from apps.bingos.validators import empty_draft_document
 from apps.exports.models import ExportJob
 from apps.media_assets.models import MediaAsset
+from apps.media_assets.serializers import MediaAssetPreviewSerializer, MediaAssetSerializer
 from apps.moderation.models import ModerationAction, Report
 from apps.plays.services import create_shared_result, replace_progress
 from apps.social.models import Comment
@@ -150,6 +151,112 @@ def test_full_board_detail_keeps_revision_without_duplicate_preview(verified_use
     preview = catalog.data["results"][0]["preview"]
     assert preview == {key: revision[key] for key in ("size", "board_background", "cells")}
     assert "preview" not in detail.data
+
+
+def test_catalog_preview_slims_only_nested_media_and_retains_cell_content(
+    verified_user_factory,
+) -> None:
+    author = verified_user_factory()
+    image = MediaAsset.objects.create(
+        owner=author,
+        kind=MediaAsset.Kind.CELL_IMAGE,
+        status=MediaAsset.Status.READY,
+        storage_key="preview-original",
+        width=24,
+        height=16,
+        detected_mime="image/png",
+    )
+    thumbnail = MediaAsset.objects.create(
+        owner=author,
+        kind=image.kind,
+        status=MediaAsset.Status.READY,
+        variant=MediaAsset.Variant.THUMBNAIL,
+        parent=image,
+        storage_key="preview-thumbnail",
+    )
+    background = MediaAsset.objects.create(
+        owner=author,
+        kind=MediaAsset.Kind.BOARD_BACKGROUND,
+        status=MediaAsset.Status.READY,
+        storage_key="preview-background",
+    )
+    document = _document(title="Media preview")
+    document["background_asset_id"] = str(background.public_id)
+    cell = document["cells"][0]
+    cell.update(
+        image_asset_id=str(image.public_id),
+        text="",
+        image_alt=("Full image description " * 6).strip(),
+        bold=True,
+        background_opacity=0.5,
+        image_opacity=0.7,
+        border_width=3,
+    )
+    bingo = create_bingo(author=author, document=document)
+    publish_bingo(bingo=bingo, actor=author, idempotency_key="media-preview-publication")
+    guest = _api_client()
+
+    detail = guest.get(f"/api/v1/bingos/{bingo.public_id}/")
+    catalog = guest.get("/api/v1/bingos/")
+    assert detail.status_code == catalog.status_code == 200
+    full_revision = detail.data["current_revision"]
+    preview = catalog.data["results"][0]["preview"]
+    media_fields = {"id", "width", "height", "url", "thumbnail_url"}
+    for slim, full in (
+        (preview["cells"][0]["image"], full_revision["cells"][0]["image"]),
+        (preview["board_background"], full_revision["board_background"]),
+    ):
+        assert set(slim) == media_fields
+        assert slim == {key: full[key] for key in media_fields}
+        assert len(full) == 17
+        assert full["status"] == MediaAsset.Status.READY
+        assert "mime_type" in full
+    assert len(preview["cells"][0]) == 19
+    for slim_cell, full_cell in zip(preview["cells"], full_revision["cells"], strict=True):
+        assert {key: value for key, value in slim_cell.items() if key != "image"} == {
+            key: value for key, value in full_cell.items() if key != "image"
+        }
+    assert preview["cells"][0]["image_alt"] == cell["image_alt"]
+    assert preview["cells"][0]["image"]["thumbnail_url"] == (
+        f"/api/v1/media/{thumbnail.public_id}/"
+    )
+    assert preview["board_background"]["thumbnail_url"] is None
+    assert preview["board_background"]["url"] == f"/api/v1/media/{background.public_id}/"
+
+
+@pytest.mark.parametrize("status", [MediaAsset.Status.PENDING, MediaAsset.Status.READY])
+@pytest.mark.parametrize("deleted", [False, True])
+@pytest.mark.parametrize("thumbnail_ready", [False, True])
+def test_preview_media_reuses_full_media_url_readiness_semantics(
+    verified_user_factory, status, deleted, thumbnail_ready
+) -> None:
+    asset = MediaAsset.objects.create(
+        owner=verified_user_factory(),
+        kind=MediaAsset.Kind.CELL_IMAGE,
+        status=status,
+        deleted_at=timezone.now() if deleted else None,
+        storage_key="readiness-original",
+    )
+    thumbnail = MediaAsset.objects.create(
+        owner=asset.owner,
+        kind=asset.kind,
+        parent=asset,
+        variant=MediaAsset.Variant.THUMBNAIL,
+        status=MediaAsset.Status.READY if thumbnail_ready else MediaAsset.Status.PROCESSING,
+        storage_key="readiness-thumbnail",
+    )
+    slim = MediaAssetPreviewSerializer(asset).data
+    full = MediaAssetSerializer(asset).data
+    assert slim == {key: full[key] for key in ("id", "width", "height", "url", "thumbnail_url")}
+    assert slim["url"] == (
+        f"/api/v1/media/{asset.public_id}/"
+        if status == MediaAsset.Status.READY and not deleted
+        else None
+    )
+    assert slim["thumbnail_url"] == (
+        f"/api/v1/media/{thumbnail.public_id}/" if thumbnail_ready else None
+    )
+    assert all(field.read_only for field in MediaAssetPreviewSerializer().fields.values())
 
 
 def test_publish_archive_restore_detail_responses_keep_revision_without_preview(
@@ -703,6 +810,8 @@ def test_upload_rejection_has_actionable_message(verified_user_factory) -> None:
     )
     detail = client.get(f"/api/v1/uploads/{intent.data['asset_id']}/")
     assert detail.status_code == 200
+    assert len(intent.data["asset"]) == len(detail.data) == 17
+    assert set(intent.data["asset"]) == set(detail.data) == set(MediaAssetSerializer.Meta.fields)
     assert detail.data["rejection_reason"] == (
         "This file could not be read as an image. Choose another image."
     )

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BingoCard } from "@/components/bingo/bingo-card";
 import { AUTH_SIGNED_OUT_EVENT } from "@/lib/auth-events";
-import type { BingoSummary, MediaAsset, RevisionCell } from "@/lib/api/types";
+import type { BingoSummary, PreviewMedia, RevisionCell } from "@/lib/api/types";
 
 const mocks = vi.hoisted(() => ({
   unlike: vi.fn(),
@@ -87,13 +87,12 @@ const bingo: BingoSummary = {
   updated_at: "2026-07-20T00:00:00Z",
 };
 
-const image: MediaAsset = {
+const image: PreviewMedia = {
   id: "44444444-4444-4444-8444-444444444444",
-  kind: "cell_image",
-  status: "ready",
+  width: 24,
+  height: 16,
   url: "/api/v1/media/full/",
   thumbnail_url: "/api/v1/media/thumbnail/",
-  mime_type: "image/webp",
 };
 
 describe("BingoCard", () => {
@@ -140,7 +139,7 @@ describe("BingoCard", () => {
           ...bingo,
           preview: {
             size: 3,
-            board_background: { ...image, kind: "board_background" },
+            board_background: image,
             cells: [{ ...previewCells[0]!, image }, ...previewCells.slice(1)],
           },
         }}
@@ -159,6 +158,52 @@ describe("BingoCard", () => {
     expect(
       screen.getByRole("img", { name: /Preview of Production readiness/ }).querySelectorAll("img"),
     ).toHaveLength(1);
+  });
+
+  it("preserves image-only cell titles and styles with slim media and no thumbnail", () => {
+    const imageAlt = "Full image description ".repeat(6);
+    const cell = {
+      ...previewCells[0]!,
+      text: "",
+      image_alt: imageAlt,
+      image: { ...image, thumbnail_url: null },
+      bold: true,
+      italic: true,
+      underline: true,
+      background_opacity: 0.5,
+      image_opacity: 0.7,
+      border_color: "#112233",
+      border_width: 2,
+    };
+    render(
+      <BingoCard
+        bingo={{
+          ...bingo,
+          preview: {
+            size: 3,
+            board_background: { ...image, thumbnail_url: null },
+            cells: [cell, ...previewCells.slice(1)],
+          },
+        }}
+      />,
+    );
+    const preview = screen.getByRole("img", { name: /Preview of Production readiness/ });
+    const firstCell = preview.querySelector(".bingo-card-preview__cell")!;
+    expect(firstCell).toHaveAttribute("title", imageAlt);
+    expect(firstCell).toHaveStyle({ borderColor: "#112233", borderWidth: "2px" });
+    expect(firstCell.querySelector(".bingo-card-preview__background")).toHaveStyle({
+      opacity: 0.5,
+    });
+    expect(firstCell.querySelector(".bingo-card-preview__image")).toHaveStyle({ opacity: 0.7 });
+    expect(firstCell.querySelector(".bingo-card-preview__text")).toHaveStyle({
+      fontWeight: 700,
+      fontStyle: "italic",
+      textDecoration: "underline",
+    });
+    for (const item of preview.querySelectorAll("img")) {
+      expect(item).toHaveAttribute("src", image.url);
+    }
+    expect(preview.querySelectorAll(".bingo-card-preview__cell")).toHaveLength(9);
   });
 
   it("opens an unpublished creator card directly in the editor", () => {

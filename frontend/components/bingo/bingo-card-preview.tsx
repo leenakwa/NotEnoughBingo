@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 
-import type { BingoCardPreview as BingoCardPreviewData, RevisionCell } from "@/lib/api/types";
+import type { BingoCardPreview as BingoCardPreviewData } from "@/lib/api/types";
 
 interface PreviewStyle extends CSSProperties {
   "--preview-font-size": string;
@@ -48,7 +48,7 @@ function previewFontSize(size: number): string {
   return `${relativeBoardWidth.toFixed(4)}cqw`;
 }
 
-function cellStyle(cell: RevisionCell): CSSProperties {
+function cellStyle(cell: BingoCardPreviewData["cells"][number]): CSSProperties {
   return {
     color: cell.text_color,
     borderColor: cell.border_color,
