@@ -7457,3 +7457,81 @@ log. No cookies, seed writes, settings changes or restarts occur. This negative
 reproduction does not match authenticated handler load, exclude transient worker
 recycling or explain the earlier500. Runtime inspection finds no container
 restart/OOM; WARNING logging does not prove absence of worker lifecycle events.
+
+### 2026-10-08 — Language wrapper and representative range appearance
+
+A separate source-guarded FE05d/BEb6 packet uses one disposable normal actor and
+exact owned private draft. At320/1710px it records13 states each: checked/unchecked
+language wrapper normal/hover/held press/actual Tab focus, two controlled-pending
+disabled-hover states and one Background opacity range's actual Tab/held pointer
+drag/released minimum. Checked wrappers use rgb(241,241,241), unchecked are
+transparent; hover/press do not change their palette/transform. Actual native
+checkbox focus applies a3px wrapper outline with2px offset. Pending disables
+inputs with opacity0.55 while wrapper opacity remains1. The sampled range moves
+100→0 by actual pointer drag, retaining0 after release, with3px focus/3px offset.
+
+All26 measurements and six masked language-card/cell-inspector screenshots are
+collected. Root visual inspection confirms visible wrapper/range focus and the
+sampled controls fitting the displayed card/inspector area. Document widths match
+viewports. There is no clipping measurement, and the scrollable inspector image
+does not prove that every lower control is visible without scrolling. Fields and
+images are masked; no global aesthetic, rendered contrast or native-device verdict
+follows. Exact cookie-bound language PATCH and owned-version draft PUT are controlled
+or blocked, so this is not a real write/persistence test.
+
+Collection succeeds, but browser/controller and clean-flow remain failed: zero
+probe failures,34 request failures and two controlled422 console errors. Independent
+result review confirms these limits. Actual profile languages remain English;
+cleanup verifies unchanged draft version/document SHA and exact owned board/draft,
+actor/profile/preferences/session/event/cache/throttle absence, exit0, with no
+diagnostic container left. Scripts/results/six images/checksums are privately
+archived outside the repository. Global section8 and pending design choices remain
+open; equivalent keyboard/persistence evidence from earlier native packets is reused.
+
+### 2026-10-08 — Dedicated fixtures pass exact integration gate
+
+Exact `a164b1ba0598c3f968a8c4a8c6f994795207350b`
+[CI37826157791](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37826157791)
+passes all12 jobs:446 backend,619 frontend/44 files,372 smoke passes/12 intentional
+skips and125 full-stack passes, both production images and Release. No reported
+flake/retry marker appears. Avatar validation/intent failure/retry passes6.1s,
+confirmed deletion4.5s, cancellation progress/retry4.1s, token-only registration
+recovery1.9s and email-change recovery2.5s. Dedicated test fixture isolation
+therefore recovers the combined serial suite without relaxing production limits.
+Prior failed runs and their distinct throttle responses remain recorded.
+
+Tested merge `d1332daf74d024333c05f01142872e0a3ea7f232` and branch HEAD share
+full tree `a81c5eedab57dc28ce26ad12cac1a7fc663a0531`, checked against GitHub
+git-commit metadata and the local object. Original logs, all nine artifacts,
+metadata, selected case results and checksums are privately archived outside
+the repository; ZIP/gzip integrity and0700/0600 permissions pass. This gate
+does not cover subsequent avatar attachment/removal failure coverage, synthetic
+Retry/Resend competition, native devices or actual production deployment.
+
+### 2026-10-08 — Browser Retry/Resend competition and avatar failure coverage
+
+Two synthetic registration verification cases at320/1710 hold Resend503 and
+Retry503, assert both native buttons disabled, pending labels, exact email/original
+token, rejected DOM duplicate clicks, retained URL, recovery and successful
+Resend202 removing obsolete Retry. Actual keyboard traversal/Space, no horizontal
+overflow and no page exceptions are checked. All API traffic is intercepted with
+synthetic CSRF: real delivery, token-only Mailpit navigation, backend quota and
+production CSRF remain separate. Existing units prove React handler guards; native
+disabled DOM clicks alone do not.
+
+Local FE05d execution initially passes six Chromium/mobile/Firefox cases and
+fails both macOS WebKit cases at Tab traversal. A bounded native two-button
+diagnostic shows Tab moving to BODY and Option-Tab to Resend. The test adopts
+the existing macOS/WebKit Alt+Tab convention, retaining focus/Space assertions;
+the two failed WebKit cases then pass. Original failure and corrected results
+remain privately archived. Format/lint/typecheck pass; exact-source CI remains
+pending for the combined changes. This is not an unexplained product defect or
+a native Safari/device completeness claim.
+
+The same dedicated avatar journey now adds held attachment503 after a real
+upload, same-file retry with a distinct asset, held removal503 retaining the
+attached avatar across refresh, then real removal200 and null persistence.
+Independent static review passes; runtime verification of these additions awaits
+the next exact CI. Controlled failures do not prove provider failure handling
+or physical orphan-asset deletion. No production interface, limits, retries or
+timeouts change.

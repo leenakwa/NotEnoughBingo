@@ -5849,6 +5849,50 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     })();
     return heldHandler;
   };
+  const profilePath = "/api/v1/profiles/me/";
+  let ownedSession: { name: string; value: string } | undefined;
+  let releaseAttachment: () => void = () => undefined;
+  let releaseRemoval: () => void = () => undefined;
+  let attachmentHandler: Promise<void> | undefined;
+  let removalHandler: Promise<void> | undefined;
+  const heldAttachment = new Promise<void>((resolve) => {
+    releaseAttachment = resolve;
+  });
+  const heldRemoval = new Promise<void>((resolve) => {
+    releaseRemoval = resolve;
+  });
+  const profileRoute = async (route: Route) => {
+    const request = route.request();
+    if (request.method() !== "PATCH" || ![1, 3].includes(profileWrites)) return route.continue();
+    expect(ownedId).toBe(actorFixture.id);
+    expect(ownedSession).toBeDefined();
+    const cookies = ((await request.headerValue("cookie")) ?? "")
+      .split(";")
+      .map((cookie) => cookie.trim());
+    expect(cookies.includes(`${ownedSession!.name}=${ownedSession!.value}`)).toBe(true);
+    const payload = request.postDataJSON() as { avatar_id: unknown };
+    expect(Object.keys(payload)).toEqual(["avatar_id"]);
+    const attaching = profileWrites === 1;
+    if (attaching) expect(typeof payload.avatar_id).toBe("string");
+    else expect(payload.avatar_id).toBeNull();
+    const handler = (async () => {
+      await (attaching ? heldAttachment : heldRemoval);
+      await route.fulfill({
+        status: 503,
+        json: {
+          error: {
+            code: "unavailable",
+            message: attaching
+              ? "Avatar attachment temporarily unavailable."
+              : "Avatar removal temporarily unavailable.",
+          },
+        },
+      });
+    })();
+    if (attaching) attachmentHandler = handler;
+    else removalHandler = handler;
+    return handler;
+  };
   try {
     expect((await api.get("/api/v1/auth/csrf/")).status()).toBe(200);
     expect(
@@ -5871,6 +5915,10 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     ).not.toContain(actor.id);
     ownedId = actor.id;
     expect((await ownedProfile()).avatar).toBeNull();
+    ownedSession = (await api.storageState()).cookies.find(
+      (cookie) => cookie.name === "neb_session",
+    );
+    expect(ownedSession).toBeDefined();
     page.on("request", (request) => {
       const path = new URL(request.url()).pathname;
       if (path === intentPath && request.method() === "POST") {
@@ -5880,6 +5928,7 @@ test("isolated avatar validation blocks writes and the same file retries an inte
       if (path === "/api/v1/profiles/me/" && request.method() === "PATCH") profileWrites += 1;
     });
     await page.route(`**${intentPath}`, intentRoute);
+    await page.route(`**${profilePath}`, profileRoute);
     await page.setViewportSize({ width: 320, height: 900 });
     await page.goto("/profile");
     const avatarCard = page.locator(".settings-card").filter({
@@ -5938,6 +5987,39 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     expect((await ownedProfile()).avatar).toBeNull();
     expect(profileWrites).toBe(0);
 
+    // A real upload can complete before attaching its asset fails. Keep the input reusable.
+    const firstCreatedIntent = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === intentPath && response.request().method() === "POST",
+    );
+    const failedAttachment = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === profilePath && response.request().method() === "PATCH",
+    );
+    await input.setInputFiles(valid);
+    const firstCreated = await firstCreatedIntent;
+    expect(firstCreated.status()).toBe(201);
+    const firstUpload = (await firstCreated.json()) as { id: string };
+    expect(firstUpload.id).toBeTruthy();
+    await expect.poll(() => profileWrites).toBe(1);
+    await expect(input).toBeDisabled();
+    await expect(input).toHaveValue("");
+    expect((await ownedProfile()).avatar).toBeNull();
+    releaseAttachment();
+    const attachmentFailure = await failedAttachment;
+    expect(attachmentFailure.status()).toBe(503);
+    expect(attachmentFailure.request().postDataJSON()).toEqual({ avatar_id: firstUpload.id });
+    await expect(avatarCard.getByRole("alert")).toHaveText(
+      "Avatar attachment temporarily unavailable.",
+    );
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
+    await expect(input).toBeEnabled();
+    await expect(input).toHaveValue("");
+    await expect(avatarCard.getByRole("button", { name: "Remove", exact: true })).toHaveCount(0);
+    expect((await ownedProfile()).avatar).toBeNull();
+    expect(intentWrites).toBe(2);
+    expect(profileWrites).toBe(1);
+
     // Reuse the identical name, MIME, and bytes; the input reset must allow reselection.
     const createdIntent = page.waitForResponse(
       (response) =>
@@ -5950,21 +6032,22 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     expect(created.status()).toBe(201);
     const upload = (await created.json()) as { id: string };
     expect(upload.id).toBeTruthy();
+    expect(upload.id).not.toBe(firstUpload.id);
     const attachment = await attached;
     expect(attachment.status()).toBe(200);
     expect(attachment.request().postDataJSON()).toEqual({
       avatar_id: upload.id,
     });
-    expect(intentWrites).toBe(2);
+    expect(intentWrites).toBe(3);
     expect(submittedIntents).toEqual(
-      [0, 1].map(() => ({
+      [0, 1, 2].map(() => ({
         kind: "avatar",
         file_name: valid.name,
         content_type: valid.mimeType,
         size: valid.buffer.length,
       })),
     );
-    expect(profileWrites).toBe(1);
+    expect(profileWrites).toBe(2);
     await expect(avatarCard.getByRole("status")).toHaveText("Avatar updated.");
     await expect(input).toBeEnabled();
     await expect(input).toHaveValue("");
@@ -5975,10 +6058,38 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
+    const remove = avatarCard.getByRole("button", { name: "Remove", exact: true });
+    const failedRemoval = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === profilePath && response.request().method() === "PATCH",
+    );
+    await remove.click();
+    await expect.poll(() => profileWrites).toBe(3);
+    await expect(remove).toBeDisabled();
+    await expect(input).toBeDisabled();
+    expect((await ownedProfile()).avatar?.id).toBe(upload.id);
+    releaseRemoval();
+    const removalFailure = await failedRemoval;
+    expect(removalFailure.status()).toBe(503);
+    expect(removalFailure.request().postDataJSON()).toEqual({ avatar_id: null });
+    await expect(avatarCard.getByRole("alert")).toHaveText(
+      "Avatar removal temporarily unavailable.",
+    );
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(1);
+    await expect(remove).toBeEnabled();
+    await expect(input).toBeEnabled();
+    await expect(input).toHaveValue("");
+    expect((await ownedProfile()).avatar?.id).toBe(upload.id);
+    await page.reload();
+    await expect(remove).toBeVisible();
+    expect((await ownedProfile()).avatar?.id).toBe(upload.id);
+    expect(profileWrites).toBe(3);
     const removed = await waitForResponse(page, "/api/v1/profiles/me/", "PATCH", () =>
       avatarCard.getByRole("button", { name: "Remove", exact: true }).click(),
     );
     expect(removed.status()).toBe(200);
+    expect(profileWrites).toBe(4);
+    expect(intentWrites).toBe(3);
     expect(removed.request().postDataJSON()).toEqual({ avatar_id: null });
     await expect(avatarCard.getByRole("status")).toHaveText("Avatar removed.");
     expect((await ownedProfile()).avatar).toBeNull();
@@ -5988,35 +6099,60 @@ test("isolated avatar validation blocks writes and the same file retries an inte
     expect(errors).toEqual([]);
   } finally {
     releaseIntent();
-    await heldHandler;
-    await page.unroute(`**${intentPath}`, intentRoute);
-    if (ownedId) {
-      expect(
-        (
-          await api.post("/api/v1/auth/login/", {
-            headers: await csrfHeaders(),
-            data: { email, password },
-          })
-        ).status(),
-      ).toBe(200);
-      if ((await ownedProfile()).avatar) {
+    releaseAttachment();
+    releaseRemoval();
+    const settledHandlers = await Promise.allSettled([
+      heldHandler,
+      attachmentHandler,
+      removalHandler,
+    ]);
+    const cleanupErrors: unknown[] = settledHandlers.flatMap((result) =>
+      result.status === "rejected" ? [result.reason] : [],
+    );
+    for (const [pattern, handler] of [
+      [`**${intentPath}`, intentRoute],
+      [`**${profilePath}`, profileRoute],
+    ] as const) {
+      try {
+        await page.unroute(pattern, handler);
+      } catch (caught) {
+        cleanupErrors.push(caught);
+      }
+    }
+    try {
+      if (ownedId) {
         expect(
           (
-            await api.patch("/api/v1/profiles/me/", {
+            await api.post("/api/v1/auth/login/", {
               headers: await csrfHeaders(),
-              data: { avatar_id: null },
+              data: { email, password },
             })
           ).status(),
         ).toBe(200);
-        expect((await ownedProfile()).avatar).toBeNull();
+        if ((await ownedProfile()).avatar) {
+          expect(
+            (
+              await api.patch("/api/v1/profiles/me/", {
+                headers: await csrfHeaders(),
+                data: { avatar_id: null },
+              })
+            ).status(),
+          ).toBe(200);
+          expect((await ownedProfile()).avatar).toBeNull();
+        }
+        expect(
+          (
+            await api.post("/api/v1/auth/logout/", {
+              headers: await csrfHeaders(),
+            })
+          ).status(),
+        ).toBe(204);
       }
-      expect(
-        (
-          await api.post("/api/v1/auth/logout/", {
-            headers: await csrfHeaders(),
-          })
-        ).status(),
-      ).toBe(204);
+    } catch (caught) {
+      cleanupErrors.push(caught);
+    }
+    if (cleanupErrors.length) {
+      throw new AggregateError(cleanupErrors, "Avatar test route or owned-account cleanup failed.");
     }
   }
 });

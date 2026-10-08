@@ -310,3 +310,170 @@ for (const scenario of [
     }
   });
 }
+
+for (const width of [320, 1710]) {
+  test(`verification Retry and Resend exclude pending duplicate writes at ${width}`, async ({
+    page,
+    browserName,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.setViewportSize({ width, height: 900 });
+    const email = "pending-verification@example.test";
+    const token = "synthetic-original-verification-token";
+    const verificationURL = `/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+    const writes: { path: string; body: unknown }[] = [];
+    const completions: Promise<void>[] = [];
+    const unexpectedWrites: string[] = [];
+    let releaseResend!: () => void;
+    let releaseRetry!: () => void;
+    const heldResend = new Promise<void>((resolve) => {
+      releaseResend = resolve;
+    });
+    const heldRetry = new Promise<void>((resolve) => {
+      releaseRetry = resolve;
+    });
+    const apiPattern = "**/api/v1/**";
+    const mockBackend = async (route: import("@playwright/test").Route) => {
+      const request = route.request();
+      const path = new URL(request.url()).pathname;
+      if (request.method() === "GET" && path === "/api/v1/auth/session/") {
+        return route.fulfill({ json: { user: null } });
+      }
+      if (request.method() === "GET" && path === "/api/v1/auth/csrf/") {
+        return route.fulfill({ json: { csrf: "synthetic-csrf" } });
+      }
+      if (["/api/v1/client-errors/", "/api/v1/interactions/"].includes(path)) {
+        return route.fulfill({ status: 204 });
+      }
+      if (
+        ![
+          "/api/v1/auth/register/",
+          "/api/v1/auth/resend-verification/",
+          "/api/v1/auth/verify-email/",
+        ].includes(path)
+      ) {
+        if (!["GET", "HEAD"].includes(request.method())) unexpectedWrites.push(path);
+        return route.fulfill({ status: 503, json: {} });
+      }
+      writes.push({ path, body: request.postDataJSON() });
+      expect(request.method()).toBe("POST");
+      expect(request.headers()["x-csrftoken"]).toBe("synthetic-csrf");
+      if (path === "/api/v1/auth/register/") {
+        return route.fulfill({ status: 202, json: { status: "verification_required" } });
+      }
+      if (path === "/api/v1/auth/resend-verification/") {
+        const attempt = writes.filter((write) => write.path === path).length;
+        if (attempt === 1) await heldResend;
+        return route.fulfill({
+          status: attempt === 1 ? 503 : 202,
+          json: { detail: "Resend unavailable." },
+        });
+      }
+      if (path === "/api/v1/auth/verify-email/") {
+        if (writes.filter((write) => write.path === path).length === 2) await heldRetry;
+        return route.fulfill({ status: 503, json: { detail: "Verification unavailable." } });
+      }
+      // Unexpected API calls also stay local to this test.
+      return route.fulfill({ status: 503, json: {} });
+    };
+    await page.route(apiPattern, (route) => {
+      const completion = mockBackend(route);
+      completions.push(completion);
+      return completion;
+    });
+    const noOverflow = async () =>
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+        ),
+      ).toBe(true);
+    try {
+      const sessionReady = page.waitForResponse("**/api/v1/auth/session/");
+      await page.goto("/register");
+      expect((await sessionReady).status()).toBe(200);
+      await page.getByLabel("Email").fill(email);
+      await page.getByLabel("Username").fill("pending_verification");
+      await page.getByLabel("Password").fill("Synthetic-Password!2026");
+      await page.getByRole("button", { name: "Create account" }).click();
+      await expect(page).toHaveURL(/\/verify-email\?email=pending-verification%40example\.test$/);
+      await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
+      await page.goto(verificationURL);
+      const card = page.locator(".auth-card");
+      const retry = card.locator("button.button--primary");
+      const resend = card.locator("button.button--secondary");
+      await expect(card.getByRole("alert")).toHaveText("Verification unavailable.");
+      await expect(retry).toHaveText("Retry");
+      await expect(resend).toBeEnabled();
+      await noOverflow();
+      await retry.focus();
+      // macOS WebKit requires Option-Tab to traverse all buttons.
+      await page.keyboard.press(
+        browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
+      );
+      await expect(resend).toBeFocused();
+      await page.keyboard.press("Space");
+      await expect.poll(() => writes.length).toBe(3);
+      for (const button of [retry, resend]) await expect(button).toBeDisabled();
+      await expect(resend).toHaveText("Sending…");
+      await card
+        .locator("button")
+        .evaluateAll((buttons) =>
+          buttons.forEach((button) => (button as HTMLButtonElement).click()),
+        );
+      await noOverflow();
+      expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(verificationURL);
+      expect(writes).toHaveLength(3);
+      releaseResend();
+      await expect(card.getByRole("alert")).toHaveText("Resend unavailable.");
+      for (const button of [retry, resend]) await expect(button).toBeEnabled();
+      await retry.focus();
+      await page.keyboard.press("Space");
+      await expect.poll(() => writes.length).toBe(4);
+      for (const button of [retry, resend]) await expect(button).toBeDisabled();
+      await expect(retry).toHaveText("Verifying…");
+      await card
+        .locator("button")
+        .evaluateAll((buttons) =>
+          buttons.forEach((button) => (button as HTMLButtonElement).click()),
+        );
+      await noOverflow();
+      expect(writes).toHaveLength(4);
+      expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(verificationURL);
+      releaseRetry();
+      await expect(card.getByRole("alert")).toHaveText("Verification unavailable.");
+      for (const button of [retry, resend]) await expect(button).toBeEnabled();
+      expect(new URL(page.url()).searchParams.get("token")).toBe(token);
+      await resend.click();
+      await expect(card.getByRole("status")).toContainText("If this registration is pending");
+      await expect(card.getByRole("alert")).toHaveCount(0);
+      await expect(retry).toHaveCount(0);
+      await expect(resend).toBeEnabled();
+      expect(writes[0]).toEqual({
+        path: "/api/v1/auth/register/",
+        body: {
+          email,
+          username: "pending_verification",
+          password: "Synthetic-Password!2026",
+        },
+      });
+      expect(unexpectedWrites).toEqual([]);
+      expect(writes.slice(1)).toEqual([
+        { path: "/api/v1/auth/verify-email/", body: { token } },
+        { path: "/api/v1/auth/resend-verification/", body: { email } },
+        { path: "/api/v1/auth/verify-email/", body: { token } },
+        { path: "/api/v1/auth/resend-verification/", body: { email } },
+      ]);
+      await noOverflow();
+      expect(errors).toEqual([]);
+    } finally {
+      releaseResend();
+      releaseRetry();
+      try {
+        await Promise.all(completions);
+      } finally {
+        await page.unroute(apiPattern);
+      }
+    }
+  });
+}
