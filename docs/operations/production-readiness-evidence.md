@@ -7984,3 +7984,151 @@ container/network are removed and shared services remain untouched.
 Scripts, response/SQL archives, runtime/source provenance and verified hashes
 are retained privately under `evidence-public-payload-envelope-2026-10-09/`.
 This improves the local payload evidence while section76 remains partial.
+
+
+### 2026-10-09 — Canonical local44 header flow and bounded RSC attribution
+
+Exact44 frontend image `541b1fca871c730fd87cc3a9ec190c7948405c0a4c0fca8f342447a109b43709`
+on configured localhost18584 subsequently passes the fresh guest public flow at
+1440x1000 and390x844: no ordinary current-Discover prefetch, other-route prefetch
+retained, Discover→board→header Discover→board→brand navigation, no overflow,
+console warnings/errors, page exceptions or HTTP error responses. Eight actual
+analytics responses are202. Release/revision, nextjs user and zero mounts are
+independently confirmed. This resolves the preview-origin limitation for this
+bounded local flow, without proving actual deployment/CDN behavior. Canonical
+capture/summary/provenance/owned-browser cleanup join the existing private
+`evidence-header-prefetch-2026-10-09/`; root verifies46 archived artifact hashes.
+
+A separate uninstrumented control records24 RSC responses200,22 canceled; an
+instrumented comparison records24 responses200,24 canceled. Both render the
+board without recorded console/page errors. All instrumented RSC fetches lack
+an abort signal; no native AbortController.abort, reader.cancel or stream.cancel
+call is observed. Fetch stacks identify initiation in the installed Next chunk,
+not cancellation causality; instrumentation's terminal-count discrepancy is
+retained. No repeated groups occur within a navigation phase using captured
+method, normalized URL and RSC/prefetch/segment fields. Router-state/cache
+headers and SSR/backend call counts remain unavailable. Tree/full/navigation
+classes are distinct; cancellations do not establish unnecessary duplication
+or a product failure. Original captures, chunk/provenance and owned cleanup are
+archived under `evidence-rsc-cancel-attribution-44edf0e-2026-10-09/`. No further
+instrumentation is treated as necessary merely to explain framework cancellation;
+production correlation and broader network coverage remain separate.
+
+
+### 2026-10-09 — Completed exact44 gate and native 200% zoom requirement
+
+Exact `44edf0ed0d930ed0d0aedd99fe46783a6cdf0320`
+[CI37849732326](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37849732326)
+finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,448 smoke
+and12 intentional skips, and125 full-stack cases. No reported flakes/retries.
+Chromium passes115; Firefox/WebKit/mobile each pass111 with four intentional
+skips. Both production images, Release and baseline gates pass. Tested merge
+`50e7b23bd2ad8b2754f8ba881b08f47f07049988` and branch44 share full tree
+`0ce5a18e785aad40c482919ce085c4b2b7c42891`. Original logs, artifacts, metadata
+and checksums are privately archived under
+`/Users/Daniil/.codex/scratch/not-enough-bingo-production-readiness/evidence-44edf0e-2026-10-09/ci/`;
+root independently verifies27 artifact hashes. This covers the header correction;
+canonical44 and bounded RSC observations retain their separate runtime limits above.
+
+Actual browser-chrome200% is directly observed in an owned native Chrome154 Guest
+window on macOS, exact44 frontend image
+`541b1fca871c730fd87cc3a9ec190c7948405c0a4c0fca8f342447a109b43709` and
+cachedb6 backend. Current views add search/chips/results keyboard navigation,
+blank-share validation, comment reply/edit cancellation,10x10 editor inspector
+and details, profile tabs/populated/empty states,11 session rows/keyboard focus,
+notification readability and blank reset validation. Own logout returns to login
+without the historical expiry dialog. Earlier source-equivalent native packets
+retain discovery/play/login/register/settings/recovery/report evidence. No
+settings, style, publish, comment/share submit or unrelated-session revoke occurs.
+Chrome menu confirms Reset100% before only the owned Guest window closes.
+CUA screenshots/accessibility-tree proof remain in the conversation; no separate
+saved pixel paths are claimed. An initial mistaken login focus submits disposable
+public test-fixture credentials to Google; the user is informed and subsequent
+field focus verified. No production/user secret is involved.
+
+`evidence-native-zoom44-2026-10-09/observations.json` and owned-fixture comparison
+retain scope/cleanup: baseline profile and ten active-session IDs are unchanged,
+preexisting bingo/comment/notification IDs preserved, own session revoked and
+owned board/two comments soft-deleted. Draft version2 is expected after publication.
+One revision and analytics remain; full preexisting record-field equality is not
+claimed. Independent requirement review validates representative native200%
+evidence against the original bullet. This closes that bullet and section24,
+whose other17 bullets were already checked. Counts recompute to817 checked/325
+unchecked (85 N/A,240 applicable),59 Verified/39 Partial/6 N/A/1 deployment-only.
+This is not exhaustive engine/device/state zoom certification or deployment proof;
+section92 native both-theme favicon and unresolved layout choices remain separate.
+
+### 2026-10-09 — Source-equivalent privacy review and absent CI transport evidence
+
+Read-only `evidence-network-privacy-source44-2026-10-09/report.json` compares
+current44 withc74 across backend, Nginx, frontend auth/API/error reporting/config,
+CI/compose and relevant lifecycle test sources; those paths are unchanged. Explicit
+public/current-user/session projections exclude raw session keys; session lists
+are owner-scoped, authenticated API responses have private/no-store middleware,
+and recovery pages configure no-referrer/query-free access logs. Archived passed
+lifecycle assertions cover query cleanup after success, original token retention
+through503/retry, token POST bodies and reuse rejection; these assertions do not
+prove all downstream transport behavior. The standalone registration email query
+remains a pending product/privacy choice.
+
+All nine archivedc74 artifacts and five embedded successful browser reports have
+zero raw-network/HAR/trace files. They prove case status and source assertions,
+not captured response bodies, cache/referrer headers, own-versus-guest/unrelated
+projection or downstream URL leakage. Current canonical44 guest captures record
+58+57 request observations with no credential/contact query keys, but only guest
+CSRF/session auth paths; this cannot close account/recovery privacy requirements.
+CI live runtime uses development images/Mailpit/emulated storage, smoke uses mocked
+APIs, and the native backend is cachedb6. Optimized current-origin protected-body,
+header and Referer capture plus target ingress/CDN/provider behavior remain open.
+Section76 stays Partial; no broad network/privacy or production-ready claim follows.
+
+
+### 2026-10-09 — Isolated101-board catalog100 and normalized-media envelope
+
+A tracked exact44 source snapshot with no backend changes runs against an owned
+isolated PostgreSQL16 tmpfs database. Three legal maximum-field-length scenarios
+have101 published10x10 boards each;42 APIClient samples return HTTP200. Catalog
+page_size100 and101 both return100 cards/10,000 cells/count101 with a next link;
+Discover/Trending requested100 return24 cards/2,400 cells/count101 with a next link.
+This supersedes the earlier24-row packet's inability to distinguish catalog100
+and feed clamping, while preserving that packet as historical evidence.
+
+Current Explore, Discover and Trending clients and their SSR loaders omit
+page_size and receive the default24; no catalog100 UI consumer is identified.
+The requested100 envelope describes the exposed API cap, not the normal current
+page load. Browser consumption of the default24 payload remains a separate check.
+
+For catalog requested100, diverse keyed ASCII produces6,729,104 rendered JSON
+bytes/2,129,922 offline gzip6 bytes/five SQL queries; repeated four-byte Unicode
+produces15,282,104/476,862/five; Unicode with valid shared normalized media produces
+17,714,004/530,464/twelve. The media case uses100 cell references per board plus
+cover/background/avatar and normalized WebP/thumbnail metadata from four shared
+320x320 PNG uploads, processed through the real media service in isolated
+InMemoryStorage. It is not distinct media per cell, maximum descriptors, large
+uploads or deployed S3/CDN URLs. Catalog101 repeats decoded sizes; its ASCII/
+Unicode gzip byte counts differ slightly; no cause is established here.
+
+Transactions roll all three fixture scenarios back; the owned database container
+and internal network are removed. Existing services/databases and repository are
+preserved; transaction on_commit callbacks are discarded. The retained packet
+`evidence-catalog100-envelope-2026-10-09/` includes summary, captures and provenance;
+root independently verifies300 artifact hashes. Sizes use DRF rendered JSON and
+offline gzip6, not actual HTTP compression/proxy/network bytes. Local arm64
+APIClient timings include render/SQL-capture overhead; two samples per route do
+not establish production latency, SLOs, memory, browser parse/render/scroll or
+concurrency. These examples are not absolute legal maxima and impose no new
+response budget/preview policy. No product exception or mandatory fix is established.
+Section76 remains Partial, with no checklist/section-count change.
+
+### 2026-10-09 — Attempted protected transport capture remains unavailable
+
+The bounded current-origin privacy capture returns no completed network packet:
+the owned CLI runner closes on all three attempts. Private report/provenance and
+failure logs remain in `evidence-network-transport44-2026-10-09/`; raw private
+artifacts use0600. Baseline author ten/player two active-session IDs are preserved,
+with zero new active fixture sessions. No source/service/reseed changes occur;
+the owned-browser close check confirms it is not open. This is a failed capture,
+not a proven privacy finding or privacy pass. Protected-body/cache-header/
+Referer/downstream-URL assertions remain open; source and archived successful
+lifecycle evidence above retain their separate scope. Section76 and counts do
+not advance.

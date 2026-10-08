@@ -115,7 +115,9 @@ Chrome Reset confirms100% and only the owned Guest window closes. Native screens
 remain in the tool conversation, without a separate saved-file artifact.
 
 Other-form zoom, other engines/devices, native screen readers and
-all-flow200% coverage remain unchecked; global section24 remains partial.
+all-flow200% coverage remain unchecked; section24 was partial at this historical
+checkpoint. The representative native44 verification below subsequently closes
+the original zoom bullet.
 Only dark browser-chrome screenshot evidence exists, so section92's both-theme
 favicon visibility remains unchecked. Viewport or CSS/device-scale changes do
 not establish native zoom. See the evidence ledger's 2026-10-09 authenticated
@@ -130,4 +132,25 @@ has visible Tab focus; Tab from the last control wraps to Close, Shift+Tab retur
 to the last control, and Escape restores Report profile trigger focus. No report
 input/submission occurs. See the [dated evidence](production-readiness-evidence.md#2026-10-09--current-frontend-native-chrome200-report-and-own-logout)
 for identity and cleanup. Other-form/engine/device/screen-reader coverage, exact
-CSS viewport and both-theme favicon visibility remain open; global24/92 stay partial.
+CSS viewport and both-theme favicon visibility remain open. Section24 was partial
+at this historical checkpoint; the representative native44 verification below
+supersedes that verdict. Section92 remains partial.
+
+
+## Representative native44 zoom requirement — 2026-10-09
+
+The original section24 bullet requires a200% zoom check. Actual browser-chrome
+200% in native Chrome154/macOS on exact44 frontend/cachedb6 backend adds readable
+search/chips/results, share validation, comments reply/edit cancellation,10x10
+editor inspector/details, profile populated/empty tabs, sessions, notifications,
+reset validation and own logout. Source-equivalent earlier native packets retain
+guest discovery/play/auth, settings/recovery and report evidence. Keyboard focus
+and control access are observed; the owned Guest window is reset100% and closed.
+The original representative zoom check is verified, completing section24's18
+applicable bullets. The earlier partial verdicts above are historical.
+
+See the [dated native44 gate and scope](production-readiness-evidence.md#2026-10-09--completed-exact44-gate-and-native-200-zoom-requirement)
+for source/image, conversation-only screenshot/AX proof and guarded fixture cleanup.
+This does not certify every engine/device/state, native screen readers, exact CSS
+viewport or production deployment. Section92 both-theme browser favicon visibility
+and unresolved layout choices remain open.

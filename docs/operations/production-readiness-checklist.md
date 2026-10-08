@@ -503,7 +503,7 @@ Check:
 - [x] form errors accessible to assistive technologies;
 - [x] color is not the sole state indicator;
 - [x] reduced-motion preference;
-- [ ] 200% zoom;
+- [x] 200% zoom;
 - [x] text contrast roughly satisfies WCAG AA expectations;
 - [x] large-text/UI contrast is reasonable.
 

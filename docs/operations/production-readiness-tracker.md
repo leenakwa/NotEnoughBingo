@@ -30,7 +30,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-10-09: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-10-09: **59 verified**, **39 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -39,12 +39,16 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-09
 
-Latest completed gate: exactc74
-[CI37847289947](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37847289947)
-passes all12 jobs:446 backend,623 frontend,448 smoke/12 skips and125 full-stack
-cases. It covers the logout-channel fix and all four configured browser profiles;
-later working-tree header-prefetch changes require their own gate. See the
-[dated evidence](production-readiness-evidence.md#2026-10-09--completed-exactc74-gate-and-current-public-network-sample).
+Latest completed gate: exact `44edf0ed0d930ed0d0aedd99fe46783a6cdf0320`
+[CI37849732326](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37849732326)
+passes all12 jobs:446 backend,625 frontend/45 files,448 smoke/12 intentional skips
+and125 full-stack cases, with no reported flakes/retries. Tested merge
+`50e7b23bd2ad8b2754f8ba881b08f47f07049988` and branch44 share full tree
+`0ce5a18e785aad40c482919ce085c4b2b7c42891`. This covers the header-prefetch
+correction, both production images and Release; the canonical configured-origin
+local flow also passes at1440x1000/390x844. See the
+[dated gate evidence](production-readiness-evidence.md#2026-10-09--completed-exact44-gate-and-native-200-zoom-requirement)
+and [canonical/RSC limits](production-readiness-evidence.md#2026-10-09--canonical-local44-header-flow-and-bounded-rsc-attribution).
 
 Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
 finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke
@@ -73,8 +77,9 @@ deployment or broad readiness claim is advanced.
 
 The bounded native Chrome200% currentc74 frontend/cachedb6 backend rerun
 subsequently verifies report focus/scrolling and own logout without an expiry dialog.
-See the [dated evidence](production-readiness-evidence.md#2026-10-09--current-frontend-native-chrome200-report-and-own-logout);
-no counter or section verdict changes.
+See the [dated evidence](production-readiness-evidence.md#2026-10-09--current-frontend-native-chrome200-report-and-own-logout).
+That packet made no counter change; the subsequent representative native44 packet
+closes the original zoom bullet and section24 within its recorded scope.
 
 Earlier failed gate —2026-10-08: Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
 finishes with ten successful jobs and failed full-stack/Release. All four smoke
@@ -180,8 +185,8 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **816 checked /326 unchecked**. Of those326,85 belong to the six
-explicitly N/A sections;241 are applicable unchecked bullets. The42 final
+Current **817 checked /325 unchecked**. Of those325,85 belong to the six
+explicitly N/A sections;240 are applicable unchecked bullets. The42 final
 execution bullets overlap earlier checks, so these counts are not independent
 tasks or a readiness percentage. The first nine section105 actions have actual
 local CI/runtime/search/configuration evidence; the deployment sequence and
@@ -285,7 +290,7 @@ original prompt remains unchanged.
 - [ ] 21. RESPONSIVE DESIGN — Partial: 320–2560 px board/editor gate, mobile WebKit, landscape/short-height inspector, and simulated keyboard-sized modal passed; real address-bar, keyboard, and iPhone safe-area behavior still need device evidence.
 - [x] 22. TOUCH UX — Verified before deployment: 44 px mobile touch targets, tap navigation/language/play/editor actions, optional drag alternatives, and no hover/tooltip-only critical controls.
 - [x] 23. KEYBOARD UX — Verified before deployment: navigation, Enter/Space/Escape, visible focus, and cross-browser report-dialog focus trap/return.
-- [ ] 24. ACCESSIBILITY — Partial: full-severity Axe and live modal checks passed, H1/grid/color-only issues fixed; heading hierarchy now passes. Three unnamed editor sliders gained explicit accessible names and values, confirmed in the browser tree. The independent current ARIA/template inventory and two corrected semantics, ten live state/width Axe/contrast probes and native checkbox visual evidence pass; native Chrome200% guest discovery/play/login/register/auth-gate observations now pass within a bounded cached-image scope; authenticated settings/editor/recovery readability and visible focus are also observed on source-equivalent cached frontend05d148a, with no settings write request; report zoom/focus and own logout subsequently pass in a bounded native Chrome200% currentc74 frontend/cachedb6 backend rerun. Other-form and other-engine/device zoom remain unchecked. The historical05d native logout opens an unexpected expiry dialog; its source fix passes scoped local browser regression and the bounded native rerun. Exactc74 CI subsequently passes all12 jobs; the later header-prefetch correction requires its own gate. See accessibility-verification-matrix.md.
+- [x] 24. ACCESSIBILITY — Verified before deployment: all18 original bullets have scoped evidence. Full-severity Axe, semantic/heading/ARIA inventory, accessible sliders, modal/keyboard/error states, contrast and reduced motion retain their earlier evidence. Representative actual Chrome154/macOS200% guest and authenticated views now cover discovery/play/auth gates, settings/editor/recovery, report, search/share/comments/profile/sessions/notifications and own logout; current44 frontend and source-equivalent historical packets retain their cached-backend limits. The original zoom bullet is verified; exhaustive engine/device/state coverage and target deployment are not claimed. Historical05d logout failure is retained, with the subsequent fix/current native reruns and exact44 CI passing. See accessibility-verification-matrix.md and the dated native44 evidence.
 - [ ] 25. COPY AND PLACEHOLDERS — Partial: placeholder inventory and product/auth names checked; legal operator copy and broader error-message exposure remain.
 - [ ] 26. LONG-CONTENT TORTURE TEST — Partial: prior account/title limits, 254-character email, long URL/multilingual comment and profile/card/cell checks retain their scope. The exact-a2 maximum-content packet exposes horizontal overflow in Explore active-filter labels at320px with permitted80-character title/author and15 tags of50 characters. Wrapping and overflow are reopened; the user’s choice of full wrapping or ellipsis is pending. The packet does not establish a new temporal layout shift.
 - [x] 27. DATES AND TIME — Verified before deployment: UTC storage and ISO timestamps, local display with timezone, DST/calendar boundaries, and database ordering by datetime; relative today/yesterday labels are not used.
@@ -337,7 +342,7 @@ original prompt remains unchanged.
 - [x] 73. TESTS — Verified before deployment: sourcea2c2d6f passes402 backend,589 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky summary. Earlier source preparation cancellation and same-source failed-job repeat are retained. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
 - [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on dated optimized local builds, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
-- [ ] 76. NETWORK PANEL — Partial:16 actual optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. No unexpected asset404/401/500 or unintended localhost/staging origin in that bounded observation. Currentc74 guest navigation succeeds; matched production previews remove one exact-current-route header prefetch, while framework cancellation causality remains unproved. An isolated24-board maximum-text envelope measures1.61/3.67MB decoded with five SQL queries; absolute payload/media/concurrency, credentials in URLs and sensitive payload review remain open. Latest header fix needs its final exact-source gate/canonical-origin refresh.
+- [ ] 76. NETWORK PANEL — Partial:16 optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. Canonical exact44 guest flow is clean at both widths, removes the current-Discover prefetch and retains other-route prefetch; its115 request observations contain no credential/contact query keys. Bounded RSC comparison separates navigation phases but cannot establish cancellation causality or backend amplification. The subsequent isolated101-board packet records42 HTTP200 responses: catalog requests100/101 clamp to100 cards/10,000 cells; feed100 clamps to24. Catalog ASCII/Unicode/shared normalized-media examples measure6,729,104/15,282,104/17,714,004 JSON bytes (offline gzip6:2,129,922/476,862/530,464), with5/5/12 SQL queries. These are not absolute legal maxima, wire/CDN, browser or concurrency/SLO measurements. Unchanged-source projections, query retention/retry and no-referrer configuration have bounded evidence, but nine archivedc74 CI artifacts contain no raw network/HAR/trace proof of account/recovery transport privacy. A subsequent transport capture fails on three CLI session closures and proves no privacy finding; author10/player2 baseline sessions remain unchanged. Protected response bodies/headers, downstream URLs/Referer, the standalone email-query decision and target ingress/provider behavior remain open. Exact44 source gate and canonical-origin refresh pass; no section76 closure.
 - [x] 77. HTTP STATUS CODES — Verified before deployment: the root's intentional 307 redirect resolves to canonical Discover HTTP 200; direct valid and missing pages return 200/404, trailing-slash normalization returns 308 with the query preserved, a guest on protected API routes receives 401 with a Session challenge, and authenticated forbidden or CSRF-invalid requests still receive 403. Real-domain edge status handling remains for rollout.
 - [ ] 78. REDIRECTS — Partial: login/logout, root, and trailing-slash redirects work with preserved query and no loop; public HTTP→HTTPS, host alias, and legacy URL policy need a domain.
 - [x] 79. STATIC ASSETS — Verified before deployment: production candidate icon/social/static assets, normalized images, protected ZIP downloads, branding and case-sensitive routing were observed; external fonts, PWA manifest and standalone static documents are absent.
@@ -367,6 +372,17 @@ original prompt remains unchanged.
 - [ ] 103. VERSION / DEPLOYMENT COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 104. ROLLBACK — Partial: additive migrations and an existing-data downgrade/upgrade rehearsal support backward compatibility; no remote feature flags exist. The isolated immutable c1fc2d7/a3e1c00 backend rehearsal restores old web while retaining forward schema/new worker and checks durable records plus existing/fresh sessions. Its sanitized artifact and reusable command are saved; actual prior deployment, registry/config retention and the target-platform rollback command remain unproven.
 - [ ] 105. FINAL EXECUTION SEQUENCE — Partial: sourcea2c2d6f passes the complete CI gate and a bounded exact-image registration/player/report/cache packet; earlier configured065 checks retain their scope. Remaining applicable local requirements and the target deployment sequence stay open.
+
+## Remaining local and operator work
+
+Section76 still needs bounded current-origin account/recovery response-body,
+cache-header and downstream URL/Referer observations; successful CI reports
+cannot supply absent transport captures. The standalone email-query choice,
+recovery-link/session/chip layout choices and both-theme native favicon visibility
+remain unresolved. Continue the applicable unchecked bullets with their recorded
+source/runtime limits; domain, delivery, ingress/cache and provider evidence
+require the real deployment or operator inputs. Exact44 CI and the canonical
+header-flow refresh are complete.
 
 ## Deployment handoff, separate from predeployment completion
 

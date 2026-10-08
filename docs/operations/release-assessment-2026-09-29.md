@@ -5,12 +5,37 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest completed gate: exactc74
-[CI37847289947](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37847289947)
-passes all12 jobs:446 backend,623 frontend,448 smoke/12 skips and125 full-stack
-cases. It covers the logout-channel fix and all four configured browser profiles;
-later working-tree header-prefetch changes require their own gate. See the
-[dated evidence](production-readiness-evidence.md#2026-10-09--completed-exactc74-gate-and-current-public-network-sample).
+Latest completed gate: exact `44edf0ed0d930ed0d0aedd99fe46783a6cdf0320`
+[CI37849732326](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37849732326)
+passes all12 jobs:446 backend,625 frontend/45 files,448 smoke/12 intentional skips
+and125 full-stack cases, with no reported flakes/retries. Tested merge
+`50e7b23bd2ad8b2754f8ba881b08f47f07049988` and branch44 share full tree
+`0ce5a18e785aad40c482919ce085c4b2b7c42891`. This covers the header-prefetch
+correction, both production images and Release; the canonical configured-origin
+local flow also passes at1440x1000/390x844. See the
+[dated gate evidence](production-readiness-evidence.md#2026-10-09--completed-exact44-gate-and-native-200-zoom-requirement)
+and [canonical/RSC limits](production-readiness-evidence.md#2026-10-09--canonical-local44-header-flow-and-bounded-rsc-attribution).
+
+The current representative native Chrome154/macOS200% packet verifies the
+original zoom requirement with guest/authenticated views and readable keyboard
+focus on exact44 frontend/cachedb6 backend, supplemented by source-equivalent
+historical observations. Owned fixtures are guardedly soft-deleted, own session
+revoked, and baseline profile/ten-session IDs preserved; revisions/analytics remain.
+Section24 is Verified before deployment; checklist817/325 and section totals
+59 Verified/39 Partial/6 N/A/1 deployment-only follow from the original bullets.
+Section76 remains Partial: canonical guest URLs and unchanged-source privacy
+contracts have bounded evidence, but archived CI reports contain no raw transport
+captures and cannot prove account/recovery headers, response projection or Referer
+isolation. A subsequent capture fails on three CLI session closures, with author10/
+player2 baseline sessions preserved; no privacy finding or transport assertion is
+established. A separate isolated101-board packet records42 HTTP200 responses:
+catalog requests100/101 return100 cards/10,000 cells, while feed100 returns24.
+Catalog ASCII/Unicode/shared normalized-media examples measure6,729,104/
+15,282,104/17,714,004 rendered JSON bytes (offline gzip6:2,129,922/476,862/
+530,464), with5/5/12 SQL queries. These scoped examples are not absolute legal
+maxima, wire/CDN, browser or production concurrency/SLO evidence. The email-query
+choice and target ingress/provider behavior remain open.
+No global production-readiness claim follows from these local results.
 
 Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
 finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke
@@ -52,7 +77,9 @@ confirms100% and only the owned Guest
 window closes. Wrapped recovery-link layout and CSRF-copy choices remain
 pending. Report zoom is subsequently observed within the bounded rerun below;
 other-form/other-engine/device zoom, exact CSS viewport and
-both-theme favicon visibility remain unchecked; global section24 stays partial.
+both-theme favicon visibility remain unchecked. The subsequent representative
+native44 packet closes the original zoom bullet and section24; exhaustive zoom
+coverage is not claimed.
 Support-placeholder delivery remains an operator check. See the dated evidence
 ledger and accessibility matrix for full scope and cleanup limits.
 
@@ -61,7 +88,9 @@ exactc74 frontend/cachedb6 backend observes report readability/focus wrapping an
 own logout settling on `/login` without an expiry dialog. Owned-session revocation,
 ten-session/profile preservation, Reset100% and owned-window closure are confirmed.
 See the [dated evidence](production-readiness-evidence.md#2026-10-09--current-frontend-native-chrome200-report-and-own-logout)
-for runtime/proof limits; other-flow/device/engine coverage and global24/92 remain open.
+for runtime/proof limits. The later representative native44 packet extends flow
+coverage and verifies section24; exhaustive device/engine coverage and section92
+remain open.
 
 Earlier failed gate —2026-10-08: Exact `761af3e` [CI37834132797](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37834132797)
 finishes with ten successful jobs and failed full-stack/Release. All four smoke
