@@ -191,7 +191,7 @@ For every form verify:
 - [x] Tab navigation works;
 - [ ] browser autofill works where expected;
 - [ ] password managers work;
-- [ ] copy/paste is not unnecessarily blocked;
+- [x] copy/paste is not unnecessarily blocked;
 - [x] accidental whitespace in emails/usernames is handled sensibly;
 - [x] email normalization is sensible;
 - [x] multiline input handles newlines;

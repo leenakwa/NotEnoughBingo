@@ -97,7 +97,7 @@ export function RegisterForm({
           <input
             type="email"
             name="email"
-            autoComplete="email"
+            autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
             required
@@ -121,7 +121,7 @@ export function RegisterForm({
           <span>Username</span>
           <input
             name="username"
-            autoComplete="username"
+            autoComplete="nickname"
             autoCapitalize="none"
             spellCheck={false}
             required

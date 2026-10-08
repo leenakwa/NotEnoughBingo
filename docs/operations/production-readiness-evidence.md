@@ -5819,3 +5819,141 @@ tests pass after the fix; integrated Node22.23.1 lint, TypeScript and589 tests i
 files pass (38.55s). Scoped ESLint and owned-file Prettier also pass on local
 Node24.19.0. The next exact-source complete gate remains required; existing
 optimized-image observations stay scoped to065.
+
+
+### 2026-10-08 — ceb CI preparation timeout; same-source failed-job repeat
+
+Source ceb11d04c70d85a75df9776ae0b5b98ba5776068 has passing frontend quality,
+589 tests/43 files and production build, browser smoke, foundation and secrets in
+[CI37754016843](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37754016843).
+Attempt1 backend113233978472 is cancelled after its20-minute job limit. Actual
+raw log confirms pytest never starts: the preceding apt installation waits for
+fonts-noto-cjk61.2MB and fonts-noto-core13.3MB from azure.archive.ubuntu.com.
+CJK starts09:04:55, is ignored09:19:11, retried09:21:47; cancellation09:23:53.
+The Run backend tests step includes package installation; its19:04 duration is
+preparation, not test execution. No test-collection/progress/results appear.
+Independent CI analysis confirms the cause and unchanged backend/workflow since
+c6. No application/DB deadlock is established. Full-stack and production images
+are skipped; Release fails. The aggregate CLI log download initially fails its
+results-receiver transport; direct job-log retrieval succeeds and is preserved.
+
+One repeat uses gh run rerun37754016843 --failed, keeping the exact source and
+successful frontend/smoke/foundation/secrets results. At that snapshot attempt2
+was in progress; its subsequent completion is recorded below. No timeout/retry-
+policy, assertion or source change is made. The complete gate records actual
+font installation, pytest and dependent full-stack/images/Release results.
+
+
+### 2026-10-08 — Complete form clipboard inventory and observed CSRF copy gap
+
+[Clipboard artifact](artifacts/native-form-keyboard-2026-10-08.json) records31/31
+actual trusted paste/insertFromPaste/exact-value cases and23/23 ordinary-copy
+roundtrips on configured source065, isolated Linux Chromium149 at390px. It covers
+all24 editable text fields of14 form kinds, six editor surfaces and two-cell
+shared text. Eight password fields support paste; native password copy is not
+attempted. Browser Clipboard API seeds only dummy data in the isolated runtime;
+actual Control+V/Control+C performs the action. No Mac UI/OS/private clipboard,
+real business writes, uploads or reseeding. Analytics is intercepted; page errors
+are empty, with two expected controlled progress404 errors. Initial runtime,
+forwarder, locator and mock/SSR identity failures are retained; only affected
+samples are corrected. No repeated31-case gate is claimed. Physical devices,
+Firefox/WebKit clipboard, autofill/password managers and other conditional editor
+states remain unverified. Section7 clipboard bullet is checked:805/337 total.
+
+A separate real empty/no-cookie POST/register returns403 before account creation,
+with “CSRF Failed: CSRF cookie not set.” in its common error envelope. Replaying
+that actual envelope in one intercepted Login POST shows exactly “detail: CSRF
+Failed: CSRF cookie not set.” and retains the fields. Screenshot and actual HTTP/
+UI proof remain private outside the repository. No actual Login write, unexpected
+mutations or page errors; expected mocked403 console remains. This confirms a
+technical user-facing error rather than a missing-fixture hypothesis. The user
+is asked to choose the replacement message before any UI copy change. Section6
+is reopened:58 verified/40 partial/six N/A/one deployment-only. Other pending UI
+choices remain pending; no replacement or recovery behavior is silently applied.
+
+
+### 2026-10-08 — Exact ceb complete gate after preparation-only repeat
+
+[CI37754016843](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37754016843)
+attempt2 completes successfully for ceb11d04c70d85a75df9776ae0b5b98ba5776068:
+all nine jobs pass. Backend388/98.54s on Python3.13/PostgreSQL actually follows
+completed Noto font installation; frontend589/43 files, smoke372/12 intentional
+skips15.6min and full-stack123/9.1min pass. No browser flaky summary appears.
+Foundation, secrets, both production image builds/scans and Release also pass.
+Only failed/dependent jobs are repeated after the documented external download
+cancellation; successful frontend/smoke/foundation/secrets are reused. Browser
+assertions, retries and timeout policies are unchanged. Actual CI merge
+3d1078d83069ba50a205226e5019e852c12379a6 has complete tree
+1525cd34365574bbf60fa795c6ccd5e6da69bf9b, matching branch source (GitHub Git API and
+local git tree). The full raw log and both backend attempts remain private in
+external task scratch. No registry promotion, merge or deployment occurs.
+
+The complete gate proves the current player replay correction; it does not make
+source065 configured clipboard/layout packets current-source runtime proofs or
+resolve the observed CSRF copy, pending UI decisions, native device capabilities
+or real deployment requirements. Checklist remains805/337, verdicts58/40/six N/A/
+one deployment-only. No extra checklist marks are inferred from CI.
+
+
+### 2026-10-08 — Native Linux password-manager Login and account scope
+
+The [native form artifact](artifacts/native-form-keyboard-2026-10-08.json) adds
+one genuine Chromium password-manager Login journey on configured065. Built-in
+WebUI Add/Save, native suggestion, exact DOM/FormData and controlled Login JSON
+agree; no application DOM-fill/JS/CDP synthetic autofill or SQL/preferences
+credential injection. Full Chromium149 uses an owned persistent Linux profile,
+basic password store and omits enable-automation. Two intercepted Login400s
+(suggestion Enter, then explicit button) and analytics have no real business
+writes; page errors empty, expected400 console retained. Initial headless-shell
+WebUI failure and dialog-locator correction remain in the raw record.
+
+Three separate Change email/password/delete attempts save another dummy credential
+through WebUI but do not fill current-password: DOM/FormData remains empty. New
+email/new passwords retain intended values; no auth payload or business writes.
+This remains unverified capability/form semantics, not a confirmed defect.
+The three forms have no current-email username anchor. Chromium's
+[password-form guidance](https://www.chromium.org/developers/design-documents/create-amazing-password-forms/#use-hidden-fields-for-implicit-information)
+recommends a CSS-hidden username input for implicit identity. That markup
+observation does not prove the cause of this Chromium149 attempt.
+Owned profiles/containers/forwarders are removed; no Mac/private vault/OS changes.
+No password-manager/autofill checklist marks or generation/automatic-save claims.
+
+
+### 2026-10-08 — Limits of native autofill follow-up
+
+One controlled Change email experiment adds only a CSS-hidden readonly username
+anchor with the current email. Native manager fill still leaves current-password
+empty and preserves the new email. The stored credential username was not read
+back; neither an application cause nor a source fix is established. No account
+username-anchor change is made from this negative experiment.
+
+A separate native Addresses WebUI attempt enters dummy Name/Email and clicks Save,
+but the resulting stored profile is not verified. Four target contexts remain
+empty while retaining other entered fields. These results cannot establish an
+application defect or unsupported browser capability without a confirmed seed.
+One profile PATCH receives controlled422; analytics is intercepted. No real
+writes or page errors. Owned Linux profiles/containers/forwarders are removed.
+Raw hashes and scope extend the existing
+[native form artifact](artifacts/native-form-keyboard-2026-10-08.json); general
+browser autofill/password-manager bullets remain unchecked.
+
+
+### 2026-10-08 — Registration credential identity metadata
+
+Registration now identifies Email as autocomplete username and the public handle
+as nickname; Password remains new-password. Login and backend LoginSerializer
+already authenticate by email. Names, validation, labels, values and request
+payload remain unchanged. This corrects semantic metadata; no wrong saved
+credential or automatic-save-after-registration defect was observed.
+The [HTML autocomplete definitions](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#autofilling-form-controls:-the-autocomplete-attribute)
+and [email login guidance](https://web.dev/articles/sign-in-form-best-practices#help_users_to_avoid_re-entering_data)
+support those roles.
+
+Existing37 auth-submission cases and full Node22 lint/typecheck/589 tests in43
+files pass. A current-source dev browser reads all three corrected attributes,
+but all fields remain disabled after its15s readiness wait:21 document/CSS/JS/icon
+responses200, no failed requests/page or console errors, no session request.
+No cause is established, no payload/retention success is claimed and no timeout,
+source or service policy is changed from that observation. The earlier configured
+source065 is untouched. The subsequent metadata source requires its own exact CI;
+ceb remains the latest complete gate until that result is recorded.

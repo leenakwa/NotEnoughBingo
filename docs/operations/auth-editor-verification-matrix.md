@@ -78,3 +78,46 @@ forms through DOM Location.reload; final document markers did not confirm
 accepted reload within5s. Initial prototype PASS results read the old document
 and are excluded. The automation/Firefox difference remains unresolved.
 This establishes bounded warnings, without a global dirty-form policy verdict.
+
+
+## Isolated Linux clipboard — 2026-10-08
+
+The [native form artifact](artifacts/native-form-keyboard-2026-10-08.json) maps all
+24 editable text fields of14 forms, six editor surfaces and the two-cell shared
+text field on configured source065. Actual Control+V produces trusted paste and
+insertFromPaste with exact Unicode/multiline values:31/31 pass. Ordinary text
+Control+C roundtrips pass23/23; eight password fields are paste-tested without
+attempting native password copying. Editor metadata, inspector text/image alt,
+inline and shared text are included. No business/real backend writes or page
+errors; controlled progress404 errors remain. Linux Chromium149 at390px only: native
+Mac/devices, Firefox/WebKit clipboard and autofill/password managers remain
+separate. Initial harness failures and corrections are retained externally.
+
+
+## Built-in password-manager observation — 2026-10-08
+
+The [native form artifact](artifacts/native-form-keyboard-2026-10-08.json) records
+isolated full Linux Chromium149: real password-manager WebUI Add/Save stores a
+dummy credential; native suggestion fills initialized Login. DOM, FormData and
+controlled submitted payload match without application DOM-fill/JS autofill.
+Suggestion Enter causes one controlled400, then the explicit button another;
+analytics is intercepted and no real auth writes occur. Initial headless-shell
+and WebUI-locator setup failures are retained. The owned profile is deleted.
+Three later account-form attempts leave current-password empty while retaining
+other entered values; this does not establish an application defect. General
+manager/autofill coverage remains open, including those forms, generation,
+automatic saving after success, third-party managers and Mac/devices.
+
+The later current-email username-anchor prototype still leaves Change email's
+password empty; stored vault identity was not read back. Addresses WebUI Save
+does not prove a stored profile; four empty autofill targets are inconclusive.
+Both experiments retain other fields and have no real writes. The artifact
+records these limits; no account form fix or general autofill verdict follows.
+
+
+Registration credential metadata now uses Email as username and the public
+handle as nickname, matching email-based Login. Existing37 submission tests and
+full lint/types/589 tests pass. Current dev rendered attributes match; its fields
+stay disabled in the recorded readiness observation, so no current browser
+submission or general manager-save success is claimed. Exact source CI remains
+pending; configured065 native packets retain their previous source scope.

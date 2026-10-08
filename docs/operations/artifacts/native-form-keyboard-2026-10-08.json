@@ -127,7 +127,7 @@
         "Save"
       ],
       "report": [
-        "×",
+        "\u00d7",
         "reason",
         "description",
         "Cancel",
@@ -147,7 +147,7 @@
       "Corrected WebKit keyboard-launched report dialog traps Tab and returns focus to its launcher after Escape."
     ],
     "console": "Expected intercepted progress404 and validation400 resource errors are retained; no empty-console claim.",
-    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher→Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
+    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher\u2192Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
     "pointerFocusObservation": {
       "engine": "webkit",
       "before": "TEXTAREA[name=comment_body]",
@@ -315,6 +315,209 @@
     "rawReport": {
       "name": "neb-social-beforeunload-native-proof-oct08.json",
       "sha256": "2feb380117132e362d0accf3b0ac69089a63d82b2d2dcf417b1a195950c55ce3"
+    }
+  },
+  "clipboard": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "imageId": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+    "runtime": {
+      "image": "mcr.microsoft.com/playwright:v1.61.1-noble",
+      "digest": "sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48",
+      "chromiumVersion": "149.0.7827.0"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "sourceModuleHashes": [
+      {
+        "sha256": "1a8f34999966e1fcfa15c18cb0385dda0017222fad70dedc7509cae3e949ae78",
+        "path": "components/auth/login-form.tsx"
+      },
+      {
+        "sha256": "2bf8d9551a03c53603e8c8a2f6e6be60e1380cf16dd4eb2152647ee6f444dec5",
+        "path": "components/auth/password-field.tsx"
+      },
+      {
+        "sha256": "9cc2e0c58f01671caa5ff157c7ad461b9f4ffe8cf2c72c2de3badf03ce04ebd1",
+        "path": "components/explore/explore-page.tsx"
+      },
+      {
+        "sha256": "e426bcba952335b6aa66e2879cf574060e99165476c28cd857e3c8568f640aa1",
+        "path": "features/social/comments-panel.tsx"
+      },
+      {
+        "sha256": "8e4301d8afd452839507a5a2d29782042767a453ad6b8c55c2a2da6e64cd5acc",
+        "path": "features/social/report-dialog.tsx"
+      },
+      {
+        "sha256": "0cc7a091fe4a7d4c8a5aab38184049d8735ba29b83f3d11fc82b70458310509f",
+        "path": "features/editor/editor-board.tsx"
+      },
+      {
+        "sha256": "8f1c2b76b877c27db1925d031f5da0bfbe4bf43a78aeaa2e732b768c389eed1a",
+        "path": "features/play/bingo-player.tsx"
+      },
+      {
+        "sha256": "3d44421cee140c9c6117befd94e15e307402bb080a563fd45ceff9bc8792f7f5",
+        "path": "components/auth/register-form.tsx"
+      },
+      {
+        "sha256": "f4011d3c023beeb7877138a9711195e3816a569d85f4dcffc12892e3b25fcf6f",
+        "path": "components/auth/password-forms.tsx"
+      },
+      {
+        "sha256": "1732bd0f818308d162e07444672555a7d1933938cb3f7bef9574a3fce4b87ecf",
+        "path": "features/profile/profile-view.tsx"
+      },
+      {
+        "sha256": "a2b2fc5f60356bae94472c4dfc6e8a24c5d5e1fc2b56ee91e7157d5a3ffd3251",
+        "path": "features/profile/account-settings.tsx"
+      },
+      {
+        "sha256": "e254911d70cb5618738375594ddbbcdeae01b2b32ce5e2b5f6cee0c775bbd8bb",
+        "path": "features/editor/cell-inspector.tsx"
+      },
+      {
+        "sha256": "36c6b642255f9ca7aed1d1fad5ba45e1bb19b5b8dbd0cc3b3e88c1c7bcdd8418",
+        "path": "features/editor/bingo-details.tsx"
+      },
+      {
+        "sha256": "802a50e504e3c26de42cb8f12fa32fff4fd4e3c01597409443ed340b57100ba4",
+        "path": "features/editor/bingo-editor.tsx"
+      }
+    ],
+    "scope": "Linux headless Chromium; all 24 editable text fields of the original 14 forms, six separate editor surfaces and the two-cell shared-text textarea.",
+    "results": {
+      "nativePastePassed": 31,
+      "ordinaryCopyRoundtripsPassed": 23,
+      "passwordCopyNotAttempted": 8
+    },
+    "requiredObservations": [
+      "Trusted paste event",
+      "Trusted insertFromPaste input",
+      "Exact dummy value",
+      "Ordinary text copy roundtrip"
+    ],
+    "mutations": "Analytics intercepted; business writes and real backend writes zero.",
+    "console": "Two controlled progress404 resource errors in clipboard packets; page errors empty.",
+    "limitations": [
+      "No native Mac/device, Firefox/WebKit clipboard or autofill/password-manager claim.",
+      "Non-text controls are not plaintext-paste targets; payloads stay below field limits.",
+      "Other conditional editor states are not exhaustively covered."
+    ],
+    "initialFailures": "Missing Linux runtime, module resolution, insecure forwarder origin, guest-only SSR controls, mock/SSR identity mismatch and an incorrect wizard-button locator preserved externally. Missing-fixture hypothesis withdrawn after actual detail200/proxy proof; only affected cases corrected.",
+    "rawReports": [
+      {
+        "name": "final-proof3.json",
+        "sha256": "6a236a249bb49ee5b015889413c7b6f2fee3715629113b0d9991e08049bf8da2"
+      },
+      {
+        "name": "neb-csrf-ui-proof-oct08.json",
+        "sha256": "dd40e030f2e5558bfe0989f2e2fa8b03fd6b42a44b10532f11240473367cb439",
+        "scope": "Separate bulk clipboard case and CSRF rendering proof."
+      }
+    ],
+    "cleanup": "Disposable containers and localhost forwarders closed; no Mac UI, OS settings or private clipboard touched. Official Linux runtime remains cached.",
+    "verifiedFields": [
+      "login-email",
+      "login-password",
+      "explore-search",
+      "root-comment-textarea",
+      "report-textarea",
+      "guest-nickname",
+      "editor-inline-textarea",
+      "register:email",
+      "register:username",
+      "register:password",
+      "forgot:email",
+      "reset:new_password",
+      "profile:username",
+      "profile:display_name",
+      "profile:bio",
+      "email:new_email",
+      "email:email-change-password",
+      "password:current_password",
+      "password:new_password",
+      "password:confirm-new-password",
+      "delete:deletion_password",
+      "reply:reply_body",
+      "edit:edited_comment",
+      "Explore Author",
+      "Explore Tags",
+      "Editor inspector Text",
+      "Editor Image description",
+      "Editor Title",
+      "Editor Description",
+      "Editor Tag",
+      "Editor shared text for 2 cells"
+    ]
+  },
+  "passwordManager": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "runtime": "Isolated Linux full Chromium149; official Playwright1.61.1 image; persistent owned test profile, basic password store and enable-automation argument omitted.",
+    "verified": "Built-in password-manager WebUI manually adds/saves a dummy credential; native suggestion fills Login email/password. DOM, FormData and controlled Login payload match.",
+    "loginMutations": "Two controlled Login400 responses (suggestion Enter and later button) and intercepted analytics; no real business writes.",
+    "accountAttempt": {
+      "forms": [
+        "Change email",
+        "Change password",
+        "Delete account"
+      ],
+      "nativeCurrentPasswordFieldsFilled": 0,
+      "otherEnteredValuesRetained": true,
+      "verdict": "Unverified: current-password DOM/FormData stays empty. Capability versus form-semantics cause is not yet established; no product defect is inferred.",
+      "usernameAnchorFactor": {
+        "forms": [
+          "Change email"
+        ],
+        "attempts": 1,
+        "nativeCurrentPasswordFieldsFilled": 0,
+        "otherEnteredValuesRetained": true,
+        "scope": "Controlled CSS-hidden readonly current-email username anchor prototype; password value never injected. Actual stored credential username was not read back. No source correction is established.",
+        "realBackendWrites": 0,
+        "rawReport": {
+          "name": "neb-password-manager-email-factor-native-proof-oct08.json",
+          "sha256": "0c68e33ac93a84cf6da91c12615e95ff0611f030a9ce203c7d365024c4b32d03"
+        }
+      }
+    },
+    "limitations": [
+      "No automatic Save prompt after real authentication, password generation, third-party manager or Mac/device proof.",
+      "General password-manager and autofill checklist bullets remain open."
+    ],
+    "cleanup": "Owned Linux profile removed; container and forwarder closed; no personal vault, Mac UI/OS or real auth writes.",
+    "rawReports": [
+      {
+        "name": "neb-password-manager-native-proof-oct08.json",
+        "sha256": "8783b6a32242ca9e5851b2c4b1e0621e5926ea7ab6c78781ce4afab7e6fbe3c3"
+      },
+      {
+        "name": "neb-password-manager-account-native-proof-oct08.json",
+        "sha256": "0324bc9991989ebd5c97fe366038dc460cc2d9c9584d055fa7120c74874808a2"
+      }
+    ]
+  },
+  "addressAutofill": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "runtime": "Isolated Linux full Chromium149; official Playwright1.61.1 image; persistent owned test profile, basic password store and enable-automation argument omitted.",
+    "contexts": [
+      "Register Email",
+      "Forgot Email",
+      "Profile Display name",
+      "Change email New email"
+    ],
+    "attempts": 4,
+    "verifiedNativeFills": 0,
+    "otherEnteredValuesRetained": true,
+    "seed": "Native Addresses WebUI Name/Email entry and Save action observed; resulting stored address not verified.",
+    "verdict": "Unverified: empty target fields cannot establish an application defect or unsupported browser capability without a confirmed address seed.",
+    "realBackendWrites": 0,
+    "mutations": "One controlled profile PATCH422 and intercepted analytics; no real writes.",
+    "cleanup": "Owned Linux profile removed; container and forwarder closed; no Mac/private OS data changed.",
+    "rawReport": {
+      "name": "neb-browser-address-autofill-native-proof-oct08.json",
+      "sha256": "d7a54229d177599bf6b9631a7049fe737653dde4fca534ab492c65479970e62f"
     }
   }
 }

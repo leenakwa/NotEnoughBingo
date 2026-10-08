@@ -29,7 +29,7 @@ hostname does not exist yet. Do not infer an item's result from code alone.
   deployment. Prepare its script and inputs before release; run it during
   rollout without reopening the whole product audit.
 
-Snapshot for 2026-10-08: **59 verified**, **39 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
+Snapshot for 2026-10-08: **58 verified**, **40 partial**, **0 awaiting itemized review**, **6 N/A**, **1 deployment-only**.
 These counts describe predeployment evidence, not a readiness percentage. The
 release cannot be considered ready while applicable predeployment bullets have
 unresolved failures or missing evidence.
@@ -38,21 +38,19 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-08
 
-Source `c6d770d` fails the complete gate in
-[CI37750054487](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37750054487):
-seven jobs pass, including388 backend tests on Python3.13/PostgreSQL,587 frontend
-cases and372 smoke/12 intentional skips. Full-stack reports96 passed, two failed
-and25 not run; Release fails. Both failures observe a seeded player board
-resetting to “Opening bingo…” before a report or accessibility check. The local
-StrictMode regression reproduces that reset. A correction is under verification;
-the current source has no complete passing gate. Section verdicts below retain
-their dated scope and do not establish current release sign-off.
+Source `ceb11d0` passes all nine jobs in attempt2 of
+[CI37754016843](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37754016843):
+backend388 on Python3.13/PostgreSQL, frontend589/43 files, smoke372/12 intentional
+skips, full-stack123, foundation, secrets, both production images and Release.
+No browser flaky summary appears. CI merge3d1078d83069ba50a205226e5019e852c12379a6
+and branch source have the same complete tree1525cd34365574bbf60fa795c6ccd5e6da69bf9b.
 
-Latest complete passing source `0655989` passes all nine jobs in
-[CI37743142188](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37743142188):
-backend383, frontend587/43 files, smoke372/12 intentional skips, full-stack123,
-foundation, secrets, both production images and Release. Browser suites report
-no flaky cases. CI tests merge1d7d3cda with the same complete tree as this source.
+Attempt1 never starts pytest: external Ubuntu font download exhausts the backend
+job limit. One repeat runs failed/dependent jobs for the same source and reuses
+successful jobs. Earlier c6 full-stack failures lose the seeded player during
+StrictMode effect replay; ceb fixes that cause with two fail-before regressions.
+Both failed gates remain recorded in the dated evidence. This passing gate does
+not resolve the newly observed CSRF copy or other pending local/UI requirements.
 
 The [exact configured Explore image](artifacts/explore-pending-submission-2026-10-08.json)
 passes nine controlled guard cases in Chromium/Firefox/WebKit, including repeated
@@ -77,14 +75,14 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **804 checked /338 unchecked**. Section42 backup/migration/rollback
+Current **805 checked /337 unchecked**. Section42 backup/migration/rollback
 contracts and section82 applicable API contracts have local evidence. Provider
 and target measurements remain open in their relevant sections.
 
 The subsequent cache-readiness correction returns503/degraded when the cache
 round-trip fails; five endpoint regressions and13 scoped observability checks
-pass locally with independent review. The388-test Python3.13/PostgreSQL CI job
-passes; the complete source gate fails as recorded above. The configured frontend proofs above remain scoped to065.
+pass locally with independent review. The388-test Python3.13/PostgreSQL job and complete ceb source gate
+pass. Actual Redis is separate from the mocked endpoint regressions. The configured frontend proofs above remain scoped to065.
 
 ### Accepted interface requirements
 
@@ -113,8 +111,8 @@ observations; the original prompt remains unchanged.
 - [x] 3. NAVIGATION — Verified before deployment: branded home and header/footer links, active-route labels, Back/Forward with profile recovery, direct/new-tab/reloaded routes and URL-restored Explore/share state passed. Dialog/disclosure Escape/outside and sticky-anchor behavior have live evidence. Navigation is always visible; no mobile menu is present.
 - [x] 4. UI STATES — Verified locally: mapped required and optional reads cover initial/loading/loaded/empty/partial/error/offline/retry/permission/session states. Auth/header/catalog, editor publication lookup, player author/progress/comments, profile viewer/activity, account sessions/preferences/export and social surfaces retain independent usable content and protect request ownership. The final two composition gaps now pass eight cases in four engines: profile activity Drafts503 with retained profile/email edits and scoped real200 retry without identity reload; accepted real export202 followed by exact status503, retained profile/email/password edits, available unrelated actions and recovery to the same ready job. Their four accompanying reset-reuse cases also pass. Full current source CI remains separate; native form/control requirements remain in sections7/8.
 - [ ] 5. LOADING UX — Partial: page/form pending states, editor save and upload status, long-running account export polling, completion feedback and real multi-MB byte progress/cancellation were exercised; synchronous submission protection covers13 data-mutating forms, editor publication and the corrected Explore search; ten Explore units and nine controlled browser scenarios pass. Layout stability still needs an itemized sweep. Skeletons are not used in this release.
-- [x] 6. ERROR HANDLING — Verified before deployment: relevant 400/401/403/404/409/413/422/429/500 and gateway/network/timeout cases have safe human-readable feedback, retained work and appropriate retry; proxy HTML and parser/exception internals stay out of the interface.
-- [ ] 7. FORMS — Partial: executed native and real API cases cover field labels, understandable nearby validation and focus, preserved work after errors, concurrent mutation protection, account-scoped comment/report recovery, whitespace/email normalization, permitted Unicode/literals and bounded numeric controls. Silent DOM-fill submission passes in four browser profiles for three account forms; this does not establish native autofill/password-manager behavior. Native Enter/Tab and intended form ownership now map across the14 form kinds; required/optional copy, global limit policy, dirty-state policy and native capabilities remain open. See the dated evidence and API/auth-editor, profile/account and accessibility matrices for scope and results.
+- [ ] 6. ERROR HANDLING — Partial: previously exercised status/network/timeout cases retain work and offer recovery. A newly observed CSRF403 passes the technical “detail: CSRF Failed: CSRF cookie not set.” into Login. The user-facing replacement awaits the user’s choice; the section is reopened. No raw stack trace is observed.
+- [ ] 7. FORMS — Partial: executed native and real API cases cover field labels, understandable nearby validation and focus, preserved work after errors, concurrent mutation protection, account-scoped comment/report recovery, whitespace/email normalization, permitted Unicode/literals and bounded numeric controls. Silent DOM-fill submission passes in four browser profiles for three account forms; this does not establish native autofill/password-manager behavior. Native Enter/Tab and intended form ownership map across14 form kinds; Linux Chromium clipboard proof covers their24 text fields plus seven editor surfaces (31 paste/23 ordinary-copy cases); required/optional copy, global limit policy, dirty-state policy and native capabilities remain open. See the dated evidence and API/auth-editor, profile/account and accessibility matrices for scope and results.
 - [ ] 8. BUTTONS AND CONTROLS — Partial: semantic button/link markup, focus and disabled states, destructive styling/confirmation, and 44px editor touch targets at 320/1710px were checked. Shared button hover/press feedback now changes visibly without mobile overflow; intended submit ownership is verified across the14 form kinds. Custom control states still need the remaining per-control sweep.
 - [x] 9. DESTRUCTIVE ACTIONS — Verified before deployment: confirmed permanent Delete/Reset, authorization and repeat safety, account-deletion cancellation, and live Archive/Restore with guest 404/200 and reload persistence; permanent actions do not promise undo.
 - [x] 10. SIGNUP — Verified before deployment: browser validation, password visibility and Enter, Mailpit verification and resend, duplicate and weak-password API behavior, expired and reused links.
@@ -180,9 +178,9 @@ observations; the original prompt remains unchanged.
 - [x] 70. PRODUCTION BUILD — Verified before deployment: configured optimized image0655989 builds and runs with matching release identity, zero application mounts and health200; nine controlled Explore guard cases and eight real-API guest layout observations pass within their recorded scope. Actual domain/provider values remain rollout inputs.
 - [x] 71. DEPENDENCIES — Verified before deployment: committed npm and Python 3.13 production/development locks, clean installs and builds, runtime version alignment, local ARM64 native imports, x86_64 CI production image and real worker PNG/PDF export pass.
 - [ ] 72. CI/CD — Partial: local evidence recorded; review remaining original bullets.
-- [x] 73. TESTS — Verified before deployment: source0655989 passes383 backend,587 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky cases. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent.
+- [x] 73. TESTS — Verified before deployment: sourceceb11d0 passes388 backend,589 frontend,372 smoke/12 intentional skips and123 live cases in complete CI, with no browser flaky summary. Attempt1 preparation cancellation and same-source failed-job repeat are retained. Coverage includes auth, authorization, editor/play/save, deletion, important APIs and calculations; payments are absent.
 - ↗ 74. PRODUCTION SMOKE TEST — Deployment-only: read-only script prepared; supply the real HTTPS origin and a known published board, then run it during rollout.
-- [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on the current production build, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
+- [x] 75. BROWSER CONSOLE — Verified before deployment: installed Chrome inspected 16 public routes at 320/1710 px and three signed-in routes on dated optimized local builds, with zero console errors/warnings or failed assets; target-origin smoke remains part of rollout.
 - [ ] 76. NETWORK PANEL — Partial:16 actual optimized-image samples inspected545 responses (529×200/16×202), zero redirects and only the configured loopback origin;50 retained assets passed hash/HTTP checks through promotion/rollback. No unexpected asset404/401/500 or unintended localhost/staging origin in that bounded observation. RSC abort cause/size, credentials in URLs and sensitive payload review remain open; latest frontend fixes need a final exact-image refresh.
 - [x] 77. HTTP STATUS CODES — Verified before deployment: the root's intentional 307 redirect resolves to canonical Discover HTTP 200; direct valid and missing pages return 200/404, trailing-slash normalization returns 308 with the query preserved, a guest on protected API routes receives 401 with a Session challenge, and authenticated forbidden or CSRF-invalid requests still receive 403. Real-domain edge status handling remains for rollout.
 - [ ] 78. REDIRECTS — Partial: login/logout, root, and trailing-slash redirects work with preserved query and no loop; public HTTP→HTTPS, host alias, and legacy URL policy need a domain.
@@ -212,7 +210,7 @@ observations; the original prompt remains unchanged.
 - [x] 102. SESSION EXPIRATION — Verified before deployment: concurrent authentication failures trigger one session recheck; editor and play flows explain expiry, preserve unsaved progress, and restore the intended route after login.
 - [ ] 103. VERSION / DEPLOYMENT COMPATIBILITY — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 104. ROLLBACK — Partial: additive migrations and an existing-data downgrade/upgrade rehearsal support backward compatibility; no remote feature flags exist. The isolated immutable c1fc2d7/a3e1c00 backend rehearsal restores old web while retaining forward schema/new worker and checks durable records plus existing/fresh sessions. Its sanitized artifact and reusable command are saved; actual prior deployment, registry/config retention and the target-platform rollback command remain unproven.
-- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: source0655989 passes the complete CI gate and bounded configured-image checks. Remaining applicable local requirements and the target deployment sequence stay open.
+- [ ] 105. FINAL EXECUTION SEQUENCE — Partial: sourceceb11d0 passes the complete CI gate; bounded configured-image checks cover source0655989 separately. Remaining applicable local requirements and the target deployment sequence stay open.
 
 ## Deployment handoff, separate from predeployment completion
 

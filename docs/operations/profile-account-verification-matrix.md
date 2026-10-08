@@ -30,8 +30,10 @@ The final combined packet adds sign-out/cancellation and passes **24/24** in the
 same four engines, retries zero, including real successful writes and full
 page-error assertions. Source/count/log references are in the dated evidence.
 
-Native autofill/password-manager operation and actual clipboard paste remain
-unverified. `autocomplete`, no paste interception and silent DOM-fill submission
+Native autofill/password-manager operation and Mac/device clipboard remain
+unverified. The [Linux clipboard packet](artifacts/native-form-keyboard-2026-10-08.json)
+subsequently verifies every editable text field of the profile/email/password/
+deletion forms with actual trusted paste and ordinary text copy; no real writes. `autocomplete`, no paste interception and silent DOM-fill submission
 establish plumbing/static behavior only. These account controls have no numeric
 inputs, reset buttons or skeletons; numeric-range checks are N/A here. Saved
 baselines, cleared credentials, rollback, upload cancellation and identity cleanup
