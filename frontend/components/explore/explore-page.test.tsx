@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ExplorePage } from "@/components/explore/explore-page";
@@ -51,6 +51,25 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("Explore partial and obsolete responses", () => {
+  it("groups active filters and preserves the remaining filters when removing a tag", () => {
+    mocks.query = "search=travel&author=sample&tags=holiday,year&ordering=newest&page=3";
+    render(<ExplorePage initialResult={page([])} />);
+
+    const filters = within(screen.getByRole("group", { name: "Active filters" }));
+    expect(filters.getByRole("button", { name: "Remove title filter: travel" })).toBeEnabled();
+    expect(filters.getByRole("button", { name: "Remove author filter: sample" })).toBeEnabled();
+    expect(filters.getByRole("button", { name: "Remove tag filter: year" })).toBeEnabled();
+    expect(filters.getByRole("button", { name: "Remove newest-first sorting" })).toBeEnabled();
+
+    fireEvent.click(filters.getByRole("button", { name: "Remove tag filter: holiday" }));
+
+    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith(
+      "/explore?search=travel&author=sample&tags=year&ordering=newest",
+      { scroll: false },
+    );
+    expect(screen.getByLabelText("Tags", { exact: true })).toHaveValue("year");
+  });
+
   it.each([
     {
       label: "Author",

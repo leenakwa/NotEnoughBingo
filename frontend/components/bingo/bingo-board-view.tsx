@@ -105,6 +105,7 @@ export function BingoBoardView({
           data-board-size={revision.size}
           aria-label={`${revision.title}, ${revision.size} by ${revision.size} bingo board`}
           aria-describedby={boardHelpId}
+          aria-multiselectable={true}
           aria-readonly={readOnly}
           aria-busy={disabled}
           data-completion-style={completionStyle}

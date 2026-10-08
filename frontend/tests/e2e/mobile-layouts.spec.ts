@@ -291,8 +291,11 @@ test("10×10 editor pans deliberately and opens a usable mobile inspector", asyn
   const lastCell = page.getByRole("gridcell", { name: /row 10, column 10/i });
   await lastCell.scrollIntoViewIfNeeded();
   await lastCell.tap();
+  await page.keyboard.press("Escape");
   const inspector = page.getByRole("complementary", { name: "Cell editor" });
   await expect(inspector).toBeVisible();
+  await expect(lastCell).toHaveAttribute("aria-selected", "true");
+  await expect(inspector.getByLabel("Text", { exact: true })).toHaveValue("Cell 100");
   const inspectorLayout = await inspector.evaluate((element) => {
     const close = element.querySelector<HTMLElement>('[aria-label="Close cell editor"]');
     const closeBox = close?.getBoundingClientRect();

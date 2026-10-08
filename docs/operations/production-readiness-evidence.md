@@ -4846,3 +4846,135 @@ observed results and their limits. Do not include credentials or session data.
   failures remain recorded above. The next commit still requires all nine
   exact-source CI jobs; other form/native-device/operations/target items remain
   open. This is not a production-readiness or deployment claim.
+
+
+### 2026-10-08 — Preserved continuation, exact-source CI and corrected browser expectations
+
+- The complete original prompt and verbatim continuation request remain unchanged;
+  SHA-256 checks match their registered values. The active goal has no token
+  budget and still requires all applicable predeployment work, exact-source CI
+  and current evidence. The continuation plan is the durable resume checkpoint;
+  one packet or green gate does not complete it.
+- Packet `a3e1c00e945855df82be25191207610ef861e148` was pushed on the existing
+  branch and draft PR #18. [CI 37707547894](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37707547894)
+  **failed**: backend/frontend quality, foundation, history secrets and both
+  production images passed; browser smoke and full-stack failed, so Release gate
+  failed. Smoke: 199 pass / one fail / 12 intentional skips. Full-stack: 110
+  pass / one fail / five not run. Logs/report downloads are retained:
+  `/tmp/neb-a3-ci-all-failed-oct08.log`, `/tmp/neb-a3-ci-playwright-report`,
+  `/tmp/neb-a3-ci-live-playwright-report`.
+- The smoke failure was reproduced at 320×800 touch WebKit, retries zero.
+  The trace contains both the mounted inspector and focused inline textarea for
+  Cell 100. Intentional mobile CSS hides the inspector while inline editing is
+  active. The test now exits that editing mode through Escape, then verifies
+  selection/text retention and unchanged inspector geometry/44 px close control.
+  An ignored-copy proof passed four engines; the actual tracked test also passes
+  **4/4**, retries zero: `/tmp/neb-ci-mobile-tracked-oct08.log`.
+- The full-stack password test submitted an incorrect current password together
+  with a weak replacement, but expected current-password validation first. The
+  actual 400 contains only `details.new_password`: serializer field validation
+  precedes service current-password checking. The corrected test uses a valid
+  replacement for the wrong-current case, then a correct current value for the
+  weak-replacement case. It asserts each actual response field, focus,
+  aria-invalid, inline message and all three retained values. **4/4** engines
+  pass with zero retries. Logs: `/tmp/neb-ci-password-validation-corrected-oct08.log`,
+  `/tmp/neb-ci-password-validation-logout-mobile-webkit-oct08.log`,
+  `/tmp/neb-ci-password-validation-logout-firefox-oct08.log`,
+  `/tmp/neb-ci-password-validation-logout-webkit-oct08.log`.
+  Independent behavioral review passes. No product validation ordering, error
+  filter, quota or retry setting was changed.
+- Final current Node 22 frontend lint/types plus **470 tests / 40 files** pass;
+  format passes. Logs: `/tmp/neb-aria-ci-amendment-final-frontend-oct08.log`,
+  `/tmp/neb-aria-ci-amendment-final-format-oct08.log`. Backend application source
+  is unchanged since the previous 382-pass/one-skip integration gate. The next
+  committed source still needs all nine CI jobs; the failed a3 gate is retained.
+
+### 2026-10-08 — ARIA, field labels and observed default UI contrast
+
+- Independent read-only inventory covers 71 current product TSX files,
+  255 ARIA/role sites in 33 files and 45 native-field template sites in 15 files.
+  The [matrix](accessibility-verification-matrix.md) records associated labels,
+  dynamic ID derivation and native-tooling limits. No placeholder-only name was
+  found. The two form-label bullets are checked.
+- The audit found two concrete mismatches: the play/shared grid allowed several
+  selected cells without declaring multiple selection, and the active-filter
+  wrapper used a name on an unnamed generic element. The grid now declares
+  `aria-multiselectable=true`; the filters expose a named group. Existing marked
+  names/pressed/read-only state and snapshot no-toggle behavior are retained.
+  Eight board and four Explore component cases pass; independent review passes.
+  The discretionary-ARIA bullet is checked after the scoped complete inventory
+  and correction, without claiming a native screen-reader walkthrough.
+- The final actual Chromium probe passes **2/2**, retries zero: five loaded
+  states at 320/1710 px, full-severity Axe, no console warnings/errors or page
+  errors, two selected cells/named filter group, default large-text/control
+  foreground and visible-border ratios at least 3:1, computable range/native
+  accents and a keyboard-modality focus-outline sample. Log:
+  `/tmp/neb-ui-contrast-loaded-reviewed-oct08.log`. Native checkbox screenshot
+  inspection and pixel measurement show its solid blue `(0,117,255)` versus
+  white at **4.21:1**; `/tmp/neb-native-checkbox-colors-oct08.json`. The
+  reasonable large-text/UI contrast bullet is checked with the limits recorded
+  in the matrix; authored art, disabled controls, OS-native variants, group
+  opacity/background images and all focus states are not certified.
+- Initial probe failures remain recorded: Next developer-toolbar focus, an
+  incorrect relative editing path, guessed account routes, and a linter rejection
+  of temporary `any` types. The reviewed probe uses actual `/profile`, loaded
+  account/preferences/session state, product controls, explicit types and native
+  accent evidence. A first host pixel check lacked Pillow; the existing backend
+  Pillow measured the saved screenshot instead, without editing the image.
+- Native Chrome app access by bundle ID/name timed out. Documented shortcuts did
+  not change the measured viewport; the extension screenshots omit chrome. Zoom
+  was reset and only the diagnostic tab closed. Actual 200% zoom and light/dark
+  favicon chrome remain unchecked; no viewport/device-scale proxy is called
+  native zoom. Counts are now **772 checked / 370 unchecked**; section verdicts
+  remain 56 verified / 42 partial / six N/A / one deployment-only.
+
+### 2026-10-08 — Actual immutable mixed-backend and rollback rehearsal
+
+- The read-only rollout mapper selected synthetic prior Git release
+  `c1fc2d7772ce697cb0dcccc528da4ab126040223` and new
+  `a3e1c00e945855df82be25191207610ef861e148`; D4→a3 alone would miss accounts
+  migration 0006, task names, sitemap and envelope compatibility changes.
+  Production backend images were built from exact Git archives with revision
+  labels, without source mounts. Actual immutable IDs and staged snapshots are
+  in the sanitized [report](artifacts/mixed-backend-rehearsal-2026-10-08.json).
+- New `infra/scripts/rehearse-mixed-release.py` uses a fixed owned disposable
+  Compose project, loopback web/Mailpit ports, private generated credentials,
+  immutable image IDs and explicit original/new process transitions. Independent
+  safety review finds no blocking isolation/secret/cleanup issue. Nine pure
+  boundary regressions pass; the foundation CI job now runs them. Root Ruff
+  lint/format pass with the project's 100-column setting. An initial root lint
+  invocation accidentally used Ruff's 88-column default (72 line-length errors),
+  then was corrected; a YAML-count assertion also confused eight definitions
+  with nine matrix-expanded jobs. Parsed YAML and the actual existing job matrix
+  are retained; neither failed check was presented as a pass.
+- Actual root execution **passes** using provided locally built images. Old
+  migrations then forward migration 0006 apply; old web is ready against the
+  forward schema. Genuine CSRF rejection is 403; proper old registration is 202,
+  account inactive, verification delivery uses SQL `{}`, Mailpit has no message,
+  and the real stopped-worker queue contains the old two-argument task. The new
+  worker delivers that job through Mailpit; old-web confirmation and login are
+  200. New web then produces a one-argument ID-only task and pending HMAC
+  intent; actual worker/mail/confirmation/login reach durable sent state.
+- Rollback restores the recorded old web image while retaining the new worker
+  and forward schema. Readiness, unchanged verification/account graph, existing
+  old/new authenticated sessions and fresh logins pass; final inspected container
+  image IDs match. Final stack is intentionally kept for the isolated frontend
+  phase. No `nebqa` volumes/services/fixtures were touched. Logs:
+  `/tmp/neb-rollout-backend-rehearsal-oct08.log`,
+  `/tmp/neb-rollout-backend-old-build-oct08.log`,
+  `/tmp/neb-rollout-backend-new-build-oct08.log`,
+  `/tmp/neb-rollout-helper-tests-oct08.log`,
+  `/tmp/neb-rollout-harness-ruff-oct08.log`,
+  `/tmp/neb-rollout-harness-format-oct08.log`.
+- Runbook now requires compatible new workers during old frontend/web rollback;
+  old workers cannot consume new task names or recovery schedules. Worker rollback
+  needs stopped new producers/schedules and explicit queue reconciliation.
+  External clients of changed draft/revision array APIs must be inventoried and
+  migrated. Independent review validates those constraints against code.
+- This pass does not establish online migration safety, rollback of a pending
+  verification, actual prior target deployment/configuration, registry retention,
+  TLS/proxy/provider behavior or old-JS/new-HTML compatibility. Those remain
+  open. Next phase builds/runs actual frontend images and retained tabs. The first
+  old frontend build correctly rejected a missing support email; a separately
+  configured build with illustrative HTTPS origin/support succeeds. The known
+  old Next release is used only in isolated loopback rehearsal, not promoted.

@@ -6,16 +6,22 @@ final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
 Current continuation evidence (2026-10-08): source `c1fc2d7` passed all nine CI
-jobs. The subsequent `d4dd0b7` gate failed new Next.js production advisories;
-its dependent browser/image jobs did not run. The bounded 16.3.8 correction and
-new auth/editor/request-size packet pass 382 PostgreSQL tests (one infrastructure
-skip), 469 frontend tests and lint/types/format locally. The corrected source
-passes current strict browser and production metadata/sitemap probes but still
-needs its own exact-source CI gate; the follow transaction defect is
-reproduced, fixed and covered by independent review and SQL/browser checks. Use the
-[continuation checkpoint](production-readiness-continuation-plan.md) and latest
-[dated evidence](production-readiness-evidence.md) for current work; the dated
-observations below remain historical, including earlier audit counts.
+jobs. The subsequent `d4dd0b7` gate failed new Next.js production advisories.
+The corrected `a3e1c00` passed backend/frontend quality, both production images,
+foundation and secrets, but failed two browser expectations and the release
+gate (199 smoke passes, 12 skips; 110 full-stack passes, five not run).
+Both failures were reproduced and corrected without changing product behavior
+or weakening focus/geometry assertions; final scoped four-engine runs pass.
+Current local frontend checks pass 470 tests and lint/types/format. Backend
+source remains covered by 382 PostgreSQL tests and one infrastructure skip.
+Independent ARIA/label and default UI contrast evidence is mapped; native browser
+zoom/favicon chrome remain unverified. A separate immutable old/new backend
+rehearsal verifies forward-schema, queued legacy/new mail and old-web rollback
+with compatible new workers. Its sanitized artifact is saved in the repository.
+The next source still needs all nine exact-SHA jobs and remaining local batches.
+Use the [continuation checkpoint](production-readiness-continuation-plan.md) and
+latest [dated evidence](production-readiness-evidence.md); observations below
+remain historical, including earlier audit counts.
 
 ## Decision
 

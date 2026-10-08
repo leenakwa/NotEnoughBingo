@@ -126,10 +126,19 @@ migrate --noinput` as the explicit one-shot release command instead.
 
 ## Rollback
 
-- Roll back to prior immutable images.
+- Restore the compatible prior frontend image first, then the web image, using
+  recorded immutable digests and their non-secret configuration manifest.
 - Do not reverse a destructive migration during an incident.
-- Additive migrations remain compatible with the previous release.
+- Keep the forward schema only after its compatibility with the selected prior
+  web release has been rehearsed; an additive migration alone is not proof.
 - Pause problematic queues or beat schedules if side effects are involved.
+- For `accounts.0006_emailverification_delivery`, retain the compatible new
+  workers during a frontend/web rollback. They can consume legacy raw-token
+  mail jobs; prior workers cannot consume the new ID-only mail task names or
+  recovery schedules. Do not restore all process images together. If worker
+  rollback is necessary, first stop new producers and recovery schedules and
+  pause/drain or explicitly reconcile every incompatible queued task. Record
+  the queue inventory and replay decision before admitting prior workers.
 - Restore data only for confirmed data corruption/loss, not ordinary code
   rollback.
 - Record the incident timeline and idempotency/replay decision for queued tasks.

@@ -376,7 +376,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
       appliedTags ||
       appliedLanguages.length ||
       appliedOrdering !== "popular" ? (
-        <div className="active-filters" aria-label="Active filters">
+        <div className="active-filters" role="group" aria-label="Active filters">
           {appliedSearch ? (
             <button
               type="button"

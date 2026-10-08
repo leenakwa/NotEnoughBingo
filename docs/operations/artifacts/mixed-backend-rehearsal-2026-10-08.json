@@ -1,0 +1,403 @@
+{
+  "project": "nebrollout-a3",
+  "settings_module": "config.settings.development",
+  "production_image_target": true,
+  "target_deployment_verified": false,
+  "backend_origin": "http://localhost:18581",
+  "frontend_origin": "http://localhost:18580",
+  "mailpit_origin": "http://localhost:18525",
+  "images": {
+    "old": {
+      "git_sha": "c1fc2d7772ce697cb0dcccc528da4ab126040223",
+      "tag": "neb-rollout-backend:old-c1fc2d7772ce",
+      "provided_local_image": true,
+      "image_id": "sha256:4323d02fefbe5820ec6305d1767269fa51e435d98379a1758ae5f8ac4a7ed53d",
+      "revision_label_verified": true
+    },
+    "new": {
+      "git_sha": "a3e1c00e945855df82be25191207610ef861e148",
+      "tag": "neb-rollout-backend:new-a3e1c00e9458",
+      "provided_local_image": true,
+      "image_id": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568",
+      "revision_label_verified": true
+    }
+  },
+  "stages": [
+    {
+      "stage": "immutable-builds-starting",
+      "images": {
+        "old": {
+          "git_sha": "c1fc2d7772ce697cb0dcccc528da4ab126040223",
+          "tag": "neb-rollout-backend:old-c1fc2d7772ce",
+          "provided_local_image": true,
+          "image_id": "sha256:4323d02fefbe5820ec6305d1767269fa51e435d98379a1758ae5f8ac4a7ed53d",
+          "revision_label_verified": true
+        },
+        "new": {
+          "git_sha": "a3e1c00e945855df82be25191207610ef861e148",
+          "tag": "neb-rollout-backend:new-a3e1c00e9458",
+          "provided_local_image": true,
+          "image_id": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568",
+          "revision_label_verified": true
+        }
+      }
+    },
+    {
+      "stage": "old-provided-production-image-verified",
+      "image": {
+        "git_sha": "c1fc2d7772ce697cb0dcccc528da4ab126040223",
+        "tag": "neb-rollout-backend:old-c1fc2d7772ce",
+        "provided_local_image": true,
+        "image_id": "sha256:4323d02fefbe5820ec6305d1767269fa51e435d98379a1758ae5f8ac4a7ed53d",
+        "revision_label_verified": true
+      }
+    },
+    {
+      "stage": "new-provided-production-image-verified",
+      "image": {
+        "git_sha": "a3e1c00e945855df82be25191207610ef861e148",
+        "tag": "neb-rollout-backend:new-a3e1c00e9458",
+        "provided_local_image": true,
+        "image_id": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568",
+        "revision_label_verified": true
+      }
+    },
+    {
+      "stage": "isolated-configuration-written"
+    },
+    {
+      "stage": "isolated-infrastructure-ready"
+    },
+    {
+      "stage": "old-migrations-applied"
+    },
+    {
+      "stage": "new-migrations-applied"
+    },
+    {
+      "stage": "forward-schema-before-old-web",
+      "snapshot": {
+        "accounts_0006_applied": true,
+        "debug": true,
+        "users": [],
+        "verifications": [],
+        "active_session_metadata": 0,
+        "durable_sessions": 0
+      }
+    },
+    {
+      "stage": "old-web-forward-schema-ready",
+      "readiness": {
+        "status": "ok",
+        "checks": {
+          "database": "ok",
+          "migrations": "ok",
+          "cache": "ok"
+        }
+      }
+    },
+    {
+      "stage": "legacy-registration-queued-worker-stopped",
+      "csrf_rejection": 403,
+      "registration": 202,
+      "mailpit_messages": 0,
+      "snapshot": {
+        "accounts_0006_applied": true,
+        "debug": true,
+        "users": [
+          {
+            "pk": 1,
+            "public_id": "0047506b-f67c-496c-a750-d025cea982bb",
+            "email": "rollout_old@example.test",
+            "username": "pending_8ef9a6bcc0af439d890f3fd69c4ff064",
+            "active": false,
+            "verified": false
+          }
+        ],
+        "verifications": [
+          {
+            "pk": 1,
+            "user_id": 1,
+            "used": false,
+            "delivery_empty": true,
+            "delivery_status": null,
+            "token_scheme": null,
+            "pending_password": true
+          }
+        ],
+        "active_session_metadata": 0,
+        "durable_sessions": 0
+      },
+      "broker": {
+        "task": "apps.accounts.tasks.send_verification_email",
+        "argument_count": 2,
+        "verification_id": 1,
+        "queued_messages": 1,
+        "matches_durable_row": true
+      }
+    },
+    {
+      "stage": "new-worker-legacy-mail-old-web-confirm-login",
+      "confirmation": 200,
+      "login": 200,
+      "public_id": "0047506b-f67c-496c-a750-d025cea982bb"
+    },
+    {
+      "stage": "new-web-forward-schema-ready",
+      "readiness": {
+        "status": "ok",
+        "checks": {
+          "database": "ok",
+          "migrations": "ok",
+          "cache": "ok"
+        }
+      }
+    },
+    {
+      "stage": "new-registration-id-only-job",
+      "registration": 202,
+      "snapshot": {
+        "accounts_0006_applied": true,
+        "debug": true,
+        "users": [
+          {
+            "pk": 1,
+            "public_id": "0047506b-f67c-496c-a750-d025cea982bb",
+            "email": "rollout_old@example.test",
+            "username": "rollout_old",
+            "active": true,
+            "verified": true
+          },
+          {
+            "pk": 2,
+            "public_id": "392b502f-0c21-42b4-8a8a-e97c480acda8",
+            "email": "rollout_new@example.test",
+            "username": "pending_a9bbe0b39ac044bda27187433db5bbd3",
+            "active": false,
+            "verified": false
+          }
+        ],
+        "verifications": [
+          {
+            "pk": 1,
+            "user_id": 1,
+            "used": true,
+            "delivery_empty": true,
+            "delivery_status": null,
+            "token_scheme": null,
+            "pending_password": true
+          },
+          {
+            "pk": 2,
+            "user_id": 2,
+            "used": false,
+            "delivery_empty": false,
+            "delivery_status": "pending",
+            "token_scheme": "hmac_sha256_v1",
+            "pending_password": true
+          }
+        ],
+        "active_session_metadata": 1,
+        "durable_sessions": 1
+      },
+      "broker": {
+        "task": "apps.accounts.tasks.send_verification_notification",
+        "argument_count": 1,
+        "verification_id": 2,
+        "queued_messages": 1,
+        "matches_durable_row": true
+      }
+    },
+    {
+      "stage": "new-mail-confirm-login-durable-sent",
+      "confirmation": 200,
+      "login": 200,
+      "public_id": "392b502f-0c21-42b4-8a8a-e97c480acda8",
+      "snapshot": {
+        "accounts_0006_applied": true,
+        "debug": true,
+        "users": [
+          {
+            "pk": 1,
+            "public_id": "0047506b-f67c-496c-a750-d025cea982bb",
+            "email": "rollout_old@example.test",
+            "username": "rollout_old",
+            "active": true,
+            "verified": true
+          },
+          {
+            "pk": 2,
+            "public_id": "392b502f-0c21-42b4-8a8a-e97c480acda8",
+            "email": "rollout_new@example.test",
+            "username": "rollout_new",
+            "active": true,
+            "verified": true
+          }
+        ],
+        "verifications": [
+          {
+            "pk": 1,
+            "user_id": 1,
+            "used": true,
+            "delivery_empty": true,
+            "delivery_status": null,
+            "token_scheme": null,
+            "pending_password": true
+          },
+          {
+            "pk": 2,
+            "user_id": 2,
+            "used": true,
+            "delivery_empty": false,
+            "delivery_status": "sent",
+            "token_scheme": "hmac_sha256_v1",
+            "pending_password": true
+          }
+        ],
+        "active_session_metadata": 2,
+        "durable_sessions": 2
+      }
+    },
+    {
+      "stage": "rollback-old-web-ready-forward-schema-new-worker",
+      "readiness": {
+        "status": "ok",
+        "checks": {
+          "database": "ok",
+          "migrations": "ok",
+          "cache": "ok"
+        }
+      }
+    },
+    {
+      "stage": "rollback-durable-records-existing-sessions-fresh-logins",
+      "snapshot": {
+        "accounts_0006_applied": true,
+        "debug": true,
+        "users": [
+          {
+            "pk": 1,
+            "public_id": "0047506b-f67c-496c-a750-d025cea982bb",
+            "email": "rollout_old@example.test",
+            "username": "rollout_old",
+            "active": true,
+            "verified": true
+          },
+          {
+            "pk": 2,
+            "public_id": "392b502f-0c21-42b4-8a8a-e97c480acda8",
+            "email": "rollout_new@example.test",
+            "username": "rollout_new",
+            "active": true,
+            "verified": true
+          }
+        ],
+        "verifications": [
+          {
+            "pk": 1,
+            "user_id": 1,
+            "used": true,
+            "delivery_empty": true,
+            "delivery_status": null,
+            "token_scheme": null,
+            "pending_password": true
+          },
+          {
+            "pk": 2,
+            "user_id": 2,
+            "used": true,
+            "delivery_empty": false,
+            "delivery_status": "sent",
+            "token_scheme": "hmac_sha256_v1",
+            "pending_password": true
+          }
+        ],
+        "active_session_metadata": 4,
+        "durable_sessions": 4
+      }
+    },
+    {
+      "stage": "retained-container-inventory",
+      "containers": {
+        "postgres": {
+          "container_id": "ac3f94eab6d9d9aeb95f44027cc3ac1e278242f6fb2bd56953d653b7de1aa342",
+          "image_id": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+          "mounts": [
+            {
+              "type": "volume",
+              "name": "nebrollout-a3_postgres_data",
+              "destination": "/var/lib/postgresql/data"
+            }
+          ]
+        },
+        "redis": {
+          "container_id": "a90ea0a6acce90fea708f0768914f20d417e2cccd695d6bcd316c8078b682e6d",
+          "image_id": "sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99",
+          "mounts": [
+            {
+              "type": "volume",
+              "name": "nebrollout-a3_redis_data",
+              "destination": "/data"
+            }
+          ]
+        },
+        "mailpit": {
+          "container_id": "d343a88ec86326240022a9c1a08e09292da6b3a5b1824dff656327a4e6399183",
+          "image_id": "sha256:5a49a77c5bdbe7c5474450b4f46348d09949df3695257729c93a30369382d4f6",
+          "mounts": [
+            {
+              "type": "volume",
+              "name": "nebrollout-a3_mailpit_data",
+              "destination": "/data"
+            }
+          ]
+        },
+        "old-web": {
+          "container_id": "f49df240aebeb3bfe05f7464086ae3a41fd05a996e305a65be79b8f261ae1a9e",
+          "image_id": "sha256:4323d02fefbe5820ec6305d1767269fa51e435d98379a1758ae5f8ac4a7ed53d",
+          "mounts": [
+            {
+              "type": "volume",
+              "name": "nebrollout-a3_media_data",
+              "destination": "/app/media"
+            }
+          ]
+        },
+        "new-worker": {
+          "container_id": "f8ba7391945c0a51a181cccadbc68416e481e0546705810ecd8823c1a6d72901",
+          "image_id": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568",
+          "mounts": [
+            {
+              "type": "volume",
+              "name": "nebrollout-a3_media_data",
+              "destination": "/app/media"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "stage": "mixed-backend-rehearsal-passed",
+      "retained_old_web": true,
+      "retained_new_worker": true
+    }
+  ],
+  "configuration": {
+    "network": "nebrollout-a3_default",
+    "host_bind_address": "127.0.0.1",
+    "source_mounts": false,
+    "old_worker_present": false,
+    "service_images": {
+      "postgres": "postgres:16-alpine",
+      "redis": "redis:7-alpine",
+      "mailpit": "axllent/mailpit:v1.30.4",
+      "old-web": "sha256:4323d02fefbe5820ec6305d1767269fa51e435d98379a1758ae5f8ac4a7ed53d",
+      "new-web": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568",
+      "new-worker": "sha256:a58c99fedd9aba2c3cf3c81df35fdc22bae467e16ad52b0a3c87115131306568"
+    },
+    "private_files_mode": "0600",
+    "native_frontend_phase": "root-owned; not part of this harness"
+  },
+  "result": "passed",
+  "kept": true
+}

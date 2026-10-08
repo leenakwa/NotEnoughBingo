@@ -202,6 +202,13 @@ confirm canonical origins and private/deleted-board exclusion, then promote the
 frontend. Record real catalog size, SQL latency and crawl capacity in the target
 rehearsal.
 
+The author draft and revision list endpoints now return paginated envelopes
+(`count`, `next`, `previous`, `results`) instead of arrays. No repository
+frontend consumer was found, but this does not establish compatibility with
+external clients. Before release, inventory such consumers and migrate any
+array-dependent client; retain this as a release constraint until the actual
+consumer inventory is known.
+
 Run the anonymous read-only walker against the selected public HTTPS origin:
 `python3 infra/scripts/verify-sitemap.py "$PUBLIC_ORIGIN"`. It follows the complete
 index without authentication or redirects, verifies static/canonical parts,
@@ -234,6 +241,15 @@ For this additive account-email migration, deploy in this order:
 3. Roll out the new web producers, then the compatible frontend. Verify actual
    registration, verification, both email-change notices, deletion cancellation
    and account export through the target broker/provider.
+
+For rollback, restore the prior compatible frontend before prior web while
+keeping migration 0006 and the compatible new workers. New workers consume both
+legacy raw-token and new ID-only account mail jobs. Old workers cannot consume
+the new task names; do not roll workers back while new producers, recovery
+schedules or those queued messages remain. Any required worker rollback needs
+an explicit producer/schedule pause and queue reconciliation plan. Local checks
+against a synthetic prior Git release do not prove the actual target image,
+configuration or broker retention; rehearse those exact artifacts before launch.
 
 New verification links are reconstructed from a versioned HMAC over immutable
 request fields; the database stores their digest and delivery state, not their

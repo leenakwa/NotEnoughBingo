@@ -180,8 +180,8 @@ Where appropriate:
 
 For every form verify:
 
-- [ ] every field has an accessible label;
-- [ ] placeholder is not the only label;
+- [x] every field has an accessible label;
+- [x] placeholder is not the only label;
 - [ ] required fields are clear;
 - [ ] optional fields are clear where useful;
 - [ ] validation is understandable;
@@ -498,14 +498,14 @@ Check:
 - [x] keyboard use;
 - [x] visible focus;
 - [x] accessible names;
-- [ ] ARIA only where needed;
+- [x] ARIA only where needed;
 - [x] correct modal semantics;
 - [x] form errors accessible to assistive technologies;
 - [x] color is not the sole state indicator;
 - [x] reduced-motion preference;
 - [ ] 200% zoom;
 - [x] text contrast roughly satisfies WCAG AA expectations;
-- [ ] large-text/UI contrast is reasonable.
+- [x] large-text/UI contrast is reasonable.
 
 Do not degrade existing accessibility while making other fixes.
 

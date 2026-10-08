@@ -20,6 +20,46 @@ removed catalog/search language pickers, fixed header and intentional hover/shad
 changes. Preserve existing user edits. Do not merge or deploy without separate
 authorization. Commits/pushes to the existing work branch are authorized.
 
+## Latest resume checkpoint — 2026-10-08
+
+Last pushed source `a3e1c00e945855df82be25191207610ef861e148` failed
+[CI 37707547894](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37707547894):
+six successful jobs, smoke/full-stack/Release failed. Last all-nine green source
+remains `c1fc2d7`. Two browser input/interaction expectations were reproduced and
+corrected: inspector after leaving inline editing, and isolated current/new
+password errors with field-response proof. Each actual tracked case passes
+four engines, retries zero. The reviewed current packet also corrects two ARIA
+semantics, maps all 45 native-field templates and default UI contrast, and adds
+an isolated immutable backend rehearsal plus nine boundary tests in foundation CI.
+Current frontend: 470 tests/40 files, Node 22 lint/types/format pass. Backend app
+source unchanged since 382 pass/one infrastructure skip. New source needs CI.
+
+Actual `c1fc2d7` old web → accounts0006 schema → a3 worker/web → old web rollback
+passes real CSRF/registration, legacy/new Redis tasks, Mailpit, confirmation,
+existing/fresh login and durable graph/image-ID checks. Sanitized report:
+`docs/operations/artifacts/mixed-backend-rehearsal-2026-10-08.json`.
+Kept isolated project `nebrollout-a3`, private workdir `/tmp/neb-rollout-a3`:
+old-web18581, new-worker, PostgreSQL/Redis and Mailpit18525. No source mounts.
+Credentials remain only in mode600 temp files; do not print or commit them.
+`nebqa`18080 remains separate. Root owns shared QA/browsers, images and commits.
+
+Next concrete task: commit/push this reviewed source and run exact-SHA CI;
+complete the production frontend/backend matrix and same-origin stale-tab
+upgrade/rollback using the isolated stack. Old production frontend image
+`neb-rollout-frontend:old-c1fc2d7772ce` is built with illustrative origin
+`https://bingo.example.com` and support, source c1fc; its initial missing-support
+build failed as intended. Backend local tags/images and report IDs are preserved.
+Build new frontend from the next committed source, same illustrative origin.
+Keep new workers/forward schema during web rollback; external array API consumers
+require inventory. Use a separate runner cwd/fixture files for isolated browsers.
+
+Counters: 772 checked /370 unchecked;56verified/42partial/6N/A/1deployment-only.
+Native200% browser zoom/favicon chrome remain unverified due unavailable native
+Chrome app access; page-only extension/viewport/DPR is insufficient. Do not turn
+those limits into a product pass or claim all local work complete. Continue
+form/control, scaling, release and other mapped local batches after this phase.
+No merge/deploy or production registry promotion is authorized; goal stays active.
+
 ## Historical starting state
 
 - Repository: `/Users/Daniil/Documents/VSCode/NotEnoughBingo`.
@@ -150,9 +190,10 @@ foundation and secret scan passed; dependent jobs skipped. Official maintainer
 release/registry verification supports the bounded Next.js and eslint-config-next
 16.3.8 patch; both host and Node 22 container clean installs pass and production
 npm audit reports zero findings. No custom cache adapter requires migration.
-The corrected source still needs all nine exact-SHA CI jobs.
+The corrected source is included in `a3e1c00`; its current exact-SHA gate is
+recorded below.
 
-The current uncommitted packet adds explicit token-only transient Retry with
+The next packet, now committed as `a3e1c00`, adds explicit token-only transient Retry with
 pending/duplicate controls and current-request ownership, plus image-description
 validation association/focus and visible editor field limits. Independent scoped
 reviews pass, including correction of a stale resend completion race. Node 22
@@ -194,21 +235,27 @@ quota-isolated token amendment passes eight cases in four engines, retries zero.
 
 The section 42 mapper found a concrete defect: both follow POST routes commit
 Follow before notification/event writes without a containing transaction.
-A late fault leaves the relationship; retry skips missing records. Keep the
-transactions bullet unchecked. `request_limit_regressions` now owns only those
-handlers plus a new follow-transaction test file. Corrected verified-fixture
+A late fault left the relationship; retry skipped missing records.
+`request_limit_regressions` implemented those handlers plus the new follow
+transaction tests. Corrected verified-fixture
 baseline reproduced four SQL rollback failures; two access cases passed. Root
 sent GO after runners finished; the three-line atomic fix passes all six cases
 and independent review. The first browser packet had shared-fixture liked-state
-ordering failures (nine passed / three failed); separate-project reset runs are
+ordering failures (nine passed / three failed); separate-project reset runs
 pass **12/12** across four engines, retries zero. Six moderation/share late SQL
 rollback cases pass and independent coverage review passes. Full mypy (77 files),
 Ruff/format, migration drift and exact OpenAPI comparison pass. Final integrated backend passes **382 tests / one infrastructure skip**. Relevant
 local transaction mapping is complete and the §42 transactions bullet is checked.
-Final frontend total is **469 / 40 files**, lint/types/format pass. First pending
-task: review/stage the final diff, preserve user-local config, commit/push and
-require all nine exact-source CI jobs. Then continue remaining form/control,
-zoom/contrast/favicon and mixed-version/rollback/release work; do not stop at CI.
+Final frontend total is **469 / 40 files**, lint/types/format pass. This packet is committed/pushed as
+`a3e1c00e945855df82be25191207610ef861e148`; user-local `.codex/config.toml`
+remains untracked and generated Next env changes are restored. Exact-source
+[CI 37707547894](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37707547894)
+failed its smoke/full-stack expectations and Release gate; see the latest
+checkpoint above for their corrections. Require all nine jobs for next source. PR #18's
+body is updated with the current packet and the previous audit failure. First
+pending task for that snapshot was CI/native/rollout mapping. The newer resume
+checkpoint above supersedes this queue. Continue remaining local work after
+reviewed fixes; do not stop at CI.
 One commit or passing CI does not complete the goal.
 
 ## Delegation record
@@ -262,7 +309,7 @@ and the next concrete task whenever work is handed off or context is compacted.
 ## Remaining local batches (inventory, not completion claims)
 
 Current counters are 56 verified / 42 partial / 6 N/A / 1 deployment-only;
-768 checked and 374 unchecked items. Section 82 has eleven mapped local
+772 checked and 370 unchecked items. Section 82 has eleven mapped local
 contract bullets; provider timeout remains open. Unchecked items include external and N/A
 conditions; these counts are not a product-readiness percentage.
 

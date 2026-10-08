@@ -4054,9 +4054,10 @@ test.describe("live full-stack product flows", () => {
       .filter({ has: page.getByRole("heading", { name: "Change password", exact: true }) });
     const current = form.getByLabel("Current password", { exact: true });
     const next = form.getByLabel("New password", { exact: true });
+    const validNewPassword = `${E2E_FIXTURE_PASSWORD}-Updated`;
     await current.fill("incorrect-password");
-    await next.fill("password123456");
-    await form.getByLabel("Confirm new password", { exact: true }).fill("password123456");
+    await next.fill(validNewPassword);
+    await form.getByLabel("Confirm new password", { exact: true }).fill(validNewPassword);
     const submit = async () => {
       const response = page.waitForResponse(
         (result) =>
@@ -4067,18 +4068,33 @@ test.describe("live full-stack product flows", () => {
       return response;
     };
 
-    expect((await submit()).status()).toBe(400);
+    const currentResponse = await submit();
+    expect(currentResponse.status()).toBe(400);
+    expect((await currentResponse.json()).error.details).toHaveProperty("current_password");
     await expect(current).toBeFocused();
     await expect(current).toHaveAttribute("aria-invalid", "true");
     await expect(form.getByText("The current password is incorrect.")).toBeVisible();
-    await expect(next).toHaveValue("password123456");
+    await expect(current).toHaveValue("incorrect-password");
+    await expect(next).toHaveValue(validNewPassword);
+    await expect(form.getByLabel("Confirm new password", { exact: true })).toHaveValue(
+      validNewPassword,
+    );
 
     await current.fill(E2E_FIXTURE_PASSWORD);
+    await next.fill("password123456");
+    await form.getByLabel("Confirm new password", { exact: true }).fill("password123456");
     await expect(form.getByText("The current password is incorrect.")).toHaveCount(0);
-    expect((await submit()).status()).toBe(400);
+    const nextResponse = await submit();
+    expect(nextResponse.status()).toBe(400);
+    expect((await nextResponse.json()).error.details).toHaveProperty("new_password");
     await expect(next).toBeFocused();
     await expect(next).toHaveAttribute("aria-invalid", "true");
     await expect(form.getByText("This password is too common.")).toBeVisible();
+    await expect(current).toHaveValue(E2E_FIXTURE_PASSWORD);
+    await expect(next).toHaveValue("password123456");
+    await expect(form.getByLabel("Confirm new password", { exact: true })).toHaveValue(
+      "password123456",
+    );
   });
 
   test("avatar upload and removal persist after reload", async ({ page }) => {

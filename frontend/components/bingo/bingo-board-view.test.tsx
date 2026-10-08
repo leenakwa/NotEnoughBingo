@@ -24,6 +24,13 @@ const cell: RevisionCell = {
   border_style: "solid",
 };
 
+const secondCell: RevisionCell = {
+  ...cell,
+  id: "second-cell-public-id",
+  column: 1,
+  text: "Learned something",
+};
+
 const revision: BingoRevision = {
   id: "revision-id",
   number: 1,
@@ -104,43 +111,62 @@ describe("BingoBoardView", () => {
     });
   });
 
-  it("calls the toggle handler with the stable cell identifier", () => {
+  it("exposes multiple playable selections and calls the toggle handler with stable identifiers", () => {
     const onToggle = vi.fn();
     render(
       <BingoBoardView
-        revision={revision}
-        selected={new Set()}
+        revision={{ ...revision, cells: [cell, secondCell] }}
+        selected={new Set([revisionCellKey(cell), revisionCellKey(secondCell)])}
         completionStyle="checkmark"
         readOnly={false}
         onToggle={onToggle}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /went somewhere new/i }));
-    expect(onToggle).toHaveBeenCalledWith(revisionCellKey(cell));
-    expect(screen.getByText(cell.text, { selector: ".play-cell-detail p" })).toBeVisible();
-    expect(screen.getByRole("button", { name: /went somewhere new/i })).toHaveAttribute(
-      "title",
-      cell.text,
-    );
+    expect(screen.getByRole("grid")).toHaveAttribute("aria-multiselectable", "true");
+    expect(screen.getByRole("grid")).toHaveAttribute("aria-readonly", "false");
+    expect(screen.getAllByRole("gridcell", { selected: true })).toHaveLength(2);
+    for (const [index, selectedCell] of [cell, secondCell].entries()) {
+      const button = screen.getByRole("button", { name: `${selectedCell.text}, selected` });
+      expect(button).toHaveAttribute("aria-pressed", "true");
+      expect(button).toHaveAttribute("title", selectedCell.text);
+      fireEvent.click(button);
+      expect(onToggle).toHaveBeenNthCalledWith(index + 1, revisionCellKey(selectedCell));
+      expect(
+        screen.getByText(selectedCell.text, { selector: ".play-cell-detail p" }),
+      ).toBeVisible();
+    }
+    expect(onToggle).toHaveBeenCalledTimes(2);
   });
 
   it("keeps shared results immutable while exposing full cell text", () => {
     const onToggle = vi.fn();
+    const selected = new Set([revisionCellKey(cell), revisionCellKey(secondCell)]);
     render(
       <BingoBoardView
-        revision={revision}
-        selected={new Set([cell.id!])}
+        revision={{ ...revision, cells: [cell, secondCell] }}
+        selected={selected}
         completionStyle="checkmark"
         readOnly
         onToggle={onToggle}
       />,
     );
-    const readOnlyCell = screen.getByRole("button", { name: /selected/i });
-    expect(readOnlyCell).toBeEnabled();
-    fireEvent.click(readOnlyCell);
+    expect(screen.getByRole("grid")).toHaveAttribute("aria-multiselectable", "true");
+    expect(screen.getByRole("grid")).toHaveAttribute("aria-readonly", "true");
+    expect(screen.getAllByRole("gridcell", { selected: true })).toHaveLength(2);
+    for (const selectedCell of [cell, secondCell]) {
+      const button = screen.getByRole("button", { name: `${selectedCell.text}, selected` });
+      expect(button).toBeEnabled();
+      expect(button).not.toHaveAttribute("aria-pressed");
+      expect(button).toHaveAttribute("title", selectedCell.text);
+      fireEvent.click(button);
+      expect(
+        screen.getByText(selectedCell.text, { selector: ".play-cell-detail p" }),
+      ).toBeVisible();
+    }
     expect(onToggle).not.toHaveBeenCalled();
-    expect(screen.getByText(cell.text, { selector: ".play-cell-detail p" })).toBeVisible();
-    expect(screen.getByText("✓")).toBeInTheDocument();
+    expect(screen.getAllByRole("gridcell", { selected: true })).toHaveLength(2);
+    expect([...selected]).toEqual([revisionCellKey(cell), revisionCellKey(secondCell)]);
+    expect(screen.getAllByText("✓")).toHaveLength(2);
   });
 
   it("marks legacy highlighted cells with a symbol as well as color", () => {
@@ -160,12 +186,6 @@ describe("BingoBoardView", () => {
   });
 
   it("uses roving focus and arrow-key navigation for playable grids", () => {
-    const secondCell: RevisionCell = {
-      ...cell,
-      id: "second-cell-public-id",
-      column: 1,
-      text: "Learned something",
-    };
     render(
       <BingoBoardView
         revision={{ ...revision, cells: [cell, secondCell] }}

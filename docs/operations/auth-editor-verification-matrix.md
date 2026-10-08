@@ -13,10 +13,12 @@ this table does not close all product forms or native-device requirements.
 | Cell image/required description | Same Unicode filename uploaded twice with distinct asset IDs, actual worker/thumbnail bytes, image-only publication selects invalid cell and focuses description with aria-invalid/associated alert; correcting alt clears invalid state; publication and public thumbnail/card layouts; four engines | Native OS chooser cancellation, invalid-size/type source-file behavior and active cancellation/failure controls remain separate |
 
 Final frontend checks including the subsequent bounded metadata correction pass
-469 tests, lint/typecheck and format; 382 PostgreSQL tests plus one
+470 tests, lint/typecheck and format; 382 PostgreSQL tests plus one
 infrastructure-only skip pass. The four
 engine scoped packet passes 16 cases, retries zero, with each project's normal
 fixture reset and ingress pacing. A later test-only fixture ownership amendment
 retains anonymous first registration confirmation and all real backend assertions;
-its final eight token cases pass in four engines without retries. The corrected
-source still requires exact-SHA CI.
+its final eight token cases pass in four engines without retries. The a3e1c00 gate failed two existing browser expectations. Their corrected
+input/interaction sequences pass four engines each with retries zero; the
+next source still requires exact-SHA CI. The complete native-field label
+inventory is in accessibility-verification-matrix.md.

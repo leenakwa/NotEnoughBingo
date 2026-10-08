@@ -30,6 +30,9 @@ jobs:
       - name: Verify the complete user readiness checklist
         run: python3 infra/scripts/verify-readiness-checklist.py
 
+      - name: Verify isolated release rehearsal boundaries
+        run: python3 -m unittest discover -s infra/scripts -p 'test_rehearse_mixed_release.py' -v
+
       - name: Validate Compose model
         run: |
           set -o pipefail
