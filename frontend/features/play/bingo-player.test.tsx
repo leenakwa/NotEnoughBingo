@@ -711,9 +711,7 @@ describe("BingoPlayer", () => {
       );
       const slot = container.querySelector(".play-follow-slot");
       expect(slot).not.toBeNull();
-      const sizingLabels = slot!.querySelectorAll(
-        ".play-action-placeholder[aria-hidden='true']",
-      );
+      const sizingLabels = slot!.querySelectorAll(".play-action-placeholder[aria-hidden='true']");
       expect(Array.from(sizingLabels, (label) => label.textContent)).toEqual([
         "Follow author",
         "Following",

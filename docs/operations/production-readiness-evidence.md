@@ -6379,3 +6379,17 @@ Follow-slot cases; root directly observes the complete601-test result and
 archives its raw log. The earlier exact-a2 browser packet remains the measured
 before state. Current optimized-image browser geometry and exact-source CI
 are pending; no global layout mark or section verdict is promoted.
+
+
+### 2026-10-08 — d8 source gate stops at formatting
+
+[CI37781920465](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37781920465)
+for d8fe89ac42613938ef65801b23a4a07b98264dd2 fails the frontend formatting
+step for features/play/bingo-player.test.tsx. Backend, foundation and full-history
+secret jobs pass; browser/image jobs are skipped and Release fails. This is not
+a complete source gate. Raw failed-job output is retained outside the repository.
+Prettier changes only a three-line querySelectorAll call to one line; assertions
+and application files are unchanged. The full frontend format check then passes.
+The earlier601-test result retains its tested scope; the corrected source gate
+and built-image geometry remain pending. No failed/skipped job is counted as a
+pass and no assertion or timeout is changed.

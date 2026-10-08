@@ -100,11 +100,12 @@ round-trip fails; five endpoint regressions and13 scoped observability checks
 pass locally with independent review. The388-test Python3.13/PostgreSQL job and complete ceb source gate
 pass. Actual Redis is separate from the mocked endpoint regressions. The earlier configured frontend proofs above remain scoped to065.
 
-The subsequent working-tree loading-layout fix seeds the header from the
+The subsequent d8 loading-layout fix seeds the header from the
 already obtained server account and reserves the accepted Follow slot. All601
 frontend tests, lint and TypeScript pass with independent code/auth reviews.
-Built-image geometry and exact committed-source CI remain pending; section5
-stays partial and these local checks do not close it.
+Its CI37781920465 stops at formatting in one player test; the formatting-only
+correction passes the full format check. Built-image geometry and the corrected
+source gate remain pending; section5 stays partial and local checks do not close it.
 
 ### Accepted interface requirements
 
