@@ -6,6 +6,8 @@ import AxeBuilder from "@axe-core/playwright";
 import type { APIRequestContext, BrowserContext, Page, Response, Route } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
+import type { BingoDraft } from "@/lib/api/types";
+
 import {
   authStatePath,
   E2E_FIXTURE_PASSWORD,
@@ -3143,6 +3145,7 @@ test.describe("live full-stack product flows", () => {
     await authenticateAs(page, "author");
     await page.goto("/create");
     await page.getByRole("gridcell").first().click();
+    await page.getByRole("textbox", { name: "Text for row 1, column 1" }).press("Escape");
     const input = page.getByLabel("Add image to cell");
     const assetIds: string[] = [];
     let lastThumbnailUrl = "";
@@ -3173,6 +3176,7 @@ test.describe("live full-stack product flows", () => {
     }
     expect(assetIds[0]).not.toBe(assetIds[1]);
 
+    await page.getByRole("button", { name: "Close cell editor" }).click();
     await page.getByRole("button", { name: "Finish creating →" }).click();
     const title = "Thumbnail image test";
     await page.getByLabel("Title").fill(title);
@@ -3184,7 +3188,13 @@ test.describe("live full-stack product flows", () => {
     );
     await page.setViewportSize({ width: 320, height: 900 });
     await expect(page.getByLabel("Image description")).toBeVisible();
+    await expect(page.getByLabel("Image description")).toBeFocused();
+    await expect(page.getByLabel("Image description")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByLabel("Image description")).toHaveAccessibleDescription(
+      /Describe this image-only cell before publishing\./,
+    );
     await page.getByLabel("Image description").fill("A small square sample image");
+    await expect(page.getByLabel("Image description")).not.toHaveAttribute("aria-invalid", "true");
     await page.getByRole("button", { name: "Close cell editor" }).click();
     await page.getByRole("button", { name: "Finish creating →" }).click();
     await page.getByRole("button", { name: "Publish bingo" }).click();
@@ -5326,4 +5336,285 @@ test("deletion cancellation shows scoped progress and retries for an isolated ac
       ).toBe(204);
     }
   }
+});
+
+for (const mode of ["registration", "email-change"] as const) {
+  test(`token-only ${mode} retries an outage with its original Mailpit link`, async ({ page }) => {
+    const api = page.context().request;
+    // Setup verification belongs to a fixture actor; the registration retry itself stays anonymous.
+    if (mode === "email-change") await authenticateAs(page, "player");
+    const nonce = randomUUID().replaceAll("-", "").slice(0, 12);
+    const email = `e2e-token-${nonce}@example.test`;
+    const password = `QA-${randomUUID()}-verification`;
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+    async function csrfHeaders() {
+      const cookie = (await api.storageState()).cookies.find((item) => item.name === "neb_csrf");
+      expect(cookie).toBeDefined();
+      return { "X-CSRFToken": cookie!.value };
+    }
+    expect((await api.get("/api/v1/auth/csrf/")).ok()).toBe(true);
+    expect(
+      (
+        await api.post("/api/v1/auth/register/", {
+          headers: await csrfHeaders(),
+          data: { email, username: `e2e_token_${nonce}`, password },
+        })
+      ).status(),
+    ).toBe(202);
+    let link = new URL(await verificationLink(api, email));
+    if (mode === "email-change") {
+      expect(
+        (
+          await api.post("/api/v1/auth/verify-email/", {
+            headers: await csrfHeaders(),
+            data: { token: link.searchParams.get("token") },
+          })
+        ).ok(),
+      ).toBe(true);
+      expect(
+        (
+          await api.post("/api/v1/auth/login/", {
+            headers: await csrfHeaders(),
+            data: { email, password },
+          })
+        ).ok(),
+      ).toBe(true);
+      const newEmail = `e2e-confirm-${nonce}@example.test`;
+      expect(
+        (
+          await api.post("/api/v1/auth/email-change/", {
+            headers: await csrfHeaders(),
+            data: { new_email: newEmail, current_password: password },
+          })
+        ).status(),
+      ).toBe(202);
+      link = new URL(await emailChangeLink(api, newEmail));
+    }
+    const token = link.searchParams.get("token");
+    expect(token).toBeTruthy();
+    const endpoint =
+      mode === "registration" ? "/api/v1/auth/verify-email/" : "/api/v1/auth/email-change/confirm/";
+    const location = link.pathname + link.search;
+    let writes = 0;
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`**${endpoint}`, async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      expect(route.request().postDataJSON()).toEqual({ token });
+      writes += 1;
+      if (writes === 1) {
+        return route.fulfill({
+          status: 503,
+          json: {
+            error: { code: "unavailable", message: "Verification temporarily unavailable." },
+          },
+        });
+      }
+      if (writes === 2) await held;
+      return route.continue();
+    });
+    try {
+      await page.goto(location);
+      const card = page.locator(".auth-card");
+      await expect(card.getByRole("alert")).toHaveText("Verification temporarily unavailable.");
+      expect(writes).toBe(1);
+      expect(new URL(page.url()).searchParams.get("token")).toBe(token);
+      const retry = card.getByRole("button", { name: "Retry", exact: true });
+      await retry.focus();
+      expect(await retry.evaluate((button) => getComputedStyle(button).outlineStyle)).not.toBe(
+        "none",
+      );
+      await retry.press("Space");
+      await expect.poll(() => writes).toBe(2);
+      const pending = card.getByRole("button", { name: "Verifying…", exact: true });
+      await expect(pending).toBeDisabled();
+      await expect(card.getByRole("status")).toHaveText("Verifying…");
+      await pending.evaluate((button: HTMLButtonElement) => button.click());
+      expect(writes).toBe(2);
+      for (const width of [320, 1710]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+      }
+      const confirmed = page.waitForResponse(
+        (response) => response.url().endsWith(endpoint) && response.request().method() === "POST",
+      );
+      release();
+      expect((await confirmed).status()).toBe(mode === "registration" ? 200 : 204);
+      await expect(
+        card.getByRole("heading", {
+          name: mode === "registration" ? "Email verified" : "Email changed",
+        }),
+      ).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(`${link.pathname}$`));
+      expect(writes).toBe(2);
+      // A separate actor checks reuse so the complete suite keeps the anonymous verification quota.
+      if (mode === "registration") await authenticateAs(page, "author");
+      const reused = page.waitForResponse(
+        (response) => response.url().endsWith(endpoint) && response.request().method() === "POST",
+      );
+      await page.goto(location);
+      expect((await reused).status()).toBe(400);
+      await expect(card.getByRole("alert")).toContainText(/invalid|expired|used/i);
+      await expect(card.getByRole("button", { name: "Retry", exact: true })).toHaveCount(0);
+      await expect(
+        card.getByRole("link", {
+          name: mode === "registration" ? /^register again$/i : /^Back to profile$/,
+        }),
+      ).toBeVisible();
+      expect(writes).toBe(3);
+      expect(errors).toEqual([]);
+    } finally {
+      release();
+    }
+  });
+}
+
+test("editor text limits and native keyboard formatting persist after reload", async ({ page }) => {
+  const errors: string[] = [];
+  let publications = 0;
+  page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/publish/")) publications += 1;
+  });
+  await authenticateAs(page, "author");
+  await page.goto("/create");
+  await page.getByRole("gridcell").first().click();
+  await page.getByRole("textbox", { name: "Text for row 1, column 1" }).press("Escape");
+  const text = "Привет🙂 <>&\n".repeat(7) + "123456789";
+  expect(text).toHaveLength(100);
+  const input = page.getByLabel("Text", { exact: true });
+  await expect(input).toHaveAccessibleDescription("Up to 100 characters.");
+  await waitForResponse(page, "/api/v1/drafts/", "POST", () => input.fill(text + "overflow"));
+  await expect(input).toHaveValue(text);
+  const id = new URL(page.url()).searchParams.get("bingo");
+  expect(id).toMatch(/^[0-9a-f-]{36}$/);
+  for (const label of ["Bold", "Italic", "Underline", "Strikethrough"]) {
+    const button = page.getByRole("button", { name: label, exact: true });
+    await button.press("Space");
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+  }
+  for (const control of [
+    { label: "Background opacity", maximum: 100, final: 99 },
+    { label: "Image opacity", maximum: 100, final: 98 },
+    { label: "Border width", maximum: 12, final: 11 },
+  ]) {
+    const slider = page.getByRole("slider", { name: control.label });
+    await slider.press("Home");
+    await expect(slider).toHaveValue("0");
+    await slider.press("ArrowLeft");
+    await expect(slider).toHaveValue("0");
+    await slider.press("End");
+    await expect(slider).toHaveValue(String(control.maximum));
+    await slider.press("ArrowRight");
+    await expect(slider).toHaveValue(String(control.maximum));
+    for (let step = control.maximum; step > control.final; step -= 1) {
+      await slider.press("ArrowLeft");
+    }
+    await expect(slider).toHaveValue(String(control.final));
+  }
+  const border = page.getByRole("combobox", { name: "Border style", exact: true });
+  await expect(border).toBeVisible();
+  await border.press("d");
+  await expect(border).toHaveValue("dashed");
+  await border.press("Tab");
+  await page.getByRole("button", { name: "Close cell editor" }).click();
+  await page.getByRole("button", { name: "Finish creating →" }).click();
+  const title = (`E2E limits ${randomUUID().slice(0, 8)} ` + "Т".repeat(70)).slice(0, 70);
+  const description = "Описание🙂 <>&\n".repeat(40).slice(0, 499) + "Z";
+  expect(description).toHaveLength(500);
+  await page.getByLabel("Title", { exact: true }).fill(title + "overflow");
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(title);
+  const details = page.getByLabel("Description");
+  await expect(details).toHaveAccessibleDescription("Up to 500 characters.");
+  await details.fill(description + "overflow");
+  await expect(details).toHaveValue(description);
+  await page.getByLabel("Bingo language").selectOption("en");
+  const tag = page.getByRole("textbox", { name: "Tag", exact: true });
+  await expect(tag).toHaveAccessibleDescription("Up to 40 characters per tag.");
+  await tag.fill("  MIXED_tag  ");
+  await tag.press("Enter");
+  await tag.fill("mixed_tag");
+  await tag.press("Enter");
+  const tags = page.getByRole("group", { name: "Selected tags" });
+  await expect(tags.getByRole("button")).toHaveCount(1);
+  const boundedTag = "я".repeat(40);
+  await tag.fill(boundedTag + "overflow");
+  await expect(tag).toHaveValue(boundedTag);
+  await tag.press("Enter");
+  const expectedTags = ["mixed_tag", boundedTag];
+  for (let index = 0; index < 13; index += 1) {
+    const value = `limit-${index}`;
+    expectedTags.push(value);
+    await tag.fill(value);
+    await tag.press("Enter");
+  }
+  await expect(tags.getByRole("button")).toHaveCount(15);
+  await tag.fill("one-too-many");
+  await expect(page.getByRole("button", { name: "Add", exact: true })).toBeDisabled();
+  await tag.press("Enter");
+  await expect(tags.getByRole("button")).toHaveCount(15);
+  expect(publications).toBe(0);
+  await expect
+    .poll(async () => {
+      const response = await page.context().request.get(`/api/v1/bingos/${id}/draft/`);
+      expect(response.ok()).toBe(true);
+      const draft = (await response.json()) as BingoDraft;
+      const cell = draft.cells.find((item) => item.row === 0 && item.column === 0);
+      return {
+        title: draft.title,
+        description: draft.description,
+        tags: draft.tags.map((item) => item.name),
+        text: cell?.text,
+        formats: [cell?.bold, cell?.italic, cell?.underline, cell?.strikethrough],
+        background: cell?.background_opacity,
+        image: cell?.image_opacity,
+        border: cell?.border_width,
+        style: cell?.border_style,
+      };
+    })
+    .toEqual({
+      title,
+      description,
+      tags: expectedTags,
+      text,
+      formats: [true, true, true, true],
+      background: 0.99,
+      image: 0.98,
+      border: 11,
+      style: "dashed",
+    });
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("gridcell").first()).toBeVisible();
+  await page.getByRole("gridcell").first().click();
+  await page.getByRole("textbox", { name: "Text for row 1, column 1" }).press("Escape");
+  await expect(input).toHaveValue(text);
+  for (const label of ["Bold", "Italic", "Underline", "Strikethrough"]) {
+    await expect(page.getByRole("button", { name: label, exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  }
+  await expect(page.getByRole("slider", { name: "Background opacity" })).toHaveValue("99");
+  await expect(page.getByRole("slider", { name: "Image opacity" })).toHaveValue("98");
+  await expect(page.getByRole("slider", { name: "Border width" })).toHaveValue("11");
+  await expect(border).toHaveValue("dashed");
+  await page.getByRole("button", { name: "Close cell editor" }).click();
+  await page.getByRole("button", { name: "Finish creating →" }).click();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(title);
+  await expect(details).toHaveValue(description);
+  await expect(tags.getByRole("button")).toHaveCount(15);
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+  expect(publications).toBe(0);
+  expect(errors).toEqual([]);
 });

@@ -62,16 +62,24 @@ diagnostic request in WebKit. Corrections and reply/edit recovery now passed
 ### Continuation checkpoint — 2026-10-08
 
 Source `c1fc2d7772ce697cb0dcccc528da4ab126040223` passed all nine jobs in
-[CI 37697846802](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37697846802),
-after the prior gate failed on source-map-js audit. New local SQL/default,
-credential, preference, sitemap, SSR, mail/export recovery and list contracts
-have 361 backend passes plus one infrastructure skip, 415 frontend passes and
-16 strict preference cases across four engines. Those results precede the final
-legacy-hash correction and new account progress browser packet; the exact final
-source gate remains pending. PostgreSQL model/default and old-writer SQL tests
-support checking section 42's defaults item. See the dated evidence and
-[continuation plan](production-readiness-continuation-plan.md). Section counts
-remain unchanged; production readiness has not been established.
+[CI 37697846802](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37697846802).
+The subsequent source `d4dd0b7a16bfbb5f02d7d9a266a9c686a74f5fd2` passed local
+363 backend / one infrastructure skip, 415 frontend and 24 strict four-engine
+preference/account cases. Its [CI 37703857269](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37703857269)
+failed newly reported Next.js production advisories; dependent jobs skipped.
+The bounded 16.3.8 patch installs cleanly and production npm audit is clear.
+New auth/editor corrections and request-size coverage now pass 382 backend tests
+plus one infrastructure skip and 469 frontend tests with lint/types/format.
+Strict current token/editor cases, quota-isolated token variants, production
+route/heading/canonical probes and sitemap walk pass; exact-source CI remains
+pending. The follow transaction defect is reproduced/fixed and independently reviewed;
+12 affected engine cases and six late business-graph rollback cases pass.
+Eleven section 82 contract bullets now have mapped local evidence, including
+actual oversized bodies and bounded reads; provider timeout remains open.
+Total **768 checked / 374 unchecked**, section verdict counts unchanged.
+Use the dated evidence and [continuation plan](production-readiness-continuation-plan.md)
+for preserved failures, exact commands and next tasks. Production readiness has
+not been established.
 
 - Product/UI: `frontend/app`, `frontend/features`, `frontend/components`,
   `frontend/tests/e2e`, and browser checks on the isolated `nebqa` stack.

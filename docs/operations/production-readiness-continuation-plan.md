@@ -143,13 +143,73 @@ final scoped security review passes. Final **24/24** preference/sign-out/
 cancellation cases pass in four engines, retries zero. Configured optimized
 build/start and sitemap traversal pass; temporary server stopped.
 
-First pending task: finish final diff/document checks, commit/push this packet
-and require all nine CI jobs on its exact SHA. During CI, continue the remaining
-local queue. Read-only form inventory found two next concrete defects: token-only
-verification failures have no Retry control, and image-only publication does not
-focus/associate the invalid image description. Implement those in separate
-bounded areas after committing this stable packet. One commit or passing CI
-does not complete the goal.
+This packet is committed/pushed as `d4dd0b7a16bfbb5f02d7d9a266a9c686a74f5fd2`.
+[CI 37703857269](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37703857269)
+failed the production Next.js audit after six new advisories appeared. Backend,
+foundation and secret scan passed; dependent jobs skipped. Official maintainer
+release/registry verification supports the bounded Next.js and eslint-config-next
+16.3.8 patch; both host and Node 22 container clean installs pass and production
+npm audit reports zero findings. No custom cache adapter requires migration.
+The corrected source still needs all nine exact-SHA CI jobs.
+
+The current uncommitted packet adds explicit token-only transient Retry with
+pending/duplicate controls and current-request ownership, plus image-description
+validation association/focus and visible editor field limits. Independent scoped
+reviews pass, including correction of a stale resend completion race. Node 22
+lint/types and **454 frontend tests / 40 files** pass; format passes. Sources are
+frozen for live checks. Root owns the live-flow file, shared runners and docs.
+
+Initial new browser packet: **3 passed / 4 failed / one interrupted / eight not
+run**, retries zero. Diagnoses: wrong email-change success assertion (actual 204),
+a border select locator/key assumption, default verification quota shared across
+projects, and mobile inline editing hiding the inspector despite successful
+upload. Keep the failed traces. Correct the test interactions/contracts and run
+projects separately with normal fixture reset; never bypass or raise quotas.
+Final scoped cases pass **16/16** across Chromium, mobile WebKit, Firefox and
+ desktop WebKit, retries zero. A first Firefox reused-link request received an
+actual Nginx HTML 429; a separately paced four-case run passed. Its auth zone is
+10 requests/minute with the existing QA/CI burst 30; no setting was increased.
+The tests close the visible mobile inspector before Finish. For full-suite quota
+isolation, email-change setup verification uses a player fixture actor and the
+registration consumed-token check uses an author actor; the first registration
+retry stays anonymous. Its final eight token cases pass across the same four engines, retries zero.
+Native OS file selection is not covered.
+
+New request-size assertions were independently reviewed. Their initial run had
+five wrong list-valued error-envelope assertions; after correction all **seven
+cases pass**. They prove bounded no-Content-Length parser reads, oversized actual
+PUT rejection without mutation/storage/enqueue, and normalized UTF-8 exact/over
+boundaries with unchanged draft/version/ETag. The byte-boundary case explicitly
+lowers its cap because valid bounded fields cannot reach 512 KiB. Real oversized
+malformed envelopes are tested separately. Full PostgreSQL integration passes **370 tests / one infrastructure skip**;
+Next.js 16.3.8 optimized build passes. A new actual 320 px long-tag overflow
+was reproduced after successful editor save/reload, and bounded chip wrapping
+passes the focused Chromium regression. The configured production build/start
+and sitemap walker pass (two parts / ten URLs / 1,808 bytes). Explore repeated-query metadata is corrected and independently reviewed;
+15 new metadata regressions bring the final frontend total to **469 / 40 files**
+with lint/types/format pass. The final configured production build, ten-route
+heading/canonical/alias/duplicate probes and sitemap walk pass. Section 36's three
+local policy bullets are checked; target hostname/HTTPS remain open. Final
+quota-isolated token amendment passes eight cases in four engines, retries zero.
+
+The section 42 mapper found a concrete defect: both follow POST routes commit
+Follow before notification/event writes without a containing transaction.
+A late fault leaves the relationship; retry skips missing records. Keep the
+transactions bullet unchecked. `request_limit_regressions` now owns only those
+handlers plus a new follow-transaction test file. Corrected verified-fixture
+baseline reproduced four SQL rollback failures; two access cases passed. Root
+sent GO after runners finished; the three-line atomic fix passes all six cases
+and independent review. The first browser packet had shared-fixture liked-state
+ordering failures (nine passed / three failed); separate-project reset runs are
+pass **12/12** across four engines, retries zero. Six moderation/share late SQL
+rollback cases pass and independent coverage review passes. Full mypy (77 files),
+Ruff/format, migration drift and exact OpenAPI comparison pass. Final integrated backend passes **382 tests / one infrastructure skip**. Relevant
+local transaction mapping is complete and the §42 transactions bullet is checked.
+Final frontend total is **469 / 40 files**, lint/types/format pass. First pending
+task: review/stage the final diff, preserve user-local config, commit/push and
+require all nine exact-source CI jobs. Then continue remaining form/control,
+zoom/contrast/favicon and mixed-version/rollback/release work; do not stop at CI.
+One commit or passing CI does not complete the goal.
 
 ## Delegation record
 
@@ -167,15 +227,28 @@ does not complete the goal.
   `profile_forms` language/privacy/notification controls; `sitemap_scale` scalable
   backend/XML sitemap and SSR IP forwarding; `credential_transactions` credential
   transactions and durable password security-email intent.
-- `session_review` independently reviewed profile/default, sitemap, export and
-  list-contract changes; it is reviewing only the new sitemap verification tool.
+- `session_review` independently reviewed profile/default, sitemap, export,
+  list-contract and sitemap-verifier changes; those scopes pass.
   `credential_security` completed credential/SSR/mail reviews and identified the
   now-fixed stale-password race. `credential_transactions` owns the final
   no-setter step-up correction (complete). Completed queue-failure findings are fixed.
 - `remaining_form_evidence` explorer completed a bounded auth/editor inventory;
   verification retry and image-description focus are the next defects. It ran
   no shared browser/database tests and made no edits.
+- `verification_retry` worker owns only the token verification component and
+  its tests. `editor_validation` owns editor/details/inspector and adjacent tests.
+  Root owns `live-product-flows.spec.ts`; writers must not edit that shared file.
   Avoid simultaneous pytest database recreation.
+- Current completed scopes: `verification_retry` and `editor_validation` writers;
+  independent callback/focus reviews; `request_limit_regressions` writer and
+  `api_contract_evidence_review` analyst. `session_review` also reviewed root's
+  new token/editor E2E cases and tag-wrap CSS, with no actionable finding.
+- `mobile_upload_trace` found test inline-editing visibility and actual long-tag
+  overflow from traces/source; root corrected both and is running strict cases.
+- `public_metadata_gaps` completed read-only section 36 mapping and found the
+  repeated-query metadata defect. `explore_metadata_fix` owns only Explore route
+  metadata and the existing public-metadata tests; GO was sent after runners
+  finished. Root owns final integrated checks/build/browser/commit/CI.
 - Root owns commits, docs, shared QA/browser/database runs, builds and CI.
 
 ## Resume instructions
@@ -189,7 +262,8 @@ and the next concrete task whenever work is handed off or context is compacted.
 ## Remaining local batches (inventory, not completion claims)
 
 Current counters are 56 verified / 42 partial / 6 N/A / 1 deployment-only;
-753 checked and 389 unchecked items. Unchecked items include external and N/A
+768 checked and 374 unchecked items. Section 82 has eleven mapped local
+contract bullets; provider timeout remains open. Unchecked items include external and N/A
 conditions; these counts are not a product-readiness percentage.
 
 1. Sections 4/5/7/8: per-form/control evidence matrix, starting with profile

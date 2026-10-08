@@ -21,7 +21,7 @@
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
-    "next": "^16.3.7",
+    "next": "~16.3.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^4.1.0"
@@ -38,7 +38,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "agentation": "^3.0.2",
     "eslint": "^9.35.0",
-    "eslint-config-next": "^16.3.7",
+    "eslint-config-next": "~16.3.8",
     "jsdom": "^27.0.0",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.6.0",

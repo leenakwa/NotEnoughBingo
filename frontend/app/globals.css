@@ -1382,13 +1382,16 @@ input[type="range"] {
 .tag-chips > span {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   gap: 7px;
   padding: 5px 8px 5px 10px;
   background: var(--soft);
   font-size: 0.8rem;
+  overflow-wrap: anywhere;
 }
 
 .tag-chips button {
+  flex-shrink: 0;
   border: 0;
   background: transparent;
   font-size: 1.15rem;

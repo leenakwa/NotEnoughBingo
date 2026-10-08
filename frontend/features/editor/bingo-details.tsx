@@ -121,15 +121,18 @@ export function BingoDetails({
         ) : null}
       </label>
       <label className="field">
-        <span>
+        <span id="bingo-description-label">
           Description <small>optional</small>
         </span>
         <textarea
           rows={4}
+          aria-labelledby="bingo-description-label"
+          aria-describedby="bingo-description-help"
           maxLength={500}
           value={state.description}
           onChange={(event) => dispatch({ type: "set-description", value: event.target.value })}
         />
+        <small id="bingo-description-help">Up to 500 characters.</small>
       </label>
 
       <div className="field">
@@ -139,6 +142,7 @@ export function BingoDetails({
         <div className="tag-input-row">
           <input
             aria-label="Tag"
+            aria-describedby="bingo-tag-help"
             value={tagInput}
             maxLength={40}
             placeholder="Search or add a tag"
@@ -159,6 +163,7 @@ export function BingoDetails({
             Add
           </button>
         </div>
+        <small id="bingo-tag-help">Up to 40 characters per tag.</small>
         {state.tags.length ? (
           <div className="tag-chips" role="group" aria-label="Selected tags">
             {state.tags.map((tag) => (

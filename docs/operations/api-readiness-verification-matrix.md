@@ -8,10 +8,10 @@ run in the evidence log; real edge/provider latency and rollout remain separate.
 | --- | --- | --- |
 | Account authentication/credentials | Email/token/password validation, CSRF on anonymous unsafe requests, anti-enumeration, scoped quotas, one-use/expiry, fresh credential and step-up row locks, no-setter legacy-hash verification, durable notice recovery | `tests/test_accounts.py`, `test_scoped_rate_limits.py`, `test_credential_transactions.py`, `test_account_email_recovery.py`, `test_account_step_up_transactions.py` |
 | Profiles/privacy/preferences/sessions/deletion | Owner writes, avatar owner/status/kind, independent public privacy, owner-scoped revocation, no raw session key/IP in responses, separate session-status quota, 24/100 profile/session subresource pagination | `test_accounts.py`, `test_api_boundaries.py`, `test_security_regressions.py`, `test_session_cookie_races.py`, `test_logout_event.py` |
-| Catalog/drafts/publication/history/management | Public/direct-link/owner visibility, verified writes, filter/document bounds, 512 KiB normalized document, version/ETag conflicts, immutable revisions and keyed replay; bounded draft/history envelopes with 24/100 limits and paginated related hydration | `test_api_boundaries.py`, `apps/bingos/tests/test_drafts_and_revisions.py`, `test_transaction_boundaries.py`, `test_author_list_pagination.py`, `test_list_and_idempotency_schema.py` |
+| Catalog/drafts/publication/history/management | Public/direct-link/owner visibility, verified writes, filter/document bounds, 512 KiB normalized document, version/ETag conflicts, immutable revisions and keyed replay; bounded draft/history envelopes with 24/100 limits and paginated related hydration | `test_api_boundaries.py`, `apps/bingos/tests/test_drafts_and_revisions.py`, `test_transaction_boundaries.py`, `test_author_list_pagination.py`, `test_list_and_idempotency_schema.py`, `test_request_size_limits.py` |
 | Progress and shares | Revision/cell membership, owner progress, CSRF for guest share creation, private share visibility, 100 selected cells/80-character name, scoped share quota, version conflict/reset and actor/session-scoped keyed replay | `apps/plays/tests/test_progress_and_shares.py`, `test_api_boundaries.py`, `test_scoped_rate_limits.py` |
 | Social/reports/moderation | Read/write visibility, comment ownership/one reply level, 2,000-character bounds, explicit moderator permissions, comment/report quotas, paginated lists, atomic counters/dedupe and append-only moderation audit | `test_social.py`, `test_social_queries.py`, `test_moderation.py`, `test_api_boundaries.py` |
-| Media/upload/protected content | Verified upload and owner/status guards, MIME/signature/size/dimension checks, upload quota, bounded raw parser, immutable processing keys, current public visibility and private no-store protection | `apps/media_assets/tests/test_validation.py`, `test_api_boundaries.py`, `test_security_regressions.py` |
+| Media/upload/protected content | Verified upload and owner/status guards, MIME/signature/size/dimension checks, upload quota, bounded raw parser, immutable processing keys, current public visibility and private no-store protection | `apps/media_assets/tests/test_validation.py`, `test_api_boundaries.py`, `test_security_regressions.py`, `test_request_size_limits.py` |
 | Account/bingo exports | Verified author bingo export, owner-only status/download, format/revision/key replay, asynchronous 202 despite operational broker failure, sanitized account ZIP, renderer deadline; recovery continues after publish failure and serializes first account jobs | `apps/exports/tests/test_exports.py`, `apps/common/tests/test_jobs.py`, `test_api_boundaries.py`, `test_transaction_boundaries.py` |
 | Notifications/interactions/feeds | Recipient scope, unavailable target suppression, event/reference/time validation, sensitive search text projection, hashed anonymous identity, event UUID dedupe; batch 100/metadata 4,000 encoded chars; feed cap 24, notification lists 24/100 | `test_notifications.py`, `test_analytics.py`, `test_api_boundaries.py`, feed/query regressions |
 | Public lookup/sitemap | Public visibility, anonymous sitemap, validated singleton canonical integer part, sparse 10,000-PK buckets, capacity 503; author suggestions cap 10, tags 24/100; trusted SSR quota identity | `test_api_boundaries.py`, `test_sitemap_pagination.py`, `test_ssr_throttle_identity.py`, frontend sitemap/server identity tests |
@@ -37,9 +37,39 @@ measure every endpoint at the actual provider. Nginx's common body ceiling is
 upload kinds apply smaller bounds. Gateway/unhandled 5xx may be non-JSON and are
 normalized safely by clients rather than promised to use a DRF envelope.
 
-Final local backend integration passes **363 tests / one infrastructure skip**;
+Final local backend integration passes **382 tests / one infrastructure skip**;
 schema generation and generated client types match. The real local broker-failure
 probe retains registration 202/pending intent and delivers after manual normal
 broker republish. Outstanding: exact-source release gate; actual edge trust,
 remaining per-route network measurements, provider timeouts and scaled concurrent
 load. Section 82 stays partial until its relevant individual bullets are proved.
+
+
+Independent item review maps eleven section 82 bullets to observed local contracts:
+validation, authentication, authorization, quotas, readable errors, stable schemas,
+pagination, request sizes, logging, secret exclusion and required idempotency.
+The request-size gap is now covered by seven cases in
+`tests/test_request_size_limits.py`: bounded reads without Content-Length, actual
+oversized PUTs with no database/storage/enqueue changes, normalized UTF-8 exact/over
+limits with preserved draft/version/ETag, and real-cap malformed bodies. The exact
+byte-cap test explicitly lowers its threshold; valid bounded fields cannot reach
+the real 512 KiB cap. Independent coverage review found no remaining local gap in
+that scope, followed by the 370-pass PostgreSQL run. Provider/edge timeout and
+concurrent target measurements remain open; these eleven checkboxes do not make
+the complete section or deployment ready. Logs are recorded in the dated evidence.
+
+
+Important transaction evidence is mapped across persisted publication/profile,
+credential/session/audit, registration/email/deletion intent and export graphs.
+The new follow fault cases first reproduced partial committed relationships on
+both routes; minimal method transactions now pass late notification/event SQL
+failure, clean retry and cross-route deduplication. Six further moderation/share
+cases demonstrate final SQL failure after mutations, complete graph restoration,
+discarded callbacks and coherent retry/replay, including session recovery and
+expired idempotency retention. Files: `test_follow_transactions.py`,
+`test_business_graph_rollback.py`, alongside `test_transaction_boundaries.py`,
+`test_credential_transactions.py`, `test_account_email_recovery.py` and
+`test_account_step_up_transactions.py`. Independent correctness/coverage review
+and the final 382-pass PostgreSQL suite support checking §42 transactions for
+these relevant local business boundaries. Broker delivery, post-commit process
+failure and deployment/migration compatibility remain separately constrained.

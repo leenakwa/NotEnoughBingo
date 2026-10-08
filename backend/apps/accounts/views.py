@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.db.models import Prefetch
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -600,6 +601,7 @@ class FollowView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(request=None, responses=FollowStateSerializer)
+    @transaction.atomic
     def post(self, request, username):
         target = get_object_or_404(
             User,
@@ -650,6 +652,7 @@ class UserFollowView(FollowView):
         )
 
     @extend_schema(request=None, responses=FollowStateSerializer)
+    @transaction.atomic
     def post(self, request, public_id):
         target = self._target(public_id)
         if target.pk == request.user.pk:

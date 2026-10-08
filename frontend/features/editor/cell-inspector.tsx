@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ImageIcon } from "@/components/ui/icons";
 import { UploadStatus } from "@/components/ui/upload-status";
@@ -28,6 +28,7 @@ export function CellInspector({
   uploadPhase,
   onCancelUpload,
   uploadFeedback,
+  imageDescriptionValidationKey = null,
 }: {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
@@ -36,13 +37,36 @@ export function CellInspector({
   uploadPhase?: UploadPhase;
   onCancelUpload: () => void;
   uploadFeedback: { text: string; error: boolean } | null;
+  imageDescriptionValidationKey?: string | null;
 }) {
   const [bulkTextSelection, setBulkTextSelection] = useState<string | null>(null);
+  const imageDescriptionInputRef = useRef<HTMLInputElement>(null);
+  const focusedValidationKey = useRef<string | null>(null);
   const cell = selectedPrimaryCell(state);
-  if (!cell) return null;
   const selectionToken = state.selectedKeys.join("|");
   const multipleSelected = state.selectedKeys.length > 1;
   const bulkTextEnabled = multipleSelected && bulkTextSelection === selectionToken;
+  const needsImageDescription =
+    Boolean(cell?.image.asset || cell?.image.previewUrl) && !cell?.text.trim();
+  const imageDescriptionInvalid =
+    imageDescriptionValidationKey !== null &&
+    imageDescriptionValidationKey === state.primaryKey &&
+    !multipleSelected &&
+    needsImageDescription &&
+    !cell?.imageAlt.trim();
+
+  useEffect(() => {
+    if (imageDescriptionValidationKey === null) focusedValidationKey.current = null;
+    else if (
+      imageDescriptionInvalid &&
+      focusedValidationKey.current !== imageDescriptionValidationKey
+    ) {
+      imageDescriptionInputRef.current?.focus();
+      focusedValidationKey.current = imageDescriptionValidationKey;
+    }
+  }, [imageDescriptionInvalid, imageDescriptionValidationKey]);
+
+  if (!cell) return null;
 
   return (
     <aside className="cell-inspector" aria-labelledby="inspector-title">
@@ -85,7 +109,7 @@ export function CellInspector({
         </div>
       ) : (
         <label className="field">
-          <span id={bulkTextEnabled ? "bulk-text-label" : undefined}>
+          <span id={bulkTextEnabled ? "bulk-text-label" : "cell-text-label"}>
             {bulkTextEnabled ? `Shared text for ${state.selectedKeys.length} cells` : "Text"}
           </span>
           <textarea
@@ -93,8 +117,10 @@ export function CellInspector({
             maxLength={100}
             value={cell.text}
             placeholder="Write something…"
-            aria-labelledby={bulkTextEnabled ? "bulk-text-label" : undefined}
-            aria-describedby={bulkTextEnabled ? "bulk-text-description" : undefined}
+            aria-labelledby={bulkTextEnabled ? "bulk-text-label" : "cell-text-label"}
+            aria-describedby={
+              bulkTextEnabled ? "cell-text-help bulk-text-description" : "cell-text-help"
+            }
             onChange={(event) =>
               dispatch({
                 type: "patch-selected",
@@ -102,6 +128,7 @@ export function CellInspector({
               })
             }
           />
+          <small id="cell-text-help">Up to 100 characters.</small>
           {bulkTextEnabled ? (
             <small id="bulk-text-description">This replaces the text in every selected cell.</small>
           ) : null}
@@ -213,18 +240,33 @@ export function CellInspector({
       {cell.image.asset || cell.image.previewUrl ? (
         state.selectedKeys.length === 1 ? (
           <label className="field">
-            <span>Image description</span>
+            <span id="cell-image-description-label">Image description</span>
             <input
+              ref={imageDescriptionInputRef}
               type="text"
+              aria-labelledby="cell-image-description-label"
               maxLength={160}
               value={cell.imageAlt}
               placeholder="Describe what this image shows"
-              aria-invalid={!cell.text.trim() && !cell.imageAlt.trim()}
+              aria-required={needsImageDescription}
+              aria-invalid={imageDescriptionInvalid}
+              aria-describedby={
+                imageDescriptionInvalid
+                  ? "cell-image-description-help cell-image-description-error"
+                  : "cell-image-description-help"
+              }
               onChange={(event) =>
                 dispatch({ type: "patch-selected", patch: { imageAlt: event.target.value } })
               }
             />
-            <small>Required for image-only cells so everyone can understand them.</small>
+            <small id="cell-image-description-help">
+              Required for image-only cells so everyone can understand them. Up to 160 characters.
+            </small>
+            {imageDescriptionInvalid ? (
+              <small id="cell-image-description-error" className="form-message--error" role="alert">
+                Describe this image-only cell before publishing.
+              </small>
+            ) : null}
           </label>
         ) : (
           <p className="field-hint">Select one cell at a time to describe its image.</p>

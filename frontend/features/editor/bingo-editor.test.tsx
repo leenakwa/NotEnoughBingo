@@ -62,6 +62,13 @@ vi.mock("@/lib/api/client", () => {
 });
 
 const BINGO_ID = "22222222-2222-4222-8222-222222222222";
+const CELL_IMAGE = {
+  id: "44444444-4444-4444-8444-444444444444",
+  kind: "cell_image",
+  status: "ready",
+  url: "/api/v1/media/cell-image/",
+  mime_type: "image/png",
+} as const;
 
 function cells(size: number): RevisionCell[] {
   return Array.from({ length: size * size }, (_, position) => ({
@@ -766,4 +773,151 @@ describe("BingoEditor autosave and safety", () => {
     expect(mocks.publishDraft.mock.calls[1]![1]).toBe(firstKey);
     expect(mocks.push).toHaveBeenCalledWith(`/bingo/${BINGO_ID}`);
   });
+
+  it("focuses an image-only publication error, preserves the board, and publishes its correction", async () => {
+    const imageCells = cells(3);
+    imageCells[0]!.text = "Keep this text";
+    imageCells[4]!.image = CELL_IMAGE;
+    mocks.getDraft.mockResolvedValueOnce(draft({ cells: imageCells }));
+    mocks.publishDraft.mockResolvedValueOnce(bingo);
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Row 1, column 1: Keep this text" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+
+    const description = screen.getByRole("textbox", { name: "Image description" });
+    expect(description).toHaveFocus();
+    expect(description).toHaveAttribute("aria-invalid", "true");
+    expect(description).toHaveAttribute("aria-required", "true");
+    expect(description).toHaveAccessibleDescription(
+      "Required for image-only cells so everyone can understand them. Up to 160 characters. Describe this image-only cell before publishing.",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Describe this image-only cell before publishing.",
+    );
+    expect(screen.getByRole("gridcell", { name: "Row 2, column 2: empty" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(
+      screen.getByRole("gridcell", { name: "Row 1, column 1: Keep this text" }),
+    ).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByText("Saved")).toBeVisible();
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+    expect(mocks.publishDraft).not.toHaveBeenCalled();
+
+    fireEvent.change(description, { target: { value: "A blue square" } });
+    expect(description).toHaveAttribute("aria-invalid", "false");
+    expect(description).toHaveAccessibleDescription(
+      "Required for image-only cells so everyone can understand them. Up to 160 characters.",
+    );
+    expect(
+      screen.queryByText("Describe this image-only cell before publishing."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("gridcell", { name: "Row 2, column 2: A blue square" }),
+    ).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    expect(screen.getByLabelText("Title")).toHaveValue("Draft title");
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+    await settle();
+
+    expect(mocks.updateDraft).toHaveBeenCalledWith(
+      BINGO_ID,
+      expect.objectContaining({
+        cells: expect.arrayContaining([
+          expect.objectContaining({ row: 0, column: 0, text: "Keep this text" }),
+          expect.objectContaining({
+            row: 1,
+            column: 1,
+            image_asset_id: CELL_IMAGE.id,
+            image_alt: "A blue square",
+          }),
+        ]),
+      }),
+      2,
+    );
+    expect(mocks.publishDraft).toHaveBeenCalledOnce();
+    expect(mocks.push).toHaveBeenCalledWith(`/bingo/${BINGO_ID}`);
+  });
+
+  it("keeps title and language errors first before opening an invalid image-only cell", async () => {
+    const imageCells = cells(3);
+    imageCells[0]!.image = CELL_IMAGE;
+    mocks.getDraft.mockResolvedValueOnce(draft({ title: "", language: "", cells: imageCells }));
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+    const title = screen.getByLabelText("Title");
+    expect(title).toHaveFocus();
+    expect(title).toHaveAccessibleDescription(
+      "Up to 70 characters. Add a title before publishing.",
+    );
+    expect(screen.queryByRole("textbox", { name: "Image description" })).not.toBeInTheDocument();
+
+    fireEvent.change(title, { target: { value: "Image board" } });
+    expect(title).toHaveAttribute("aria-invalid", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+    const language = screen.getByRole("combobox", { name: "Bingo language" });
+    expect(language).toHaveFocus();
+    expect(language).toHaveAccessibleDescription("Choose a bingo language before publishing.");
+    fireEvent.change(language, { target: { value: "en" } });
+    expect(language).toHaveAttribute("aria-invalid", "false");
+    expect(
+      screen.getByRole("textbox", { name: "Description optional" }),
+    ).toHaveAccessibleDescription("Up to 500 characters.");
+    expect(screen.getByRole("textbox", { name: "Tag" })).toHaveAccessibleDescription(
+      "Up to 40 characters per tag.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+    expect(screen.getByRole("textbox", { name: "Image description" })).toHaveFocus();
+    expect(mocks.publishDraft).not.toHaveBeenCalled();
+  });
+
+  it.each(["another draft", "blank board", "session check"])(
+    "clears image-description publication validation after opening %s",
+    async (boundary) => {
+      const imageCells = cells(3);
+      imageCells[0]!.image = CELL_IMAGE;
+      mocks.getDraft.mockResolvedValueOnce(draft({ cells: imageCells }));
+      const view = render(<BingoEditor bingoId={BINGO_ID} />);
+      await settle();
+      fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+      fireEvent.click(screen.getByRole("button", { name: "Publish bingo" }));
+      expect(screen.getByRole("textbox", { name: "Image description" })).toHaveAttribute(
+        "aria-invalid",
+        "true",
+      );
+
+      if (boundary === "another draft") {
+        const nextId = "33333333-3333-4333-8333-333333333333";
+        mocks.getDraft.mockResolvedValueOnce(draft({ bingo_id: nextId, cells: imageCells }));
+        view.rerender(<BingoEditor bingoId={nextId} />);
+        await settle();
+      } else if (boundary === "blank board") {
+        view.rerender(<BingoEditor />);
+        await settle();
+        vi.mocked(uploadImage).mockResolvedValueOnce(CELL_IMAGE);
+        fireEvent.click(screen.getByRole("button", { name: "Row 1, column 1: empty" }));
+        fireEvent.change(screen.getByLabelText("Add image to cell"), {
+          target: { files: [new File(["image"], "cell.png", { type: "image/png" })] },
+        });
+        await settle();
+      } else {
+        act(() => window.dispatchEvent(new Event(AUTH_SESSION_ENDED_EVENT)));
+        await settle();
+      }
+
+      if (boundary === "another draft") {
+        fireEvent.click(screen.getByRole("button", { name: "Row 1, column 1: empty" }));
+      }
+      const description = screen.getByRole("textbox", { name: "Image description" });
+      expect(description).toHaveAttribute("aria-invalid", "false");
+      expect(description).toHaveValue("");
+      expect(
+        screen.queryByText("Describe this image-only cell before publishing."),
+      ).not.toBeInTheDocument();
+      expect(mocks.publishDraft).not.toHaveBeenCalled();
+    },
+  );
 });

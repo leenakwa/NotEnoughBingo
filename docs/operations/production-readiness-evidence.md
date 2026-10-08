@@ -4572,3 +4572,277 @@ observed results and their limits. Do not include credentials or session data.
   transaction mapping, form/control coverage and operations/target requirements
   remain open. The current dirty packet still requires its own commit and all
   nine exact-source CI jobs; no production-readiness or deployment claim.
+
+## 2026-10-08 — next exact-source gate and newly published dependency findings
+
+- The reviewed packet is pushed as
+  `d4dd0b7a16bfbb5f02d7d9a266a9c686a74f5fd2`.
+  [CI 37703857269](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37703857269)
+  passed backend, foundation and committed-history secret scan. Frontend stopped
+  at production npm audit; dependent browser/image jobs were skipped and the
+  release gate failed. This is not a passing release artifact.
+- The registry audit now reports Next.js 16.0.0–16.3.7 affected by six
+  maintainer advisories, with one high-severity affected production package:
+  [draft-mode cache leak](https://github.com/advisories/GHSA-3w37-wq28-93x7),
+  [SSG/ISR cache poisoning](https://github.com/advisories/GHSA-4jqv-mc3x-m676),
+  [development MCP disclosure](https://github.com/advisories/GHSA-39w2-rjm5-chcv),
+  [metadata route disclosure](https://github.com/advisories/GHSA-f87g-xv8r-7p7x),
+  [SSG/ISR content substitution](https://github.com/advisories/GHSA-mcj8-r9mp-w47p)
+  and [image optimization SSRF](https://github.com/advisories/GHSA-cjq9-62q9-8jv4).
+  A fresh local production audit reproduces the finding. Earlier zero-finding
+  results remain valid observations of their audit snapshot, not current safety.
+  Official patched-version verification and the smallest coherent dependency
+  update are in progress; no advisory or gate is suppressed.
+  Logs: `/tmp/neb-ci-d4dd0b7-failures-oct08.log`,
+  `/tmp/neb-production-audit-after-d4dd0b7-oct08.json`.
+
+
+## 2026-10-08 — dependency patch and current auth/editor evidence
+
+- Official [Next.js 16.3.8 release](https://github.com/vercel/next.js/releases/tag/v16.3.8)
+  and [maintainer comparison](https://github.com/vercel/next.js/compare/v16.3.7...v16.3.8)
+  verify the patch. Matching registry metadata preserves Node/React/ESLint peers;
+  the repository has no custom incremental cache handler. Only Next.js and its
+  ESLint configuration/plugin/platform packages are updated to 16.3.8. Host and
+  Node 22 clean installs pass; production npm audit reports zero findings.
+  Logs: `/tmp/neb-next1638-host-install-oct08.log`,
+  `/tmp/neb-next1638-node22-install-oct08.log`,
+  `/tmp/neb-next1638-production-audit-oct08.json`.
+- Token verification now offers explicit Retry for transient failures with its
+  original token, pending status and synchronous duplicate protection. Current
+  token/mode/lifetime ownership protects callbacks, success and URL stripping;
+  stale resend completion was found and corrected by independent review.
+  Image-only publication associates and focuses the required description;
+  ordinary edits do not steal focus. Scoped reviews pass. Integrated Node 22
+  lint/types and **454 tests / 40 files** pass; format passes. Logs:
+  `/tmp/neb-next1638-forms-integrated-frontend-oct08.log`,
+  `/tmp/neb-next1638-forms-frontend-format-oct08.log`.
+- Initial strict new live packet stopped with **three passed, four failed, one
+  interrupted and eight not run**. Test diagnoses include email-change 204
+  expectation, native border select locator/key assumptions, a real default
+  verification 429 shared across projects, and mobile inline text editing hiding
+  the inspector after successful upload. Traces and failures are preserved;
+  no error filters, retries or quota increases are added. Corrected Chromium
+  token cases pass; editor/control and final four-engine results remain pending.
+  Logs: `/tmp/neb-next1638-token-editor-browser-oct08.log`,
+  `/tmp/neb-next1638-token-editor-chromium-oct08.log`.
+- Seven independently reviewed request-size cases now pass. The initial run
+  failed five assertions because error details are lists; exact list/message/code
+  assertions are corrected without weakening state checks. Tests cover bounded
+  parser reads without Content-Length, actual oversized PUTs, no state/storage/
+  enqueue on rejection, normalized UTF-8 byte boundaries and preserved draft/
+  version/ETag. Valid bounded fields remain below 512 KiB; the exact boundary
+  test explicitly lowers that cap, while separate malformed bodies exceed the
+  real cap. Actual deployed ingress enforcement remains separate. Logs:
+  `/tmp/neb-request-size-regressions-oct08.log`,
+  `/tmp/neb-request-size-regressions-corrected-oct08.log`.
+- Independent section 82 mapping supports checking ten local contract bullets;
+  **763 checked / 379 unchecked**, section verdict counts unchanged. Request-size
+  recording awaits integration; actual provider timeout/load remains open.
+
+- Final request-size integration: **370 PostgreSQL tests passed / one Nginx
+  outside-image skip**; Ruff and format pass. Section 82 request-size is checked:
+  total **764 checked / 378 unchecked**, section verdict counts unchanged. Logs:
+  `/tmp/neb-next1638-request-size-all-postgres-oct08.log`,
+  `/tmp/neb-request-size-final-ruff-oct08.log`,
+  `/tmp/neb-request-size-final-python-format-oct08.log`.
+- The native editor scenario exposed actual horizontal overflow at 320 px with
+  one valid 40-character unbroken Cyrillic tag. The chip now wraps within its
+  container and retains its nonshrinking remove button. Corrected native select
+  typeahead, sliders and save/reload/overflow pass in Chromium. This was a real
+  source defect after the harness corrections, not a filtered assertion. Logs:
+  `/tmp/neb-next1638-editor-controls-chromium-oct08.log`,
+  `/tmp/neb-next1638-editor-tagwrap-chromium-oct08.log`.
+- The first Next.js 16.3.8 optimized start omitted `APP_ENVIRONMENT=production`;
+  the strict sitemap walker correctly rejected the intentional empty noindex
+  urlset instead of accepting it as a public index. That temporary server was
+  stopped. A fresh explicitly configured production build/start is pending;
+  no target/public hostname claim is made. Logs:
+  `/tmp/neb-next1638-tagwrap-optimized-build-oct08.log`,
+  `/tmp/neb-next1638-tagwrap-optimized-start-oct08.log`,
+  `/tmp/neb-next1638-production-sitemap-walk-oct08.log`.
+
+- Final Node 22 check/format on tag-wrap source: **454 tests / 40 files**, lint,
+  types and Prettier pass. Independent root CSS/E2E review passes. Configured
+  `APP_ENVIRONMENT=production` Next.js 16.3.8 optimized build/start passes and
+  strict anonymous sitemap walk confirms **two parts / ten URLs / 1,808 bytes**.
+  Illustrative canonical origin is not a public-deployment verification. Logs:
+  `/tmp/neb-next1638-tagwrap-final-frontend-oct08.log`,
+  `/tmp/neb-next1638-tagwrap-final-format-oct08.log`,
+  `/tmp/neb-next1638-configured-optimized-build-oct08.log`,
+  `/tmp/neb-next1638-configured-optimized-start-oct08.log`,
+  `/tmp/neb-next1638-configured-production-sitemap-oct08.log`.
+- A separate-project four-case Chromium run passes; mobile WebKit passes both
+  token cases and native editor controls but fails the Unicode image journey:
+  after leaving inline editing the visible mobile inspector correctly overlays
+  the underlying Finish button. The scenario now closes the inspector through
+  its normal button before continuing, without force click. Final projects are
+  rerunning with normal fixture reset and zero retries. Prior mobile failure:
+  `/tmp/neb-next1638-final-logout-mobile-webkit-oct08.log`.
+
+- Reviewed projects now pass Chromium **4/4**, mobile WebKit **4/4**, and a
+  separately paced Firefox **4/4**. The first Firefox run's consumed-token
+  assertion received an actual **Nginx HTML 429**, distinct from the earlier DRF
+  quota. The QA ingress has its existing 10 requests/minute auth zone and burst
+  30 (matching the existing CI override); no setting was increased for this
+  packet. Normal time between projects permits refill. Desktop WebKit is still
+  pending. Logs: `/tmp/neb-next1638-reviewed-logout-chromium-oct08.log`,
+  `/tmp/neb-next1638-reviewed-logout-mobile-webkit-oct08.log`,
+  `/tmp/neb-next1638-reviewed-logout-firefox-oct08.log`,
+  `/tmp/neb-next1638-paced-firefox-oct08.log`.
+- Configured optimized production browser probe passes **2/2** at 320/1710 px
+  for Explore→profile/account→Explore, with private/no-store HTML, no page or
+  console errors, no bad responses or feedback assets. Canceled requests are
+  asserted to be specifically aborted Next prefetch requests; actual failures
+  are not ignored. Log: `/tmp/neb-next1638-production-routes-oct08.log`.
+- A bounded section 36 inventory found an Explore metadata mismatch: only the
+  first member of a repeated query parameter counted toward search-state
+  noindex. An empty first member followed by a nonempty language could bypass
+  that metadata policy. This is a local correction pending implementation;
+  the initial SSR blank-language error is not described as successful filtering.
+  Existing semantic-heading, clean-route and canonical evidence is being mapped.
+
+- Desktop WebKit final four cases pass **4/4**; combined final scoped engine
+  results are **16/16, retries zero**. Native formatting/range/select behavior,
+  multilingual bounded input, persistence/reload, long-tag layout, real Mailpit
+  token retry/reuse and image-description focus now have executed evidence.
+  Log: `/tmp/neb-next1638-paced-webkit-oct08.log` plus prior three engine logs.
+- Full-suite quota review found the new tests would add three anonymous token
+  operations beyond the shared-IP default five/hour used by other journeys.
+  A bounded test-only amendment attributes email-change setup verification to
+  the player fixture and registration consumed-token checking to the author
+  fixture; its first token-only registration confirmation remains anonymous.
+  Application quotas and real backend requests stay intact. The amendment still
+  requires a scoped browser run; its four-engine antecedent is preserved above.
+
+- Explore repeated-query metadata now scans every value. Fifteen regressions
+  exercise actual metadata generation for blank/base, scalar and repeated query
+  state, and staging; the two repeated-value cases failed before the fix. Scoped
+  twenty metadata cases pass; independent review passes. No API/UI normalization
+  change is included. Integrated Node 22 **469 tests / 40 files**, lint/typecheck
+  and format pass. Logs: `/tmp/neb-next1638-metadata-final-frontend-oct08.log`,
+  `/tmp/neb-next1638-metadata-final-format-oct08.log`.
+- A fresh configured production build and two real-browser public-head probes
+  pass. Ten guest routes at 320/1710 px have a single first H1, no heading-level
+  jumps, meaningful unique titles, nonempty descriptions, canonical identities,
+  no overflow and no page errors: catalogs, three policy pages, support, public
+  bingo/profile and immutable share. Search/page/repeated-language query state
+  has query-free Explore canonical and noindex; uppercase username/UUID requests
+  point to persisted canonical identities. Slash redirect is 308 and preserves
+  search. The first probe incorrectly assumed Location was absolute; corrected
+  parsing resolves a valid relative Location against the response URL. Logs:
+  `/tmp/neb-next1638-metadata-optimized-build-oct08.log`,
+  `/tmp/neb-next1638-public-metadata-oct08.log` (one pass / one harness failure),
+  `/tmp/neb-next1638-public-metadata-reviewed-oct08.log` (**2/2**).
+  The actual final sitemap walk again passes two parts / ten URLs / 1,808 bytes:
+  `/tmp/neb-next1638-final-production-sitemap-oct08.log`.
+- Section 36 semantic headings, meaningful URLs and local duplicate handling
+  now have inspected and executed evidence. Named routes and username/public
+  UUID identities intentionally preserve links across title edits; no slug
+  rewrite is required. www/alternate-host and HTTP→HTTPS target verification stay
+  open. Total **767 checked / 375 unchecked**, section verdict counts unchanged.
+- Final quota-isolated token amendment passes Chromium **2/2** with an anonymous
+  first registration retry and separate fixture-owned setup/reuse operations;
+  remaining engine amendment checks are running. Log:
+  `/tmp/neb-next1638-final-token-actors-chromium-oct08.log`.
+
+- The final fixture-owned setup/reuse variant passes **eight token cases** across
+  Chromium, mobile WebKit, Firefox and desktop WebKit, retries zero. Anonymous
+  first registration confirmation, original token/body checks, held real retry,
+  consumed-token rejection and recovery actions remain intact. Logs:
+  `/tmp/neb-next1638-final-token-actors-chromium-oct08.log`,
+  `/tmp/neb-next1638-final-token-actors-logout-mobile-webkit-oct08.log`,
+  `/tmp/neb-next1638-final-token-actors-logout-firefox-oct08.log`,
+  `/tmp/neb-next1638-final-token-actors-logout-webkit-oct08.log`.
+- Bounded section 42 mapping found a high-confidence source defect in both
+  follow POST handlers: Follow is committed before notification and interaction
+  writes, with no encompassing transaction and no ATOMIC_REQUESTS setting.
+  A late write failure can leave Follow persisted; created=False on retry then
+  skips the missing records. The existing successful/uniqueness tests do not
+  prove late-write rollback. Fault tests and a bounded fix are now assigned;
+  executed reproduction is pending. The transactions checkbox stays open.
+  Separate missing assertions are moderation's final history-write rollback
+  and sharing's final idempotency-write rollback; their atomic source alone is
+  not reported as executed proof. Existing mapped profile/publication/credential/
+  email-intent/export rollback proofs remain valid.
+
+- Final metadata-source optimized profile/account probe passes **2/2** at
+  320/1710 px with the same explicit console/page/request assertions. Temporary
+  optimized server was stopped. Log:
+  `/tmp/neb-next1638-final-production-routes-oct08.log`.
+- Initial follow fault test run failed all six cases at authentication HTTP 401;
+  its unverified fixture never reached the handlers. That result is a harness
+  failure, not atomicity reproduction. The writer corrected the tests to use
+  verified actors; all actual SQL/failure/rollback/retry assertions remain.
+  Corrected baseline reproduction is pending. Log:
+  `/tmp/neb-follow-transaction-baseline-oct08.log`.
+
+- Corrected follow baseline actually reaches both routes: **four SQL-fault cases
+  fail with Follow wrongly retained / two permission cases pass**. PostgreSQL
+  NOT NULL failures are injected at notification and interaction-event writes;
+  this reproduces the source defect. The minimal fix adds an atomic boundary to
+  each POST handler; inputs, access and statuses remain unchanged. Its six cases
+  now pass, proving graph rollback, complete retry and cross-route deduplication.
+  Logs: `/tmp/neb-follow-transaction-corrected-baseline-oct08.log`,
+  `/tmp/neb-follow-transaction-fixed-oct08.log`.
+  Independent review, integrated checks and affected strict browser cases are
+  still pending; moderation/share graph rollback assertions are being written.
+
+- Independent follow transaction review passes: the method transaction contains
+  DB-only relationship/notification/event writes, wraps before DRF error
+  handling, preserves schema metadata, and retains unique-constraint/get_or_create
+  concurrent deduplication. OpenAPI validates and exactly matches its checked-in
+  file after the decorator change; Ruff passes. Affected strict browser packet
+  first passed nine cases and failed three later core social cases because the
+  first engine's like remained in the shared fixture. The failing later pages
+  correctly show Liked rather than the test's initial Like expectation. The
+  normal single-engine CI core is unchanged; separate-engine fixture resets are
+  now running the same twelve checks without altering assertions/retries. Log:
+  `/tmp/neb-next1638-follow-social-oct08.log`.
+
+- Separate normal-fixture project runs pass **12/12** affected follow/social
+  cases in Chromium, mobile WebKit, Firefox and desktop WebKit, retries zero.
+  They include real follow completion after departure, delayed failure cleanup,
+  and like/comment/reply/follow/report success; no source or assertion changes
+  were needed for the shared-fixture failure. Logs:
+  `/tmp/neb-next1638-follow-reviewed-logout-chromium-oct08.log`,
+  `/tmp/neb-next1638-follow-reviewed-logout-mobile-webkit-oct08.log`,
+  `/tmp/neb-next1638-follow-reviewed-logout-firefox-oct08.log`,
+  `/tmp/neb-next1638-follow-reviewed-logout-webkit-oct08.log`.
+- Six new late business-graph SQL cases pass. Board-hide and account-suspension
+  tests capture real content/report/audit/session mutations before a final
+  history NOT NULL failure, compare persisted graph restoration, recover warmed
+  cached sessions from restored durable rows, discard failed callbacks and retry
+  coherently. Four share cases cover guest/authenticated actors and new/expired
+  keys: share/event/counter mutations occur before final idempotency failure;
+  rollback restores the prior graph and expired key; retry/replay retains one
+  coherent result and existing publication/progress/shares/events. Independent
+  coverage review passes. Log: `/tmp/neb-business-graph-rollback-oct08.log`.
+  These prove SQL/callback rollback, not real broker delivery or process failure
+  after commit. Eager cache eviction is acceptable; valid restored sessions must
+  load again, rather than preserving raw cache bytes.
+- Full mypy passes **77 source files**; OpenAPI generation validates and matches
+  exactly after follow method decoration. Full Ruff/format and migration drift
+  checks pass; final integrated backend execution is still running. Logs:
+  `/tmp/neb-follow-all-final-mypy-oct08.log`,
+  `/tmp/neb-follow-schema-validation-oct08.log`,
+  `/tmp/neb-follow-openapi-compare-oct08.log`,
+  `/tmp/neb-final-follow-graphs-ruff-oct08.log`,
+  `/tmp/neb-final-follow-graphs-format-oct08.log`,
+  `/tmp/neb-final-follow-migration-drift-oct08.log`.
+
+- Final integrated backend on all new transaction/request-size cases: **382
+  passed / one infrastructure-only skip**, 51.33 s. No remaining failed test in
+  this run. Important local transaction boundaries now have mapped multiwrite,
+  fault/retry, callback and concurrency evidence; §42 transactions is checked.
+  Total **768 checked / 374 unchecked**, section verdicts remain **56 verified /
+  42 partial / six N/A / one deployment-only**. Log:
+  `/tmp/neb-final-follow-graphs-postgres-oct08.log`.
+- The completed local packet has 469 frontend tests / 40 files, Node 22 lint/
+  types/format, 382 PostgreSQL tests plus one infrastructure skip, Ruff/format,
+  mypy 77 sources, migration drift and exact OpenAPI comparison, independent
+  reviews, strict token/editor/follow engine packets and configured optimized
+  production metadata/profile/sitemap probes. Each probe's scope and antecedent
+  failures remain recorded above. The next commit still requires all nine
+  exact-source CI jobs; other form/native-device/operations/target items remain
+  open. This is not a production-readiness or deployment claim.

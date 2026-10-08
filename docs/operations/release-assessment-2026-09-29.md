@@ -6,12 +6,16 @@ final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
 Current continuation evidence (2026-10-08): source `c1fc2d7` passed all nine CI
-jobs; the subsequent local packet passes 363 PostgreSQL tests (one infrastructure
-skip), 415 frontend tests, 24 strict four-engine preference/account cases and a
-configured optimized sitemap walk. That packet still needs its own exact-source
-CI gate. Use the [continuation checkpoint](production-readiness-continuation-plan.md)
-and latest [dated evidence](production-readiness-evidence.md) for current work;
-the dated observations below remain historical, including earlier audit counts.
+jobs. The subsequent `d4dd0b7` gate failed new Next.js production advisories;
+its dependent browser/image jobs did not run. The bounded 16.3.8 correction and
+new auth/editor/request-size packet pass 382 PostgreSQL tests (one infrastructure
+skip), 469 frontend tests and lint/types/format locally. The corrected source
+passes current strict browser and production metadata/sitemap probes but still
+needs its own exact-source CI gate; the follow transaction defect is
+reproduced, fixed and covered by independent review and SQL/browser checks. Use the
+[continuation checkpoint](production-readiness-continuation-plan.md) and latest
+[dated evidence](production-readiness-evidence.md) for current work; the dated
+observations below remain historical, including earlier audit counts.
 
 ## Decision
 

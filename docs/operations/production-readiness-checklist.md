@@ -726,17 +726,17 @@ If pages should be indexed, verify:
 - [x] unique title;
 - [x] sensible meta description;
 - [x] meaningful H1;
-- [ ] semantic headings;
+- [x] semantic headings;
 - [x] canonical URL;
 - [x] crawlable links;
-- [ ] clean meaningful URLs;
+- [x] clean meaningful URLs;
 - [x] sitemap.xml;
 - [x] robots.txt;
 - [x] correct HTTP statuses;
 - [ ] www/non-www policy;
 - [ ] HTTP → HTTPS;
 - [x] trailing slash strategy;
-- [ ] duplicate URL handling;
+- [x] duplicate URL handling;
 - [x] no accidental `noindex`;
 - [x] preview/staging deployments are not indexed;
 - [x] structured data if the site actually benefits from it.
@@ -844,7 +844,7 @@ Before launch verify:
 - [x] foreign keys;
 - [x] nullable fields;
 - [x] defaults;
-- [ ] transactions;
+- [x] transactions;
 - [ ] rollback/migration strategy.
 
 Test:
@@ -1514,18 +1514,18 @@ Do not leave this accidental.
 
 For every important API endpoint verify relevant:
 
-- [ ] input validation;
-- [ ] authentication;
-- [ ] authorization;
-- [ ] rate limiting;
-- [ ] understandable error responses;
-- [ ] stable response schema;
+- [x] input validation;
+- [x] authentication;
+- [x] authorization;
+- [x] rate limiting;
+- [x] understandable error responses;
+- [x] stable response schema;
 - [ ] timeout;
-- [ ] pagination;
-- [ ] request-size limits;
-- [ ] logging;
-- [ ] secrets not exposed;
-- [ ] idempotency where required.
+- [x] pagination;
+- [x] request-size limits;
+- [x] logging;
+- [x] secrets not exposed;
+- [x] idempotency where required.
 
 # 83. CORS
 

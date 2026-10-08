@@ -18,6 +18,7 @@ import { EditorSaveStatus, type EditorSaveStatusValue } from "@/features/editor/
 import {
   canRedo,
   canUndo,
+  cellKey,
   editorDocumentFingerprint,
   editorDocumentSnapshot,
   editorPayload,
@@ -82,6 +83,9 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [imageDescriptionValidationKey, setImageDescriptionValidationKey] = useState<string | null>(
+    null,
+  );
   const [hydrating, setHydrating] = useState(Boolean(bingoId));
   const [authState, setAuthState] = useState<
     "checking" | "allowed" | "guest" | "unverified" | "error"
@@ -158,6 +162,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       setPendingAction(null);
       setUploading(null);
       setError("");
+      setImageDescriptionValidationKey(null);
       setMessage("");
       setStep("board");
       dispatch({ type: "new-document" });
@@ -180,6 +185,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       setAuthState("checking");
       setPendingAction(null);
       setUploading(null);
+      setImageDescriptionValidationKey(null);
       failedFingerprint.current = null;
       setAuthCheckVersion((version) => version + 1);
     };
@@ -269,6 +275,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     setPendingAction(null);
     setUploading(null);
     setError("");
+    setImageDescriptionValidationKey(null);
     api.bingos
       .getDraft(bingoId, controller.signal)
       .then((draft) => {
@@ -615,6 +622,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         version: latest.version,
       });
       dispatch({ type: "hydrate", draft: latest });
+      setImageDescriptionValidationKey(null);
       updateSaveStatus("saved");
       setSaveError("");
     } catch (caught) {
@@ -661,6 +669,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
 
   async function publish() {
     if (actionInFlight.current) return;
+    setImageDescriptionValidationKey(null);
     if (!state.title.trim()) {
       setError("Add a title before publishing.");
       return;
@@ -683,7 +692,10 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
         focus: { row: imageWithoutDescription.row, column: imageWithoutDescription.column },
       });
       setStep("board");
-      setError("Describe this image-only cell before publishing.");
+      setError("");
+      setImageDescriptionValidationKey(
+        cellKey(imageWithoutDescription.row, imageWithoutDescription.column),
+      );
       return;
     }
     actionInFlight.current = true;
@@ -1043,6 +1055,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
       <CellInspector
         state={state}
         dispatch={dispatch}
+        imageDescriptionValidationKey={imageDescriptionValidationKey}
         uploadPending={uploading !== null}
         uploadPhase={uploading === "cell" ? uploadPhase : undefined}
         onCancelUpload={cancelUpload}

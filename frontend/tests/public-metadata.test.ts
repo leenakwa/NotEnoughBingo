@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generateMetadata as bingoMetadata } from "@/app/bingo/[bingoId]/page";
+import { generateMetadata as exploreMetadata } from "@/app/explore/page";
 import { generateMetadata as profileMetadata } from "@/app/profile/[username]/page";
 import { generateMetadata as shareMetadata } from "@/app/share/[bingoId]/[shareId]/page";
 import robots from "@/app/robots";
@@ -9,6 +10,7 @@ import { absoluteSiteUrl, siteUrl } from "@/lib/site";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
+  getExplore: vi.fn(),
   getShare: vi.fn(),
   getProfile: vi.fn(),
 }));
@@ -19,6 +21,7 @@ vi.mock("next/headers", () => ({
 
 vi.mock("@/lib/api/server", () => ({
   getServerBingo: mocks.getBingo,
+  getServerExplore: mocks.getExplore,
   getServerShare: mocks.getShare,
   getServerProfile: mocks.getProfile,
   lookupServerBingo: async (...args: unknown[]) => ({
@@ -120,6 +123,49 @@ describe("public route metadata", () => {
     else process.env.APP_ENVIRONMENT = previousEnvironment;
     if (previousOrigin === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
     else process.env.NEXT_PUBLIC_APP_URL = previousOrigin;
+  });
+
+  it.each([
+    { label: "no parameters", searchParams: {} },
+    { label: "undefined search", searchParams: { search: undefined } },
+    { label: "empty search", searchParams: { search: "" } },
+    { label: "whitespace search", searchParams: { search: " \t\n " } },
+    { label: "empty repeated languages", searchParams: { languages: ["", " \t ", "\n"] } },
+  ])("keeps base Explore metadata indexable for $label", async ({ searchParams }) => {
+    const metadata = await exploreMetadata({ searchParams: Promise.resolve(searchParams) });
+
+    expect(metadata.robots).toBeUndefined();
+    expect(metadata.alternates).toEqual({ canonical: "/explore" });
+    expect(mocks.getExplore).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { label: "search", searchParams: { search: "board" } },
+    { label: "author", searchParams: { author: "author" } },
+    { label: "tags", searchParams: { tags: "games" } },
+    { label: "languages", searchParams: { languages: "en" } },
+    { label: "ordering", searchParams: { ordering: "newest" } },
+    { label: "page", searchParams: { page: "2" } },
+    { label: "later repeated language", searchParams: { languages: ["", "en"] } },
+    { label: "later repeated search", searchParams: { search: [" \t ", " board "] } },
+  ])("keeps Explore $label query state out of search", async ({ searchParams }) => {
+    const metadata = await exploreMetadata({ searchParams: Promise.resolve(searchParams) });
+
+    expect(metadata.robots).toEqual({ index: false, follow: true });
+    expect(metadata.alternates).toEqual({ canonical: "/explore" });
+    expect(mocks.getExplore).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { label: "base Explore", searchParams: {} },
+    { label: "repeated language query", searchParams: { languages: ["", "en"] } },
+  ])("keeps staging $label out of crawlers", async ({ searchParams }) => {
+    process.env.APP_ENVIRONMENT = "staging";
+    const metadata = await exploreMetadata({ searchParams: Promise.resolve(searchParams) });
+
+    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(metadata.alternates).toEqual({ canonical: "/explore" });
+    expect(mocks.getExplore).not.toHaveBeenCalled();
   });
 
   it("uses the immutable published revision and indexes only public bingos", async () => {

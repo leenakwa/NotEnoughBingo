@@ -19,7 +19,9 @@ export async function generateMetadata({
   searchParams: ExploreSearchParams;
 }): Promise<Metadata> {
   const raw = await searchParams;
-  const hasSearchState = Object.values(raw).some((value) => first(value).trim());
+  const hasSearchState = Object.values(raw).some((value) =>
+    Array.isArray(value) ? value.some((entry) => entry.trim()) : value?.trim(),
+  );
   return {
     title: "Explore",
     description: "Search public bingo boards by title, author, or tag.",
