@@ -1392,6 +1392,8 @@ input[type="range"] {
 
 .tag-chips button {
   flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   font-size: 1.15rem;
@@ -2030,6 +2032,10 @@ input[type="range"] {
 .profile-tabs [aria-selected="true"] {
   background: var(--ink);
   color: var(--paper);
+}
+
+.profile-tabs [aria-selected="true"]:hover:not(:disabled) {
+  color: var(--ink);
 }
 
 .profile-tab-panel {

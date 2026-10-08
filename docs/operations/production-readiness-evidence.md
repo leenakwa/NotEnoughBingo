@@ -5247,3 +5247,89 @@ observed results and their limits. Do not include credentials or session data.
   inventory and continuation checkpoint are updated; original prompt/request
   hashes remain unchanged and native goal active. Exact-source CI remains pending.
   No merge or deployment is authorized.
+
+### 2026-10-08 —606 exact-source recovery and immutable native/upload checks
+
+- Pushed606ebb6c074b00d3c2b3848b71ad80a3e997320e passes all nine jobs in
+  [CI37720755955](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955):
+  backend383, frontend564/42 files, browser smoke264/12 intentional skips with
+  zero flaky/retried cases, full-stack120, foundation/secrets/both images/Release.
+  Full retained log /tmp/neb-ci-606ebb6-reviewed-oct08.log. Actual CI merge
+  e258f05903ac9dab215f82ca6e52b9c246636533 shares HEAD tree
+  a620355dc1e77f3f241fe976654a40525be71638, verified through the commit API.
+- Exact Git-archive configured606 production image builds, matches runtime
+  release, mounts no app files and returns health200. Actual image ID
+  sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6.
+  Optimized32 controlled profile-native plus16 auth silent-fill cases pass48/48,
+  retries zero. Real3MiB API PUT/cancel/retry/ready/reload passes once, and four
+  API Blob/CSRF/held processing/reload cases pass4/4. Total53 cases; app-only Mac
+  keyboard preference restored/verified. No synthetic storage success or byte
+  progress in the real upload cases. Source/scope/logs and numeric proof are in
+  [sanitized606 candidate report](artifacts/frontend-candidate-606ebb6-2026-10-08.json).
+- These gates cover606; subsequent CSS and account browser evidence are a
+  separate working-tree packet. Original prompt/request hashes remain unchanged,
+  native goal stays active and checklist775/367 remains unchanged.
+
+### 2026-10-08 — Selected-tab contrast, tag target and account native controls
+
+- Source-only inventory predicts selected-tab white-on-soft hover. Browser
+  debugger proves contrast1.13:1 for actual selected Created hover/held press at
+  320/1710, with normal/focus19.80. Scoped CSS changes only selected hovered text
+  to existing ink, preserving secondary hover background and press translation.
+  Regression initially fails both Chromium widths, then final8/8 pass across
+  four profiles, retries zero: hover/press17.53, normal/focus19.80,3px keyboard
+  outline, no overflow/page errors. Initial test tuple-inference type error is
+  corrected. [State proof](artifacts/profile-tab-states-2026-10-08.json).
+- Bounded Chromium editor probe2/2 at320/1710 finds format/size/icon targets44px,
+  visible focus and native size disabled limits3/10, no contrast/overflow issue.
+  Tag-remove target23.05×20.41 is below project44px target. Only two CSS minimum
+  dimension declarations change; final8/8 browser regressions pass in four
+  profiles:44×44 actual targets,40-character Unicode wrapping, literal markup
+  as text, keyboard removal of intended tag with sibling retention, no accidental
+  publication/submission or page error/overflow. Original successful browser run
+  and corrected possibly-undefined test index diagnostic remain logged. Mac
+  preference restored. [Tag proof](artifacts/editor-tag-controls-2026-10-08.json).
+  Upload pending label retains pointer/hover while file input is disabled, but
+  busy text/phase/Cancel are present; this does not prove duplicate submission.
+- Account implementation audit finds native constraints/normalization coherent.
+  New controlled native packet24/24 passes first run, then independent review
+  recommends short current-password fixtures to detect an unintended minimum12
+  on current credentials. Amended email/password16/16 pass; deletion8 unchanged
+  cases already pass, all retries zero. Three forms at320/1710 in Chromium,
+  Pixel7 Chromium, Firefox and WebKit (three engine families/four profiles).
+  Native required/typeMismatch, keyboard11→12 new/confirmation minimum, Tab and
+  visible focus, Show/Hide without submit, mismatch focus/no write, exact raw
+  FormData and own-endpoint pending one-write guard are proved. DOM email strips
+  edge spaces while retaining mixed case; backend lowercase has existing API
+  evidence. Raw short padded current/deletion and padded new passwords are
+  retained in the mocked payload. Empty deletion opens no confirm; dismiss
+  retains input/no write; accept invokes own endpoint and controlled422 focuses
+  associated retained error. This proves flow, not real deletion/scheduling.
+  Reload clears transient email/password without a beforeunload dialog; no
+  persisted-work or chosen dirty-navigation policy claim. Logs
+  /tmp/neb-account-native-controls-initial-oct08.log and
+  /tmp/neb-account-native-short-current-reviewed-oct08.log. Scoped checks and Mac
+  preference restoration pass; independent coverage review has no blocker.
+- Root final Node22 lint/types and564 tests/42 files pass on the stable combined
+  source: /tmp/neb-controls-account-final-node22-oct08.log. Original prompt/request
+  unchanged, checklist775/367 and verdicts unchanged. Current-source CI and
+  configured optimized image remain required for this separate packet.
+
+### 2026-10-08 — Native browser capability and historical RSC scope audit
+
+- Cua opens a temporary own Chrome Explore tab on606 candidate18584; DOM control
+  is available. Native Chrome app accessibility reads time out twice. Native tab
+  Cmd+Equal returns without observed zoom change (DPR2, viewport1728×996 both
+  before/after). No viewport override is used; temporary tab closed.200% native
+  zoom/favicon/browser chrome/autofill/password-manager requirements remain
+  capability gaps, not silently converted into deployment-only requirements.
+- Independent performance audit matches historical raw report SHA and excludes
+  context teardown: the probe clears its active sample before close. All291 RSC
+  responses are200 text/x-component;284 abort and seven complete,142 fresh/142
+  warm. Failure timestamps/request IDs/prefetch headers are absent, and mutable
+  error arrays allow late events, so phase attribution is incomplete. Default
+  production viewport prefetch from [Next Link documentation](https://nextjs.org/docs/app/api-reference/components/link#prefetch)
+  supports probable origin, not cancellation cause/server impact. No measured
+  bottleneck is established. Next bounded freshDiscover probe needs fixed idle,
+  sanitized headers/IDs/timing/bytes/cancel flags, separate cleanup bucket and
+  one actual navigation with correlated upstream logs. Retain every abort.

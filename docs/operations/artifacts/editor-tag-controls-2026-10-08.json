@@ -1,0 +1,499 @@
+{
+  "date": "2026-10-08",
+  "base_source": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+  "implementation_scope": "Working-tree tag-remove minimum width/height44px only; not included in base source.",
+  "before_target_css_px": [
+    23.05,
+    20.41
+  ],
+  "proof": {
+    "stats": {
+      "startTime": "2026-10-08T03:26:21.011Z",
+      "duration": 27195.836,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "project": "chromium",
+        "status": "passed",
+        "width": 320,
+        "layout": {
+          "viewportWidth": 320,
+          "pageWidth": 320,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 2,
+              "contentWidth": 292,
+              "clientWidth": 292,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "width": 1710,
+        "layout": {
+          "viewportWidth": 1710,
+          "pageWidth": 1710,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 376,
+              "clientWidth": 376,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "width": 320,
+        "layout": {
+          "viewportWidth": 320,
+          "pageWidth": 320,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 2,
+              "contentWidth": 292,
+              "clientWidth": 292,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "width": 1710,
+        "layout": {
+          "viewportWidth": 1710,
+          "pageWidth": 1710,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 376,
+              "clientWidth": 376,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "width": 320,
+        "layout": {
+          "viewportWidth": 320,
+          "pageWidth": 320,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 2,
+              "contentWidth": 292,
+              "clientWidth": 292,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "width": 1710,
+        "layout": {
+          "viewportWidth": 1710,
+          "pageWidth": 1710,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 376,
+              "clientWidth": 376,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "width": 320,
+        "layout": {
+          "viewportWidth": 320,
+          "pageWidth": 320,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 2,
+              "contentWidth": 292,
+              "clientWidth": 292,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "width": 1710,
+        "layout": {
+          "viewportWidth": 1710,
+          "pageWidth": 1710,
+          "chips": [
+            {
+              "text": "\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f\u042f",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 376,
+              "clientWidth": 376,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "<b>literal & text</b>",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 230,
+              "clientWidth": 230,
+              "buttonInsideChip": true
+            },
+            {
+              "text": "keep me",
+              "width": 44,
+              "height": 44,
+              "textLines": 1,
+              "contentWidth": 123,
+              "clientWidth": 123,
+              "buttonInsideChip": true
+            }
+          ]
+        },
+        "firstFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "secondFocus": {
+          "focusVisible": true,
+          "outlineStyle": "solid",
+          "outlineWidth": 3
+        },
+        "mutations": [
+          {
+            "path": "/api/v1/bingos/11111111-1111-4111-8111-111111111111/draft/",
+            "method": "PUT",
+            "tags": [
+              "keep me"
+            ]
+          }
+        ],
+        "submissions": 0,
+        "errors": []
+      }
+    ]
+  },
+  "log": "/tmp/neb-editor-tag-controls-reviewed-oct08.log",
+  "limits": [
+    "ControlledAPI and actual rendered UI; no server persistence or physical touch-device claim.",
+    "Four profiles use three engine families; mobile Pixel7Chromium is emulated.",
+    "Final exact-source CI and configured optimized image remain required for this working-tree fix."
+  ]
+}

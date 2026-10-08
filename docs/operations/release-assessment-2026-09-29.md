@@ -5,15 +5,16 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Current continuation evidence (2026-10-08): pushed `6206647` completes
-[CI37718675809](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809)
-with seven passing jobs and failed smoke/Release gates. Backend383, frontend560
-and full-stack120 pass; smoke231 pass/one reset silent-fill failure/12 intentional
-skips. Actual merge checkout has the same tree as620 HEAD. The test assigns DOM
-text before the reset control is enabled; a minimal test-only precondition passes
-16/16 scoped four-profile cases without retries and awaits its own CI.
+Current continuation evidence (2026-10-08): pushed `606ebb6` passes all nine
+[CI37720755955](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955)
+jobs: backend383, frontend564/42 files, smoke264/12 intentional skips with no
+flaky cases or retries, full-stack120, scans, foundation, both images and Release.
+Actual merge checkout shares HEAD treea620355dc1e77f3f241fe976654a40525be71638.
+Its exact configured optimized image passes53 cases:32 controlled profile native,
+16 controlled auth silent-fill and five real API upload cases. Build/runtime
+release match, zero app mounts and health200; Mac app keyboard setting restored.
 
-Last all-nine green remains `b0d3e7e` in
+Historical `b0d3e7e` was all-nine green in
 [CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152):
 backend383, frontend503, smoke231 plusone flaky case/12 intentional skips and
 full-stack119. The flaky case is the same reset test; this was discovered by
@@ -33,8 +34,12 @@ tests and120 ordered live cases, with scoped reviews. Actual3MiB slow-storage
 progress/cancel/retry/processing/ready-attachment/reload proof passes;12 scoped
 cases across four engines also pass. Its exact configured optimized image passes
 one3MiB slow API PUT case and four API Blob/CSRF/processing/persistence cases,
-retries zero. This does not override failed CI. Separate profile evidence passes
-19 unit and32 controlled browser cases; no profile implementation change.
+retries zero.620 CI failed the silent-fill test;606's enabled-field test
+precondition corrects that failure. Profile19 units/32 controlled browser cases
+are included in606. Subsequent working-tree scoped CSS corrects selected-tab
+hover contrast and44px tag-removal targets;16 browser regressions pass. Account
+native constraints/FormData coverage adds24 cases (amended16 plus unchanged8),
+without an account implementation change. This next packet still needs its own CI.
 Real CDN, target capacity, native browser zoom/favicon/autofill/device
 evidence and other local requirements remain open. The checklist records775
 checked/367 unchecked;57 verified/41 partial/six N/A/one deployment-only.
@@ -45,8 +50,8 @@ remain historical; the current working tree is not a completed release gate.
 
 ## Decision
 
-Current620 source fails its exact-source CI gate despite passing bounded local
-image checks. The test-only correction and profile evidence need their own CI
+Source606 passes its exact-source gate and bounded local image checks. The
+subsequent CSS/account packet needs its own CI and configured image checks
 before promotion. This is **not an authorized
 public
 deployment**. Images have not been promoted to a production registry or tested

@@ -38,19 +38,18 @@ unresolved failures or missing evidence.
 
 ### Latest source gate — 2026-10-08
 
-Current620 passes seven [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809)
-and fails smoke/Release. Actual PR merge tree equals HEAD. Backend383,
-frontend560 and full-stack120 pass; smoke231 pass/one reset silent-fill failure/
-12 intentional skips. Minimal test-only enabled-field precondition passes16/16
-scoped cases without retries and still needs its own CI. Last all-nine green b0
-has231 smoke passes plusone flaky reset case/12 skips, not a strict zero-retry gate.
-620 exact configured optimized frontend passes large3MiB API PUT and four real
-API Blob/CSRF/processing/persistence cases; separate shared QA proves MinIO POST
-progress/cancellation and120 ordered live cases. Profile19 units/32 controlled
-native browser cases add evidence, without an implementation change. Section5
+Current606 passes all nine [CI jobs](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955).
+Actual PR merge tree equals HEAD. Backend383, frontend564/42 files, full-stack120
+and smoke264/12 intentional skips pass with zero smoke retries/flaky cases.620's
+silent-fill failure and b0's one flaky result remain recorded.606 exact configured
+optimized frontend passes53 cases:32 controlled profile native,16 auth silent-fill
+and five real API Blob/CSRF/processing/persistence cases; separate shared QA proves
+MinIO POST progress/cancellation and120 ordered live cases. Next working-tree
+selected-tab contrast/tag-target CSS and16 regressions plus24 account native
+cases still need their own exact-source gate. Section5
 large-upload progress is locally checked;775 checked/367 unchecked, verdicts
 remain57 verified/41 partial/six N/A/one deployment-only. Final exact-source CI
-remains required. Details are in dated evidence/checkpoint.
+and remaining local requirements remain required. Details are in dated evidence/checkpoint.
 
 ### Current requirements override — 2026-10-03
 

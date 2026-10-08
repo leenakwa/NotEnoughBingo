@@ -31,9 +31,25 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
 ### Source and exact-source gate
 
 - Branch: `sk/production-readiness`; pushed HEAD:
-  `62066472a28eebe46800e05fba9c59a785f3a726` (upload progress/checkpoint packet).
+  `606ebb6c074b00d3c2b3848b71ad80a3e997320e` (profile/auth test/evidence packet).
 - Draft PR: https://github.com/leenakwa/NotEnoughBingo/pull/18.
-- Current [CI37718675809](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809)
+- Current [CI37720755955](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955)
+  passes all nine jobs for606: backend383, frontend564/42 files, smoke264 with
+  12 intentional skips and zero flaky/retried cases, full-stack120, foundation,
+  secrets, both images and Release. Configured immutable606 image builds in
+  /tmp/neb-rollout-build-prepared/candidate-606ebb6/frontend; log
+  /tmp/neb-frontend-606ebb6-production-build-oct08.log. Actual image ID
+  sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6.
+  Candidate18584 runs this image with matching release, zero app mounts and
+  health200. Optimized controlled profile32/auth silent-fill16 cases pass48/48,
+  retries zero; /tmp/neb-frontend-606ebb6-native-browser-oct08.log. Original
+  app-only Mac keyboard preference restored/verified. Real API upload5-case
+  repeat passes: large1 plus four engine API Blob/CSRF/processing cases. Total53
+  optimized cases, retries zero. Sanitized report
+  artifacts/frontend-candidate-606ebb6-2026-10-08.json; this gate covers606 only,
+  not the next working-tree CSS/account evidence. Actual merge e258f05903ac9dab215f82ca6e52b9c246636533
+  shares HEAD tree a620355dc1e77f3f241fe976654a40525be71638, verified through API.
+- Previous [CI37718675809](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809)
   completes with seven jobs passing and smoke/Release failing. Backend383,
   frontend560/42 files and full-stack120 pass; smoke231 pass/one reset silent-fill
   failure/12 intentional skips. Actual merge checkout
@@ -58,7 +74,7 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
   inspector/input locator corrects only the diagnostic runner. App image unchanged.
   Sanitized image/transfer/CI report:
   artifacts/frontend-candidate-6206647-2026-10-08.json.
-- Last all-nine green source remains `b0d3e7e` (previous packet), below.
+- Last all-nine green source is606; historical b0 gate below.
 - [CI37715496152](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37715496152)
   **passes all nine jobs**: backend383, frontend503/40 files, browser smoke231
   plusone flaky reset silent-fill case and12 intentional skips, full-stack119,
@@ -196,15 +212,59 @@ continuation request are unchanged and verified by SHA-256. Continuation SHA-256
 2. **Completed:** stable-source120/120 ordered upload gate,12/12 scoped engine
    cases, genuine slow-storage proof, sanitized artifact, independent reviews,
    commit/push620 and configured optimized-image5/5 cases. Retain all failures.
-3. **Current:** commit reviewed profile evidence and minimal auth test correction.
+3. **Committed/pushed606ebb6:** reviewed profile evidence and minimal auth test correction.
    Integrated Node22 lint/types564 tests/42 files, format/checklist/diff and
    browser/artifact secret scans pass. Browser debugger proves all
    three CI traces and local original5/5 failures assign values while reset input
    is disabled; initialization clears them and no POST occurs. Awaiting each
    filled field enabled passes diagnostic5/5 and final four-profile16/16,
    retries zero. Only auth-forms.spec.ts changes, +3 lines; no app-source fix.
-   Obtain all-nine CI for the resulting exact tree; no retry/limit increases.
+   All-nine CI and53 optimized cases now pass for606; no retry/limit increases.
    User.codex changes remain excluded. No premature readiness claim.
+   Browser debugger then proves selected ProfileCollections tab hover/held-press
+   contrast1.13:1 at320/1710 (normal/focus19.80). Secondary hover lightens the
+   selected background while its text stays white. Worker owns only scoped CSS
+   text-color correction plus a native browser regression; preserve existing
+   hover background, active translation and user shadow/header decisions.
+   Scoped CSS fix and computed-contrast regression are frozen after8/8 cases
+   at320/1710 in four profiles, retries zero. Hover/heldpress17.53:1,
+   normal/focus19.80:1, actual keyboardoutline3px, no overflow/pageerror.
+   Log /tmp/neb-profile-tab-states-reviewed-oct08.log. New account-native-controls
+   worker owns only its browser file;24 email/password/deletion cases pass
+   for native constraints/Tab/FormData normalization/own-endpoint lock. Source
+   audit finds no account implementation bug; credential values are transient,
+   cleared on departure rather than saved to storage. Navigation policy remains
+   an observation to map, not an invented requirement to preserve passwords.
+   Independent coverage review finds no blocker; short padded current-password
+   amendment passes16 affected cases, unchanged deletion8 already pass, all
+   retries zero. Log /tmp/neb-account-native-short-current-reviewed-oct08.log.
+   Root full Node22 lint/types564 tests/42 files pass before that string-only
+   fixture amendment; amended scoped checks pass afterward. Mac setting restored.
+   Editor custom-control Chromium probe2/2 at320/1710 proves format/size/icon
+   controls44px and visible3px focus, native size limits3/10 disabled, upload
+   phase/input disable and no overflow. Tag remove target23.05×20.41px is below
+   project44px target; worker's two-line44px minimum fix and eight-case browser
+   regression pass and are frozen. All profiles measure44×44, longUnicode wraps
+   at320, literal markup remains text, keyboardremoval preserves siblings and
+   does not publish/submit. Scopechecks pass; Mac preference restored. Log
+   /tmp/neb-editor-tag-controls-reviewed-oct08.log. Upload label stays pointer/hoverable during pending, but
+   busy text/status and disabled input are present; duplicate upload not proved.
+   Other custom states still require bounded observations; no blanket section8 pass.
+   Tag fix final8/8 passes, all targets44×44 and320px Unicode wraps, source-frozen.
+   Final integrated root Node22 lint/types564 tests/42 files pass; current dirty source contains only six
+   CSS lines (selected-tab hover/text and tag-button minimums) plus browser evidence.
+   Next root gate: final integrated checks, diff/checklist/secret review, commit
+   selected-tab/tag-button CSS plus their16 regressions and account24 evidence,
+   push existing branch and obtain its exact-source CI/configured image. Keep
+   original prompt/request hashes and all failed/limited observations.
+   Performance evidence audit confirms historical284 RSC aborts exclude context
+   teardown;291 RSC responses all200,284 abort/seven complete,142 fresh/142 warm.
+   Probe lacks request IDs/timestamps/prefetch headers and keeps mutable error
+   arrays, so phase attribution and cause/server cost remain unproved. Next
+   bounded probe: immutable-candidate freshDiscover fixedidle, sanitized request
+   headers/IDs/timing/bytes/cancel flags, separate cleanup bucket, then one actual
+   link navigation and correlated upstream logs. Never hide aborts or call them
+   harmless solely from default prefetch behavior.
 4. Next control observation at320/1710: .format-button, .size-control button,
    .tag-chips button, .card-action, .active-filters > button,
    .download-control > div button, .icon-button, profile-tabs roles,
@@ -236,7 +296,11 @@ Counters: **775 checked /367 unchecked**, **57 verified /41 partial /6 N/A /one
 and real recovery cases. Section59 compatibility bullet is locally proved;
 real CDN remains open. Native200% browser zoom/favicon chrome/autofill/password
 managers/physical devices are capability gaps; viewport/DPR/page-only evidence
-cannot close them. Goal remains active until all possible local work is done.
+cannot close them. Cua Chrome DOM is available and temporary Explore tab opens;
+native Chrome app AX reads time out twice. Native tab Cmd+Equal returns without
+changing DPR2/viewport1728×996;200% zoom remains unverified. No viewport substitute
+or app setting change; temporary tab closed. Goal remains active until all possible
+local work is done.
 
 ## Historical starting state
 
