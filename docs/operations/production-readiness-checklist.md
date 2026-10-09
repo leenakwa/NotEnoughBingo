@@ -59,7 +59,7 @@ Verify all of the following:
 - [x] loading states exist;
 - [x] empty states exist;
 - [x] success states exist;
-- [x] errors are understandable;
+- [ ] errors are understandable;
 - [x] submit buttons have loading/disabled states;
 - [ ] duplicate submission is prevented;
 - [x] browser Back/Forward work correctly;

@@ -5,7 +5,22 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest completed committed-source gate: exact
+Latest attempted source gate: exact
+`d515b792ab606a432b929f88e73077eef2e109e3`
+[CI37878186145](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37878186145)
+finishes FAILURE: ten jobs succeed, full-stack and Release fail. Backend469 and
+Node22.23.3 frontend666/46 files pass, including all49 editor cases. Browser
+reports retain590 expected,12 skipped, one unexpected and zero flaky cases.
+The new export test fails at retry0 before recovery assertions: its global alert
+locator matches the editor error and Next route announcer. Original trace proves
+backend202 and injected503, not successful same-job retry/download. The working-
+tree fix scopes both alert assertions to the editor main region; lint, formatting,
+discovery and independent review pass, actual execution awaits the next source.
+Root verifies46 retained hashes, nine fresh artifact digests and source/merge
+`d9507156b1b2b2ee4fc805107d72297e68f7554d` tree
+`05c30f51fb78e7e70755e81337c9c555e4758e5d`. Failed artifacts remain retained.
+
+Latest successful completed committed-source gate: exact
 `bb4ae862cb7bcdd73b20680b9be98063242626a9`
 [CI37875904112](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37875904112)
 finishes SUCCESS with all12 jobs:469 backend,655 frontend/46 files and590 expected
@@ -29,8 +44,9 @@ NODE_ENV=production, environment=staging, embedded mergec271 and the synthetic
 `https://ci.not-enough-bingo.invalid` origin. The step succeeds after the script's
 required removal of its uniquely named container; no independent post-removal
 listing is retained. This closes URL bullet994 and restores section91 Verified
-before deployment. Current822 checked/320 unchecked,89 N/A/231 applicable and
-58 Verified/40 Partial totals remain; ID27 stays open and section1 Partial.
+before deployment. Current821 checked/321 unchecked,89 N/A/232 applicable and
+58 Verified/40 Partial totals apply after reopening unclear-error item25.
+Items25 and27 stay open; section1 remains Partial.
 
 This gate includes the metadata helper/probe, asset labels, installed-Gunicorn
 OSV guard and prior preview/recovery/Gunicorn/navigation changes. The actual CI
@@ -40,12 +56,12 @@ is not. The ordinary full PyPI audit still explicitly skips Gunicorn26.2.2.
 This scoped known-advisory result does not guarantee absence of undisclosed
 vulnerabilities.
 
-Committedbb4 still creates duplicate export jobs after an uncertain accepted
-POST or exhausted polling; the reviewed working-tree correction has49 passing
-host Node24 editor cases and three original before-fix failures. Its next-source
-Node22 gate and accepted-response live recovery case remain pending. The live
-case is discovered only, with its draft-endpoint predicate corrected and source-reviewed; no runtime
-execution is claimed. These export changes are outsidebb4 CI. Cached local
+Committedbb4 creates duplicate export jobs after an uncertain accepted POST or
+exhausted polling. Correctiond515b79 retains keys/resumes known jobs;49 editor
+cases pass on host Node24 and actual CI Node22.23.3, with three original before-
+fix failures retained. Its new live test fails on the alert locator before the
+retry/download assertions; the corrected fixture still awaits actual execution.
+These export changes are outside the completed successfulbb4 gate. Cached local
 frontend ec69223/backend b6aabca/worker a3 and keepalive0 observations retain their
 separate scopes. The isolated metadata probe uses a loopback backend alias and
 establishes rendered heads, not functional backend availability, current
@@ -100,8 +116,8 @@ post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
 
-Currentbb4 external GitGuardian check113644315650 remains FAILURE with the same
-six occurrences/four incidents, now132 commits; historical605/991/e8/84/188 metadata is retained.
+Currentd515 external GitGuardian check113651482045 remains FAILURE with the same
+six occurrences/four incidents, now133 commits; historicalbb4/605/991/e8/84/188 metadata is retained.
 
 The [committed preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
 removes only unused position/image_asset_id fields from feed/Explore SSR preview
@@ -121,12 +137,12 @@ original zoom requirement with guest/authenticated views and readable keyboard
 focus on exact44 frontend/cachedb6 backend, supplemented by source-equivalent
 historical observations. Owned fixtures are guardedly soft-deleted, own session
 revoked, and baseline profile/ten-session IDs preserved; revisions/analytics remain.
-Section24 is Verified before deployment; checklist822/320 and section totals
+Section24 is Verified before deployment; checklist821/321 and section totals
 58 Verified/40 Partial/6 N/A/1 deployment-only follow from the original bullets.
-Of320 unchecked bullets,89 are release-scoped N/A:85 in the six N/A sections
+Of321 unchecked bullets,89 are release-scoped N/A:85 in the six N/A sections
 plus four absent-feature conditions (product WebSockets, invitation/receipt
 emails and payment-webhook alerts), confirmed by source inventory and independent
-review.231 applicable unchecked bullets remain. Four implemented email-type
+review.232 applicable unchecked bullets remain. Four implemented email-type
 functional checks and the two local restore-procedure checks have separately
 reviewed evidence; applicability reconciliation itself changes no checkbox or
 section verdict.

@@ -9263,3 +9263,98 @@ export live case is discovered only, with its draft-endpoint predicate corrected
 not an executed result. Current totals are822 checked/320 unchecked,89 N/A/231
 applicable and58 Verified/40 Partial, with these distinct item states. Public
 rollout and current Django/Gunicorn recovery/privacy transport remain separate.
+
+
+## 2026-10-09 — stale player revision error and production auth-cache probe preparation
+
+A bounded current-source trace found a normal stale-tab error: a signed-in player
+views R1 without persisted progress, the author publishes R2, and selecting an
+R1 cell returns400 under details.revision_id. The player formatter exposes
+`revision id: Only the current or already-started revision can be updated.`
+This reopens understandable-error item25; the user was asked to choose clearer
+updated-bingo/refresh copy or retaining the server text without its technical
+prefix. No frontend copy or behavior was changed while that choice is pending.
+
+The new parameterized API regression proves GET returns empty version0 without
+a PlayProgress row, then obsolete-R1 PUT400 creates no row. Its contrasting
+already-started-R1 branch remains writable after R2, returning200, persisted
+selections, version2 and stale=true. All five tests in the affected plays file
+pass, with two independently captured request/response cases, Ruff and diff
+checks. Independent static review passes. This is host Python3.14.5/SQLite with
+Django5.2.16/DRF3.16.1, differing from declared pins; PostgreSQL/current-source CI
+is pending. Original capture and source hashes are retained privately in
+`evidence-stale-player-revision-d515-2026-10-09`; root verifies test hash
+`da766569601ddf36b8d4921f654d1e0498807af0dcfba6cac906ae35390746e7`.
+
+A separate working-tree CI gate starts the immutable optimized backend image
+with its unchanged entrypoint/Gunicorn command, production settings and synthetic
+probe credentials. It uses its own uniquely named512MiB/one-CPU container, no
+network or published ports, and real in-container HTTP. Anonymous auth/me401,
+CSRF-rejected login403 and unmatched auth404 require private/no-store without
+public; unmatched non-auth404 checks prefix scope. Liveness and response bytes
+are bounded; success is emitted only after required removal of its own container.
+The report distinguishes image identity from its supplied release environment;
+embedded backend release, successful auth, DB/Redis, ingress and shared caches
+remain unverified. No local Docker execution or restart occurred.
+
+Host compilation, project Ruff/format, patched lifecycle/failure-parser checks
+and all four assertions against real host Django test responses pass. These
+fixtures use test settings/APIClient and do not establish optimized HTTP runtime.
+Initial format/project-lint failures and DisallowedHost fixture failure are
+retained. Root identified and corrected an initial unexecuted vanilla-DRF-detail
+assumption to the project's actual error envelope; host401/403 responses confirm
+its codes/message/challenge/cache contract. Actionlint was unavailable locally.
+The retained host proof is explicitly tool-output excerpts/summaries, not full
+runner logs, in `evidence-backend-auth-cache-gate-d515-2026-10-09`. Independent
+static review passes script hash
+`1cad03739339d60c7d3e3fb7cef77fb55e9242a8d0775f7a7e13db50e386b08e`.
+Actual optimized-image execution awaits the next source gate.
+
+At this preparation point counts are821 checked/321 unchecked,89 release-scoped
+N/A/232 applicable;58 Verified/40 Partial. Items25 and27 remain open. CI for
+committedd515b79 is still running, with its Node22.23.3 frontend666/46 files and
+all49 editor cases already passing; no final run/live-export result is claimed.
+
+
+## 2026-10-09 — failedd515b79 export recovery fixture gate
+
+Exact source `d515b792ab606a432b929f88e73077eef2e109e3`,
+[CI37878186145](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37878186145),
+finishes FAILURE with ten successful jobs and failed full-stack/Release. Sole
+watch82225 exits1; no rerun, restart or manual dispatch occurs. Backend469/cache16
+and Node22.23.3 frontend666/46 files, including49 editor cases, pass. Browser
+reports contain590 expected,12 skipped, one unexpected and zero flaky cases.
+Four smoke profiles and both production images pass.
+
+The new accepted-response export scenario fails once at retry0/1530ms on
+`live-product-flows.spec.ts:2317:41`. Its global getByRole(alert) matches both
+the actual editor error and Next's empty route announcer. Original trace confirms
+real export POST202 then injected503; second request, key/job identity and PNG
+download assertions are not reached. Full-stack reports126 passed/one failed;
+compression/proxy recovery steps are skipped, while failure capture, artifact
+upload and service cleanup succeed. This is a test locator defect; it does not
+prove successful export recovery or establish another product defect.
+
+The scoped working-tree fixture uses the editor main region for both the initial
+error and final disappearance assertions. Expected key/job, downloaded PNG
+bytes, draft writes, page errors, timeouts and retries are unchanged. Target
+ESLint, Prettier, diff checks and discovery of one case pass; independent static
+review passes. Discovery is not execution. Item27 remains open; item25's stale
+player message choice is still pending. Counts821/321,89 N/A/232 applicable and
+58 Verified/40 Partial remain unchanged.
+
+Original logs and all nine artifacts, including failure screenshot/video/error
+context/trace, are sealed privately in `evidence-d515b79-2026-10-09/ci`. Archive
+integrity checks pass. Root independently verifies46 manifest file hashes and
+nine fresh artifact API digests against streamed bytes, plus fresh source/merge
+Git API identity: tested merge `d9507156b1b2b2ee4fc805107d72297e68f7554d`
+and source share tree `05c30f51fb78e7e70755e81337c9c555e4758e5d`.
+Root's separate private verification does not claim to rerun archive CRC checks.
+
+Optimized metadata again passes eight200 heads/128 assertions on image
+`sha256:4199ef1b77cc42195c1aef8c4e825716eb341eb70c70508e12db7831b3d5ba03`,
+production Node/staging environment and embedded merged950 release. Installed
+Gunicorn26.2.2 OSV guard passes. New backend-cache HTTP probe and stale-revision
+API regressions are outside this committed source and require the next gate.
+External GitGuardian113651482045 remains FAILURE: six occurrences/four incidents
+over133 commits. Provider spans, reuse and disposition remain unresolved.

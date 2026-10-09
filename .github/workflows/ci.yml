@@ -522,6 +522,17 @@ jobs:
             exit 1
           fi
 
+      - name: Verify backend anonymous auth rejection and cache headers over HTTP
+        if: ${{ matrix.name == 'backend' }}
+        timeout-minutes: 3
+        env:
+          IMAGE_REF: not-enough-bingo-backend:${{ github.sha }}
+          EXPECTED_RELEASE: ${{ github.sha }}
+        run: |
+          python3 infra/scripts/verify-backend-auth-cache.py \
+            --image "$IMAGE_REF" \
+            --expected-release "$EXPECTED_RELEASE"
+
       - name: Verify embedded frontend release and reject runtime relabeling
         if: ${{ matrix.name == 'frontend' }}
         env:

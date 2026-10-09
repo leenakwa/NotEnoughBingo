@@ -39,7 +39,22 @@ unresolved failures or missing evidence.
 
 ### Latest observed source gate — 2026-10-09
 
-Latest completed committed-source gate: exact
+Latest attempted source gate: exact
+`d515b792ab606a432b929f88e73077eef2e109e3`
+[CI37878186145](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37878186145)
+finishes FAILURE: ten jobs succeed, full-stack and Release fail. Backend469 and
+Node22.23.3 frontend666/46 files pass, including all49 editor cases. Browser
+reports retain590 expected,12 skipped, one unexpected and zero flaky cases.
+The new export test fails at retry0 before recovery assertions: its global alert
+locator matches the editor error and Next route announcer. Original trace proves
+backend202 and injected503, not successful same-job retry/download. The working-
+tree fix scopes both alert assertions to the editor main region; lint, formatting,
+discovery and independent review pass, actual execution awaits the next source.
+Root verifies46 retained hashes, nine fresh artifact digests and source/merge
+`d9507156b1b2b2ee4fc805107d72297e68f7554d` tree
+`05c30f51fb78e7e70755e81337c9c555e4758e5d`. Failed artifacts remain retained.
+
+Latest successful completed committed-source gate: exact
 `bb4ae862cb7bcdd73b20680b9be98063242626a9`
 [CI37875904112](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37875904112)
 finishes SUCCESS with all12 jobs:469 backend,655 frontend/46 files and590 expected
@@ -63,8 +78,9 @@ NODE_ENV=production, environment=staging, embedded mergec271 and the synthetic
 `https://ci.not-enough-bingo.invalid` origin. The step succeeds after the script's
 required removal of its uniquely named container; no independent post-removal
 listing is retained. This closes URL bullet994 and restores section91 Verified
-before deployment. Current822 checked/320 unchecked,89 N/A/231 applicable and
-58 Verified/40 Partial totals remain; ID27 stays open and section1 Partial.
+before deployment. Current821 checked/321 unchecked,89 N/A/232 applicable and
+58 Verified/40 Partial totals apply after reopening unclear-error item25.
+Items25 and27 stay open; section1 remains Partial.
 
 This gate includes the metadata helper/probe, asset labels, installed-Gunicorn
 OSV guard and prior preview/recovery/Gunicorn/navigation changes. The actual CI
@@ -74,12 +90,12 @@ is not. The ordinary full PyPI audit still explicitly skips Gunicorn26.2.2.
 This scoped known-advisory result does not guarantee absence of undisclosed
 vulnerabilities.
 
-Committedbb4 still creates duplicate export jobs after an uncertain accepted
-POST or exhausted polling; the reviewed working-tree correction has49 passing
-host Node24 editor cases and three original before-fix failures. Its next-source
-Node22 gate and accepted-response live recovery case remain pending. The live
-case is discovered only, with its draft-endpoint predicate corrected and source-reviewed; no runtime
-execution is claimed. These export changes are outsidebb4 CI. Cached local
+Committedbb4 creates duplicate export jobs after an uncertain accepted POST or
+exhausted polling. Correctiond515b79 retains keys/resumes known jobs;49 editor
+cases pass on host Node24 and actual CI Node22.23.3, with three original before-
+fix failures retained. Its new live test fails on the alert locator before the
+retry/download assertions; the corrected fixture still awaits actual execution.
+These export changes are outside the completed successfulbb4 gate. Cached local
 frontend ec69223/backend b6aabca/worker a3 and keepalive0 observations retain their
 separate scopes. The isolated metadata probe uses a loopback backend alias and
 establishes rendered heads, not functional backend availability, current
@@ -134,8 +150,8 @@ post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
 
-Currentbb4 external GitGuardian check113644315650 remains FAILURE with the same
-six occurrences/four incidents, now132 commits; historical605/991/e8/84/188 metadata is retained.
+Currentd515 external GitGuardian check113651482045 remains FAILURE with the same
+six occurrences/four incidents, now133 commits; historicalbb4/605/991/e8/84/188 metadata is retained.
 
 The [committed preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
 removes only unused position/image_asset_id fields from feed/Explore SSR preview
@@ -285,11 +301,11 @@ no real writes. Corrected WebKit keyboard opening returns report focus; a separa
 pointer launch leaves BODY focused, with its desired policy undecided. Earlier
 auth/profile/account/editor packets retain their own source scope.
 
-Current **822 checked /320 unchecked**. Of those320,89 are release-scoped N/A:
+Current **821 checked /321 unchecked**. Of those321,89 are release-scoped N/A:
 85 belong to the six explicitly N/A sections, and four conditional requirements
 cover absent product WebSockets, invitation/receipt emails and payment-webhook
 alerts. Source inventory and independent review support these exclusions;
-231 are applicable unchecked bullets. The42 final
+232 are applicable unchecked bullets. The42 final
 execution bullets overlap earlier checks, so these counts are not independent
 tasks or a readiness percentage. The first nine section105 actions have actual
 local CI/runtime/search/configuration evidence; the deployment sequence and
@@ -370,7 +386,7 @@ original prompt remains unchanged.
 
 ## Section verdicts
 
-- [ ] 1. BASIC LAUNCH DETAILS — Partial: prior launch, session and configuration observations retain their scopes. Current committed editor export retries use a fresh key after an accepted POST response is lost or polling times out, creating duplicate backend jobs. The working-tree fix retains uncertain keys and resumes known jobs, with49 passing host editor cases and independent correctness/privacy reviews; exact-source browser/Node22 verification remains pending.
+- [ ] 1. BASIC LAUNCH DETAILS — Partial: prior launch/session/configuration observations retain their scopes. Committedd515b79 retains uncertain export keys and resumes known jobs;49 editor cases pass under Node22, but its live fixture fails before retry/download assertions; the scoped alert correction awaits the next gate. A fresh player on obsolete R1 after an author publishes R2 receives a technical revision rejection; API reproduction and continued started-R1 behavior pass locally, while understandable error copy awaits the user. Items25 and27 remain open.
 - [x] 2. FIRST-SCREEN / PRODUCT CLARITY — Verified before deployment: a guest can see what to do, the primary Find a bingo action and secondary Create action, free guest play and signup requirement; at 320×667 both actions fit entirely in the first viewport in that dated observation. This is a manual browser/heuristic check, not an external user-comprehension study.
 - [x] 3. NAVIGATION — Verified before deployment: branded home and header/footer links, active-route labels, Back/Forward with profile recovery, direct/new-tab/reloaded routes and URL-restored Explore/share state passed. Dialog/disclosure Escape/outside and sticky-anchor behavior have live evidence. Navigation is always visible; no mobile menu is present.
 - [x] 4. UI STATES — Verified locally: mapped required and optional reads cover initial/loading/loaded/empty/partial/error/offline/retry/permission/session states. Auth/header/catalog, editor publication lookup, player author/progress/comments, profile viewer/activity, account sessions/preferences/export and social surfaces retain independent usable content and protect request ownership. The final two composition gaps now pass eight cases in four engines: profile activity Drafts503 with retained profile/email edits and scoped real200 retry without identity reload; accepted real export202 followed by exact status503, retained profile/email/password edits, available unrelated actions and recovery to the same ready job. Their four accompanying reset-reuse cases also pass. Full current source CI remains separate; native form/control requirements remain in sections7/8.

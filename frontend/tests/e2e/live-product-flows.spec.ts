@@ -2313,8 +2313,9 @@ test("published PNG retry recovers an accepted export response without duplicati
   );
 
   const button = page.getByRole("button", { name: "Published PNG", exact: true });
+  const editorAlert = page.getByRole("main").getByRole("alert");
   await button.click();
-  await expect(page.getByRole("alert")).toContainText(message);
+  await expect(editorAlert).toContainText(message);
   await expect(button).toBeEnabled();
   expect(attempts).toHaveLength(1);
   const downloadPromise = page.waitForEvent("download", { timeout: 60_000 });
@@ -2325,7 +2326,7 @@ test("published PNG retry recovers an accepted export response without duplicati
   const bytes = readFileSync((await download.path())!);
   expect(bytes.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   await expect(button).toBeEnabled();
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(editorAlert).toHaveCount(0);
   expect(attempts).toHaveLength(2);
   expect(attempts[1]).toEqual(attempts[0]);
   expect(draftWrites).toBe(0);
