@@ -8,6 +8,8 @@ from django.test import Client
 from django.urls import path
 from django.utils import timezone
 
+from apps.accounts.services import issue_email_verification
+
 pytestmark = pytest.mark.django_db
 
 
@@ -24,6 +26,66 @@ urlpatterns = [
     path("api/v1/cache-example-not-modified/", _cacheable_response, {"status": 304}),
     path("static/cache-example.css", _cacheable_response),
 ]
+
+
+def test_anonymous_csrf_response_is_not_cacheable() -> None:
+    client = Client(enforce_csrf_checks=True)
+
+    response = client.get("/api/v1/auth/csrf/")
+
+    assert response.status_code == 200
+    assert response.json()["csrf"]
+    assert "neb_csrf" in response.cookies
+    assert response["Cache-Control"] == "private, no-store"
+    assert "Cookie" in response["Vary"]
+
+
+def test_anonymous_email_verification_success_and_reused_token_are_not_cacheable(
+    user_factory,
+) -> None:
+    user = user_factory()
+    token = issue_email_verification(user)
+    assert token is not None
+    client = Client(enforce_csrf_checks=True)
+    csrf = client.get("/api/v1/auth/csrf/").json()["csrf"]
+
+    response = client.post(
+        "/api/v1/auth/verify-email/",
+        {"token": token},
+        content_type="application/json",
+        HTTP_X_CSRFTOKEN=csrf,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["email"] == user.email
+    assert response["Cache-Control"] == "private, no-store"
+    assert client.get("/api/v1/auth/session/").json()["user"] is None
+
+    reused_token_response = client.post(
+        "/api/v1/auth/verify-email/",
+        {"token": token},
+        content_type="application/json",
+        HTTP_X_CSRFTOKEN=csrf,
+    )
+
+    assert reused_token_response.status_code == 400
+    assert "token" in reused_token_response.json()["error"]["details"]
+    assert reused_token_response["Cache-Control"] == "private, no-store"
+
+
+def test_anonymous_password_recovery_response_is_not_cacheable() -> None:
+    client = Client(enforce_csrf_checks=True)
+    csrf = client.get("/api/v1/auth/csrf/").json()["csrf"]
+
+    response = client.post(
+        "/api/v1/auth/password-reset/",
+        {"email": "unknown@example.test"},
+        content_type="application/json",
+        HTTP_X_CSRFTOKEN=csrf,
+    )
+
+    assert response.status_code == 202
+    assert response["Cache-Control"] == "private, no-store"
 
 
 @pytest.mark.parametrize(

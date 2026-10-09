@@ -14,7 +14,7 @@ request_logger = logging.getLogger("app.request")
 
 
 class PrivateApiCacheMiddleware:
-    """Prevent storage of API responses associated with an authenticated session."""
+    """Prevent storage of auth responses and authenticated API responses."""
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
@@ -26,7 +26,11 @@ class PrivateApiCacheMiddleware:
         response = self.get_response(request)
         # Logout and rejected DRF authentication can clear request.user; DRF can
         # also restore a restricted pending-deletion session after Django auth.
-        if authenticated or (getattr(request, "user", None) and request.user.is_authenticated):
+        if (
+            request.path.startswith("/api/v1/auth/")
+            or authenticated
+            or (getattr(request, "user", None) and request.user.is_authenticated)
+        ):
             patch_cache_control(response, private=True, no_store=True)
         return response
 

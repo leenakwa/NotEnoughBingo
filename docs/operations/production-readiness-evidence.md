@@ -8701,3 +8701,115 @@ changes; its output/diff is preserved privately and none is committed. The
 `openapi-snapshot-fix.json` and regenerated check file retain commands, results
 and local dependency-version limits in the email-boundary packet. No behavior
 changes or broader test repeats are introduced by this schema correction.
+
+### 2026-10-09 — Completed188c0d9 source and image gate
+
+Exact `188c0d9ba82f58a529b48d77359ac51878ff42bc`
+[CI37864523562](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37864523562)
+finishes SUCCESS with all12 jobs:466 backend,625 frontend/45 files,452 smoke with12
+intentional skips and125 full-stack cases. All577 reported passed browser cases
+have zero reported flakes/errors. Chromium passes116 smoke cases; each remaining
+profile passes112 with four skips. The backend includes six email-boundary and14
+production-default startup cases. Both images and Release pass; the actual built
+backend image rejects unsafe startup without a settings override as intended.
+This resolves the earlier pending consolidated email/startup/schema source gate.
+
+Source188 and logged tested merge `a9d5a2671587505727baeb1a7801037dd1e4cd6f`
+share full tree `b4a10211866eb496ce1155c280b14f816d6807b4`. Root verifies26 retained
+file hashes and all nine original artifact API digests; original logs, API metadata
+and archive-integrity results remain privately in `evidence-188c0d9-2026-10-09/ci/`.
+This is CI case/image evidence, not raw browser transport or real deployment proof.
+Subsequent working-tree auth-cache and documentation changes are outside the gate.
+
+Historical39 run37864190158 finishes CANCELLED after its backend schema failure:
+four browser jobs are cancelled, full-stack/images skipped and Release failed.
+Its original evidence and two-constraint correction remain recorded above.
+GitGuardian check113607951080 on188 remains FAILURE with the same six occurrence
+IDs and four incident IDs, now across127 commits. The repository secret scan passes;
+provider spans, historical external use and vendor disposition remain unresolved.
+
+### 2026-10-09 — Real recovery transport and anonymous auth cache gap
+
+The private `evidence-successful-recovery-transport-39-2026-10-09/` packet is named
+for its starting investigation; provenance records sourceHEAD188, cached frontend
+ec69223/backend b6aabca/worker a3 and the existing keepalive0 command. Relevant
+privacy source comparisons retain the serializer maximum-length difference and
+worker differences; this is not an exact188 optimized stack. All40 packet file
+hashes verify. Fresh owned headless contexts use actual registration202,
+verification200, initial login200, reset request202/confirm204 and email-change
+request202/confirm204 with real local email links. Emitted localhost18580 links
+are rebased to candidate18584; actual destination routing and external mail-client
+Referer behavior are untested. Earlier collector/navigation failures remain retained.
+
+The first post-reset login returns500 at00:26:05.248Z, with targeted frontend
+`read ECONNRESET` and an empty selected backend log window. It is retained as a
+failure. Pre-retry state proves zero active owned sessions; exactly one authorized
+retry in a fresh context returns200 at00:28:54.253Z and permits the remaining
+email-change flow. Neither retry nor later success identifies the original cause.
+
+Registration waiting UI carries email in `/verify-email?email=…`; four observed
+same-origin Referer headers expose that synthetic contact value: session GET,
+icon GET and two forgot-password RSC prefetches. This is a positive local contact
+leak observation; the email-query UI choice remains pending. Successful token
+verification/reset/email-change documents have no-referrer and private/no-store
+headers; their expected initial HTML contains the issued link values and success
+removes query parameters. No literal known credential/token/password/session
+Referer match is observed in the captured scope. Cookie/security-header completeness,
+RSC bodies, unknown-secret absence, target telemetry and production are unverified.
+
+Anonymous verification POST200 returns the owned email with no explicit
+Cache-Control on the cached backend. No stored response or exploitable cache is
+proven. Guest and authenticated different-owner profile/history/share projections
+have no captured known raw/encoded credential match; own authenticated reads remain
+private/no-store. These bounded known-value scans do not establish broad privacy.
+Guarded standard deletion removes owned sessions/verification rows and leaves the
+owned anonymized soft-deleted user/completed audit record and owned Mailpit mail.
+Baseline author10/player2 active sessions persist. Post-cleanup session is guest,
+me401 and owned profile404. Shared services were not restarted; baseline fixture
+user and active-session counts are unchanged. Browsing may advance analytics.
+
+A subsequent working-tree change to `backend/apps/common/middleware.py` applies
+existing private/no-store policy to every `/api/v1/auth/` response regardless of
+session identity. Three integrated regressions in `test_private_api_cache.py`
+cover anonymous CSRF, actual issued verification success/reused-token400 and
+password-recovery202; the full focused file passes16 SQLite tests in1.97s. Scoped
+security review, Ruff/format and diff checks pass. Root independently repeats16
+SQLite cases in2.22s; its first attempt resolves unavailable host `postgres` and
+ends with16 setup errors before any test body executes, then succeeds with explicit
+in-memory SQLite. Python3.14.5/Django5.2.16/DRF3.16.1/pytest8.4.2 differ from
+locked versions. Private evidence is `evidence-anonymous-auth-cache-188-2026-10-09.txt`.
+Exact188 CI, optimized browser runtime and pinned dependencies do not cover this
+patch. No checkbox/count changes follow; sections59/76 and expired-links ID569
+remain open.
+
+### 2026-10-09 — Single post-reset login and bounded keepalive0 TCP observations
+
+`evidence-current-keepalive0-tcp-188-2026-10-09/` retains ten anonymous session GETs:
+eight through the frontend and two direct backend, all401 with complete responses
+and Connection close. Each of eight frontend upstream tuples has one fresh SYN,
+one unique request payload segment and FIN in each direction; no RST or matching
+proxy error occurs. Ten manifest file hashes verify. This GET-only observation
+cannot explain the earlier login POST500 or measure frequency, throughput or SLOs.
+
+A later unchanged-runtime browser packet intentionally opens the post-reset login
+modal, navigates directly to login and sends exactly one new post-reset login POST.
+It returns200 at00:44:01.228Z; the prior500 remains unresolved. Native browser CDP
+records113 canceled requests, including navigation-prefetch and reset requests;
+this is not a clean-network claim. Console is empty. The packet has12 verified
+manifest hashes in `evidence-one-login-browser-188-2026-10-09/`.
+
+The paired `evidence-one-login-tcp-188-2026-10-09/` metadata-only observer retains
+33 fresh frontend→backend tuples,33 SYNs/unique request payload segments,33 FINs
+in each direction and zeroRST; zero kernel packet drops are reported. One tuple
+fits the final-login timing window, but no HTTP payload/path is parsed or stored:
+association is timing correlation. All13 TCP manifest hashes verify. Across120
+one-second worker snapshots, PID/start-tick state is stable; short-lived turnover
+cannot be excluded and WARNING level suppresses INFO lifecycle logs. Frontend and
+backend container IDs/start times remain unchanged with zero restarts; owned
+observer is absent after cleanup.
+
+Retrospective present-process start-tick mapping places worker1224 start near
+00:26:05.617Z, shortly after the original500. This is a temporal clue only; prior
+worker assignment, replacement reason and original request ownership are absent.
+The original500 cause is UNKNOWN. No source/config/runtime change, retry in this
+new flow, frequency estimate, or production transport certification follows.
