@@ -6,22 +6,37 @@ final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
 Latest completed committed-source gate: exact
-`84b5b875acf74926cc42545cdf25e8840586ef6e`
-[CI37867107702](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37867107702)
-finishes SUCCESS with all12 jobs:469 backend,625 frontend/45 files,452 smoke/12
-intentional skips and125 full-stack cases; all577 reported passed browser cases
-have zero reported unexpected or flaky cases. The locked backend gate includes all16
-auth-cache cases, six email-boundary and14 production-startup cases. Both production
-images and Release pass, including the actual backend-image default-settings
-unsafe-startup rejection check. Source84 and tested merge
-`2405e2c7a15b41d12f6072d31104ff36cf13ecc4` share full tree
-`609dd617f5feac464420e282f30a610b9ed3cc10`. Root independently verifies both
-Git API trees,35 retained CI file hashes and all nine fresh artifact API digests
-against actual bytes; archive integrity passes.
-This gate includes the anonymous-auth cache correction and prior email/startup/
-schema changes. It excludes the subsequent working-tree preview projection and
-documentation reconciliation. Cached local frontend ec69223/backend b6aabca/worker
-a3 and keepalive0 transport observations retain their separate scopes. See the
+`e8d9e58be7d4d2069e93f1048be35d2e99802c47`
+[CI37868923503](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37868923503)
+finishes SUCCESS with all12 jobs:469 backend,632 frontend/46 files and125 full-stack
+cases. Browser reports contain576 expected passes, one WebKit flaky case and12
+intentional skips, with zero unexpected cases. The WebKit header test initially
+fails while the Trending RSC request is still pending and the browser remains on
+Discover at the five-second heading assertion; retry1 passes. Independent trace
+review confirms that boundary, but does not prove the underlying server delay.
+The subsequent test explicitly awaits the route URL before unchanged heading/
+scroll/shadow assertions; exact-source runtime verification remains pending.
+This historical browser gate retains its flaky result. The locked backend includes all16 auth-cache,
+six email-boundary and14 production-startup cases. Both production images and
+Release pass, including the backend-image default-settings unsafe-startup check.
+Sourcee8 and logged tested merge `43d44dd6b6370b88ddc1fbfe8703a76ebc684155`
+share full tree `6896a30e573f4389115deadcc84868dcde71e61d`. Root independently
+verifies both Git API trees,41 retained CI file hashes and all nine fresh artifact
+API digests against actual bytes; archive integrity passes. See the
+[datede8 gate](production-readiness-evidence.md#2026-10-09--completede8d9e58-source-and-image-gate).
+
+This gate includes the SSR preview field projection and its seven new cases,
+the anonymous-auth cache correction and prior email/startup/schema changes.
+Subsequent Gunicorn26.2.2 dependency/configuration changes, three recovery
+component tests and header-navigation synchronization require the next exact-source
+gate; they are outside this completed e8 gate. Cached local frontend
+ec69223/backend b6aabca/worker a3 and keepalive0 transport observations retain
+their separate scopes; no actual deployment or current recovery-runtime result
+follows from this CI gate.
+
+Historical84 all12 SUCCESS,469 backend/625 frontend/577 browser passes with no
+reported flakes,35 hashes, nine artifact digests and shared tree
+`609dd617f5feac464420e282f30a610b9ed3cc10` remain retained in the
 [dated84 gate](production-readiness-evidence.md#2026-10-09--completed84b5b87-source-and-image-gate).
 
 Historical188 all12 SUCCESS,466 backend/625 frontend/577 browser cases,26 hashes,
@@ -45,24 +60,26 @@ observes four same-origin registration-email Referer matches and anonymous
 verification200 returning own email without explicit Cache-Control. The email-query
 UI choice remains pending. The later auth-prefix private/no-store fix passes
 16 focused SQLite tests and scoped security review; it is outside exact188 CI.
-Committed84 backend469 now passes under locked dependencies, including all16
-cache cases; optimized-runtime transport remains unverified. A subsequent single
+Committed84 and latest e8 backend469 pass under locked dependencies, including
+all16 cache cases; optimized-runtime transport remains unverified. A subsequent single
 post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
 
-Current84 external GitGuardian check113616329935 remains FAILURE with the same
-six occurrences/four incidents, now128 commits; historical188 metadata is retained.
+Currente8 external GitGuardian check113622182680 remains FAILURE with the same
+six occurrences/four incidents, now129 commits; historical84/188 metadata is retained.
 
-A separate [working-tree preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
+The [committed preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
 removes only unused position/image_asset_id fields from feed/Explore SSR preview
 props. Thirty-six focused server cases, full typecheck, scoped lint/format and
 independent source review pass. Actual source-bound development pages retain the
 raw API content except those fields: normalized JSON34,709→31,642 bytes for five
 boards/77 cells on each route. Narrow/wide layout and first-card navigation pass;
 network capture is unavailable, so no new zero-initial-feed-request claim follows.
-This patch is outside committed84 CI and has no optimized-image, wire/gzip or
-latency proof. No checkbox/count or section verdict changes follow.
+This patch is included in exact e8 CI, including all seven projection cases. Its
+actual development-media observation remains separate; no optimized browser
+runtime, wire/gzip or latency proof follows. No checkbox/count or section verdict
+changes follow.
 
 
 The current representative native Chrome154/macOS200% packet verifies the

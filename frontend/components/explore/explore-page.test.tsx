@@ -52,6 +52,75 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("Explore partial and obsolete responses", () => {
+  it("retries the failed filtered page without restoring stale results", async () => {
+    mocks.query =
+      "search=travel&author=sample&tags=holiday,year&languages=en&ordering=newest&page=2";
+    const initial = {
+      ...page([{ id: "old", title: "Previous page results" } as BingoSummary]),
+      next: "/explore?page=3",
+      previous: "/explore?page=1",
+    };
+    let rejectPage!: (reason: unknown) => void;
+    let resolveRetry!: (value: Page<BingoSummary>) => void;
+    mocks.explore.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectPage = reject;
+      }),
+    );
+    mocks.explore.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRetry = resolve;
+      }),
+    );
+    mocks.replace.mockImplementation((url: string) => {
+      mocks.query = url.split("?")[1] ?? "";
+    });
+    const view = render(<ExplorePage initialResult={initial} />);
+    expect(screen.getByText("Previous page results")).toBeVisible();
+    expect(screen.getByText("Page 2")).toBeVisible();
+    expect(mocks.explore).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    view.rerender(<ExplorePage />);
+    expect(screen.getByText("Updating results…")).toBeVisible();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    const query = {
+      search: "travel",
+      author: "sample",
+      tags: ["holiday", "year"],
+      languages: ["en"],
+      ordering: "newest",
+      page: 3,
+    };
+    expect(mocks.explore).toHaveBeenCalledExactlyOnceWith(query, expect.any(AbortSignal));
+    await act(async () => rejectPage({ status: 503 }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Catalog unavailable.");
+    expect(screen.queryByText("Previous page results")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Search by title")).toHaveValue("travel");
+    expect(screen.getByLabelText("Author", { exact: true })).toHaveValue("sample");
+    expect(screen.getByLabelText("Tags", { exact: true })).toHaveValue("holiday,year");
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByText("Searching bingos…")).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("Previous page results")).not.toBeInTheDocument();
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenLastCalledWith(query, expect.any(AbortSignal));
+    expect(mocks.replace).toHaveBeenCalledTimes(1);
+    await act(async () =>
+      resolveRetry({
+        ...page([{ id: "current", title: "Recovered page results" } as BingoSummary]),
+        previous: "/explore?page=2",
+      }),
+    );
+    expect(screen.getByText("Recovered page results")).toBeVisible();
+    expect(screen.getByText("Page 3")).toBeVisible();
+    expect(screen.getByText("1 result")).toBeVisible();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("Previous page results")).not.toBeInTheDocument();
+  });
+
   it.each(["success", "error"])(
     "ignores identical pending submits in one event batch and allows a repeat after %s",
     async (outcome) => {

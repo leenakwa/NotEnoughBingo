@@ -70,6 +70,7 @@ test("opaque header stays fixed with a soft shadow after scrolling", async ({ pa
   await page.evaluate(() => scrollTo(0, 250));
   await expect(header).toHaveClass(/\bis-scrolled\b/);
   await header.getByRole("link", { name: "Trending", exact: true }).click();
+  await page.waitForURL("**/trending");
   await expect(page.getByRole("heading", { name: "Trending", exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   await expect(header).toHaveCSS("box-shadow", "none");

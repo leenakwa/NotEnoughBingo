@@ -8816,7 +8816,7 @@ new flow, frequency estimate, or production transport certification follows.
 
 ### 2026-10-09 — Preview SSR unused-field projection
 
-A separate working-tree patch on84b5b875acf74926cc42545cdf25e8840586ef6e introduces
+The preview patch, originally prepared on84b5b875acf74926cc42545cdf25e8840586ef6e, introduces
 `frontend/lib/api/preview-page.ts`, used by `frontend/lib/api/server.ts`, to remove
 only unused `position` and `image_asset_id` from feed/Explore preview cells before
 SSR serialization. Input pages are preserved; public API, detail payloads, preview
@@ -8827,7 +8827,8 @@ existing session and22 existing request-identity cases). Full typecheck, scoped
 lint/Prettier and independent source review pass. The private
 `projection-check-tool-response-summary.json` records final successful tool
 responses and resolved initial fixture/type/lint failures; it is a summary, not
-an original runner log. This is outside committed84 CI.
+an original runner log. It was outside committed84 CI; the subsequent exact e8
+gate below includes the projection and its seven new cases.
 
 Private `evidence-preview-projection-84-2026-10-09/` records actual development
 source-bound runtime18080 on the cached nebqa frontend image, Node22.23.1, not an
@@ -8852,9 +8853,10 @@ response summary; file modes are0600. Root independently verifies both recorded
 source hashes and exact raw-to-SSR equality except those two deleted fields.
 No counts, checkboxes or section closures change.
 
-Committed84 subsequently completes all12 jobs successfully as recorded below;
-the working-tree preview projection remains excluded. Its16 auth-cache cases pass
-under locked dependencies while optimized-runtime transport remains unverified.
+Committed84 subsequently completes all12 jobs successfully as recorded below,
+with the projection excluded. The later exact e8 gate includes it; both gates
+pass16 auth-cache cases under locked dependencies. The source-bound development
+media observation above remains separate from optimized runtime/wire verification.
 
 ### 2026-10-09 — Completed84b5b87 source and image gate
 
@@ -8885,3 +8887,115 @@ remain unresolved. Historical188127-commit failure metadata, its passing12-job
 source gate/26 hashes/nine artifact digests, and39 schema failure/final CANCELLED
 run remain retained. No counts, checkboxes or section verdicts change; applicable
 open items and real deployment requirements remain open.
+
+### 2026-10-09 — Completede8d9e58 source and image gate
+
+Exact `e8d9e58be7d4d2069e93f1048be35d2e99802c47`
+[CI37868923503](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37868923503)
+finishes SUCCESS with all12 jobs:469 backend and632 frontend tests/46 files,
+including all seven new server-preview projection cases. The backend includes
+all16 auth-cache cases and the earlier six email-boundary/14 production-startup
+cases. Both production images and Release pass; the actual backend-image
+production-default unsafe-startup rejection check succeeds.
+
+Original browser reports contain576 expected passes, one flaky case,12 intentional
+skips and zero unexpected cases: Chromium116, Firefox112/mobile112, WebKit111
+expected passes plus one flaky/four skips, and125 full-stack passes. The three
+non-Chromium smoke profiles each skip four cases. WebKit's
+`hover-lift.spec.ts:42` case, "opaque header stays fixed with a soft shadow after
+scrolling", initially fails atline73 because the Trending heading is not found
+within5s after clicking its link. Retry1 passes. The original failed/retry results,
+attachments and detailed case metadata are retained; cause remains unestablished
+for the underlying development delay. Completed trace analysis shows the
+Trending GET with `_rsc` pending without a captured response; the frame still
+shows Discover at5s. Retry navigation takes105ms. This is not proof of a product
+source defect, and a passing CI job does not make this a clean browser report.
+
+Logged tested merge `43d44dd6b6370b88ddc1fbfe8703a76ebc684155` and sourcee8
+share full tree `6896a30e573f4389115deadcc84868dcde71e61d`. Root independently
+fetches both Git API trees and verifies41 manifest file hashes, all nine fresh
+artifact API digests against actual archive bytes, archive integrity and embedded
+report ZIP integrity. Original logs, metadata, reports and validation remain
+privately in `evidence-e8d9e58-2026-10-09/ci/`.
+
+This gate includes the preview field projection and prior auth-cache/email/startup/
+schema changes. The actual source-bound development-media packet above retains
+its local scope; CI reports do not establish optimized browser transport, wire/
+gzip size, latency or real deployment readiness. Subsequent Gunicorn26.2.2,
+recovery and navigation-test changes require the next exact-source gate and are
+outside exact e8 CI. Historical84's12-job success/35 hashes/nine digests and
+188's12-job success/26 hashes/nine digests remain retained unchanged.
+
+External GitGuardian check113622182680 remains FAILURE: the same six occurrences
+and four incidents, now129 commits. Historical84/188 vendor metadata is retained;
+provider spans, external use and disposition remain unresolved. No counts,
+checkboxes or section verdicts change; applicable open items and deployment
+requirements remain open.
+
+### 2026-10-09 — Explore and notification recovery component checks
+
+Three independently reviewed component tests extend the existing Explore and
+notification test files. Explore preserves applied search/author/tags/language/
+ordering and page3 through a held failure and Try again, clears stale results
+after failure, and displays recovered results and pagination. Notifications
+retries the failed page2 with old rows absent and Mark all as read disabled while
+loading. A held mark-all failure leaves both rows unread and unlocks the button;
+resubmission makes both rows read, with one API action call per attempt.
+
+The two affected files pass19 tests: three new and16 existing (Explore11;
+notifications8). Full frontend typecheck and targeted ESLint pass in the existing
+Node22 container; production source is unchanged. Private
+`evidence-recovery-state-tests-e8-2026-10-09/recovery-check-tool-response-summary.json`
+retains exact commands and successful tool responses as a summary, not an original
+runner log. These tests use rejected API promises carrying status503 and resolved
+promises, including void mark-all success; they do not establish actual HTTP,
+browser or deployment recovery. No global UI-state closure, checklist/count change
+or CI verdict follows.
+
+### 2026-10-09 — Forced worker recycle comparison and scoped Gunicorn upgrade
+
+`evidence-worker-recycle-protocol-e8-2026-10-09/` retains a bounded Gunicorn23
+baseline: one gthread worker, two threads, keepalive0 and max_requests3. Its24
+fresh-connection requests return18×200 and6×500 at indices4/8/12/16/20/24;
+24 fresh upstream SYNs correlate with six resets and18 application nonce records.
+`evidence-worker-recycle-fixed-26.2.2-e8-2026-10-09/` repeats the same fixtures,
+client, cached images and process flags using official26.2.2 source extracted
+read-only through PYTHONPATH. All24 requests return200, with24 matching application
+nonces,24 fresh upstream SYNs, zero resets and eight max3 retirements/nine boots.
+Independent review passes; root verifies22 baseline and28 refreshed candidate
+manifest hashes. Both probes stay within combined384MiB limits without OOM;
+owned containers/networks are removed and shared images/runtimes are preserved.
+This tests extracted source, not an installed26.2.2 production image. Upstream
+[gthread PR3440](https://github.com/benoitc/gunicorn/pull/3440) documents improved
+graceful draining; this comparison does not establish the original500's cause
+or a production failure frequency.
+
+The separate prospective patch pins Gunicorn26.2.2 in `backend/pyproject.toml`
+and both locks to the official GitHub `.tar.gz` archive at commit
+`8d98faa9a13d3399a7bea81b5169e5cd72225395`, SHA-256
+`b42561d72978f30c97b65ea1ba54b0171dfe7f1ef8603b13085647cacec2077d`.
+Both README uv compilations pass without --upgrade; unrelated requirements and
+markers are unchanged. Config adds only `control_socket_disable=True` for the
+unused management socket. An isolated macOS Python3.13 Gunicorn-only source build,
+install and pip check pass, including installed version/direct-URL hash checks.
+`evidence-gunicorn26-lock-install-2026-10-09/lock-install-tool-response-summary.json`
+retains these results and the initial uv codeload-URL extension failure followed
+by the authorized same-byte `.tar.gz` redirect. It is a tool-response summary.
+
+A separate cached Python3.13.15 print-config check imports candidate26.2.2 and
+current backend source read-only: control socket disabled, workers3, threads2,
+max_requests1000/jitter100, keepalive0, graceful_timeout30 and timeout60. It starts
+no serving worker. The [official releases](https://gunicorn.org/news/) document
+26.2.1's bounded chunk framing and26.2.2's ASGI connection-close fix; these do not
+replace dependency security auditing. PyPI26.2.2 is absent, and pip-audit coverage
+is unverified. This patch remains outside exact e8 CI; full locked installation,
+production image and deployment verification remain pending. No checklist/count
+change or production-readiness claim follows.
+
+### 2026-10-09 — Trending navigation test synchronization
+
+`frontend/tests/e2e/hover-lift.spec.ts` adds only
+`await page.waitForURL("**/trending")` after the actual Trending click, before
+unchanged heading/scroll/shadow assertions. No timeout, retry, skip or warm-up
+changes are made. Scoped behavioral review, ESLint and Prettier pass; runtime
+verification remains pending in the next exact-source CI gate.
