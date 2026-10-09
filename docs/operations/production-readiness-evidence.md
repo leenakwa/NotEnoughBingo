@@ -8668,3 +8668,36 @@ for valid startup imports; no dependency files changed. Both corrections await
 one consolidated exact-source CI/image gate; no new checklist closure or
 production-ready claim follows. Counts remain823 checked/319 unchecked,89 N/A
 and230 applicable unchecked;59 Verified/39 Partial/6 N/A/1 deployment-only.
+
+### 2026-10-09 — 39fe568 schema comparison failure
+
+[CI37864190158](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37864190158)
+on39fe568756559e579a97e433fc4cb5a95ff88a98 fails backend OpenAPI comparison:
+the generated EmailChangeRequest.new_email and RegisterRequest.email schemas
+add maxLength254, absent from the committed snapshot. Original completed backend
+job113606887030 log is retained privately. Backend tests, full-stack and production
+images are skipped; neither the20 new cases under locked dependencies nor the
+actual-image guard is proven by this run. Foundation, repository secret scan and
+frontend gates pass; remaining jobs were still active at the failure checkpoint.
+Logged tested mergec986a1e731093f32a615e9b2e3c2b40111bd294b and source39 share
+full tree1b0e821c974a427efda123e310b759ca8fb01e27. The original run is retained
+without manual restart. Schema generation and the exact corrected-source gate
+remain pending; earlier local checks retain their separate scope.
+
+External GitGuardian check113606875260 also fails: six occurrences across126
+commits. Sanitized metadata matches exactly the six original occurrence IDs and
+four incident IDs/paths/detectors previously recorded for03a83e9. This does not
+prove exact vendor spans, historical external use or a provider disposition;
+the external finding remains separate from the successful repository secret scan.
+
+The correction regenerates backend/openapi.yaml with PostgreSQL-engine test
+settings and an unreachable loopback database URL; generation completes without
+a database connection or service. Its final diff contains exactly the two
+maxLength254 additions. A second fresh generated schema is byte-identical;
+semantic comparison confirms only those two constraints, with LoginRequest and
+EmailRequest unchanged. npm run api:types succeeds and produces no frontend type
+diff. SQLite-engine generation initially produced17 unrelated integer-range
+changes; its output/diff is preserved privately and none is committed. The
+`openapi-snapshot-fix.json` and regenerated check file retain commands, results
+and local dependency-version limits in the email-boundary packet. No behavior
+changes or broader test repeats are introduced by this schema correction.

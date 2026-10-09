@@ -25,8 +25,12 @@ A later backend patch fixes persisted email length validation before and after
 Unicode normalization, and production startup selecting development settings
 when the settings variable is omitted. Final local checks pass six isolated
 PostgreSQL boundary cases and14 startup subprocess cases; independent reviews
-pass. The new actual-image CI guard and exact consolidated source gate are
-pending. The completed03 gate does not cover this patch. See the
+pass. [CI37864190158](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37864190158)
+fails backend schema comparison before tests: two new maxLength constraints
+were absent from the stored OpenAPI schema. Backend tests and production-image
+jobs were not run. The snapshot now has exactly the two expected constraints,
+fresh PostgreSQL-engine schema generation matches it, and regenerated frontend
+types are unchanged. A new exact-source/image gate remains pending. The completed03 gate does not cover this patch. See the
 [dated correction evidence](production-readiness-evidence.md#2026-10-09--email-storage-boundaries-and-production-startup-defaults).
 
 The current representative native Chrome154/macOS200% packet verifies the

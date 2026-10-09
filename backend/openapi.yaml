@@ -3817,6 +3817,7 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
         current_password:
           type: string
           writeOnly: true
@@ -5212,6 +5213,7 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
         username:
           type: string
           minLength: 1
