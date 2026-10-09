@@ -8813,3 +8813,75 @@ Retrospective present-process start-tick mapping places worker1224 start near
 worker assignment, replacement reason and original request ownership are absent.
 The original500 cause is UNKNOWN. No source/config/runtime change, retry in this
 new flow, frequency estimate, or production transport certification follows.
+
+### 2026-10-09 — Preview SSR unused-field projection
+
+A separate working-tree patch on84b5b875acf74926cc42545cdf25e8840586ef6e introduces
+`frontend/lib/api/preview-page.ts`, used by `frontend/lib/api/server.ts`, to remove
+only unused `position` and `image_asset_id` from feed/Explore preview cells before
+SSR serialization. Input pages are preserved; public API, detail payloads, preview
+content/order/images/backgrounds and UI behavior remain unchanged. New
+`server-preview.test.ts` checks field-only projection/input preservation and server
+feed/Explore calls;36 focused server cases pass (seven new projection, seven
+existing session and22 existing request-identity cases). Full typecheck, scoped
+lint/Prettier and independent source review pass. The private
+`projection-check-tool-response-summary.json` records final successful tool
+responses and resolved initial fixture/type/lint failures; it is a summary, not
+an original runner log. This is outside committed84 CI.
+
+Private `evidence-preview-projection-84-2026-10-09/` records actual development
+source-bound runtime18080 on the cached nebqa frontend image, Node22.23.1, not an
+optimized84 image. Both Discover and Explore raw API pages contain five boards/77
+cells and77 occurrences each of position/image_asset_id. Their actual SSR
+initialResult has zero occurrences of each and equals the corresponding raw API
+page exactly after removing those two cell fields. Normalized JSON drops34,709
+→31,642 bytes (3,067 bytes) on each route; this does not measure whole SSR,
+compressed wire size or latency. A retained dense24 calculation removes86,976
+compact JSON bytes offline; that fixture is not an actual new runtime capture.
+
+Actual390/1440 pages have no horizontal overflow, retained navigation works and
+first-card detail displays nine cells. The preserved single thumbnail is recorded
+loaded after scroll at390 and in the retained existing1440 observation; the latter
+is archived in `thumbnail-1440-existing-observation.json` with screenshot
+corroboration. Native console has no warnings/errors. Browser network
+capture is unavailable; DOM evaluation does not expose performance. No new
+assertion of zero initial feed GET follows. Existing skipInitialRequest/source
+tests and earlier observations retain their separate scopes. All19 refreshed
+packet manifest hashes match, including the retained wide observation and tool
+response summary; file modes are0600. Root independently verifies both recorded
+source hashes and exact raw-to-SSR equality except those two deleted fields.
+No counts, checkboxes or section closures change.
+
+Committed84 subsequently completes all12 jobs successfully as recorded below;
+the working-tree preview projection remains excluded. Its16 auth-cache cases pass
+under locked dependencies while optimized-runtime transport remains unverified.
+
+### 2026-10-09 — Completed84b5b87 source and image gate
+
+Exact `84b5b875acf74926cc42545cdf25e8840586ef6e`
+[CI37867107702](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37867107702)
+finishes SUCCESS with all12 jobs:469 backend,625 frontend/45 files,452 smoke/12
+intentional skips and125 full-stack cases. All577 reported passed browser cases
+have zero reported unexpected or flaky cases. Chromium passes116 smoke cases; each
+other profile passes112 with four skips. The locked backend job includes all16
+private-api-cache cases; the earlier six email-boundary and14 production-startup
+cases remain included. Both production images and Release pass; the actual backend
+image default-settings unsafe-startup rejection check succeeds.
+
+Logged tested merge `2405e2c7a15b41d12f6072d31104ff36cf13ecc4` and source84
+share full tree `609dd617f5feac464420e282f30a610b9ed3cc10`. Root independently
+fetches both Git API trees and verifies35 manifest file hashes, all nine fresh
+artifact API digests against actual bytes and archive integrity. Original logs,
+metadata, reports and validation remain privately in
+`evidence-84b5b87-2026-10-09/ci/`. This supplies the auth-cache correction's
+consolidated locked-source/image gate, not actual optimized recovery transport or
+production proof. The subsequent working-tree preview projection and documentation
+reconciliation are excluded. The separately retained19-file preview packet and
+final scoped source/document review pass within their recorded local scopes.
+
+External GitGuardian check113616329935 remains FAILURE: the same six occurrences
+and four incidents, now128 commits. Provider spans, external use and disposition
+remain unresolved. Historical188127-commit failure metadata, its passing12-job
+source gate/26 hashes/nine artifact digests, and39 schema failure/final CANCELLED
+run remain retained. No counts, checkboxes or section verdicts change; applicable
+open items and real deployment requirements remain open.

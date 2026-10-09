@@ -5,6 +5,7 @@ import { isIP } from "node:net";
 import { headers as requestHeaders } from "next/headers";
 import { cache } from "react";
 
+import { projectPreviewPage } from "@/lib/api/preview-page";
 import type { components as ApiComponents } from "@/lib/api/schema";
 import type {
   AuthenticatedUser,
@@ -116,9 +117,11 @@ export const getServerSession = cache(async (cookieHeader = "") => {
 });
 
 export const getServerFeed = cache(
-  (kind: "discover" | "trending", page: number, cookieHeader = "") => {
+  async (kind: "discover" | "trending", page: number, cookieHeader = "") => {
     const query = new URLSearchParams({ page: String(page) });
-    return serverGet<Page<BingoSummary>>(`feeds/${kind}/`, cookieHeader, query);
+    return projectPreviewPage(
+      await serverGet<Page<BingoSummary>>(`feeds/${kind}/`, cookieHeader, query),
+    );
   },
 );
 
@@ -141,7 +144,7 @@ export const getServerSitemapIndex = () =>
 export const getServerSitemap = (part: string) =>
   serverGet<PublicSitemapResponse>("sitemap/bingos/", "", new URLSearchParams({ part }));
 
-export const getServerExplore = cache((input: ExploreServerQuery, cookieHeader = "") => {
+export const getServerExplore = cache(async (input: ExploreServerQuery, cookieHeader = "") => {
   const query = new URLSearchParams();
   if (input.search) query.set("search", input.search);
   if (input.author) query.set("author", input.author);
@@ -154,5 +157,5 @@ export const getServerExplore = cache((input: ExploreServerQuery, cookieHeader =
   for (const language of input.languages ?? []) query.append("languages", language);
   if (input.ordering && input.ordering !== "popular") query.set("ordering", input.ordering);
   if (input.page && input.page > 1) query.set("page", String(input.page));
-  return serverGet<Page<BingoSummary>>("bingos/", cookieHeader, query);
+  return projectPreviewPage(await serverGet<Page<BingoSummary>>("bingos/", cookieHeader, query));
 });

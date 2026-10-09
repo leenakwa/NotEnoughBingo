@@ -40,21 +40,27 @@ unresolved failures or missing evidence.
 ### Latest observed source gate — 2026-10-09
 
 Latest completed committed-source gate: exact
-`188c0d9ba82f58a529b48d77359ac51878ff42bc`
-[CI37864523562](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37864523562)
-finishes SUCCESS with all12 jobs:466 backend,625 frontend/45 files,452 smoke/12
+`84b5b875acf74926cc42545cdf25e8840586ef6e`
+[CI37867107702](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37867107702)
+finishes SUCCESS with all12 jobs:469 backend,625 frontend/45 files,452 smoke/12
 intentional skips and125 full-stack cases; all577 reported passed browser cases
-have zero reported flakes/errors. The backend gate includes six email-boundary
-and14 production-startup cases. Both production images and Release pass, including
-the actual backend-image default-settings unsafe-startup rejection check.
-Source188 and tested merge `a9d5a2671587505727baeb1a7801037dd1e4cd6f` share
-full tree `b4a10211866eb496ce1155c280b14f816d6807b4`. Root verifies26 retained
-CI file hashes and all nine artifact API digests; archive integrity is retained.
-This supersedes the earlier03 source gate and covers the email/startup corrections
-and their two-constraint OpenAPI snapshot correction. It excludes the subsequent
-working-tree anonymous-auth cache patch and documentation reconciliation. Cached
-local frontend ec69223/backend b6aabca/worker a3 and keepalive0 observations have
-separate scope. See the [dated188 gate](production-readiness-evidence.md#2026-10-09--completed188c0d9-source-and-image-gate).
+have zero reported unexpected or flaky cases. The locked backend gate includes all16
+auth-cache cases, six email-boundary and14 production-startup cases. Both production
+images and Release pass, including the actual backend-image default-settings
+unsafe-startup rejection check. Source84 and tested merge
+`2405e2c7a15b41d12f6072d31104ff36cf13ecc4` share full tree
+`609dd617f5feac464420e282f30a610b9ed3cc10`. Root independently verifies both
+Git API trees,35 retained CI file hashes and all nine fresh artifact API digests
+against actual bytes; archive integrity passes.
+This gate includes the anonymous-auth cache correction and prior email/startup/
+schema changes. It excludes the subsequent working-tree preview projection and
+documentation reconciliation. Cached local frontend ec69223/backend b6aabca/worker
+a3 and keepalive0 transport observations retain their separate scopes. See the
+[dated84 gate](production-readiness-evidence.md#2026-10-09--completed84b5b87-source-and-image-gate).
+
+Historical188 all12 SUCCESS,466 backend/625 frontend/577 browser cases,26 hashes,
+nine artifact digests and shared treeb4a10211866eb496ce1155c280b14f816d6807b4
+remain retained in the [dated188 gate](production-readiness-evidence.md#2026-10-09--completed188c0d9-source-and-image-gate).
 
 Historical [CI37864190158](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37864190158)
 on39fe568 retains its backend OpenAPI comparison failure and final CANCELLED run:
@@ -71,12 +77,26 @@ The [real recovery transport packet](production-readiness-evidence.md#2026-10-09
 retains first post-reset login500/ECONNRESET and one authorized retry200. It
 observes four same-origin registration-email Referer matches and anonymous
 verification200 returning own email without explicit Cache-Control. The email-query
-UI choice remains pending. A working-tree auth-prefix private/no-store fix passes
-16 focused SQLite tests and scoped security review; it is outside exact188 CI and
-has no optimized-runtime or pinned-version verification. A subsequent single
+UI choice remains pending. The later auth-prefix private/no-store fix passes
+16 focused SQLite tests and scoped security review; it is outside exact188 CI.
+Committed84 backend469 now passes under locked dependencies, including all16
+cache cases; optimized-runtime transport remains unverified. A subsequent single
 post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
+
+Current84 external GitGuardian check113616329935 remains FAILURE with the same
+six occurrences/four incidents, now128 commits; historical188 metadata is retained.
+
+A separate [working-tree preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
+removes only unused position/image_asset_id fields from feed/Explore SSR preview
+props. Thirty-six focused server cases, full typecheck, scoped lint/format and
+independent source review pass. Actual source-bound development pages retain the
+raw API content except those fields: normalized JSON34,709→31,642 bytes for five
+boards/77 cells on each route. Narrow/wide layout and first-card navigation pass;
+network capture is unavailable, so no new zero-initial-feed-request claim follows.
+This patch is outside committed84 CI and has no optimized-image, wire/gzip or
+latency proof. No checkbox/count or section verdict changes follow.
 
 
 Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
