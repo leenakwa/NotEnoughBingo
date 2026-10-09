@@ -61,7 +61,7 @@ Verify all of the following:
 - [x] success states exist;
 - [ ] errors are understandable;
 - [x] submit buttons have loading/disabled states;
-- [ ] duplicate submission is prevented;
+- [x] duplicate submission is prevented;
 - [x] browser Back/Forward work correctly;
 - [x] refreshing nested/deep routes works;
 - [x] mobile layout works;

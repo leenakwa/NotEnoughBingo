@@ -161,7 +161,6 @@ describe("Explore partial and obsolete responses", () => {
   it("keeps a new search pending until its URL has applied and its own response settles", async () => {
     mocks.query = "search=travel";
     let resolveNew: (value: Page<BingoSummary>) => void = () => undefined;
-    mocks.explore.mockResolvedValueOnce(page([]));
     mocks.explore.mockReturnValueOnce(
       new Promise((done) => {
         resolveNew = done;
@@ -174,16 +173,29 @@ describe("Explore partial and obsolete responses", () => {
     await act(async () => Promise.resolve());
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(1);
-    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith("/explore?search=holiday", {
+      scroll: false,
+    });
+    expect(mocks.explore).not.toHaveBeenCalled();
     mocks.query = "search=holiday";
     view.rerender(<ExplorePage />);
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(1);
-    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledExactlyOnceWith(
+      {
+        search: "holiday",
+        author: "",
+        tags: [],
+        languages: [],
+        ordering: "popular",
+        page: 1,
+      },
+      expect.any(AbortSignal),
+    );
     await act(async () => resolveNew(page([])));
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(2);
-    expect(mocks.explore).toHaveBeenCalledTimes(3);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
     await act(async () => Promise.resolve());
   });
 
@@ -201,19 +213,23 @@ describe("Explore partial and obsolete responses", () => {
         resolveNew = done;
       }),
     );
-    mocks.replace.mockImplementation((url: string) => {
-      mocks.query = url.split("?")[1] ?? "";
-    });
-    render(<ExplorePage initialResult={page([])} />);
+    const view = render(<ExplorePage initialResult={page([])} />);
     const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
 
     fireEvent.submit(form);
     fireEvent.change(screen.getByLabelText("Search by title"), { target: { value: "holiday" } });
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    expect(mocks.explore.mock.calls[0]?.[1]?.aborted).toBe(false);
+    mocks.query = "search=holiday";
+    view.rerender(<ExplorePage />);
     expect(mocks.explore).toHaveBeenCalledTimes(2);
     expect(mocks.explore.mock.calls[0]?.[1]?.aborted).toBe(true);
-    await act(async () => resolveOld(page([])));
+    await act(async () =>
+      resolveOld(page([{ id: "obsolete", title: "Obsolete results" } as BingoSummary])),
+    );
+    expect(screen.queryByText("Obsolete results")).not.toBeInTheDocument();
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(2);
     expect(mocks.explore).toHaveBeenCalledTimes(2);
@@ -227,7 +243,6 @@ describe("Explore partial and obsolete responses", () => {
   it("does not unlock a newer submit when an earlier URL transition applies first", async () => {
     mocks.query = "search=travel";
     let resolveCurrent: (value: Page<BingoSummary>) => void = () => undefined;
-    mocks.explore.mockResolvedValueOnce(page([]));
     mocks.explore.mockResolvedValueOnce(page([]));
     mocks.explore.mockReturnValueOnce(
       new Promise((done) => {
@@ -244,9 +259,12 @@ describe("Explore partial and obsolete responses", () => {
       fireEvent.submit(form);
     });
     await act(async () => Promise.resolve());
+    expect(mocks.explore).not.toHaveBeenCalled();
     mocks.query = "search=holiday";
     view.rerender(<ExplorePage />);
     await act(async () => Promise.resolve());
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    expect(mocks.explore.mock.calls[0]?.[0]?.search).toBe("holiday");
     fireEvent.change(input, { target: { value: "current" } });
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(2);
@@ -254,6 +272,8 @@ describe("Explore partial and obsolete responses", () => {
     view.rerender(<ExplorePage />);
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    expect(mocks.explore.mock.calls[1]?.[0]?.search).toBe("current");
     await act(async () => resolveCurrent(page([])));
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(3);
@@ -263,14 +283,14 @@ describe("Explore partial and obsolete responses", () => {
   it("allows resubmitting an aborted search after browser Back restores its source URL", async () => {
     mocks.query = "search=travel";
     mocks.explore.mockReturnValueOnce(new Promise(() => undefined));
-    mocks.replace.mockImplementation((url: string) => {
-      mocks.query = url.split("?")[1] ?? "";
-    });
     const view = render(<ExplorePage initialResult={page([])} />);
     const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
     const input = screen.getByLabelText("Search by title");
     fireEvent.change(input, { target: { value: "holiday" } });
     fireEvent.submit(form);
+    expect(mocks.explore).not.toHaveBeenCalled();
+    mocks.query = "search=holiday";
+    view.rerender(<ExplorePage />);
     expect(mocks.explore).toHaveBeenCalledTimes(1);
     expect(mocks.explore.mock.calls[0]?.[0]?.search).toBe("holiday");
 
@@ -282,7 +302,84 @@ describe("Explore partial and obsolete responses", () => {
     fireEvent.submit(form);
     expect(trackInteraction).toHaveBeenCalledTimes(2);
     expect(mocks.replace).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    mocks.query = "search=holiday";
+    view.rerender(<ExplorePage />);
     expect(mocks.explore).toHaveBeenCalledTimes(3);
+    await act(async () => Promise.resolve());
+  });
+
+  it("keeps a same-filter refresh in flight when a whitespace deep link becomes canonical", async () => {
+    mocks.query = "search=++travel++&author=++sample++&tags=++holiday++%2C++year++";
+    let resolve: (value: Page<BingoSummary>) => void = () => undefined;
+    mocks.explore.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    const view = render(<ExplorePage initialResult={page([])} />);
+    const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
+    fireEvent.submit(form);
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    const signal = mocks.explore.mock.calls[0]?.[1] as AbortSignal;
+
+    mocks.query = mocks.replace.mock.calls[0]![0].split("?")[1];
+    view.rerender(<ExplorePage />);
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    expect(signal.aborted).toBe(false);
+    expect(mocks.explore).toHaveBeenLastCalledWith(
+      {
+        search: "travel",
+        author: "sample",
+        tags: ["holiday", "year"],
+        languages: [],
+        ordering: "popular",
+        page: 1,
+      },
+      signal,
+    );
+    fireEvent.submit(form);
+    expect(mocks.replace).toHaveBeenCalledTimes(1);
+
+    await act(async () =>
+      resolve(page([{ id: "current", title: "Canonical results" } as BingoSummary])),
+    );
+    expect(screen.getByText("Canonical results")).toBeVisible();
+    fireEvent.submit(form);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    await act(async () => Promise.resolve());
+  });
+
+  it("applies browser Forward filters and only refreshes once when submitting them again", async () => {
+    mocks.query = "search=travel";
+    mocks.explore.mockReturnValueOnce(new Promise(() => undefined));
+    const view = render(<ExplorePage initialResult={page([])} />);
+    const form = screen.getByRole("button", { name: "Search" }).closest("form")!;
+
+    mocks.query = "search=holiday&author=sample&tags=year&languages=de&ordering=newest&page=2";
+    view.rerender(<ExplorePage />);
+    expect(screen.getByLabelText("Search by title")).toHaveValue("holiday");
+    expect(screen.getByLabelText("Author", { exact: true })).toHaveValue("sample");
+    expect(screen.getByLabelText("Tags", { exact: true })).toHaveValue("year");
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+
+    fireEvent.submit(form);
+    expect(mocks.explore).toHaveBeenCalledTimes(1);
+    mocks.query = mocks.replace.mock.calls[0]![0].split("?")[1];
+    view.rerender(<ExplorePage />);
+    expect(mocks.explore.mock.calls[0]?.[1]?.aborted).toBe(true);
+    expect(mocks.explore).toHaveBeenCalledTimes(2);
+    expect(mocks.explore).toHaveBeenLastCalledWith(
+      {
+        search: "holiday",
+        author: "sample",
+        tags: ["year"],
+        languages: ["de"],
+        ordering: "newest",
+        page: 1,
+      },
+      expect.any(AbortSignal),
+    );
     await act(async () => Promise.resolve());
   });
 

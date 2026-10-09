@@ -5,67 +5,74 @@ and its [105-section tracker](production-readiness-tracker.md) are the scope for
 final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
-Latest attempted source gate: exact
-`d515b792ab606a432b929f88e73077eef2e109e3`
-[CI37878186145](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37878186145)
-finishes FAILURE: ten jobs succeed, full-stack and Release fail. Backend469 and
-Node22.23.3 frontend666/46 files pass, including all49 editor cases. Browser
-reports retain590 expected,12 skipped, one unexpected and zero flaky cases.
-The new export test fails at retry0 before recovery assertions: its global alert
-locator matches the editor error and Next route announcer. Original trace proves
-backend202 and injected503, not successful same-job retry/download. The working-
-tree fix scopes both alert assertions to the editor main region; lint, formatting,
-discovery and independent review pass, actual execution awaits the next source.
-Root verifies46 retained hashes, nine fresh artifact digests and source/merge
-`d9507156b1b2b2ee4fc805107d72297e68f7554d` tree
-`05c30f51fb78e7e70755e81337c9c555e4758e5d`. Failed artifacts remain retained.
+Latest completed committed-source gate: exact
+`d5fe818a2e815c211202f8c1032aceb564a91ff0`
+[CI37879694946](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37879694946)
+finishes SUCCESS with all12 jobs, including both production images and Release:
+471 backend, Node22.23.3 frontend666/46 files (all49 editor cases),591 expected
+browser passes,12 intentional skips, zero unexpected cases and zero flakes.
+Chromium passes119 smoke cases, each other profile115/four skips; full-stack127.
+The accepted-response PNG export recovery case passes at retry0/2898ms: real
+backend202 is replaced with browser503, then explicit retry reuses the same key
+and job, completes a PNG-signature download and performs no draft writes. The
+original PNG bytes were not separately uploaded. Together with the49 editor
+cases and prior form-lock evidence, this closes duplicate-submission item27 for
+these observed editor/form paths. Understandable-error item25 remains open for
+the user's stale-revision message choice; section1 remains Partial.
 
-Latest successful completed committed-source gate: exact
-`bb4ae862cb7bcdd73b20680b9be98063242626a9`
-[CI37875904112](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37875904112)
-finishes SUCCESS with all12 jobs:469 backend,655 frontend/46 files and590 expected
-browser passes with12 intentional skips, zero unexpected cases and zero flakes.
-Chromium passes119 smoke cases, each other profile115/four skips, and full-stack
-flows126. The new static public-head loop passes once at retry0 in8690ms; all28
-metadata unit cases pass. Both production images and Release pass. The cached
-backend-image SBOM records Gunicorn26.2.2 and its production-default unsafe-startup
-guard passes; the locked backend includes all16 auth-cache cases.
-Sourcebb4 and logged tested merge `c271cb8d2969dc513b9c7fa397cc305d43ff65a8`
-share full tree `6fbd557c5d388d7dd8713d0b150a45fe05e83f1b`. Root independently
-verifies both Git API commits,47 retained CI file hashes and all nine fresh
-artifact API digests against actual bytes; archive integrity passes.
-See the [datedbb4 gate](production-readiness-evidence.md#2026-10-09--completedbb4ae86-source-and-rendered-metadata-gate).
+Source and tested merge `f149faa0369c8ed2cb80b5e9b10bac40edb7fe2d` share full tree
+`91efeaf035dd4e632ab5cd189675565d2f5189a2`. Root independently verifies47 retained
+manifest hashes, all nine fresh artifact API digests against original bytes and
+fresh Git API tree identity. Archive-agent integrity checks pass separately;
+root did not rerun ZIP CRC. Logs/artifacts remain sealed privately in
+`evidence-d5fe818-2026-10-09/ci` with separate root verification record
+`evidence-d5fe-root-final-verification-2026-10-09.json`.
+See the [datedd5 gate](production-readiness-evidence.md#2026-10-09--completedd5fe818-source-export-recovery-and-anonymous-auth-cache-gate).
 
-The optimized frontend-image step verifies seven static routes plus filtered
-Explore: eight200 heads/128 assertions, including query-free canonical and Open
-Graph URLs and preserved shared metadata. Original runtime JSON identifies image
-`sha256:c193ea746bcd14f199c182295b2ff45f00d14576f27e4d08b08c332533457502`,
-NODE_ENV=production, environment=staging, embedded mergec271 and the synthetic
-`https://ci.not-enough-bingo.invalid` origin. The step succeeds after the script's
-required removal of its uniquely named container; no independent post-removal
-listing is retained. This closes URL bullet994 and restores section91 Verified
-before deployment. Current821 checked/321 unchecked,89 N/A/232 applicable and
-58 Verified/40 Partial totals apply after reopening unclear-error item25.
-Items25 and27 stay open; section1 remains Partial.
+Actual backend image HTTP stdout verifies production settings, DEBUG=false and
+its default Gunicorn entrypoint: anonymous GET auth/me401, CSRF-rejected POST
+login403 and missing auth route404 each have `Cache-Control: private, no-store`;
+a non-auth missing route404 has no Cache-Control header. Runtime middleware hash
+matches committed source. Image is
+`sha256:ed2636afafac85e0447eacdb3c8632ebc44ebbdc19e60d3ba26ca267b28dd817`;
+APP_RELEASE is probe-supplied, not embedded-release proof. This establishes four
+anonymous/rejection/unmatched-route HTTP outcomes, not successful authentication,
+DB/Redis, TLS, shared caches or public ingress. Section59 remains Partial.
 
-This gate includes the metadata helper/probe, asset labels, installed-Gunicorn
-OSV guard and prior preview/recovery/Gunicorn/navigation changes. The actual CI
-OSV guard passes for installed26.2.2 with one matching dependency, no skip and
-vulns[]; original command/runtime stdout is retained, but generated audit JSON
-is not. The ordinary full PyPI audit still explicitly skips Gunicorn26.2.2.
-This scoped known-advisory result does not guarantee absence of undisclosed
-vulnerabilities.
+Optimized frontend metadata passes eight200 heads/128 assertions; all28 metadata
+unit cases and the live public-head loop at retry0/8811ms pass. Original JSON
+identifies image
+`sha256:568586d8483e15eb4196f32ee3be56d625293adf0c622509d8102f52d7daf527`,
+NODE_ENV=production, staging environment, embedded mergef149 release and synthetic
+`https://ci.not-enough-bingo.invalid` origin. Successful steps require removal of
+their owned containers; no independent post-removal listing is retained. This
+retains ID994/section91 Verified before deployment. Metadata heads do not prove
+functional backend or optimized feed/media/browser runtime behavior. The prepared
+next gate transfers the optimized frontend image into the full-stack job and
+adds four guest SSR/hydration/search cases against its existing development
+backend. These uncommitted runtime checks are unexecuted. Runner cancellation
+fix review passes10 mocked and six signal checks, not actual Docker cancellation.
+An old-query Explore GET is confirmed; the uncommitted source correction passes
+13 scoped tests (before correction: six failed/seven passed), full typecheck and
+target lint/format. Independent scoped source/test review passes; actual
+optimized browser execution remains unverified. Bullets881/882 remain open. Current totals:822 checked/320 unchecked,
+89 release-scoped N/A/231 applicable;58 Verified/40 Partial/6 N/A/1 deployment-only.
+Installed Gunicorn26.2.2 OSV guard passes; the ordinary full PyPI audit still
+explicitly skips it. No undisclosed-vulnerability guarantee follows.
 
-Committedbb4 creates duplicate export jobs after an uncertain accepted POST or
-exhausted polling. Correctiond515b79 retains keys/resumes known jobs;49 editor
-cases pass on host Node24 and actual CI Node22.23.3, with three original before-
-fix failures retained. Its new live test fails on the alert locator before the
-retry/download assertions; the corrected fixture still awaits actual execution.
-These export changes are outside the completed successfulbb4 gate. Cached local
-frontend ec69223/backend b6aabca/worker a3 and keepalive0 observations retain their
-separate scopes. The isolated metadata probe uses a loopback backend alias and
-establishes rendered heads, not functional backend availability, current
-Django/Gunicorn recovery/privacy transport or public deployment readiness.
+Historicald515 [CI37878186145](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37878186145)
+remains FAILURE: ten jobs succeed, full-stack/Release fail;469 backend,666 frontend,
+590 expected browser passes/12 skips/one unexpected/zero flaky. The global alert
+locator failed before retry/download assertions; its original trace, artifacts,
+46 retained hashes/nine digests and tree `05c30f51fb78e7e70755e81337c9c555e4758e5d`
+remain retained. The scoped alert fixture and auth-cache probe now have actuald5
+execution above; the failed result is not relabeled successful.
+Historicalbb4 [CI37875904112](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37875904112)
+retains all12 SUCCESS,469 backend/655 frontend/590 browser passes/12 skips and
+shared tree `6fbd557c5d388d7dd8713d0b150a45fe05e83f1b` in the
+[datedbb4 gate](production-readiness-evidence.md#2026-10-09--completedbb4ae86-source-and-rendered-metadata-gate).
+Cached local frontend ec69223/backend b6aabca/worker a3 and keepalive0 observations
+retain their separate source/runtime limits.
 
 Historical605 all12 SUCCESS,469 backend/647 frontend/46 files,589 expected browser
 passes,12 skips/zero flakes,44 hashes/nine digests and shared tree
@@ -110,14 +117,18 @@ observes four same-origin registration-email Referer matches and anonymous
 verification200 returning own email without explicit Cache-Control. The email-query
 UI choice remains pending. The later auth-prefix private/no-store fix passes
 16 focused SQLite tests and scoped security review; it is outside exact188 CI.
-Committed84 and latestbb4 backend469 pass under locked dependencies, including
-all16 cache cases; optimized-runtime transport remains unverified. A subsequent single
+Historical84/bb4 backend469 and latestd5 backend471 pass under locked dependencies,
+including all16 cache cases. The laterd5 production-image anonymous rejection/
+missing-route probe above passes; successful-authentication and public-cache
+transport remain unverified. A subsequent single
 post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
 
-Currentd515 external GitGuardian check113651482045 remains FAILURE with the same
-six occurrences/four incidents, now133 commits; historicalbb4/605/991/e8/84/188 metadata is retained.
+Currentd5 external GitGuardian check113656303870 remains FAILURE: six occurrences/
+four incidents over134 commits. This is separate from the green Release job;
+provider spans, reuse and disposition remain unresolved. Historicald515/
+bb4/605/991/e8/84/188 metadata is retained.
 
 The [committed preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
 removes only unused position/image_asset_id fields from feed/Explore SSR preview
@@ -126,7 +137,7 @@ independent source review pass. Actual source-bound development pages retain the
 raw API content except those fields: normalized JSON34,709→31,642 bytes for five
 boards/77 cells on each route. Narrow/wide layout and first-card navigation pass;
 network capture is unavailable, so no new zero-initial-feed-request claim follows.
-This patch is included in e8/991 and latestbb4 CI, including all seven projection cases. Its
+This patch is included in e8/991/bb4 and latestd5 CI, including all seven projection cases. Its
 actual development-media observation remains separate; no optimized browser
 runtime, wire/gzip or latency proof follows. No checkbox/count or section verdict
 changes follow.
@@ -137,12 +148,12 @@ original zoom requirement with guest/authenticated views and readable keyboard
 focus on exact44 frontend/cachedb6 backend, supplemented by source-equivalent
 historical observations. Owned fixtures are guardedly soft-deleted, own session
 revoked, and baseline profile/ten-session IDs preserved; revisions/analytics remain.
-Section24 is Verified before deployment; checklist821/321 and section totals
+Section24 is Verified before deployment; checklist822/320 and section totals
 58 Verified/40 Partial/6 N/A/1 deployment-only follow from the original bullets.
-Of321 unchecked bullets,89 are release-scoped N/A:85 in the six N/A sections
+Of320 unchecked bullets,89 are release-scoped N/A:85 in the six N/A sections
 plus four absent-feature conditions (product WebSockets, invitation/receipt
 emails and payment-webhook alerts), confirmed by source inventory and independent
-review.232 applicable unchecked bullets remain. Four implemented email-type
+review.231 applicable unchecked bullets remain. Four implemented email-type
 functional checks and the two local restore-procedure checks have separately
 reviewed evidence; applicability reconciliation itself changes no checkbox or
 section verdict.
@@ -467,7 +478,7 @@ The subsequent cache-readiness correction has13 passing scoped observability
 checks and independent review. Its388-test Python3.13/PostgreSQL job passes;
 the complete ceb source gate passes. Earlier configured frontend observations remain scoped to065.
 
-Current checklist:816 checked/326 unchecked;58 verified/40 partial/six N/A/
+At that checkpoint:816 checked/326 unchecked;58 verified/40 partial/six N/A/
 one deployment-only. Of326 unchecked bullets,85 belong to the six explicitly N/A sections;241 are
 applicable. The42 final-execution bullets overlap earlier checks. These counts
 describe evidence, not independent tasks or a product-readiness percentage.
@@ -626,7 +637,7 @@ full typecheck, targeted lint/format and independent review. One development
 head loop is discovered, not executed. The additive exact-built-image probe
 passes parser/mocked-cleanup/Ruff checks but has not executed against Docker.
 The next exact-source CI must run both rendered gates.
-Current counts are822 checked/320 unchecked, including89 release-scoped N/A and
+At this gap checkpoint, counts were822 checked/320 unchecked, including89 release-scoped N/A and
 231 applicable;58 sections Verified/40 Partial. Social-provider caches still
 require a real deployment. No copy, design or indexing policy change is selected.
 

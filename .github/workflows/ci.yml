@@ -328,6 +328,7 @@ jobs:
     needs:
       - backend
       - frontend
+      - container-images
     timeout-minutes: 45
     env:
       CI: "true"
@@ -347,6 +348,12 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Download the guarded optimized frontend image
+        uses: actions/download-artifact@v8
+        with:
+          name: optimized-preview-frontend-image-${{ github.sha }}
+          path: ${{ runner.temp }}/optimized-preview-image
 
       - name: Configure local full-stack environment
         run: cp .env.example .env
@@ -376,6 +383,15 @@ jobs:
         run: |
           docker compose run --rm --no-deps backend python manage.py migrate --noinput
           docker compose up -d --wait --wait-timeout 240 backend worker beat frontend proxy
+
+      - name: Verify optimized frontend guest SSR and hydration on the live backend
+        timeout-minutes: 15
+        env:
+          EXPECTED_RELEASE: ${{ github.sha }}
+          IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/optimized-preview-image
+        run: |
+          python3 infra/scripts/verify-optimized-preview-runtime.py run \
+            --artifact-dir "$IMAGE_ARTIFACT_DIR" --expected-release "$EXPECTED_RELEASE"
 
       - name: Run live Playwright product flows
         working-directory: frontend
@@ -407,6 +423,26 @@ jobs:
         with:
           name: live-playwright-report
           path: frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload optimized preview Playwright report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: optimized-preview-playwright-report
+          path: frontend/optimized-preview-playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload optimized preview results and runtime provenance
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: optimized-preview-test-results
+          path: |
+            frontend/optimized-preview-test-results/
+            frontend/optimized-preview-evidence/
           if-no-files-found: ignore
           retention-days: 7
 
@@ -581,6 +617,28 @@ jobs:
           format: spdx-json
           upload-artifact-retention: 30
           upload-release-assets: false
+
+      - name: Export the guarded optimized frontend image and provenance
+        if: ${{ matrix.name == 'frontend' }}
+        timeout-minutes: 10
+        env:
+          IMAGE_REF: not-enough-bingo-frontend:${{ github.sha }}
+          EXPECTED_RELEASE: ${{ github.sha }}
+          IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/optimized-preview-image
+        run: |
+          python3 infra/scripts/verify-optimized-preview-runtime.py export \
+            --image "$IMAGE_REF" --artifact-dir "$IMAGE_ARTIFACT_DIR" \
+            --expected-release "$EXPECTED_RELEASE"
+
+      - name: Upload optimized frontend image for live preview checks
+        if: ${{ matrix.name == 'frontend' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: optimized-preview-frontend-image-${{ github.sha }}
+          path: ${{ runner.temp }}/optimized-preview-image/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
 
   release-gate:
     name: Release gate

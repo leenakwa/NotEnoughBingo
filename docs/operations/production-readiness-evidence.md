@@ -9358,3 +9358,120 @@ Gunicorn26.2.2 OSV guard passes. New backend-cache HTTP probe and stale-revision
 API regressions are outside this committed source and require the next gate.
 External GitGuardian113651482045 remains FAILURE: six occurrences/four incidents
 over133 commits. Provider spans, reuse and disposition remain unresolved.
+
+
+## 2026-10-09 — Completedd5fe818 source, export recovery and anonymous auth cache gate
+
+Exact source `d5fe818a2e815c211202f8c1032aceb564a91ff0`,
+[CI37879694946](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37879694946),
+finishes SUCCESS with all12 jobs, including full-stack, both production images
+and Release. Actual logs record471 backend cases and Node22.23.3 frontend666
+in46 files, including all49 editor cases and28 metadata unit cases. Original
+Playwright reports record591 expected passes,12 intentional skips, zero
+unexpected cases and zero flaky cases: Chromium119 smoke; Firefox, WebKit and
+mobile115 each/four skips each; full-stack127. Sole retained watch exits0.
+This is committed-source CI evidence, not production deployment certification.
+
+The published-PNG accepted-response recovery case passes once at retry0 in
+2898ms. Its executed source routes the first export POST through the real backend
+and asserts202 before substituting503 to the browser. After the scoped editor
+alert appears, the explicit Published PNG retry reaches another backend202 with
+exactly the same idempotency key/job ID. It completes a download, checks no
+failure, PNG filename and the eight-byte PNG signature, clears the alert,
+records exactly two attempts, zero draft writes and zero page errors, and retains
+the editor route/board. The passing result establishes execution of those
+assertions; the original download bytes are not separately uploaded. Source case
+SHA-256 is `11ba4e18252d5983e953768535eb432e5a709457bd6decaca3981c38a0f11218`.
+Together with49 editor cases covering retained uncertain keys/resumed known jobs
+and prior form-lock observations, this closes exact BASIC LAUNCH duplicate-
+submission item27 for these observed editor/form paths. It does not claim native
+browser/transport-wide or every future-operation idempotency.
+
+Understandable-error item25 remains unchecked: a new player on stale R1 still
+receives the technical revision rejection when the author has published R2, and
+the user's replacement wording remains pending. Section1 stays Partial. Only
+item27 changes in this reconciliation; totals become822 checked/320 unchecked,
+including89 release-scoped N/A and231 applicable unchecked requirements. Section
+totals remain58 Verified/40 Partial/6 N/A/1 deployment-only. The source prompt is
+unchanged. The failedd515 gate above, including its global-alert locator failure
+before recovery assertions, remains historical; successfuld5 execution supplies
+the previously missing recovery proof without relabeling that failed run.
+
+The actual backend-image step succeeds with original HTTP stdout from default
+Gunicorn entrypoint, config.settings.production, APP_ENVIRONMENT=production and
+DEBUG=false. Liveness returns200. Anonymous GET `/api/v1/auth/me/` returns401 with
+Session WWW-Authenticate; CSRF-rejected POST `/api/v1/auth/login/` returns403;
+GET `/api/v1/auth/__cache_probe_missing__/` returns404. Each of these three auth
+responses has exactly `Cache-Control: private, no-store`. Non-auth GET
+`/api/v1/__cache_probe_missing__/` returns404 without Cache-Control. Image ID is
+`sha256:ed2636afafac85e0447eacdb3c8632ebc44ebbdc19e60d3ba26ca267b28dd817`.
+Runtime middleware SHA-256 matches source
+`11661af36963c0f1254adf17d10ae16f911fe7028daa3423ef9fd412849a4b7f`;
+executed probe SHA-256 is
+`1cad03739339d60c7d3e3fb7cef77fb55e9242a8d0775f7a7e13db50e386b08e`.
+Configured releasef149 is supplied by the probe, not proof of an embedded backend
+release. The container has network disabled. These four HTTP outcomes prove
+anonymous rejections/unmatched-route headers; successful authentication, DB/Redis,
+public ingress/TLS and shared-cache behavior remain unverified. Section59 remains
+Partial. Success JSON follows required owned-container removal; there is no
+independent post-removal listing.
+
+The optimized frontend image's original JSON records eight200 public heads/128
+assertions, query-free canonical/Open Graph URLs and shared metadata, image
+`sha256:568586d8483e15eb4196f32ee3be56d625293adf0c622509d8102f52d7daf527`,
+NODE_ENV=production, staging environment, embedded/built release
+`f149faa0369c8ed2cb80b5e9b10bac40edb7fe2d` and synthetic CI origin
+`https://ci.not-enough-bingo.invalid`. The live public-head loop passes at
+retry0/8811ms. Executed metadata-probe SHA-256 is
+`8fecb62626a08c1da5bf59416fb757668cd7587aa0c20f57e636ed9c7deb04c1`.
+The completed success requires owned-container cleanup, without an independent
+post-removal listing. The loopback backend alias/head inspection does not prove
+functional backend, feed/media browser runtime, wire/gzip/latency or a public
+rollout. ID994/section91 retain their prior closure. The prepared next gate
+transfers the optimized frontend image into full-stack and adds four dedicated
+guest SSR/hydration/search cases against its existing development backend. This
+uncommitted runtime gate remains unexecuted. Runner cancellation-fix static
+review passes10 mock and six signal checks; actual Docker cancellation has not
+been observed. The old-query Explore GET is confirmed; its uncommitted local
+correction and bounded test result are recorded below. Actual optimized browser
+execution and coverage/closure for bullets881/882 remain unverified. Installed Gunicorn26.2.2 OSV guard
+passes separately; its ordinary full PyPI-audit skip remains disclosed.
+
+Original logs and all nine artifacts are sealed in private
+`evidence-d5fe818-2026-10-09/ci`. Root's separate
+`evidence-d5fe-root-final-verification-2026-10-09.json` verifies47 manifest file
+hashes and all nine fresh artifact API digests against streamed original bytes,
+plus fresh source/tested-merge Git API identity. Source and logged tested merge
+`f149faa0369c8ed2cb80b5e9b10bac40edb7fe2d` share full tree
+`91efeaf035dd4e632ab5cd189675565d2f5189a2`. Archive-agent integrity checks pass;
+root did not rerun ZIP CRC. Separate external GitGuardian check113656303870 remains
+FAILURE: six occurrences/four incidents over134 commits, with the same prior
+occurrences. This metadata does not establish exact provider spans, secret reuse
+or vendor disposition. Its failure remains separate from the green Release job;
+operator review is still open. No secrets are reproduced here.
+
+
+### 2026-10-09 — Explore applied-filter duplicate request correction, local scope
+
+A changed-filter Apply previously increments the request nonce before the URL
+change is applied, causing a request with the old query followed by the new one.
+Equivalent whitespace changes can also retrigger fetch dependencies despite an
+unchanged normalized query. The uncommitted correction increments the nonce only
+when the normalized key already equals the applied key; changed filters await
+the URL. Fetch dependencies now use normalized primitive search/author/tag values
+matching the request. The visible layout and pending UI choices are unchanged.
+
+Private `evidence-explore-request-fix-d5fe-2026-10-09` retains raw regression logs:
+before correction six fail/seven pass; after correction all13 scoped Explore
+cases pass. Full TypeScript check and target ESLint/Prettier pass. Inspected source
+SHA-256 is `2c2a90f0e5fd846a28ba1e50b43b70a82b05cd64585ce5796fa43fc3c434e4ff`;
+test SHA-256 is `30597c2fdd44c8bca15c7046bdde2a2405a325cfd491f32f900e8d53ad76da68`.
+Independent scoped source/test review passes with no findings; the strict two-
+GET browser witness assumes SSR succeeds. Static review of the prepared optimized
+coverage also passes against the installed Next16.3.8 writer/parser, empty-to-
+exact-response DOM/React witness and page-error/request guards. These reviews
+establish static coverage, not browser execution. This patch is outside
+committedd5 CI; the four prepared guest optimized-image SSR/hydration/search
+cases are unexecuted.
+No actual optimized-browser/network or performance result follows, and
+bullets881/882, their count states and section76 remain unchanged.

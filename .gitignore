@@ -46,6 +46,9 @@ pnpm-debug.log*
 .playwright-cli/
 playwright-report/
 test-results/
+frontend/optimized-preview-playwright-report/
+frontend/optimized-preview-test-results/
+frontend/optimized-preview-evidence/
 blob-report/
 
 # Runtime data

@@ -39,6 +39,13 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
   const appliedSearch = searchParams.get("search") ?? "";
   const appliedAuthor = searchParams.get("author") ?? "";
   const appliedTags = searchParams.get("tags") ?? "";
+  const requestSearch = appliedSearch.trim();
+  const requestAuthor = appliedAuthor.trim();
+  const requestTagsKey = appliedTags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .join(",");
   const appliedLanguagesKey = searchParams.getAll("languages").join(",");
   const appliedLanguages = useMemo(
     () => appliedLanguagesKey.split(",").filter(Boolean),
@@ -88,12 +95,9 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
       try {
         const data = await api.bingos.explore(
           {
-            search: appliedSearch,
-            author: appliedAuthor,
-            tags: appliedTags
-              .split(",")
-              .map((tag) => tag.trim())
-              .filter(Boolean),
+            search: requestSearch,
+            author: requestAuthor,
+            tags: requestTagsKey.split(",").filter(Boolean),
             languages: appliedLanguages,
             ordering: appliedOrdering,
             page,
@@ -116,13 +120,13 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
       }
     },
     [
-      appliedAuthor,
       appliedOrdering,
-      appliedSearch,
-      appliedTags,
       appliedLanguages,
       appliedKey,
       page,
+      requestSearch,
+      requestAuthor,
+      requestTagsKey,
     ],
   );
 
@@ -248,7 +252,7 @@ export function ExplorePage({ initialResult }: { initialResult?: Page<BingoSumma
       });
     }
     updateUrl(1);
-    setRequestVersion((value) => value + 1);
+    if (key === appliedKey) setRequestVersion((value) => value + 1);
   }
 
   function changePage(nextPage: number) {
