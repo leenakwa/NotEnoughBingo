@@ -85,6 +85,9 @@ RUN chmod +x /app/docker-entrypoint.sh \
        USE_S3=false \
        python manage.py collectstatic --noinput
 
+# Select production settings before Gunicorn imports config (and its Celery app).
+ENV DJANGO_SETTINGS_MODULE=config.settings.production
+
 USER app
 
 EXPOSE 8000

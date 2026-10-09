@@ -454,6 +454,32 @@ jobs:
               ;;
           esac
 
+      - name: Verify backend defaults to production settings and rejects unsafe startup
+        if: ${{ matrix.name == 'backend' }}
+        env:
+          IMAGE_REF: not-enough-bingo-backend:${{ github.sha }}
+        run: |
+          settings_module="$(docker image inspect "$IMAGE_REF" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^DJANGO_SETTINGS_MODULE=//p')"
+          if [ "$settings_module" != config.settings.production ]; then
+            echo 'Backend production image must default to production settings' >&2
+            exit 1
+          fi
+          startup_log="$(mktemp)"
+          trap 'rm -f "$startup_log"' EXIT
+          if docker run --rm --network none --entrypoint python \
+            -e APP_ENVIRONMENT=production -e DEBUG=false -e ALLOWED_HOSTS='*' \
+            -e DATABASE_URL=sqlite:///:memory: -e USE_S3=false \
+            "$IMAGE_REF" -m gunicorn config.wsgi:application \
+            --config python:config.gunicorn --check-config >"$startup_log" 2>&1; then
+            echo 'Backend production image accepted unsafe startup configuration' >&2
+            exit 1
+          fi
+          if ! grep -Fq 'ALLOWED_HOSTS must be explicit and cannot contain a wildcard' "$startup_log"; then
+            cat "$startup_log" >&2
+            echo 'Backend startup did not reject configuration through production guards' >&2
+            exit 1
+          fi
+
       - name: Verify embedded frontend release and reject runtime relabeling
         if: ${{ matrix.name == 'frontend' }}
         env:

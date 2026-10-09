@@ -24,6 +24,13 @@ throughput during rollout; local boundary probes do not establish capacity.
 
 ## Required configuration
 
+The backend production image defaults to `DJANGO_SETTINGS_MODULE=config.settings.production`.
+Gunicorn, WSGI, ASGI, and Celery also default to production settings when the
+variable is absent. Keep this selection for public deployments. Local `manage.py`
+commands and the development Compose services explicitly select development
+settings; standalone local Celery commands must set
+`DJANGO_SETTINGS_MODULE=config.settings.development`.
+
 Start from `.env.example` only as a variable inventory; none of its local
 credentials may be reused. `config.settings.production` fails during startup
 for debug mode, known local/default credentials, wildcard hosts, SQLite,

@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, password_validation
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import MaxLengthValidator
 from django.db import transaction
 from drf_spectacular.helpers import lazy_serializer
 from drf_spectacular.utils import extend_schema_field
@@ -149,13 +150,15 @@ class OwnUserProfileReadSerializer(UserProfileReadSerializer):
 
 
 class RegistrationSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(max_length=254)
     username = serializers.RegexField(r"^[a-zA-Z0-9_]{3,30}$", max_length=30)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
     display_name = serializers.CharField(max_length=80, allow_blank=True, required=False)
 
     def validate_email(self, value: str) -> str:
-        return value.strip().lower()
+        normalized = value.strip().lower()
+        MaxLengthValidator(254)(normalized)
+        return normalized
 
     def validate_username(self, value: str) -> str:
         normalized = value.strip().lower()
@@ -201,8 +204,13 @@ class EmailRequestSerializer(serializers.Serializer):
 
 
 class EmailChangeRequestSerializer(serializers.Serializer):
-    new_email = serializers.EmailField()
+    new_email = serializers.EmailField(max_length=254)
     current_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate_new_email(self, value: str) -> str:
+        normalized = value.strip().lower()
+        MaxLengthValidator(254)(normalized)
+        return normalized
 
     def validate(self, attrs: dict) -> dict:
         user = self.context["request"].user
@@ -214,7 +222,7 @@ class EmailChangeRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"new_email": "This account cannot change its email address right now."}
             )
-        email = attrs["new_email"].strip().lower()
+        email = attrs["new_email"]
         if email == user.email.lower():
             raise serializers.ValidationError({"new_email": "Enter a different email address."})
         if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():

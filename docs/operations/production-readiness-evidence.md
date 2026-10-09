@@ -8513,3 +8513,158 @@ helpers, preserving query extraction; targeted lint/typecheck/format pass, with
 independent review. Its exact-source live CI is still pending. Checklist totals
 are now823 checked/319 unchecked, including89 release-scoped N/A and230 applicable
 unchecked; section verdicts remain59/39/6/1.
+
+### 2026-10-09 — Actual dense default24 SSR/API/thumbnail delivery
+
+The ordinary shared catalog contains only two text boards; its untouched guest
+GET observations at390/1440 remain separately scoped in
+`evidence-actual-default24-delivery-ec69223-2026-10-09/` (11 root-verified hashes).
+An initial built-in Chrome tab inherited an existing signed-in QA session and
+was immediately closed; it is excluded from measurements, and its automatic
+telemetry may have posted to the shared stack.
+A new owned isolated database contains24 public10×10 boards/2,400 cells and one
+shared validated32×32 image processed by the existing media task. The optimized
+ec69223 frontend and declared cached b6 backend deliver actual SSR/API/thumbnail
+responses, without mocked GETs. `evidence-full24-delivery-ec69223-2026-10-09/`
+retains24 root-verified hashes and passes independent performance/scope review.
+
+Both390×900 and1440×900 show24 SSR articles and24 rendered cards, without
+horizontal overflow or observed layout shifts. SSR gzip encoded body bytes are
+140,830/140,858 and decoded bytes2,532,397; the diagnostic feed GET has99,226
+encoded/1,119,988 decoded bytes. ResourceTiming transfer and CDP total lengths
+include different overhead and are recorded separately. The initial browser load
+has no feed GET; that diagnostic request is not a product duplicate. One shared
+thumbnail URL returns200 image/webp,78 bytes, natural32×32, twice per viewport.
+Only3 narrow/12 wide image elements load after jumping to the bottom; this does
+not prove fetching all24 images or distinct-image performance.
+
+Late95ms/69ms long tasks precede the diagnostic feed request and cannot be
+attributed to that request or response serialization. Their cause remains
+unverified; single local runs establish no latency budget or regression.
+Non-GET browser requests are aborted and resulting telemetry console errors are
+diagnostic artifacts. Owned contexts, containers, networks and volume are removed
+with verified cleanup. No shared catalog or repository source changes occur.
+This is actual dense-fixture delivery evidence, not production settings/network,
+CDN/cache effectiveness, representative distinct-media stress or an SLO.
+
+### 2026-10-09 — Genuine expired-link browser rejection and recovery gap
+
+`evidence-expired-link-browser-ec69223-2026-10-09/` retains42 root-verified hashes
+and passes independent security/scope review. Three owned accounts in an isolated
+cached stack use unused signed expired verification/email-change rows and a reset
+signature aged3,720s against the3,600s timeout. Only the generating instance's
+clock is overridden; its signature check succeeds while the default current-time
+generator rejects it. Actual API/UI requests return400 with expiry errors;
+no response mocks, global time changes or invalid/reused-token substitutes occur.
+Account email, password, verification and active/deletion state remain unchanged
+before guarded fixture cleanup. All owned stack resources are removed.
+
+Verification offers registration/login recovery. The supplemental email-context
+resend route returns202 and visible check-inbox guidance, but the token-row count
+stays unchanged under cooldown; no fresh email or provider receipt is proved.
+The generated verification link itself omits that email parameter. Email change
+offers Profile → login recovery with unchanged contact data.
+
+Expired password reset shows its error but no page-level new-link/login action;
+`frontend/components/auth/password-forms.tsx` renders login navigation only after
+success. Global header login remains available. This is a confirmed usability
+gap, not a security vulnerability or complete navigation dead end. The user's
+choice of an error-adjacent new-reset link or replacement recovery screen remains
+pending; no UI treatment is selected. Original expired-links ID569 stays open
+until the recovery behavior is resolved and verified. This local fixture proof
+does not establish actual email receipt, final provider or deployment behavior.
+
+### 2026-10-09 — Completed03a83e9 source gate
+
+Exact03a83e9c2d494a7fae1d25948fae51935c4cdb99
+[CI37860882959](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37860882959)
+completes SUCCESS with all12 jobs:446 backend tests,625 frontend tests/45 files,
+452 smoke cases/12 intentional skips and125 full-stack cases. The577 browser
+report passes have zero unexpected failures, flakes, retries or global errors.
+All five named Mailpit cases pass once with protocol/origin/route assertions.
+Both production image jobs and Release pass; watch88667 exits0.
+
+Logged tested merge16268823647c8b04ca7eb55ab5965ef699b987e5 and branch/local HEAD
+have identical full tree9b48fd4ed0e08e5088657f82428d69b3ee71984a. Root independently
+checks both current Git API trees, all nine current API artifact digests and46
+retained file hashes. Thirteen ZIPs (including five embedded reports) and two
+gzip image-build logs have integrity verification. The retained packet is
+`evidence-03a83e9-2026-10-09/ci/`; no rerun is performed. This gate includes the
+six local checklist closures and new Mailpit assertions, not subsequent
+documentation reconciliation or actual deployment.
+
+### 2026-10-09 — GitGuardian metadata and historical source classification
+
+Current03a83e9 GitGuardian check113596031848 reports FAILURE with six occurrences
+across125 commits and four unique incidents; annotations are zero. The
+[vendor comment](https://github.com/leenakwa/NotEnoughBingo/pull/18#issuecomment-5898178562)
+provides path/commit/line references, resolving the earlier metadata gap without
+provider login. Private redacted metadata and independent source classification
+are retained in `gitguardian-metadata-03a83e9-2026-10-09/`.
+
+Incident37737208 references weak-password rejection test inputs with400/no-account
+assertions.37983670 references runtime-generated transaction passwords and a
+legacy-hasher-prefix assertion.37983669 references three revisions of UUID-derived
+passwords for temporary live-test accounts.37990522 references native-control
+synthetic inputs with intercepted422 validation. These locations support test
+material, and no production credential exposure is established by this inspection.
+QA seed guards exist in the referenced revisions. Docker runtime stages selectively
+copy application files, but neither dockerignore excludes tests and frontend build
+context includes them; compiled artifact exclusion is not verified here.
+
+The GitHub table contains detector labels rather than detected values, so exact
+provider spans remain unavailable. Historical external use/reuse is unverified;
+provider disposition is not changed and no blanket false-positive classification
+is claimed. Operator inspection of exact spans remains required. This external
+FAIL is separate from the passing repository secret scan and12-job source gate.
+
+### 2026-10-09 — Email storage boundaries and production startup defaults
+
+A bounded field-contract check finds that the registration/new-email serializers
+accepted valid emails longer than their254-character database columns; field
+validation had no explicit cap. Both persisted inputs now enforce254 before
+and after existing strip/lower normalization. Independent review catches a
+second edge: valid254-character Unicode input can lowercase to255 characters.
+That case now returns field-specific HTTP400/max_length without persistence.
+Login/reset/resend lookup contracts and frontend limits are unchanged.
+
+Six final actual PostgreSQL cases pass in2.64s: ASCII254 completes registration
+verification and email-change confirmation; ASCII255 and Unicode254→255 reject
+without new users/verification/security events/mail or invalidating the existing
+pending email change. Isolated SQLite also passes these six cases. Earlier71
+PostgreSQL account/step-up/recovery cases and the four ASCII cases are retained
+as historical checks before the normalization correction. The initial SQLite
+broad run has58 pass/four skips/nine failures from its absent PostgreSQL advisory
+lock function; only its result summary was retained, not a full failure log.
+Owned PostgreSQL containers use cached images, bounded resources and tmpfs, and
+are removed with absence verified; shared services/databases are preserved.
+Independent final correctness review passes. The private
+`evidence-email-storage-boundary-03-2026-10-09/` packet has six root-hashed files.
+
+A separate actual sanitized subprocess proves production Gunicorn import order
+selected development settings when DJANGO_SETTINGS_MODULE was omitted:
+config package initialization imports Celery before Gunicorn/WSGI can choose
+production. APP_ENVIRONMENT=production and DEBUG=false still yielded DEBUG=True
+and wildcard hosts. Deployment exposure is unverified. Celery now defaults to
+production, and the production Docker stage sets the same module after build-time
+collectstatic. manage.py and development Compose retain explicit development
+selection; bare local Celery requires that explicit selection, documented in the
+deployment baseline.
+
+Fourteen final subprocess cases pass in4.28s: omitted-module Gunicorn/WSGI/ASGI/
+Celery imports reject unsafe configuration, accept valid production configuration,
+and respect an explicit development selection. Source-derived image-default
+Gunicorn checks reject wildcard hosts and DEBUG. CI additionally inspects the
+actual built backend image and runs network-disabled Gunicorn check-config
+without a settings override, requiring the specific production guard failure.
+That actual-image check remains pending. Independent security review passes;
+Ruff/format, Hadolint, workflow YAML and shell syntax checks pass. The private
+`evidence-production-default-settings-03-2026-10-09/` packet has two root-hashed
+files; recorded source hashes match the reviewed files.
+
+Local Python3.14.5/Django5.2.16/DRF3.16.1/pytest8.4.2 differ from locked CI/runtime
+versions. Committed WhiteNoise6.12.0 was installed into the existing local venv
+for valid startup imports; no dependency files changed. Both corrections await
+one consolidated exact-source CI/image gate; no new checklist closure or
+production-ready claim follows. Counts remain823 checked/319 unchecked,89 N/A
+and230 applicable unchecked;59 Verified/39 Partial/6 N/A/1 deployment-only.

@@ -8,7 +8,7 @@ from celery import Celery
 from celery.signals import setup_logging, task_failure, task_postrun, task_prerun, task_retry
 from django.conf import settings
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 
 app = Celery("not_enough_bingo")
 app.config_from_object("django.conf:settings", namespace="CELERY")

@@ -40,19 +40,28 @@ unresolved failures or missing evidence.
 ### Latest observed source gate — 2026-10-09
 
 Latest completed committed-source gate: exact
-`ec692234ba892b16ed2aae3cbd8eeecc0f91ad0d`
-[CI37856721227](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37856721227)
+`03a83e9c2d494a7fae1d25948fae51935c4cdb99`
+[CI37860882959](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37860882959)
 finishes SUCCESS with all12 jobs:446 backend,625 frontend/45 files,452 smoke/12
 intentional skips and125 full-stack cases; all577 reported passed cases have
-zero retries/errors. Logged tested merge35e151daf770d4ddef9a806f31663a1d13c9fdb2
-and branch/local HEAD share full tree dce1150323c8791a945abdf357b07836cd4fd1ec.
-All nine original artifact API digests, archive integrity and27 packet hashes
-verify. Both production images and Release pass. This covers the export
-live-region and offscreen-preview source/test patches; subsequent documentation
+zero retries/errors. All five named Mailpit cases pass once with the new
+protocol/origin/route assertions. Logged tested merge16268823647c8b04ca7eb55ab5965ef699b987e5
+and the recorded branch head03a83e9 share full tree9b48fd4ed0e08e5088657f82428d69b3ee71984a.
+All nine original artifact API digests, archive integrity and46 packet hashes
+verify. Both production images and Release pass. This includes the prior
+preview/export changes and the Mailpit test correction; later documentation
 reconciliation is outside this committed gate. Optimized local ec69223 runtime
-and earlier44 native packets retain their recorded scopes. See the
-[dated ec69223 gate](production-readiness-evidence.md#2026-10-09--completed-ec69223-source-gate)
+has unchanged application code relative to03a83e9 and retains its declared cached
+backend/worker limits. See the [dated03 gate](production-readiness-evidence.md#2026-10-09--completed03a83e9-source-gate)
 and [optimized local evidence](production-readiness-evidence.md#2026-10-09--optimized-ec69223-export-announcement-and-pagination-loading).
+
+A later backend patch fixes persisted email length validation before and after
+Unicode normalization, and production startup selecting development settings
+when the settings variable is omitted. Final local checks pass six isolated
+PostgreSQL boundary cases and14 startup subprocess cases; independent reviews
+pass. The new actual-image CI guard and exact consolidated source gate are
+pending. The completed03 gate does not cover this patch. See the
+[dated correction evidence](production-readiness-evidence.md#2026-10-09--email-storage-boundaries-and-production-startup-defaults).
 
 Earlier completed gate — Exact `5f4bca9` [CI37844368314](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37844368314)
 finishes successfully with all12 jobs:446 backend,619 frontend/44 files,444 smoke
