@@ -61,7 +61,7 @@ Verify all of the following:
 - [x] success states exist;
 - [x] errors are understandable;
 - [x] submit buttons have loading/disabled states;
-- [x] duplicate submission is prevented;
+- [ ] duplicate submission is prevented;
 - [x] browser Back/Forward work correctly;
 - [x] refreshing nested/deep routes works;
 - [x] mobile layout works;
@@ -1643,7 +1643,7 @@ Inspect rendered production source/head for expected tags such as:
 - [x] Open Graph title;
 - [x] Open Graph description;
 - [x] Open Graph image;
-- [ ] Open Graph URL;
+- [x] Open Graph URL;
 - [x] canonical;
 - [x] favicon.
 

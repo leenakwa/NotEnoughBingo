@@ -40,37 +40,55 @@ unresolved failures or missing evidence.
 ### Latest observed source gate — 2026-10-09
 
 Latest completed committed-source gate: exact
-`6050e9ef5cefa72cbc768f3c9dbff0c5c184c46a`
-[CI37874111137](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37874111137)
-finishes SUCCESS with all12 jobs:469 backend,647 frontend/46 files and589 expected
+`bb4ae862cb7bcdd73b20680b9be98063242626a9`
+[CI37875904112](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37875904112)
+finishes SUCCESS with all12 jobs:469 backend,655 frontend/46 files and590 expected
 browser passes with12 intentional skips, zero unexpected cases and zero flakes.
 Chromium passes119 smoke cases, each other profile115/four skips, and full-stack
-flows125. All12 new editor validation-label browser cases pass once at retry0.
-The locked backend includes all16 auth-cache, six email-boundary and14 production-
-startup cases. Both production images and Release pass; the cached backend-image
-SBOM records Gunicorn26.2.2 and its production-default unsafe-startup guard passes.
-Source605 and logged tested merge `8bbb084e13264c8aacf690228036c732425aff56`
-share full tree `8d360241f5cb09ad4b145f19a1879b5ab4219ede`. Root independently
-verifies both Git API commits/full recursive tree,44 retained CI file hashes and
-all nine fresh artifact API digests against actual bytes; archive integrity passes.
-See the [dated605 gate](production-readiness-evidence.md#2026-10-09--completed6050e9e-source-and-image-gate).
+flows126. The new static public-head loop passes once at retry0 in8690ms; all28
+metadata unit cases pass. Both production images and Release pass. The cached
+backend-image SBOM records Gunicorn26.2.2 and its production-default unsafe-startup
+guard passes; the locked backend includes all16 auth-cache cases.
+Sourcebb4 and logged tested merge `c271cb8d2969dc513b9c7fa397cc305d43ff65a8`
+share full tree `6fbd557c5d388d7dd8713d0b150a45fe05e83f1b`. Root independently
+verifies both Git API commits,47 retained CI file hashes and all nine fresh
+artifact API digests against actual bytes; archive integrity passes.
+See the [datedbb4 gate](production-readiness-evidence.md#2026-10-09--completedbb4ae86-source-and-rendered-metadata-gate).
 
-This gate includes the asset-field label correction/12 new API cases and12 browser
-cases, installed-Gunicorn OSV CI guard, preview/recovery/Gunicorn/navigation changes
-and prior auth-cache/email/startup/schema changes. The actual CI OSV guard passes
-for installed26.2.2 with one matching dependency, no skip and vulns[]; complete
-original command/runtime stdout is retained, but its generated audit JSON is not.
-The ordinary full PyPI audit still explicitly skips Gunicorn26.2.2. This scoped
-known-advisory result does not guarantee absence of undisclosed vulnerabilities.
+The optimized frontend-image step verifies seven static routes plus filtered
+Explore: eight200 heads/128 assertions, including query-free canonical and Open
+Graph URLs and preserved shared metadata. Original runtime JSON identifies image
+`sha256:c193ea746bcd14f199c182295b2ff45f00d14576f27e4d08b08c332533457502`,
+NODE_ENV=production, environment=staging, embedded mergec271 and the synthetic
+`https://ci.not-enough-bingo.invalid` origin. The step succeeds after the script's
+required removal of its uniquely named container; no independent post-removal
+listing is retained. This closes URL bullet994 and restores section91 Verified
+before deployment. Current822 checked/320 unchecked,89 N/A/231 applicable and
+58 Verified/40 Partial totals remain; ID27 stays open and section1 Partial.
 
-The subsequent static Open Graph URL correction and optimized-image metadata
-gate are outside605. Their28 host tests pass; one live browser case is discovered,
-not executed. Rendered development and optimized-image results await the next
-exact-source CI; section91 remains Partial with its URL bullet open. Current
-counts and newest metadata evidence below remain unchanged. Cached local frontend
-ec69223/backend b6aabca/worker a3 and keepalive0 transport observations retain
-their separate scopes; this CI gate establishes neither current Django/Gunicorn
-recovery/privacy transport nor real deployment readiness.
+This gate includes the metadata helper/probe, asset labels, installed-Gunicorn
+OSV guard and prior preview/recovery/Gunicorn/navigation changes. The actual CI
+OSV guard passes for installed26.2.2 with one matching dependency, no skip and
+vulns[]; original command/runtime stdout is retained, but generated audit JSON
+is not. The ordinary full PyPI audit still explicitly skips Gunicorn26.2.2.
+This scoped known-advisory result does not guarantee absence of undisclosed
+vulnerabilities.
+
+Committedbb4 still creates duplicate export jobs after an uncertain accepted
+POST or exhausted polling; the reviewed working-tree correction has49 passing
+host Node24 editor cases and three original before-fix failures. Its next-source
+Node22 gate and accepted-response live recovery case remain pending. The live
+case is discovered only, with its draft-endpoint predicate corrected and source-reviewed; no runtime
+execution is claimed. These export changes are outsidebb4 CI. Cached local
+frontend ec69223/backend b6aabca/worker a3 and keepalive0 observations retain their
+separate scopes. The isolated metadata probe uses a loopback backend alias and
+establishes rendered heads, not functional backend availability, current
+Django/Gunicorn recovery/privacy transport or public deployment readiness.
+
+Historical605 all12 SUCCESS,469 backend/647 frontend/46 files,589 expected browser
+passes,12 skips/zero flakes,44 hashes/nine digests and shared tree
+`8d360241f5cb09ad4b145f19a1879b5ab4219ede` remain retained in the
+[dated605 gate](production-readiness-evidence.md#2026-10-09--completed6050e9e-source-and-image-gate).
 
 Historical991 all12 SUCCESS,469 backend/635 frontend,577 expected browser passes,
 12 skips/zero flakes,46 hashes/nine digests and shared tree
@@ -110,14 +128,14 @@ observes four same-origin registration-email Referer matches and anonymous
 verification200 returning own email without explicit Cache-Control. The email-query
 UI choice remains pending. The later auth-prefix private/no-store fix passes
 16 focused SQLite tests and scoped security review; it is outside exact188 CI.
-Committed84 and latest605 backend469 pass under locked dependencies, including
+Committed84 and latestbb4 backend469 pass under locked dependencies, including
 all16 cache cases; optimized-runtime transport remains unverified. A subsequent single
 post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
 
-Current605 external GitGuardian check113638587727 remains FAILURE with the same
-six occurrences/four incidents, now131 commits; historical991/e8/84/188 metadata is retained.
+Currentbb4 external GitGuardian check113644315650 remains FAILURE with the same
+six occurrences/four incidents, now132 commits; historical605/991/e8/84/188 metadata is retained.
 
 The [committed preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
 removes only unused position/image_asset_id fields from feed/Explore SSR preview
@@ -126,7 +144,7 @@ independent source review pass. Actual source-bound development pages retain the
 raw API content except those fields: normalized JSON34,709→31,642 bytes for five
 boards/77 cells on each route. Narrow/wide layout and first-card navigation pass;
 network capture is unavailable, so no new zero-initial-feed-request claim follows.
-This patch is included in e8/991 and latest605 CI, including all seven projection cases. Its
+This patch is included in e8/991 and latestbb4 CI, including all seven projection cases. Its
 actual development-media observation remains separate; no optimized browser
 runtime, wire/gzip or latency proof follows. No checkbox/count or section verdict
 changes follow.
@@ -352,7 +370,7 @@ original prompt remains unchanged.
 
 ## Section verdicts
 
-- [x] 1. BASIC LAUNCH DETAILS — Verified before deployment: real metadata/icons/404/error and first-screen routes, loading/empty/success states, session/reset/account-switch flows, mobile/Safari and production browser probes passed. The production image requires a same-origin browser API path and explicit non-local backend address, while its public HTTPS origin and staging index policy are validated. Actual domain/provider checks remain part of rollout.
+- [ ] 1. BASIC LAUNCH DETAILS — Partial: prior launch, session and configuration observations retain their scopes. Current committed editor export retries use a fresh key after an accepted POST response is lost or polling times out, creating duplicate backend jobs. The working-tree fix retains uncertain keys and resumes known jobs, with49 passing host editor cases and independent correctness/privacy reviews; exact-source browser/Node22 verification remains pending.
 - [x] 2. FIRST-SCREEN / PRODUCT CLARITY — Verified before deployment: a guest can see what to do, the primary Find a bingo action and secondary Create action, free guest play and signup requirement; at 320×667 both actions fit entirely in the first viewport in that dated observation. This is a manual browser/heuristic check, not an external user-comprehension study.
 - [x] 3. NAVIGATION — Verified before deployment: branded home and header/footer links, active-route labels, Back/Forward with profile recovery, direct/new-tab/reloaded routes and URL-restored Explore/share state passed. Dialog/disclosure Escape/outside and sticky-anchor behavior have live evidence. Navigation is always visible; no mobile menu is present.
 - [x] 4. UI STATES — Verified locally: mapped required and optional reads cover initial/loading/loaded/empty/partial/error/offline/retry/permission/session states. Auth/header/catalog, editor publication lookup, player author/progress/comments, profile viewer/activity, account sessions/preferences/export and social surfaces retain independent usable content and protect request ownership. The final two composition gaps now pass eight cases in four engines: profile activity Drafts503 with retained profile/email edits and scoped real200 retry without identity reload; accepted real export202 followed by exact status503, retained profile/email/password edits, available unrelated actions and recovery to the same ready job. Their four accompanying reset-reuse cases also pass. Full current source CI remains separate; native form/control requirements remain in sections7/8.
@@ -442,7 +460,7 @@ original prompt remains unchanged.
 - [ ] 88. SUPPORT — Partial: local evidence recorded; review remaining original bullets.
 - [ ] 89. LEGAL / BUSINESS FOOTER — Partial: Privacy, Terms, Cookies, and current-year footer verified; a private contact and real operator/legal identity still need user-provided details and review.
 - [x] 90. FOOTER — Verified before deployment: current-year branded footer, five working internal links, contact destination page, intentional cookies anchor, responsive layout, and no broken placeholders; official social accounts are not configured for this release.
-- [ ] 91. PAGE METADATA — Partial: prior title, description, canonical, image, Twitter and favicon observations retain their scopes. Inspection of committed6050e9e and the installed Next metadata resolver confirms missing Open Graph URLs on Discover, Explore, Trending, Privacy, Terms, Community Guidelines and Support; the earlier all-public-route URL conclusion is superseded. The working-tree correction passes28 host metadata tests and independent review; rendered development/production-image checks await the next exact-source CI.
+- [x] 91. PAGE METADATA — Verified before deployment: exactbb4 production image serves seven static public routes and filtered Explore with query-free canonical/Open Graph URLs and preserved title, description, image dimensions/alt, Twitter and favicon head metadata. The observed NODE_ENV=production image uses the synthetic staging CI origin;28 metadata cases, the live head loop at retry0 and all12 CI jobs pass. Earlier dynamic bingo/profile/share observations retain their scopes; public-domain/social-provider rollout remains separate.
 - [ ] 92. FAVICON SET — Partial: ICO, SVG browser icon, and 180px Apple touch icon return 200 and appear in page head; native dark browser chrome is captured, but visibility in both light/dark chrome remains unchecked. PWA is absent.
 - [x] 93. SCROLL BEHAVIOR — Verified before deployment: route top, browser Back, modal close, horizontal overflow, and sticky-header anchor behavior checked at mobile and desktop widths. Removed global smooth scrolling after a mobile WebKit tap missed a moving checkbox; the corrected language flow passed 20 repeated touch runs and the full live regression.
 - [x] 94. MODALS — Verified before deployment: report dialog X, Cancel, Escape, backdrop, focus containment, background scroll lock, and 320px-high viewport; there is no destructive modal action.

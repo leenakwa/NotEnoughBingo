@@ -2265,6 +2265,75 @@ test("published multilingual bingo downloads as PNG and PDF through the real wor
   }
 });
 
+test("published PNG retry recovers an accepted export response without duplicating its job", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  const board = await createSocialFormBoard(page);
+  await page.goto(`/create?bingo=${board.id}`);
+  await expect(page.getByRole("heading", { name: "Edit bingo", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Finish creating →" }).click();
+  await page.getByText("Download published version", { exact: true }).click();
+
+  const exportPath = `/api/v1/bingos/${board.id}/exports/`;
+  const attempts: Array<{ key: string; jobId: string }> = [];
+  let draftWrites = 0;
+  page.on("request", (request) => {
+    if (
+      ["POST", "PUT", "PATCH"].includes(request.method()) &&
+      new URL(request.url()).pathname === `/api/v1/bingos/${board.id}/draft/`
+    ) {
+      draftWrites += 1;
+    }
+  });
+  const message = "The export response was interrupted. Try downloading again.";
+  await page.route(
+    (url) => url.pathname === exportPath,
+    async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      expect(route.request().postDataJSON()).toEqual({ format: "png" });
+      const key = route.request().headers()["idempotency-key"];
+      expect(key).toBeTruthy();
+      // Commit the request to the real backend before hiding its accepted response.
+      const accepted = await route.fetch();
+      expect(accepted.status()).toBe(202);
+      const job = (await accepted.json()) as { id: string };
+      expect(job.id).toBeTruthy();
+      attempts.push({ key: key!, jobId: job.id });
+      if (attempts.length === 1) {
+        await route.fulfill({
+          status: 503,
+          json: { error: { code: "unavailable", message } },
+        });
+      } else {
+        await route.fulfill({ response: accepted });
+      }
+    },
+  );
+
+  const button = page.getByRole("button", { name: "Published PNG", exact: true });
+  await button.click();
+  await expect(page.getByRole("alert")).toContainText(message);
+  await expect(button).toBeEnabled();
+  expect(attempts).toHaveLength(1);
+  const downloadPromise = page.waitForEvent("download", { timeout: 60_000 });
+  await button.click();
+  const download = await downloadPromise;
+  expect(await download.failure()).toBeNull();
+  expect(download.suggestedFilename()).toMatch(/\.png$/);
+  const bytes = readFileSync((await download.path())!);
+  expect(bytes.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  await expect(button).toBeEnabled();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  expect(attempts).toHaveLength(2);
+  expect(attempts[1]).toEqual(attempts[0]);
+  expect(draftWrites).toBe(0);
+  expect(new URL(page.url()).pathname).toBe("/create");
+  expect(new URL(page.url()).searchParams.get("bingo")).toBe(board.id);
+  expect(pageErrors).toEqual([]);
+});
+
 async function waitForResponse(
   page: Page,
   path: string,

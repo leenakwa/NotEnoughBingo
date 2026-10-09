@@ -54,6 +54,16 @@ interface PendingDraftCreation {
   idempotencyKey: string;
 }
 
+interface PendingExport {
+  ownerId: string;
+  lifetime: number;
+  bingoId: string;
+  revisionId: string;
+  format: BingoExportFormat;
+  idempotencyKey: string;
+  job: ExportJob | null;
+}
+
 function isDraftConflict(error: unknown): error is ApiClientError {
   return (
     error instanceof ApiClientError &&
@@ -95,7 +105,8 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const [authCheckVersion, setAuthCheckVersion] = useState(0);
   const [accountId, setAccountId] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
-  const [exportAvailable, setExportAvailable] = useState(false);
+  const [exportRevisionId, setExportRevisionId] = useState<string | null>(null);
+  const exportAvailable = Boolean(exportRevisionId);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState(false);
   const [exportCheckVersion, setExportCheckVersion] = useState(0);
@@ -115,6 +126,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   const serverDraft = useRef({ bingoId: bingoId ?? null, version: 0 });
   const pendingCreation = useRef<PendingDraftCreation | null>(null);
   const actionInFlight = useRef(false);
+  const pendingExport = useRef<PendingExport | null>(null);
   const pendingPublication = useRef<{
     fingerprint: string;
     bingoId: string;
@@ -132,6 +144,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     mutationLifetime.current += 1;
     saveLoop.current = null;
     actionInFlight.current = false;
+    pendingExport.current = null;
     uploadController.current?.abort();
     setUploadPhase("preparing");
     setUploadProgress(null);
@@ -318,7 +331,7 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
   }, [accountId, authState, bingoId, draftLoadVersion, updateSaveStatus]);
 
   useEffect(() => {
-    setExportAvailable(false);
+    setExportRevisionId(null);
     setExportError(false);
     setExportLoading(false);
     if (authState !== "allowed" || !accountId || !bingoId) return;
@@ -327,7 +340,11 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     api.bingos
       .get(bingoId, controller.signal)
       .then((bingo) => {
-        if (!controller.signal.aborted) setExportAvailable(Boolean(bingo.current_revision));
+        if (!controller.signal.aborted) {
+          const revisionId = bingo.current_revision?.id ?? null;
+          if (pendingExport.current?.revisionId !== revisionId) pendingExport.current = null;
+          setExportRevisionId(revisionId);
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) setExportError(true);
@@ -749,21 +766,24 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     }
   }
 
-  async function waitForExport(job: ExportJob, lifetime: number): Promise<ExportJob> {
-    let current = job;
-    for (let attempt = 0; attempt < 30 && current.status !== "ready"; attempt += 1) {
+  async function waitForExport(attempt: PendingExport, resume: boolean): Promise<ExportJob> {
+    let current = attempt.job!;
+    for (let poll = 0; poll < 30 && (resume || current.status !== "ready"); poll += 1) {
       if (current.status === "failed" || current.status === "expired") return current;
-      await new Promise((resolve) => window.setTimeout(resolve, 1000));
-      if (lifetime !== mutationLifetime.current) return current;
+      // A user retry checks the known job immediately, then retains the polling budget.
+      if (!resume) await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      if (attempt.lifetime !== mutationLifetime.current) return current;
       current = await api.exports.get(current.id);
-      if (lifetime !== mutationLifetime.current) return current;
+      if (attempt.lifetime !== mutationLifetime.current) return current;
+      attempt.job = current;
+      resume = false;
     }
     return current;
   }
 
   async function exportBoard(format: BingoExportFormat) {
     if (actionInFlight.current) return;
-    if (!exportAvailable) {
+    if (!exportRevisionId) {
       setError("Publish this bingo before requesting a permanent PNG or PDF export.");
       return;
     }
@@ -775,19 +795,57 @@ export function BingoEditor({ bingoId }: { bingoId?: string }) {
     try {
       const persistedBingoId = serverDraft.current.bingoId ?? state.bingoId;
       if (!persistedBingoId) throw new Error("Publish the bingo before exporting it.");
-      const job = await api.exports.create(persistedBingoId, format, makeIdempotencyKey());
+      if (
+        pendingExport.current?.ownerId !== accountId ||
+        pendingExport.current.lifetime !== lifetime ||
+        pendingExport.current.bingoId !== persistedBingoId ||
+        pendingExport.current.revisionId !== exportRevisionId ||
+        pendingExport.current.format !== format
+      ) {
+        pendingExport.current = {
+          ownerId: accountId,
+          lifetime,
+          bingoId: persistedBingoId,
+          revisionId: exportRevisionId,
+          format,
+          idempotencyKey: makeIdempotencyKey(),
+          job: null,
+        };
+      }
+      const attempt = pendingExport.current;
+      const resume = Boolean(attempt.job);
+      // A lost POST response may already have created work. Retain its key;
+      // once its job is known, retry GET instead of requesting another export.
+      const job =
+        attempt.job ?? (await api.exports.create(persistedBingoId, format, attempt.idempotencyKey));
       if (lifetime !== mutationLifetime.current) return;
-      const completed = await waitForExport(job, lifetime);
+      attempt.job = job;
+      const completed = await waitForExport(attempt, resume);
       if (lifetime !== mutationLifetime.current) return;
       if (completed.status === "ready" && completed.download_url) {
         window.location.assign(completed.download_url);
+        pendingExport.current = null;
       } else if (completed.status === "failed" || completed.status === "expired") {
+        pendingExport.current = null;
         throw new Error(completed.error ?? "Export generation failed.");
       } else {
         setMessage("The export is still processing. Try downloading again shortly.");
       }
     } catch (caught) {
       if (lifetime !== mutationLifetime.current) return;
+      if (
+        caught instanceof ApiClientError &&
+        ([401, 403, 404].includes(caught.status) ||
+          (caught.status === 400 &&
+            caught.details !== null &&
+            typeof caught.details === "object" &&
+            !Array.isArray(caught.details) &&
+            "idempotency_key" in caught.details))
+      ) {
+        // A changed published revision can definitively reject a retained POST key.
+        // Leave the error visible; the next user request may start a fresh attempt.
+        pendingExport.current = null;
+      }
       setError(errorMessage(caught));
     } finally {
       if (lifetime === mutationLifetime.current) {

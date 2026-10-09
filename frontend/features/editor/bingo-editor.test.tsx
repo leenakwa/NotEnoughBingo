@@ -864,6 +864,326 @@ describe("BingoEditor autosave and safety", () => {
     expect(screen.getByText(/Downloads use the currently published revision/)).toBeVisible();
   });
 
+  it("preserves dirty edits and unlocks rejected export creation for a successful retry", async () => {
+    let rejectCreate!: (error: Error) => void;
+    mocks.createExport.mockReturnValueOnce(
+      new Promise<ExportJob>((_resolve, reject) => {
+        rejectCreate = reject;
+      }),
+    );
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Keep my dirty title" } });
+    fireEvent.click(screen.getByText("Download published version"));
+    const png = screen.getByRole("button", { name: "Published PNG" });
+    const pdf = screen.getByRole("button", { name: "Published PDF" });
+    fireEvent.click(png);
+    await settle();
+    expect(png).toBeDisabled();
+    expect(pdf).toBeDisabled();
+    expect(screen.getByText("Preparing published PNG export…")).toBeVisible();
+    fireEvent.click(png);
+    fireEvent.click(pdf);
+    expect(mocks.createExport).toHaveBeenCalledTimes(1);
+    await act(async () => rejectCreate(new Error("Export service is unavailable.")));
+    expect(screen.getByRole("alert")).toHaveTextContent("Export service is unavailable.");
+    expect(screen.getByLabelText("Title")).toHaveValue("Keep my dirty title");
+    expect(png).toBeEnabled();
+    expect(pdf).toBeEnabled();
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(window.location.hash).toBe("");
+    mocks.createExport.mockResolvedValueOnce({
+      id: "retried-export",
+      status: "ready",
+      download_url: "#published-export",
+      error: null,
+    } as ExportJob);
+    fireEvent.click(pdf);
+    await settle();
+    expect(mocks.createExport).toHaveBeenCalledTimes(2);
+    expect(mocks.createExport).toHaveBeenLastCalledWith(BINGO_ID, "pdf", expect.any(String));
+    expect(mocks.createExport.mock.calls[1]![2]).not.toBe(mocks.createExport.mock.calls[0]![2]);
+    expect(window.location.hash).toBe("#published-export");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toHaveValue("Keep my dirty title");
+    expect(png).toBeEnabled();
+    expect(pdf).toBeEnabled();
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+  });
+
+  it.each(["failed", "expired", "request rejection"])(
+    "retains the draft and permits another export after polling %s",
+    async (failure) => {
+      mocks.createExport.mockResolvedValueOnce({ id: "pending-export", status: "queued" });
+      const message = `Published export ${failure}.`;
+      if (failure === "request rejection")
+        mocks.getExport.mockRejectedValueOnce(new Error(message));
+      else
+        mocks.getExport.mockResolvedValueOnce({
+          id: "pending-export",
+          status: failure,
+          error: message,
+        });
+      await openEditor(BINGO_ID);
+      fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+      fireEvent.click(screen.getByText("Download published version"));
+      const png = screen.getByRole("button", { name: "Published PNG" });
+      const pdf = screen.getByRole("button", { name: "Published PDF" });
+      fireEvent.click(png);
+      await settle();
+      expect(png).toBeDisabled();
+      expect(pdf).toBeDisabled();
+      await advanceAutosave(1000);
+      expect(screen.getByRole("alert")).toHaveTextContent(message);
+      expect(screen.getByLabelText("Title")).toHaveValue("Draft title");
+      expect(png).toBeEnabled();
+      expect(pdf).toBeEnabled();
+      expect(mocks.getExport).toHaveBeenCalledExactlyOnceWith("pending-export");
+      expect(mocks.updateDraft).not.toHaveBeenCalled();
+      expect(mocks.push).not.toHaveBeenCalled();
+      expect(window.location.hash).toBe("");
+      const recovered = {
+        id: failure === "request rejection" ? "pending-export" : "new-export",
+        status: "ready",
+        download_url: "#recovered-export",
+        error: null,
+      } as ExportJob;
+      if (failure === "request rejection") mocks.getExport.mockResolvedValueOnce(recovered);
+      else mocks.createExport.mockResolvedValueOnce(recovered);
+      fireEvent.click(png);
+      await settle();
+      expect(mocks.createExport).toHaveBeenCalledTimes(failure === "request rejection" ? 1 : 2);
+      if (failure === "request rejection")
+        expect(mocks.getExport).toHaveBeenLastCalledWith("pending-export");
+      else
+        expect(mocks.createExport.mock.calls[1]![2]).not.toBe(mocks.createExport.mock.calls[0]![2]);
+      expect(window.location.hash).toBe("#recovered-export");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Title")).toHaveValue("Draft title");
+      expect(png).toBeEnabled();
+      expect(pdf).toBeEnabled();
+      expect(mocks.updateDraft).not.toHaveBeenCalled();
+    },
+  );
+
+  it("unlocks a still-processing export after bounded polling without background requests", async () => {
+    mocks.createExport.mockResolvedValueOnce({ id: "slow-export", status: "queued" });
+    for (let poll = 0; poll < 30; poll += 1)
+      mocks.getExport.mockResolvedValueOnce({ id: "slow-export", status: "processing" });
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByText("Download published version"));
+    const png = screen.getByRole("button", { name: "Published PNG" });
+    const pdf = screen.getByRole("button", { name: "Published PDF" });
+    fireEvent.click(png);
+    await settle();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(29000);
+    });
+    expect(png).toBeDisabled();
+    expect(pdf).toBeDisabled();
+    expect(screen.getByText("Preparing published PNG export…")).toBeVisible();
+    await advanceAutosave(1000);
+    expect(
+      screen.getByText("The export is still processing. Try downloading again shortly."),
+    ).toBeVisible();
+    expect(png).toBeEnabled();
+    expect(pdf).toBeEnabled();
+    expect(screen.getByLabelText("Title")).toHaveValue("Draft title");
+    expect(window.location.hash).toBe("");
+    expect(mocks.getExport).toHaveBeenCalledTimes(30);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60000);
+    });
+    expect(mocks.getExport).toHaveBeenCalledTimes(30);
+    expect(mocks.createExport).toHaveBeenCalledTimes(1);
+    expect(mocks.updateDraft).not.toHaveBeenCalled();
+    mocks.getExport.mockResolvedValueOnce({
+      id: "slow-export",
+      status: "ready",
+      download_url: "#slow-export-ready",
+      error: null,
+    } as ExportJob);
+    fireEvent.click(png);
+    await settle();
+    expect(mocks.createExport).toHaveBeenCalledTimes(1);
+    expect(mocks.getExport).toHaveBeenLastCalledWith("slow-export");
+    expect(window.location.hash).toBe("#slow-export-ready");
+  });
+
+  it("reuses the export creation key after a lost POST response", async () => {
+    mocks.createExport.mockRejectedValueOnce(new Error("The response was lost."));
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByText("Download published version"));
+    const png = screen.getByRole("button", { name: "Published PNG" });
+    fireEvent.click(png);
+    await settle();
+    expect(screen.getByRole("alert")).toHaveTextContent("The response was lost.");
+    const key = mocks.createExport.mock.calls[0]![2];
+    mocks.createExport.mockResolvedValueOnce({
+      id: "recovered-job",
+      status: "ready",
+      download_url: "#lost-response-recovered",
+      error: null,
+    } as ExportJob);
+    fireEvent.click(png);
+    await settle();
+    expect(mocks.createExport).toHaveBeenCalledTimes(2);
+    expect(mocks.createExport).toHaveBeenLastCalledWith(BINGO_ID, "png", key);
+    expect(window.location.hash).toBe("#lost-response-recovered");
+    mocks.createExport.mockResolvedValueOnce({
+      id: "intentional-new-job",
+      status: "ready",
+      download_url: "#new-download",
+      error: null,
+    } as ExportJob);
+    fireEvent.click(png);
+    await settle();
+    expect(mocks.createExport.mock.calls[2]![2]).not.toBe(key);
+    expect(window.location.hash).toBe("#new-download");
+  });
+
+  it("abandons a definitively rejected key after the published revision changes remotely", async () => {
+    mocks.createExport.mockRejectedValueOnce(new Error("The POST response was lost."));
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByText("Download published version"));
+    const png = screen.getByRole("button", { name: "Published PNG" });
+    fireEvent.click(png);
+    await settle();
+    const key = mocks.createExport.mock.calls[0]![2];
+    mocks.createExport.mockRejectedValueOnce(
+      new ApiClientError(400, {
+        code: "validation_error",
+        message: "This key was already used for another export.",
+        details: { idempotency_key: ["This key was already used for another export."] },
+      }),
+    );
+    fireEvent.click(png);
+    await settle();
+    expect(mocks.createExport).toHaveBeenLastCalledWith(BINGO_ID, "png", key);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This key was already used for another export.",
+    );
+    expect(mocks.createExport).toHaveBeenCalledTimes(2);
+    mocks.createExport.mockResolvedValueOnce({
+      id: "new-revision-export",
+      status: "ready",
+      download_url: "#new-revision-export",
+      error: null,
+    } as ExportJob);
+    fireEvent.click(png);
+    await settle();
+    expect(mocks.createExport).toHaveBeenCalledTimes(3);
+    expect(mocks.createExport.mock.calls[2]![2]).not.toBe(key);
+    expect(window.location.hash).toBe("#new-revision-export");
+    expect(mocks.getBingo).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([403, 404])(
+    "discards a known export job when polling is rejected with %s",
+    async (status) => {
+      mocks.createExport.mockResolvedValueOnce({ id: "inaccessible-job", status: "queued" });
+      mocks.getExport.mockRejectedValueOnce(
+        new ApiClientError(status, { code: "error", message: "Export unavailable." }),
+      );
+      await openEditor(BINGO_ID);
+      fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+      fireEvent.click(screen.getByText("Download published version"));
+      const png = screen.getByRole("button", { name: "Published PNG" });
+      fireEvent.click(png);
+      await settle();
+      await advanceAutosave(1000);
+      expect(screen.getByRole("alert")).toHaveTextContent("Export unavailable.");
+      mocks.createExport.mockResolvedValueOnce({
+        id: "accessible-job",
+        status: "ready",
+        download_url: "#accessible-export",
+        error: null,
+      } as ExportJob);
+      fireEvent.click(png);
+      await settle();
+      expect(mocks.createExport).toHaveBeenCalledTimes(2);
+      expect(mocks.createExport.mock.calls[1]![2]).not.toBe(mocks.createExport.mock.calls[0]![2]);
+      expect(mocks.getExport).toHaveBeenCalledTimes(1);
+      expect(window.location.hash).toBe("#accessible-export");
+    },
+  );
+
+  it("discards an uncertain export attempt after session lifetime invalidation", async () => {
+    mocks.createExport.mockRejectedValueOnce(new Error("Export response lost."));
+    await openEditor(BINGO_ID);
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByText("Download published version"));
+    fireEvent.click(screen.getByRole("button", { name: "Published PNG" }));
+    await settle();
+    const key = mocks.createExport.mock.calls[0]![2];
+    act(() => window.dispatchEvent(new Event(AUTH_SESSION_ENDED_EVENT)));
+    await settle();
+    await settle();
+    mocks.createExport.mockResolvedValueOnce({
+      id: "reauth-export",
+      status: "ready",
+      download_url: "#reauth-export",
+      error: null,
+    } as ExportJob);
+    fireEvent.click(screen.getByRole("button", { name: "Published PNG" }));
+    await settle();
+    expect(mocks.createExport).toHaveBeenCalledTimes(2);
+    expect(mocks.createExport.mock.calls[1]![2]).not.toBe(key);
+    expect(window.location.hash).toBe("#reauth-export");
+  });
+
+  it("ignores a late export response and uses a fresh attempt after changing boards", async () => {
+    let resolveOld!: (job: ExportJob) => void;
+    mocks.createExport.mockReturnValueOnce(
+      new Promise<ExportJob>((resolve) => {
+        resolveOld = resolve;
+      }),
+    );
+    const view = render(<BingoEditor bingoId={BINGO_ID} />);
+    await settle();
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Finish creating →" }));
+    fireEvent.click(screen.getByText("Download published version"));
+    fireEvent.click(screen.getByRole("button", { name: "Published PNG" }));
+    await settle();
+    const key = mocks.createExport.mock.calls[0]![2];
+    const nextId = "33333333-3333-4333-8333-333333333333";
+    mocks.getDraft.mockResolvedValueOnce(draft({ bingo_id: nextId, title: "Next board" }));
+    mocks.getBingo.mockResolvedValueOnce({
+      ...bingo,
+      id: nextId,
+      current_revision: { id: "next-revision" },
+    });
+    view.rerender(<BingoEditor bingoId={nextId} />);
+    await settle();
+    await settle();
+    await act(async () =>
+      resolveOld({
+        id: "old-export",
+        status: "ready",
+        download_url: "#wrong-board",
+        error: null,
+      } as ExportJob),
+    );
+    expect(window.location.hash).toBe("");
+    mocks.createExport.mockResolvedValueOnce({
+      id: "next-export",
+      status: "ready",
+      download_url: "#next-board",
+      error: null,
+    } as ExportJob);
+    fireEvent.click(screen.getByRole("button", { name: "Published PNG" }));
+    await settle();
+    expect(mocks.createExport).toHaveBeenLastCalledWith(nextId, "png", expect.any(String));
+    expect(mocks.createExport.mock.calls[1]![2]).not.toBe(key);
+    expect(screen.getByLabelText("Title")).toHaveValue("Next board");
+    expect(window.location.hash).toBe("#next-board");
+  });
+
   it("guards publication and reuses its key after a lost response", async () => {
     const filledCells = cells(3);
     filledCells[0]!.text = "Publish once";

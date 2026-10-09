@@ -9168,3 +9168,98 @@ and its URL bullet open. Existing822 checked/320 unchecked,89 N/A/231 applicable
 and58 Verified/40 Partial counts remain unchanged. No current Django/Gunicorn
 HTTP recovery/privacy transport, deployment readiness or broader section closure
 follows from this CI gate.
+
+### 2026-10-09 — Editor export retries preserve accepted work
+
+Committedbb4 generates a fresh idempotency key for every editor export request.
+Backend `request_bingo_export` reuses only owner/kind/key, so a user retry after a
+lost accepted response or30-poll exhaustion creates another job and broker enqueue.
+Worker duplicate-delivery protection only covers one job ID. The generic duplicate-
+submission requirement is therefore reopened as ID27/section1 Partial; current
+counts become821 checked/321 unchecked (89 N/A/232 applicable),57 Verified/41 Partial.
+No other checked requirement is reopened merely from this bounded finding.
+
+The working-tree attempt tracks owner, mutation lifetime, board, observed published
+revision, format, key and known job. Ambiguous POST failures retain the key; once
+the job is known, an explicit retry resumes GET rather than creating more work.
+Terminal failed/expired states, ready download, lifecycle invalidation and definitive
+401/403/404 or idempotency-key400 rejection clear the attempt. The server remains
+authoritative for foreign-tab revision changes; its rejected key is surfaced with
+the existing message, and the next explicit user request gets a new key. No extra
+metadata request, automatic POST retry, copy, autosave or design change is made.
+
+Original before-fix44-case runner log contains three regression failures: lost
+POST key replacement, a polling-GET failure causing another POST, and timeout retry
+creating another job. Corrected source passes49 editor cases (38 existing, five
+recovery and six idempotency/boundary additions), full host Node24.16 typecheck and
+targeted lint/format. Unit hash-URL fixtures observe the ready navigation branch,
+not downloaded file bytes. Independent correctness and scoped privacy/lifetime
+reviews pass; original runner logs and a labeled tool-response summary are private
+in `evidence-editor-export-idempotency-bb4-2026-10-09/`. Actual Node22 and live
+accepted-response recovery remain pending the next exact-source CI. These working-
+tree changes are outsidebb4 CI, and global states1111–1123 remain open.
+
+### 2026-10-09 — Completedbb4ae86 source and rendered metadata gate
+
+Exact `bb4ae862cb7bcdd73b20680b9be98063242626a9`
+[CI37875904112](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37875904112)
+finishes SUCCESS with all12 jobs:469 backend and655 frontend tests/46 files,
+including28 metadata cases. The backend includes16 auth-cache cases. Both
+production images and Release pass. Original browser reports contain590 expected
+passes,12 intentional skips and zero unexpected/flaky cases: Chromium119, each
+other smoke profile115/four skips, and126 full-stack cases. The new live case
+"static public heads retain canonical social URLs and shared metadata" has one
+passed result, retry0, duration8690ms. It covers seven static routes plus filtered
+Explore in the development full-stack gate; optimized evidence is supplied by
+the separate production-image step below.
+
+The actual step "Verify rendered metadata from the production frontend image"
+completes SUCCESS. Its retained original runtime JSON identifies image
+`sha256:c193ea746bcd14f199c182295b2ff45f00d14576f27e4d08b08c332533457502`,
+NODE_ENV=production, environment=staging, release/built_release
+`c271cb8d2969dc513b9c7fa397cc305d43ff65a8`, and origin/built_origin
+`https://ci.not-enough-bingo.invalid`. Discover, Explore, Trending, Privacy, Terms,
+Community Guidelines, Support and filtered Explore each return200 and pass16 head
+assertions, totaling128. Filtered Explore retains the query-free canonical URL.
+The executed assertions include canonical/Open Graph URLs, titles, descriptions,
+shared image dimensions/alt, Twitter and favicon metadata. Exact executed probe
+source SHA-256 is `8fecb62626a08c1da5bf59416fb757668cd7587aa0c20f57e636ed9c7deb04c1`.
+The stdout JSON is retained as original bytes; its scoped step-log excerpt is
+derived from the unchanged original frontend-image log.
+
+JSON output precedes finally-cleanup. The successful step after script return
+also establishes success of the required `docker rm --force` for its own uniquely
+named container: cleanup errors after successful verification are re-raised.
+No independent post-removal container listing is retained. The isolated probe
+uses a loopback backend alias and synthetic staging origin, so it proves rendered
+production-image heads, not functional backend availability or public deployment.
+
+Logged tested merge `c271cb8d2969dc513b9c7fa397cc305d43ff65a8` and sourcebb4
+share full tree `6fbd557c5d388d7dd8713d0b150a45fe05e83f1b`; the Git API comparison
+contains zero changed files. Root independently verifies both commits,47 manifest
+file hashes and all nine fresh artifact API digests against original bytes.
+Outer ZIP/gzip and embedded report integrity pass. Original logs, metadata,
+reports, probe stdout/source and validation remain privately in
+`evidence-bb4ae86-2026-10-09/ci/`. Historical605/991/e8/84 results and the original
+e8 failure/retry remain retained.
+
+The installed-Gunicorn OSV step succeeds for26.2.2, requiring exactly one matching
+dependency, no skip_reason and vulns[]. Original command/runtime stdout is
+retained; generated audit JSON is not separately uploaded. The ordinary full
+PyPI audit still explicitly skips26.2.2. The cached backend-image SBOM records
+26.2.2 and the actual production-default unsafe-startup guard passes; this is
+not a fresh installation log or absence-of-undisclosed-vulnerabilities guarantee.
+External GitGuardian check113644315650 remains FAILURE: the same six occurrences
+and four incidents, now132 commits. Historical vendor metadata remains retained;
+provider spans, external use and disposition remain unresolved.
+
+This rendered evidence supersedes the pending metadata gates recorded above,
+closes Open Graph URL bullet994 and restores section91 Verified before deployment.
+ID27 stays open and section1 Partial: committedbb4 still creates duplicate export
+jobs after uncertain acceptance or exhausted polling. The reviewed working-tree
+fix and its49 host Node24 cases/three before-fix failures remain outside this CI;
+next-source Node22 and live accepted-response recovery are pending. The new
+export live case is discovered only, with its draft-endpoint predicate corrected and source-reviewed,
+not an executed result. Current totals are822 checked/320 unchecked,89 N/A/231
+applicable and58 Verified/40 Partial, with these distinct item states. Public
+rollout and current Django/Gunicorn recovery/privacy transport remain separate.
