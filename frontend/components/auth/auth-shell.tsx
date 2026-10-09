@@ -1,5 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { AuthLink } from "@/components/auth/auth-link";
 
 export function AuthShell({
   eyebrow,
@@ -7,26 +8,37 @@ export function AuthShell({
   description,
   children,
   footer,
+  presentation = "page",
 }: {
   eyebrow: string;
   title: string;
   description: string;
   children: ReactNode;
   footer?: { text: string; href: string; label: string };
+  presentation?: "page" | "dialog";
 }) {
+  const Container = presentation === "dialog" ? "div" : "main";
+  const Heading = presentation === "dialog" ? "h2" : "h1";
+  const titleId = presentation === "dialog" ? "auth-dialog-title" : "auth-title";
   return (
-    <main id="main-content" className="auth-shell">
-      <section className="auth-card" aria-labelledby="auth-title">
+    <Container
+      id={presentation === "page" ? "main-content" : undefined}
+      className={presentation === "dialog" ? "auth-dialog__content" : "auth-shell"}
+    >
+      <section
+        className={presentation === "dialog" ? undefined : "auth-card"}
+        aria-labelledby={titleId}
+      >
         <p className="eyebrow">{eyebrow}</p>
-        <h1 id="auth-title">{title}</h1>
+        <Heading id={titleId}>{title}</Heading>
         <p>{description}</p>
         {children}
         {footer ? (
           <p className="auth-footer">
-            {footer.text} <Link href={footer.href}>{footer.label}</Link>
+            {footer.text} <AuthLink href={footer.href}>{footer.label}</AuthLink>
           </p>
         ) : null}
       </section>
-    </main>
+    </Container>
   );
 }

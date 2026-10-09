@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import permissions, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.bingos.models import Bingo
@@ -94,10 +96,35 @@ class ProgressView(APIView):
 
 class SharedResultCreateView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "shares"
 
     @extend_schema(
         request=SharedResultCreateSerializer,
-        responses={201: SharedResultSerializer},
+        parameters=[
+            OpenApiParameter(
+                name="Idempotency-Key",
+                location=OpenApiParameter.HEADER,
+                required=True,
+                type={"type": "string", "minLength": 8, "maxLength": 128},
+                pattern=VALID_KEY.pattern,
+                description="Letters, digits, dots, colons, underscores or hyphens.",
+            )
+        ],
+        responses={
+            201: OpenApiResponse(
+                SharedResultSerializer,
+                description="Created share, or the existing share for an identical retry.",
+            ),
+            400: OpenApiResponse(
+                OpenApiTypes.OBJECT,
+                description="Invalid share input or missing/malformed key.",
+            ),
+            409: OpenApiResponse(
+                OpenApiTypes.OBJECT,
+                description="The key was already used for a different share request.",
+            ),
+        },
     )
     def post(self, request, bingo_id):
         try:

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
 
 import { BingoGrid } from "@/components/bingo/bingo-grid";
+import { AvatarImage } from "@/components/ui/avatar-image";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-state";
 import { api, errorMessage } from "@/lib/api/client";
 import type {
@@ -14,21 +15,58 @@ import type {
   ProfileSharedResultItem,
   PublicUser,
 } from "@/lib/api/types";
+import { formatLocalDateTime } from "@/lib/date-time";
 
-type ProfileTab = "bingos" | "plays" | "shares" | "followers" | "following";
+type ProfileTab = "bingos" | "drafts" | "plays" | "shares" | "followers" | "following";
 type Collection =
-  | { kind: "bingos"; page: Page<BingoSummary> }
+  | { kind: "bingos" | "drafts"; page: Page<BingoSummary> }
   | { kind: "plays"; page: Page<ProfilePlayHistoryItem> }
   | { kind: "shares"; page: Page<ProfileSharedResultItem> }
   | { kind: "followers" | "following"; page: Page<PublicUser> };
 
 const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "bingos", label: "Created" },
+  { id: "drafts", label: "Drafts" },
   { id: "plays", label: "Recent plays" },
   { id: "shares", label: "Shared results" },
   { id: "followers", label: "Followers" },
   { id: "following", label: "Following" },
 ];
+
+const ownEmptyStates: Record<
+  ProfileTab,
+  { title: string; description: string; action?: { href: string; label: string } }
+> = {
+  bingos: {
+    title: "No published bingos yet",
+    description: "Create a board and publish it when you are ready for others to play.",
+    action: { href: "/create", label: "Create a bingo" },
+  },
+  drafts: {
+    title: "No drafts yet",
+    description: "Start a bingo and save it to keep working on it later.",
+    action: { href: "/create", label: "Create a bingo" },
+  },
+  plays: {
+    title: "No plays yet",
+    description: "Pick a community board and mark the cells that apply to you.",
+    action: { href: "/discover", label: "Find a bingo" },
+  },
+  shares: {
+    title: "No shared results yet",
+    description: "After playing a board, share your result to keep it here.",
+    action: { href: "/discover", label: "Find a bingo" },
+  },
+  followers: {
+    title: "No followers yet",
+    description: "People who follow your profile will appear here.",
+  },
+  following: {
+    title: "Not following anyone yet",
+    description: "Explore community boards and follow an author you like.",
+    action: { href: "/discover", label: "Explore bingos" },
+  },
+};
 
 export function ProfileCollections({
   username,
@@ -43,16 +81,17 @@ export function ProfileCollections({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const visibleTabs = ownProfile ? tabs : tabs.filter((item) => item.id !== "drafts");
 
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError("");
     const request: Promise<Collection> =
-      tab === "bingos"
+      tab === "bingos" || tab === "drafts"
         ? api.profiles
-            .bingos(username, pageNumber, controller.signal)
-            .then((page) => ({ kind: "bingos", page }))
+            .bingos(username, pageNumber, controller.signal, tab === "drafts" ? "draft" : "created")
+            .then((page) => ({ kind: tab, page }))
         : tab === "plays"
           ? api.profiles
               .playHistory(username, pageNumber, controller.signal)
@@ -69,9 +108,14 @@ export function ProfileCollections({
                   .following(username, pageNumber, controller.signal)
                   .then((page) => ({ kind: "following", page }));
     request
-      .then(setCollection)
+      .then((data) => {
+        if (!controller.signal.aborted) setCollection(data);
+      })
       .catch((caught) => {
-        if (!controller.signal.aborted) setError(errorMessage(caught));
+        if (!controller.signal.aborted) {
+          setCollection(null);
+          setError(errorMessage(caught));
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -82,6 +126,7 @@ export function ProfileCollections({
   const page = collection?.page;
 
   function activateTab(nextTab: ProfileTab) {
+    if (nextTab === tab) return;
     setTab(nextTab);
     setPageNumber(1);
     setCollection(null);
@@ -89,13 +134,14 @@ export function ProfileCollections({
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let nextIndex: number | null = null;
-    if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
-    if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+    if (event.key === "ArrowLeft")
+      nextIndex = (index - 1 + visibleTabs.length) % visibleTabs.length;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % visibleTabs.length;
     if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = tabs.length - 1;
+    if (event.key === "End") nextIndex = visibleTabs.length - 1;
     if (nextIndex === null) return;
     event.preventDefault();
-    const nextTab = tabs[nextIndex];
+    const nextTab = visibleTabs[nextIndex];
     if (!nextTab) return;
     activateTab(nextTab.id);
     event.currentTarget
@@ -108,7 +154,7 @@ export function ProfileCollections({
     <section className="profile-section" aria-labelledby="profile-content-title">
       <h2 id="profile-content-title">Profile activity</h2>
       <div className="profile-tabs" role="tablist" aria-label="Profile sections">
-        {tabs.map((item, index) => (
+        {visibleTabs.map((item, index) => (
           <button
             key={item.id}
             id={`profile-tab-${item.id}`}
@@ -140,20 +186,17 @@ export function ProfileCollections({
         ) : null}
         {!loading && !error && page?.results.length === 0 ? (
           <EmptyState
-            title="Nothing visible here"
+            title={ownProfile ? ownEmptyStates[tab].title : "Nothing visible here"}
             description={
               ownProfile
-                ? "Activity will appear here as you use Not Enough Bingo."
+                ? ownEmptyStates[tab].description
                 : "This section is empty or hidden by its privacy setting."
             }
-            action={
-              ownProfile && tab === "bingos"
-                ? { href: "/create", label: "Create a bingo" }
-                : undefined
-            }
+            action={ownProfile ? ownEmptyStates[tab].action : undefined}
           />
         ) : null}
-        {collection?.kind === "bingos" && collection.page.results.length ? (
+        {(collection?.kind === "bingos" || collection?.kind === "drafts") &&
+        collection.page.results.length ? (
           <BingoGrid bingos={collection.page.results} />
         ) : null}
         {collection?.kind === "plays" && collection.page.results.length ? (
@@ -165,9 +208,7 @@ export function ProfileCollections({
                   <span>
                     Revision {item.revision_number} · {item.selected_count} selected
                   </span>
-                  <time dateTime={item.updated_at}>
-                    {new Date(item.updated_at).toLocaleString()}
-                  </time>
+                  <time dateTime={item.updated_at}>{formatLocalDateTime(item.updated_at)}</time>
                 </Link>
               </li>
             ))}
@@ -182,9 +223,7 @@ export function ProfileCollections({
                   <span>
                     Revision {item.revision_number} · {item.selected_count} selected
                   </span>
-                  <time dateTime={item.created_at}>
-                    {new Date(item.created_at).toLocaleString()}
-                  </time>
+                  <time dateTime={item.created_at}>{formatLocalDateTime(item.created_at)}</time>
                 </Link>
               </li>
             ))}
@@ -198,15 +237,17 @@ export function ProfileCollections({
               return (
                 <li key={person.id}>
                   <Link href={`/profile/${person.username}`}>
-                    {avatarUrl ? (
-                      // The backend serves validated raster avatars.
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarUrl} alt="" width={44} height={44} />
-                    ) : (
-                      <span aria-hidden="true">
-                        {(person.display_name || person.username).slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
+                    <AvatarImage
+                      src={avatarUrl}
+                      width={44}
+                      height={44}
+                      loading="lazy"
+                      fallback={
+                        <span aria-hidden="true">
+                          {(person.display_name || person.username).slice(0, 1).toUpperCase()}
+                        </span>
+                      }
+                    />
                     <span>
                       <b>{person.display_name || person.username}</b>
                       <small>@{person.username}</small>
@@ -225,7 +266,10 @@ export function ProfileCollections({
             type="button"
             className="button button--secondary"
             disabled={!page.previous || loading}
-            onClick={() => setPageNumber((value) => Math.max(1, value - 1))}
+            onClick={() => {
+              setCollection(null);
+              setPageNumber((value) => Math.max(1, value - 1));
+            }}
           >
             Previous
           </button>
@@ -234,7 +278,10 @@ export function ProfileCollections({
             type="button"
             className="button button--secondary"
             disabled={!page.next || loading}
-            onClick={() => setPageNumber((value) => value + 1)}
+            onClick={() => {
+              setCollection(null);
+              setPageNumber((value) => value + 1);
+            }}
           >
             Next
           </button>

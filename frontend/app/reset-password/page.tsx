@@ -4,7 +4,10 @@ import { Suspense } from "react";
 import { ResetPasswordForm } from "@/components/auth/password-forms";
 import { LoadingState } from "@/components/ui/page-state";
 
-export const metadata: Metadata = { title: "Choose a new password" };
+export const metadata: Metadata = {
+  title: "Choose a new password",
+  robots: { index: false, follow: false },
+};
 
 export default function ResetPasswordPage() {
   return (

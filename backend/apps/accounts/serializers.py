@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from django.contrib.auth import authenticate, password_validation
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import MaxLengthValidator
+from django.db import transaction
 from drf_spectacular.helpers import lazy_serializer
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -14,6 +18,7 @@ from apps.accounts.models import (
     UserPrivacySettings,
     UserProfile,
 )
+from apps.bingos.languages import LANGUAGE_CODES
 from apps.media_assets.serializers import MediaAssetSerializer
 
 
@@ -29,13 +34,22 @@ class PublicUserSerializer(serializers.ModelSerializer[User]):
 
 class CurrentUserSerializer(PublicUserSerializer):
     email_verified = serializers.BooleanField(source="is_email_verified", read_only=True)
+    deletion_scheduled_for = serializers.DateTimeField(read_only=True, allow_null=True)
 
     class Meta(PublicUserSerializer.Meta):
-        fields = (*PublicUserSerializer.Meta.fields, "email", "email_verified")
+        fields = (
+            *PublicUserSerializer.Meta.fields,
+            "email",
+            "email_verified",
+            "deletion_scheduled_for",
+        )
 
 
 class CsrfResponseSerializer(serializers.Serializer):
-    csrf = serializers.CharField(read_only=True)
+    csrf = serializers.CharField(
+        read_only=True,
+        help_text="Masked token for the X-CSRFToken header on unsafe requests.",
+    )
 
 
 class RegistrationStatusSerializer(serializers.Serializer):
@@ -44,6 +58,11 @@ class RegistrationStatusSerializer(serializers.Serializer):
 
 class AuthResultSerializer(serializers.Serializer):
     user = CurrentUserSerializer(read_only=True)
+
+
+class SessionStatusSerializer(serializers.Serializer):
+    user = CurrentUserSerializer(read_only=True, allow_null=True)
+    logout_event = serializers.CharField(read_only=True, allow_null=True, max_length=32)
 
 
 class FollowStateSerializer(serializers.Serializer):
@@ -61,16 +80,6 @@ class AccountExportResponseSerializer(serializers.Serializer):
     status = serializers.CharField(read_only=True)
 
 
-class ProfileBingoCollectionSerializer(serializers.Serializer):
-    count = serializers.IntegerField(min_value=0, read_only=True)
-    next = serializers.URLField(read_only=True, allow_null=True)
-    previous = serializers.URLField(read_only=True, allow_null=True)
-    results = lazy_serializer("apps.bingos.serializers.BingoCardSerializer")(
-        many=True,
-        read_only=True,
-    )
-
-
 class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
     id = serializers.UUIDField(source="user.public_id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
@@ -79,7 +88,6 @@ class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
     following_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
     privacy = serializers.SerializerMethodField()
-    created_bingos = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -93,7 +101,6 @@ class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
             "following_count",
             "is_following",
             "privacy",
-            "created_bingos",
         )
 
     def _is_owner(self, obj: UserProfile) -> bool:
@@ -123,46 +130,6 @@ class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
     def get_privacy(self, obj: UserProfile) -> dict:
         return PrivacySerializer(obj.user.privacy).data
 
-    @extend_schema_field(ProfileBingoCollectionSerializer(allow_null=True))
-    def get_created_bingos(self, obj: UserProfile) -> dict | None:
-        privacy = obj.user.privacy
-        if not self._is_owner(obj) and not privacy.show_created_bingos:
-            return None
-
-        from apps.bingos.models import Bingo
-        from apps.bingos.serializers import BingoCardSerializer
-
-        queryset = (
-            Bingo.objects.public_catalog()
-            .filter(author=obj.user)
-            .select_related(
-                "author",
-                "author__profile",
-                "author__profile__avatar",
-                "cover",
-                "current_revision",
-            )
-            .prefetch_related(
-                "tag_links__tag",
-                "cover__derivatives",
-                "current_revision__background__derivatives",
-                "current_revision__cells__image",
-                "current_revision__cells__image__derivatives",
-                "author__profile__avatar__derivatives",
-            )
-        )
-        results = list(queryset[:12])
-        return {
-            "count": queryset.count(),
-            "next": None,
-            "previous": None,
-            "results": BingoCardSerializer(
-                results,
-                many=True,
-                context=self.context,
-            ).data,
-        }
-
     def to_representation(self, instance: UserProfile) -> dict:
         data = super().to_representation(instance)
         if not self._is_owner(instance) and not instance.user.privacy.show_bio:
@@ -170,14 +137,28 @@ class UserProfileReadSerializer(serializers.ModelSerializer[UserProfile]):
         return data
 
 
+class OwnUserProfileReadSerializer(UserProfileReadSerializer):
+    preferred_languages = serializers.ListField(child=serializers.CharField(), read_only=True)
+    language_preferences_confirmed = serializers.BooleanField(read_only=True)
+
+    class Meta(UserProfileReadSerializer.Meta):
+        fields = (
+            *UserProfileReadSerializer.Meta.fields,
+            "preferred_languages",
+            "language_preferences_confirmed",
+        )
+
+
 class RegistrationSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(max_length=254)
     username = serializers.RegexField(r"^[a-zA-Z0-9_]{3,30}$", max_length=30)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
     display_name = serializers.CharField(max_length=80, allow_blank=True, required=False)
 
     def validate_email(self, value: str) -> str:
-        return value.strip().lower()
+        normalized = value.strip().lower()
+        MaxLengthValidator(254)(normalized)
+        return normalized
 
     def validate_username(self, value: str) -> str:
         normalized = value.strip().lower()
@@ -185,9 +166,13 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError("This username is unavailable.")
         return normalized
 
-    def validate_password(self, value: str) -> str:
-        validate_password(value)
-        return value
+    def validate(self, attrs: dict) -> dict:
+        candidate = User(username=attrs["username"], email=attrs["email"])
+        try:
+            validate_password(attrs["password"], candidate)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": exc.messages}) from exc
+        return attrs
 
 
 class LoginSerializer(serializers.Serializer):
@@ -218,6 +203,34 @@ class EmailRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 
+class EmailChangeRequestSerializer(serializers.Serializer):
+    new_email = serializers.EmailField(max_length=254)
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate_new_email(self, value: str) -> str:
+        normalized = value.strip().lower()
+        MaxLengthValidator(254)(normalized)
+        return normalized
+
+    def validate(self, attrs: dict) -> dict:
+        user = self.context["request"].user
+        if not check_password(attrs["current_password"], user.password):
+            raise serializers.ValidationError(
+                {"current_password": "The current password is incorrect."}
+            )
+        if not user.can_create_content:
+            raise serializers.ValidationError(
+                {"new_email": "This account cannot change its email address right now."}
+            )
+        email = attrs["new_email"]
+        if email == user.email.lower():
+            raise serializers.ValidationError({"new_email": "Enter a different email address."})
+        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError({"new_email": "This email address is unavailable."})
+        attrs["new_email"] = email
+        return attrs
+
+
 class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField(max_length=200)
     token = serializers.CharField(max_length=200)
@@ -232,11 +245,6 @@ class PasswordChangeSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True, trim_whitespace=False)
     new_password = serializers.CharField(write_only=True, trim_whitespace=False)
 
-    def validate_current_password(self, value: str) -> str:
-        if not self.context["request"].user.check_password(value):
-            raise serializers.ValidationError("The current password is incorrect.")
-        return value
-
     def validate_new_password(self, value: str) -> str:
         password_validation.validate_password(value, self.context["request"].user)
         return value
@@ -247,10 +255,18 @@ class ProfileUpdateSerializer(serializers.ModelSerializer[UserProfile]):
     username = serializers.RegexField(
         r"^[a-zA-Z0-9_]{3,30}$", max_length=30, source="user.username", required=False
     )
+    preferred_languages = serializers.ListField(
+        child=serializers.CharField(max_length=8), required=False, allow_empty=True, max_length=15
+    )
 
     class Meta:
         model = UserProfile
-        fields = ("username", "display_name", "bio", "avatar_id")
+        fields = ("username", "display_name", "bio", "avatar_id", "preferred_languages")
+
+    def validate_preferred_languages(self, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)) or any(code not in LANGUAGE_CODES for code in value):
+            raise serializers.ValidationError("Choose distinct supported languages.")
+        return value
 
     def validate_avatar_id(self, value):
         if value is None:
@@ -266,9 +282,12 @@ class ProfileUpdateSerializer(serializers.ModelSerializer[UserProfile]):
             raise serializers.ValidationError("The avatar asset is unavailable.")
         return value
 
+    @transaction.atomic
     def update(self, instance: UserProfile, validated_data: dict) -> UserProfile:
         user_data = validated_data.pop("user", {})
         avatar_id = validated_data.pop("avatar_id", serializers.empty)
+        if "preferred_languages" in validated_data:
+            instance.language_preferences_confirmed = True
         if user_data:
             username = user_data["username"].lower()
             if User.objects.exclude(pk=instance.user_id).filter(username__iexact=username).exists():
@@ -339,6 +358,6 @@ class AccountDeletionSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_password(self, value: str) -> str:
-        if not self.context["request"].user.check_password(value):
+        if not check_password(value, self.context["request"].user.password):
             raise serializers.ValidationError("The password is incorrect.")
         return value

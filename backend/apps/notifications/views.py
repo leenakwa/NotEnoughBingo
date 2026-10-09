@@ -1,7 +1,13 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
 from rest_framework import generics, permissions, serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,10 +16,23 @@ from apps.notifications.models import Notification
 from apps.notifications.serializers import NotificationSerializer
 
 
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="unread",
+                type=bool,
+                required=False,
+                description="Set true to return only unread notifications.",
+            )
+        ]
+    )
+)
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardPageNumberPagination
+    filter_backends: list = []
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -31,6 +50,8 @@ class NotificationListView(generics.ListAPIView):
             .prefetch_related("actor__profile__avatar__derivatives")
         )
         unread = self.request.query_params.get("unread")
+        if unread not in (None, "0", "1", "false", "true"):
+            raise ValidationError({"unread": "Choose true or false."})
         if unread in {"1", "true"}:
             queryset = queryset.filter(is_read=False)
         return queryset

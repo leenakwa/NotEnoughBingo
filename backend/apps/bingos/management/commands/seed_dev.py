@@ -161,7 +161,7 @@ class Command(BaseCommand):
                 deleted_at__isnull=True,
             ).exists():
                 continue
-            document = empty_draft_document(title=spec.title, size=spec.size)
+            document = empty_draft_document(title=spec.title, size=spec.size, language="en")
             document.update(
                 {
                     "description": spec.description,

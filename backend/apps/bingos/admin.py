@@ -26,6 +26,7 @@ class BingoAdmin(admin.ModelAdmin):
         "visibility",
         "size",
         "published_at",
+        "last_published_at",
         "hidden_at",
     )
     list_filter = ("status", "visibility", "marking_style", "hidden_at")
@@ -43,9 +44,13 @@ class BingoAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
         "published_at",
+        "last_published_at",
         "deleted_at",
     )
     inlines = (BingoTagInline,)
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
 
 
 @admin.register(Draft)

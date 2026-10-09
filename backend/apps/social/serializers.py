@@ -66,6 +66,12 @@ class CommentCreateSerializer(serializers.Serializer):
         return value.strip()
 
 
+class CommentContextSerializer(serializers.Serializer):
+    bingo_id = serializers.UUIDField()
+    comment = CommentSerializer()
+    parent = CommentSerializer(allow_null=True)
+
+
 class CommentUpdateSerializer(serializers.ModelSerializer[Comment]):
     class Meta:
         model = Comment

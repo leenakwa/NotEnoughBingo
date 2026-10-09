@@ -1,0 +1,1805 @@
+{
+  "date": "2026-10-08",
+  "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+  "imageId": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+  "scope": "Native desktop-engine keyboard interactions against the configured optimized local image. Controlled API responses; no target deployment or physical-device claim.",
+  "moduleHashes": {
+    "features/social/comments-panel.tsx": "e426bcba952335b6aa66e2879cf574060e99165476c28cd857e3c8568f640aa1",
+    "features/social/report-dialog.tsx": "8e4301d8afd452839507a5a2d29782042767a453ad6b8c55c2a2da6e64cd5acc",
+    "features/play/bingo-player.tsx": "8f1c2b76b877c27db1925d031f5da0bfbe4bf43a78aeaa2e732b768c389eed1a",
+    "components/explore/explore-page.tsx": "9cc2e0c58f01671caa5ff157c7ad461b9f4ffe8cf2c72c2de3badf03ce04ebd1"
+  },
+  "social": {
+    "result": {
+      "expected": 6,
+      "passed": 6,
+      "retries": 0,
+      "formsCovered": 30,
+      "writesPerCase": 5,
+      "unexpectedWrites": 0,
+      "realBackendWrites": 0
+    },
+    "cases": [
+      {
+        "engine": "chromium",
+        "width": 320,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "chromium",
+        "width": 1710,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "firefox",
+        "width": 320,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "firefox",
+        "width": 1710,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "webkit",
+        "width": 320,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      },
+      {
+        "engine": "webkit",
+        "width": 1710,
+        "status": "passed",
+        "retry": 0,
+        "forms": [
+          "root",
+          "reply",
+          "edit",
+          "report",
+          "share"
+        ],
+        "heldOwnEndpointRequests": 5,
+        "pageErrors": []
+      }
+    ],
+    "tabOrder": {
+      "root": [
+        "comment_body",
+        "Post comment"
+      ],
+      "reply": [
+        "reply_body",
+        "Cancel",
+        "Post reply"
+      ],
+      "edit": [
+        "edited_comment",
+        "Cancel",
+        "Save"
+      ],
+      "report": [
+        "\u00d7",
+        "reason",
+        "description",
+        "Cancel",
+        "Send report"
+      ],
+      "share": [
+        "nickname",
+        "Cancel",
+        "Create share link"
+      ]
+    },
+    "assertions": [
+      "Tab and Shift+Tab traverse active controls in each form.",
+      "Textarea Enter inserts a newline; Enter on submit invokes only that form endpoint.",
+      "Outer whitespace is trimmed while multiline Unicode, emoji and literal markup punctuation survive.",
+      "Each held mutation returns a controlled400; input remains available for correction.",
+      "Corrected WebKit keyboard-launched report dialog traps Tab and returns focus to its launcher after Escape."
+    ],
+    "console": "Expected intercepted progress404 and validation400 resource errors are retained; no empty-console claim.",
+    "initialFailures": "Initial WebKit320/1710 cases openedReport via pointer.click and failed launcher-focus expectation afterEscape; separate pointerprobe observed BODY. Corrected only diagnostic keyboardlaunch (focuslauncher\u2192Enter) then2WebKitcasespassed. Original4Chromium/Firefoxcases not repeated.",
+    "pointerFocusObservation": {
+      "engine": "webkit",
+      "before": "TEXTAREA[name=comment_body]",
+      "opened": "Close report dialog button",
+      "after": "BODY",
+      "restoredLauncher": false,
+      "scope": "Pointer opening followed by Escape; distinct from the corrected keyboard-launch proof. Focus policy remains a pending user choice."
+    }
+  },
+  "explore": {
+    "stats": {
+      "startTime": "2026-10-08T08:02:24.929Z",
+      "duration": 8988.442,
+      "expected": 3,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "engine": "chromium",
+        "status": "passed",
+        "retry": 0,
+        "submitFormOwnership": true,
+        "searchEvents": 1,
+        "requests": [
+          "S",
+          "S"
+        ],
+        "pageErrors": []
+      },
+      {
+        "engine": "firefox",
+        "status": "passed",
+        "retry": 0,
+        "submitFormOwnership": true,
+        "searchEvents": 1,
+        "requests": [
+          "S",
+          "S"
+        ],
+        "pageErrors": []
+      },
+      {
+        "engine": "webkit",
+        "status": "passed",
+        "retry": 0,
+        "submitFormOwnership": true,
+        "searchEvents": 1,
+        "requests": [
+          "S",
+          "S"
+        ],
+        "pageErrors": []
+      }
+    ],
+    "tabOrder": [
+      "Search",
+      "Author",
+      "Tags",
+      "selected sort radio",
+      "Search submit",
+      "Clear"
+    ],
+    "assertions": [
+      "Forward Tab and reverse Shift+Tab traverse the listed controls.",
+      "ArrowDown changes selected sort from Popular to New.",
+      "Enter on Search invokes its own form and emits one search event."
+    ],
+    "scope": "API and analytics intercepted; separate pending-guard cases were not rerun. Two same-query reads in the recorded transition are not a one-HTTP-request claim."
+  },
+  "keyboardPreference": {
+    "domain": "org.webkit.Playwright",
+    "key": "AppleKeyboardUIMode",
+    "temporaryValue": 2,
+    "original": null,
+    "restoredVerified": true
+  },
+  "checklistMapping": {
+    "section7": [
+      "Enter works appropriately",
+      "Tab navigation works"
+    ],
+    "section8": [
+      "submit buttons submit only the intended form"
+    ],
+    "priorEvidence": "Other eight data-mutating form kinds have existing auth/profile/account native evidence. Editor controls are covered separately by the existing native editor packet. Combined inventory:13 data-mutating form kinds plus Explore."
+  },
+  "notEstablished": [
+    "Native autofill/password-manager and general clipboard behavior",
+    "Every control hover/active/loading or global layout stability",
+    "Dirty-form policy across the product",
+    "Pointer-launched WebKit report focus restoration",
+    "Real persistence from the intercepted writes"
+  ],
+  "rawReports": [
+    {
+      "name": "neb-social-keyboard-native-proof-oct08.json",
+      "sha256": "0583de41d0aa6cb2e78e7c0de3afbe8a7fd79c0e8bebed5ff876872069c62baa"
+    },
+    {
+      "name": "neb-explore-tab-native-proof-oct08.json",
+      "sha256": "398ad622bf7faa2e5d2d57ce03feeda5b16a2492736a52582d1e62cf75528449"
+    },
+    {
+      "name": "neb-social-keyboard-initial-oct08.json",
+      "sha256": "564bccf8a0a607fe183f0e4b724777bf37538f2707f3ed8ae5adb621274ac343"
+    },
+    {
+      "name": "neb-social-keyboard-webkit-keyboard-launch-oct08.json",
+      "sha256": "2ed00fe3ae2863bbc15512b3a5d9550396fd0b431ca33442910e2eecf78b16ef"
+    },
+    {
+      "name": "neb-report-pointer-focus-oct08.json",
+      "sha256": "e3893841a5a88ed522fe2f27a3b78213b0a5949320db5b692ebd1fa501562958"
+    },
+    {
+      "name": "neb-explore-tab-oct08.json",
+      "sha256": "2d18c9b4bd3c58958cf3b875a5fe156767d021cfbdc227486e11c5472a606c7a"
+    }
+  ],
+  "beforeUnload": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "imageId": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+    "moduleHashes": {
+      "features/social/comments-panel.tsx": "e426bcba952335b6aa66e2879cf574060e99165476c28cd857e3c8568f640aa1",
+      "features/social/report-dialog.tsx": "8e4301d8afd452839507a5a2d29782042767a453ad6b8c55c2a2da6e64cd5acc",
+      "features/social/social-draft-cache.ts": "8401771696ab884cf01fb090de12192c9df7144f786aa4179ce97dcc64e3c463",
+      "lib/use-unsaved-changes-warning.ts": "34e8c3718228dbba92126fb488eb5fd202ca4e4687eea1d18713cc15bdea2035"
+    },
+    "width": 390,
+    "forms": [
+      "root",
+      "reply",
+      "edit",
+      "report"
+    ],
+    "result": {
+      "fullDismissAcceptCasesPassed": 8,
+      "firefoxAcceptedReloadUnverified": 4,
+      "skips": 0,
+      "automaticRetries": 0
+    },
+    "verifiedEngines": [
+      "Chromium",
+      "WebKit"
+    ],
+    "dismiss": "Actual native beforeunload dialog cancels reload and retains exact entered text.",
+    "acceptedReload": "Chromium/WebKit confirm a full reload: root/reply/report drafts are empty, and edit restores its server original.",
+    "firefox": {
+      "warningAndDismiss": "Actual dialogs and retained text observed for four forms with DOM Location.reload after trusted input.",
+      "acceptedReload": "Fresh document not observed within5s in final four marker-based cases.",
+      "limitations": [
+        "Original four page.reload cases produced no dialog.",
+        "DOM Location.reload produced a native beforeunload dialog; dismissal retained input, and trusted activation was verified.",
+        "The first one-case and subsequent two-case prototypes read the old DOM before asynchronous reload; their PASS labels do not establish accepted reload.",
+        "The final four document-marker cases did not observe a fresh document within five seconds after accepting. The automation difference remains unresolved; no product-hook failure is established. Further attempts stopped."
+      ]
+    },
+    "scope": "390px root/reply/edit/report forms; native beforeunload after trusted input, no synthetic beforeunload. All mutating APIs intercepted; read-only fixture cookies; no auth writes, reseeding, source changes or OS preference changes.",
+    "mutations": "Only intercepted analytics; business mutations0 and real backend writes0 in eight complete cases.",
+    "pageErrors": [],
+    "console": "Expected intercepted progress404 errors retained in eight complete cases.",
+    "globalDirtyFormVerdict": false,
+    "rawReport": {
+      "name": "neb-social-beforeunload-native-proof-oct08.json",
+      "sha256": "2feb380117132e362d0accf3b0ac69089a63d82b2d2dcf417b1a195950c55ce3"
+    }
+  },
+  "clipboard": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "imageId": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+    "runtime": {
+      "image": "mcr.microsoft.com/playwright:v1.61.1-noble",
+      "digest": "sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48",
+      "chromiumVersion": "149.0.7827.0"
+    },
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "sourceModuleHashes": [
+      {
+        "sha256": "1a8f34999966e1fcfa15c18cb0385dda0017222fad70dedc7509cae3e949ae78",
+        "path": "components/auth/login-form.tsx"
+      },
+      {
+        "sha256": "2bf8d9551a03c53603e8c8a2f6e6be60e1380cf16dd4eb2152647ee6f444dec5",
+        "path": "components/auth/password-field.tsx"
+      },
+      {
+        "sha256": "9cc2e0c58f01671caa5ff157c7ad461b9f4ffe8cf2c72c2de3badf03ce04ebd1",
+        "path": "components/explore/explore-page.tsx"
+      },
+      {
+        "sha256": "e426bcba952335b6aa66e2879cf574060e99165476c28cd857e3c8568f640aa1",
+        "path": "features/social/comments-panel.tsx"
+      },
+      {
+        "sha256": "8e4301d8afd452839507a5a2d29782042767a453ad6b8c55c2a2da6e64cd5acc",
+        "path": "features/social/report-dialog.tsx"
+      },
+      {
+        "sha256": "0cc7a091fe4a7d4c8a5aab38184049d8735ba29b83f3d11fc82b70458310509f",
+        "path": "features/editor/editor-board.tsx"
+      },
+      {
+        "sha256": "8f1c2b76b877c27db1925d031f5da0bfbe4bf43a78aeaa2e732b768c389eed1a",
+        "path": "features/play/bingo-player.tsx"
+      },
+      {
+        "sha256": "3d44421cee140c9c6117befd94e15e307402bb080a563fd45ceff9bc8792f7f5",
+        "path": "components/auth/register-form.tsx"
+      },
+      {
+        "sha256": "f4011d3c023beeb7877138a9711195e3816a569d85f4dcffc12892e3b25fcf6f",
+        "path": "components/auth/password-forms.tsx"
+      },
+      {
+        "sha256": "1732bd0f818308d162e07444672555a7d1933938cb3f7bef9574a3fce4b87ecf",
+        "path": "features/profile/profile-view.tsx"
+      },
+      {
+        "sha256": "a2b2fc5f60356bae94472c4dfc6e8a24c5d5e1fc2b56ee91e7157d5a3ffd3251",
+        "path": "features/profile/account-settings.tsx"
+      },
+      {
+        "sha256": "e254911d70cb5618738375594ddbbcdeae01b2b32ce5e2b5f6cee0c775bbd8bb",
+        "path": "features/editor/cell-inspector.tsx"
+      },
+      {
+        "sha256": "36c6b642255f9ca7aed1d1fad5ba45e1bb19b5b8dbd0cc3b3e88c1c7bcdd8418",
+        "path": "features/editor/bingo-details.tsx"
+      },
+      {
+        "sha256": "802a50e504e3c26de42cb8f12fa32fff4fd4e3c01597409443ed340b57100ba4",
+        "path": "features/editor/bingo-editor.tsx"
+      }
+    ],
+    "scope": "Linux headless Chromium; all 24 editable text fields of the original 14 forms, six separate editor surfaces and the two-cell shared-text textarea.",
+    "results": {
+      "nativePastePassed": 31,
+      "ordinaryCopyRoundtripsPassed": 23,
+      "passwordCopyNotAttempted": 8
+    },
+    "requiredObservations": [
+      "Trusted paste event",
+      "Trusted insertFromPaste input",
+      "Exact dummy value",
+      "Ordinary text copy roundtrip"
+    ],
+    "mutations": "Analytics intercepted; business writes and real backend writes zero.",
+    "console": "Two controlled progress404 resource errors in clipboard packets; page errors empty.",
+    "limitations": [
+      "No native Mac/device, Firefox/WebKit clipboard or autofill/password-manager claim.",
+      "Non-text controls are not plaintext-paste targets; payloads stay below field limits.",
+      "Other conditional editor states are not exhaustively covered."
+    ],
+    "initialFailures": "Missing Linux runtime, module resolution, insecure forwarder origin, guest-only SSR controls, mock/SSR identity mismatch and an incorrect wizard-button locator preserved externally. Missing-fixture hypothesis withdrawn after actual detail200/proxy proof; only affected cases corrected.",
+    "rawReports": [
+      {
+        "name": "final-proof3.json",
+        "sha256": "6a236a249bb49ee5b015889413c7b6f2fee3715629113b0d9991e08049bf8da2"
+      },
+      {
+        "name": "neb-csrf-ui-proof-oct08.json",
+        "sha256": "dd40e030f2e5558bfe0989f2e2fa8b03fd6b42a44b10532f11240473367cb439",
+        "scope": "Separate bulk clipboard case and CSRF rendering proof."
+      }
+    ],
+    "cleanup": "Disposable containers and localhost forwarders closed; no Mac UI, OS settings or private clipboard touched. Official Linux runtime remains cached.",
+    "verifiedFields": [
+      "login-email",
+      "login-password",
+      "explore-search",
+      "root-comment-textarea",
+      "report-textarea",
+      "guest-nickname",
+      "editor-inline-textarea",
+      "register:email",
+      "register:username",
+      "register:password",
+      "forgot:email",
+      "reset:new_password",
+      "profile:username",
+      "profile:display_name",
+      "profile:bio",
+      "email:new_email",
+      "email:email-change-password",
+      "password:current_password",
+      "password:new_password",
+      "password:confirm-new-password",
+      "delete:deletion_password",
+      "reply:reply_body",
+      "edit:edited_comment",
+      "Explore Author",
+      "Explore Tags",
+      "Editor inspector Text",
+      "Editor Image description",
+      "Editor Title",
+      "Editor Description",
+      "Editor Tag",
+      "Editor shared text for 2 cells"
+    ]
+  },
+  "passwordManager": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "runtime": "Isolated Linux full Chromium149; official Playwright1.61.1 image; persistent owned test profile, basic password store and enable-automation argument omitted.",
+    "verified": "Built-in password-manager WebUI manually adds/saves a dummy credential; native suggestion fills Login email/password. DOM, FormData and controlled Login payload match.",
+    "loginMutations": "Two controlled Login400 responses (suggestion Enter and later button) and intercepted analytics; no real business writes.",
+    "accountAttempt": {
+      "forms": [
+        "Change email",
+        "Change password",
+        "Delete account"
+      ],
+      "nativeCurrentPasswordFieldsFilled": 0,
+      "otherEnteredValuesRetained": true,
+      "verdict": "Unverified: current-password DOM/FormData stays empty. Capability versus form-semantics cause is not yet established; no product defect is inferred.",
+      "usernameAnchorFactor": {
+        "forms": [
+          "Change email"
+        ],
+        "attempts": 1,
+        "nativeCurrentPasswordFieldsFilled": 0,
+        "otherEnteredValuesRetained": true,
+        "scope": "Controlled CSS-hidden readonly current-email username anchor prototype; password value never injected. Actual stored credential username was not read back. No source correction is established.",
+        "realBackendWrites": 0,
+        "rawReport": {
+          "name": "neb-password-manager-email-factor-native-proof-oct08.json",
+          "sha256": "0c68e33ac93a84cf6da91c12615e95ff0611f030a9ce203c7d365024c4b32d03"
+        }
+      }
+    },
+    "limitations": [
+      "No automatic Save prompt after real authentication, password generation, third-party manager or Mac/device proof.",
+      "General password-manager and autofill checklist bullets remain open."
+    ],
+    "cleanup": "Owned Linux profile removed; container and forwarder closed; no personal vault, Mac UI/OS or real auth writes.",
+    "rawReports": [
+      {
+        "name": "neb-password-manager-native-proof-oct08.json",
+        "sha256": "8783b6a32242ca9e5851b2c4b1e0621e5926ea7ab6c78781ce4afab7e6fbe3c3"
+      },
+      {
+        "name": "neb-password-manager-account-native-proof-oct08.json",
+        "sha256": "0324bc9991989ebd5c97fe366038dc460cc2d9c9584d055fa7120c74874808a2"
+      }
+    ]
+  },
+  "addressAutofill": {
+    "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "runtime": "Isolated Linux full Chromium149; official Playwright1.61.1 image; persistent owned test profile, basic password store and enable-automation argument omitted.",
+    "contexts": [
+      "Register Email",
+      "Forgot Email",
+      "Profile Display name",
+      "Change email New email"
+    ],
+    "attempts": 4,
+    "verifiedNativeFills": 0,
+    "otherEnteredValuesRetained": true,
+    "seed": "Native Addresses WebUI Name/Email entry and Save action observed; resulting stored address not verified.",
+    "verdict": "Unverified: empty target fields cannot establish an application defect or unsupported browser capability without a confirmed address seed.",
+    "realBackendWrites": 0,
+    "mutations": "One controlled profile PATCH422 and intercepted analytics; no real writes.",
+    "cleanup": "Owned Linux profile removed; container and forwarder closed; no Mac/private OS data changed.",
+    "rawReport": {
+      "name": "neb-browser-address-autofill-native-proof-oct08.json",
+      "sha256": "d7a54229d177599bf6b9631a7049fe737653dde4fca534ab492c65479970e62f"
+    }
+  },
+  "networkPrivacy": {
+    "frontendSourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+    "backendScope": "Old c1 configured backend; module fingerprints and runtime in external raw proof. Not new cache middleware runtime.",
+    "logicalCases": 6,
+    "apiReadResponses200": 5,
+    "bearerDocuments200": 2,
+    "browserRequestsClassified": 68,
+    "downstreamDummyQueryLeaks": 0,
+    "refererDummyLeaks": 0,
+    "publicAuthFieldsAbsent": true,
+    "sessionKeysAbsent": true,
+    "realMutations": 0,
+    "limits": [
+      "Own public profile was requested as its owner; no cross-owner/anonymous profile verdict.",
+      "Required initial bearer-link GETs are excluded from leak assertions; dummy query stays after controlled verification failure.",
+      "auth/me and auth/sessions lacked Cache-Control; session status was private,no-store.",
+      "Six cases do not establish global network privacy."
+    ],
+    "rawReport": {
+      "name": "neb-network-privacy-native-proof-oct08.json",
+      "sha256": "e0e5bcc1712ced170b0abc71ec4bdbc12049f71b7148b318bc18c2d97e17a413"
+    }
+  },
+  "localLoggingProtection": {
+    "baseCommit": "22429b12f51e7f22dd9ab80018371b03ffee9b2c",
+    "sourceIdentity": "Logging/cache patch based on22429b1; exact module hashes identify the tested source. PostgreSQL CI for this patch remains pending in this observation.",
+    "moduleHashes": [
+      {
+        "sha256": "4a8eab5a395a8df82991ce57cced7eea6095974b4fd54a33053f0510eb18434f",
+        "path": "backend/apps/common/logging.py"
+      },
+      {
+        "sha256": "df9e2a390406871d1b543a788a66920d1d1cecfa0dd518906a60982d6ed1cde3",
+        "path": "backend/apps/common/middleware.py"
+      },
+      {
+        "sha256": "d260700ce988d9dc1ecb292458c823d4435359d11e7d217b1711a7c00f951025",
+        "path": "backend/config/settings/base.py"
+      },
+      {
+        "sha256": "9d40de00940bab4753a983262a2d4dd02c080c1d009e64be0ef65d239e63453c",
+        "path": "backend/apps/common/tests/test_observability.py"
+      },
+      {
+        "sha256": "d362e40755cb339b5237a4b95740604c91a6564eaec06d56a702efd1f5067c00",
+        "path": "backend/tests/test_private_api_cache.py"
+      },
+      {
+        "sha256": "19e61864a4706d7611fc0f21ce78163406dc70cdfc5ebf7d22b3a9d69f7d9d94",
+        "path": "frontend/next.config.ts"
+      }
+    ],
+    "backend": {
+      "runtime": "Python3.13.15,Django5.2.17,DRF3.17.2 in existing nebqa backend; isolated memory DB/cache/mail/storage/broker/results, Sentry disabled.",
+      "frameworkBefore": "Actual WSGI request logger and Django request handler emit dummy token/email/password through inherited raw handlers.",
+      "frameworkAfter": "Explicit django/django.server handlers use JsonFormatter; installed-framework subprocess verifies no dummy secrets and retained logger/severity/status.",
+      "scopedSuitePassed": 77,
+      "independentReview": "PASS; static source/test review; not separate runtime execution.",
+      "limits": "Earlier broad SQLite run has two existing PostgreSQL advisory-lock failures. First combined logging suite has one Gunicorn child-settings harness failure, preserved and fixed only in private bootstrap.",
+      "scopedSuiteNote": "After replacing the dummy login test password literal with runtime generation, the same77 tests, Ruff and scoped mypy pass again; scanner policy unchanged."
+    },
+    "frontend": {
+      "runtime": "Next16.3.8 development; actual config restart verified, health200.",
+      "before": "Two anonymous dummy bearer GET200 URLs emit UID/tokens in request logs.",
+      "after": "logging:false; two dummy bearer GET200 URLs emit no UID/tokens. No browser mutation or production-runtime claim.",
+      "firstAfterAttempt": "Two HTTP errors during server restart; excluded from passing evidence.",
+      "quality": "Node22 lint/typecheck/589 tests in43 files pass.",
+      "registrationAfterRestart": {
+        "status": 200,
+        "ready": false,
+        "timeoutMs": 15000,
+        "disabledFields": 3,
+        "consoleErrors": 0,
+        "pageErrors": 0,
+        "mutations": 0,
+        "sourceSha256": "0945e5934ed03bcf2ef894c5c3faaca67a55ed8a28af19ac91cead5dfeef1c24",
+        "proofSha256": "998fef58f373b3d270e535f8574048e6392df3bfba0c2e4d5fe5c4cf7423a0f6",
+        "limits": "Rendered autocomplete attributes match; submission, payload, retention and overflow were not reached. Cause unestablished; no further attempts."
+      }
+    },
+    "checklistScope": "Section55 local application/framework/proxy password and token logging; provider guarantees remain separate. Registration email-query behavior remains open pending user choice.",
+    "rawReports": [
+      {
+        "name": "neb-django-framework-logging-before-detail-oct08.log",
+        "sha256": "efa6893b17ef28369bae71c914f8e3b9876b219828b79e31b3b8aa69c4c0dc5a"
+      },
+      {
+        "name": "neb-django-framework-logging-after-oct08.log",
+        "sha256": "893104a6ad0265fbb64341c9ad9c8cd09a331a09b09467e1cdcafa89e5f886b3"
+      },
+      {
+        "name": "neb-django-framework-logging-after-fixed-harness-oct08.log",
+        "sha256": "3918da8625e84ace558542e03c947a94090a0b051d4189b9b7fb52d56eaec2da"
+      },
+      {
+        "name": "neb-next-request-privacy-before-oct08.json",
+        "sha256": "cfa94ca65879ef00139e5ca2dd0907568d0f02a37037ebc500116c3579d1aeea"
+      },
+      {
+        "name": "neb-next-request-privacy-after-oct08.json",
+        "sha256": "03d8ae01330ad1e8d2387102aede6eb50fba8923ebe7dfe38a0d8ad04c1fd8a3"
+      },
+      {
+        "name": "neb-next-request-privacy-ready-after-oct08.json",
+        "sha256": "5ed22d6c344b96491ff3d5eed18778bb28c0d9666a3e23769b1f8eb5ca4947dd"
+      },
+      {
+        "name": "neb-private-api-cache-generated-password-oct08.log",
+        "sha256": "f17da5d2d053de10125ee5eed7840ca161f92237929085e08bb11a3486faab15"
+      },
+      {
+        "name": "neb-private-api-cache-generated-password-mypy-oct08.log",
+        "sha256": "5d4b6d285b77932e3d08212c3b4974d0a803f98ec60408ac6ccf6a063fa6c19e"
+      }
+    ]
+  },
+  "optimizedRuntimeVerification": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "runtime": {
+      "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+      "frontendImage": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+      "backendImage": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+      "frontendBuiltReleaseMatches": true,
+      "bothImageRevisionLabelsMatch": true,
+      "backendAppReleaseMatches": true,
+      "backendSettingsModule": "config.settings.development",
+      "environment": "isolated-rehearsal",
+      "frontendPort": 18584,
+      "backendPort": 18585,
+      "frontendMounts": "none (root verified)",
+      "backendScope": "Gunicorn image with local development settings; DEBUG True, fixture PostgreSQL, S3 false (root verified); not target production configuration",
+      "linuxBrowserImage": "mcr.microsoft.com/playwright:v1.61.1-noble",
+      "linuxBrowserImageDigest": "sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48",
+      "playwrightVersion": "1.61.1"
+    },
+    "registration": {
+      "ready": true,
+      "documentStatus": 200,
+      "attributes": [
+        {
+          "name": "email",
+          "type": "email",
+          "autocomplete": "username",
+          "disabled": false
+        },
+        {
+          "name": "username",
+          "type": "text",
+          "autocomplete": "nickname",
+          "disabled": false
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "autocomplete": "new-password",
+          "disabled": false
+        }
+      ],
+      "payload": {
+        "keys": [
+          "email",
+          "password",
+          "username"
+        ],
+        "emailMatches": true,
+        "usernameMatches": true,
+        "passwordMatches": true
+      },
+      "retained": {
+        "email": true,
+        "username": true,
+        "password": true
+      },
+      "submitEnabled": true,
+      "geometry": {
+        "viewport": 390,
+        "documentWidth": 390,
+        "overflow": false
+      }
+    },
+    "playerCases": [
+      {
+        "identity": "guest",
+        "width": 390,
+        "documentStatus": 200,
+        "gridRemainsVisible": true,
+        "geometry": {
+          "viewport": 390,
+          "documentWidth": 390,
+          "overflow": false
+        }
+      },
+      {
+        "identity": "registered",
+        "width": 390,
+        "documentStatus": 200,
+        "gridRemainsVisible": true,
+        "geometry": {
+          "viewport": 390,
+          "documentWidth": 390,
+          "overflow": false
+        },
+        "report": {
+          "remainsVisible": true,
+          "backdrop": "rgba(0, 0, 0, 0.46)",
+          "fitsWidth": true,
+          "closedAfterEscape": true
+        }
+      },
+      {
+        "identity": "registered",
+        "width": 1710,
+        "documentStatus": 200,
+        "gridRemainsVisible": true,
+        "geometry": {
+          "viewport": 1710,
+          "documentWidth": 1710,
+          "overflow": false
+        },
+        "report": {
+          "remainsVisible": true,
+          "backdrop": "rgba(0, 0, 0, 0.46)",
+          "fitsWidth": true,
+          "closedAfterEscape": true
+        }
+      }
+    ],
+    "headerCases": [
+      {
+        "identity": "registered",
+        "kind": "auth-me",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "registered",
+        "kind": "auth-sessions",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "registered",
+        "kind": "profile",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "guest",
+        "kind": "auth-me",
+        "status": 401,
+        "cacheControl": null,
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "guest",
+        "kind": "auth-sessions",
+        "status": 401,
+        "cacheControl": null,
+        "vary": "Accept, Cookie, origin"
+      },
+      {
+        "identity": "guest",
+        "kind": "profile",
+        "status": 200,
+        "cacheControl": null,
+        "vary": "Accept, Cookie, origin"
+      }
+    ],
+    "realMutations": 0,
+    "interceptedMutations": {
+      "registration": 1,
+      "analytics": 3
+    },
+    "pageErrors": 0,
+    "expectedConsoleErrors": 1,
+    "scopeLimits": [
+      "One registration390, guestplayer390, registeredplayer390/1710, six realAPI GET observations only; not global layout/production readiness.",
+      "600ms post-ready visibility observation does not prove SSR before hydration, absence of all races, or StrictMode dev behavior.",
+      "The previous currentdev disabled-input failure remains unexplained; optimized PASS does not establish logging/restart as cause.",
+      "Registration response was intercepted400; no real account/auth writes or successful registration asserted.",
+      "No Mac UI, OS preferences, private credentials, source edits, service changes or reseed."
+    ],
+    "rawProof": {
+      "name": "neb-optimized-a2-bounded-native-proof-oct08.json",
+      "sha256": "75bcaeee48047e5d6ecd20abdb17e87324e4afd362e0e021868a99bd8affa3d3"
+    },
+    "cleanupVerified": {
+      "disposableContainerAbsent": true,
+      "browserAndProxiesClosed": true
+    },
+    "sourceGate": {
+      "runId": 37769102508,
+      "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37769102508",
+      "jobsPassed": 9,
+      "backendPassed": 402,
+      "frontendPassed": 589,
+      "smokePassed": 372,
+      "intentionalSmokeSkips": 12,
+      "livePassed": 123,
+      "testedMerge": "33a8aaf58bb15f11577019a14c9315d936455050",
+      "completeTree": "15a3af87976ca42bc80a24dc2174c1efeb0414ec",
+      "branchTreeMatches": true
+    }
+  },
+  "adminKnownRouteBoundaryA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "anonymousAndNonstaffGetCases": 4,
+    "denialStatus": 302,
+    "existingStaffGetCases": 3,
+    "staffStatus": 200,
+    "realMutations": 0,
+    "populatedPaginationVerified": false,
+    "productionSettingsVerified": false,
+    "scope": "Known routes enforce auth/permissions; empty changelist search/paginator structure only. Existing CI covers destructive guards and moderation confirmation/audit.",
+    "rawProofs": [
+      {
+        "name": "neb-admin-a2-readonly-proof-oct08.json",
+        "sha256": "20b53f4c684439c0044969a939bdffd96f05fa2699cbe75f0f3d60c49f15a6b5"
+      },
+      {
+        "name": "neb-admin-a2-staff-readonly-proof-oct08.json",
+        "sha256": "5b5e6db16575b8680a6a822d37eb42fbd41b68398d217bcb3308728dc49bbefb"
+      }
+    ]
+  },
+  "maximumContentA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+    "counts": {
+      "cases": 28,
+      "verified": 21,
+      "unverified": 7,
+      "failures": 7,
+      "observedMutationRequests": 44,
+      "interceptedMutations": 44,
+      "backendWritesFromGuards": 0,
+      "mutationCoverageComplete": true
+    },
+    "pageErrors": 0,
+    "consoleErrorEvents": 32,
+    "consoleEventCauseEstablished": false,
+    "viewports": [
+      320,
+      1710
+    ],
+    "verifiedScope": "14 auth/account, 6 reply/edit/report cases and wide Explore; controlled error retention/layout.",
+    "unverified": [
+      {
+        "kind": "guest-nickname50",
+        "width": 320,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "explore-title80-author80-tags15x50",
+        "width": 320,
+        "errorName": "AssertionError",
+        "check": "document-overflow"
+      },
+      {
+        "kind": "editor-image-alt160",
+        "width": 320,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "editor-bulk-shared-text100",
+        "width": 320,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "guest-nickname50",
+        "width": 1710,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "editor-image-alt160",
+        "width": 1710,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      },
+      {
+        "kind": "editor-bulk-shared-text100",
+        "width": 1710,
+        "errorName": "Error",
+        "check": "expect(locator).toBeVisible() failed"
+      }
+    ],
+    "otherFailedCasesInitialLayoutFit": true,
+    "activeFiltersMobileOverflowConfirmed": true,
+    "pendingUserChoice": "Full wrapping or ellipsis for long active-filter values; no source changes.",
+    "limits": [
+      "One Linux Chromium engine, two viewports; no physical-device claim",
+      "All business mutations return controlled400, telemetry204; no backend persistence or capacity claim",
+      "Password100 is a representative long valid input, not a product maximum",
+      "Existing moderator cookie only reused for SSR/social, never printed or persisted into proof",
+      "Current UI limits500/40/50 remain unchanged; no assertion that API1000/50/80 must be adopted",
+      "Only listed missing fields; prior profile/editor maximum packets remain independent evidence"
+    ],
+    "rawProof": {
+      "name": "maximum-content/proof.json",
+      "sha256": "e4dc4654302fe462b4b44e5235276784cecb16fa039e85193bde463ed6600312"
+    }
+  },
+  "directApiResponseSizesA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+    "cases": [
+      {
+        "case": "normal-default-catalog",
+        "status": 200,
+        "requestedAcceptEncoding": "gzip",
+        "responseContentEncoding": "identity",
+        "wireBodyBytes": 9054,
+        "decodedJsonBytes": 9054,
+        "contentLengthHeader": "9054",
+        "contentType": "application/json",
+        "cacheControl": null,
+        "redirected": false,
+        "totalAvailableCount": 2,
+        "resultCount": 2,
+        "hasNext": false,
+        "configuredDefaultPageSize": 24,
+        "previewCellCount": 18,
+        "mediaMetadataOccurrences": 0,
+        "previewContributionCanonicalBytes": 6933,
+        "descriptionContributionCanonicalBytes": 116
+      },
+      {
+        "case": "largest-preview-board-on-returned-page",
+        "status": 200,
+        "requestedAcceptEncoding": "gzip",
+        "responseContentEncoding": "identity",
+        "wireBodyBytes": 8838,
+        "decodedJsonBytes": 8838,
+        "contentLengthHeader": "8838",
+        "contentType": "application/json",
+        "cacheControl": null,
+        "redirected": false,
+        "boardSize": 3,
+        "previewCellCount": 9,
+        "revisionCellCount": 9,
+        "mediaMetadataOccurrences": 0,
+        "previewContributionCanonicalBytes": 3473,
+        "currentRevisionContributionCanonicalBytes": 4095,
+        "previewCellsEqualRevisionCells": true,
+        "editableDraftPresent": false
+      }
+    ],
+    "limits": [
+      "Catalog fixture has fewer than24 results.",
+      "Largest returned fixture is smaller than10x10.",
+      "Field contributions use compact UTF8 JSON serialization, excluding field-key/separator overhead; they are not independently compressed transfer sizes.",
+      "Direct backend compression differs from final ingress/CDN policy.",
+      "No IDs/names/user fields/query values/response bodies persisted."
+    ],
+    "globalRequirementClosed": false,
+    "rawProof": {
+      "name": "neb-response-size-a2-once-oct08.json",
+      "sha256": "05f7e3c3e95c8c4238f712593801b7525b4d0ab08a62566c58f526a1ba7e807e"
+    }
+  },
+  "maximumContentAlertDiagnosticA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+    "counts": {
+      "cases": 6,
+      "flowsCompleted": 6,
+      "globalAssertionPassed": 0,
+      "globalAssertionFailed": 6,
+      "observedMutationRequests": 8,
+      "interceptedMutations": 8,
+      "backendWritesFromGuards": 0,
+      "mutationCoverageComplete": true
+    },
+    "cause": "The unchanged global alert assertion matches application feedback and Next shadow-DOM route announcer, producing a strict-mode violation in all six cases.",
+    "independentObservationsVerified": 6,
+    "allControlled400Completed": true,
+    "allIntendedFeedbackVisible": true,
+    "allInputValuesRetained": true,
+    "bulkBothCellsRetained": true,
+    "allBeforeAfterGeometryFits": true,
+    "pageErrors": 0,
+    "consoleErrorEvents": 6,
+    "consoleEventCauseEstablished": false,
+    "originalGlobalAssertionsRemainFailed": true,
+    "limits": [
+      "ONE six-case diagnostic only, Linux Chromium at320/1710; no repeat28/Explore/RSC",
+      "Original global alert assertion retained, controlled400 fixtures and15000/20000 action/navigation timeouts unchanged",
+      "Passive auth event observations do not instrument React viewer/mutationLifetime references; zero events alone do not prove every lifecycle transition",
+      "No response bodies, private headers/query/cookies/IDs/email or form values recorded; only structural classes/flags/length/equality",
+      "All writes intercepted; no backend persistence or real-device claim",
+      "Failure DOM text/URLs/IDs/emails/value attributes sanitized; original packet preserved separately"
+    ],
+    "rawProof": {
+      "name": "maximum-content-six-diagnostic/proof.json",
+      "sha256": "d2e26f2624e5c48ce277cd7a4f5d9e0b797e226aa77f947e498068bf337995a6"
+    }
+  },
+  "playerLoadingGeometryA2": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "runtime": {
+      "composePath": "/tmp/neb-rollout-a3/compose.json",
+      "frontend": {
+        "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18584,
+        "publicRelease": "a2c2d6f54b690f730c1186c1eb739ef414437e7c"
+      },
+      "backend": {
+        "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18585
+      }
+    },
+    "scope": "ONE guest390 CLS attribution and registered390/1710 pending-to-ready geometry diagnostic only",
+    "proofSha256": "df9aa4c55754db2c32c7f50601b022e56ec0dfaca07a4b1908bf5ca447a2110b",
+    "counts": {
+      "observations": 3,
+      "completed": 3,
+      "failures": 0,
+      "observedMutations": 3,
+      "interceptedTelemetry": 3,
+      "blockedBusinessMutations": 0
+    },
+    "summary": {
+      "counts": {
+        "observations": 3,
+        "completed": 3,
+        "failures": 0,
+        "observedMutations": 3,
+        "interceptedTelemetry": 3,
+        "blockedBusinessMutations": 0
+      },
+      "browserVersion": "149.0.7827.0",
+      "proxyErrors": 0,
+      "observations": [
+        {
+          "mode": "guest",
+          "width": 390,
+          "completed": true,
+          "frameCount": 189,
+          "clsMaxSessionWindow": 0.0006855929487179487,
+          "clsSumNoRecentInput": 0.0006855929487179487,
+          "heldBoardContinuity": null,
+          "progressHoldMs": null,
+          "realProgressResponse": null,
+          "firstPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "lastPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "shiftSourceClasses": [],
+          "unattributedShiftEntries": 1,
+          "pageErrorCount": 0,
+          "consoleWarningErrorCount": 0
+        },
+        {
+          "mode": "registered",
+          "width": 390,
+          "completed": true,
+          "frameCount": 253,
+          "clsMaxSessionWindow": 0.005395327635327636,
+          "clsSumNoRecentInput": 0.0060809205840455845,
+          "heldBoardContinuity": {
+            "framesObserved": 63,
+            "absentFrames": 0,
+            "notVisibleFrames": 0
+          },
+          "progressHoldMs": 1063,
+          "realProgressResponse": {
+            "status": 200,
+            "ownedRequest": true,
+            "bodyTransportFinished": true,
+            "transportError": null
+          },
+          "firstPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 54
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "lastPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            },
+            "board": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "shiftSourceClasses": [
+            "account-nav",
+            "classic-header__center",
+            "button button--secondary"
+          ],
+          "unattributedShiftEntries": 1,
+          "pageErrorCount": 0,
+          "consoleWarningErrorCount": 0
+        },
+        {
+          "mode": "registered",
+          "width": 1710,
+          "completed": true,
+          "frameCount": 253,
+          "clsMaxSessionWindow": 0.03427796284184307,
+          "clsSumNoRecentInput": 0.03427796284184307,
+          "heldBoardContinuity": {
+            "framesObserved": 64,
+            "absentFrames": 0,
+            "notVisibleFrames": 0
+          },
+          "progressHoldMs": 1060,
+          "realProgressResponse": {
+            "status": 200,
+            "ownedRequest": true,
+            "bodyTransportFinished": true,
+            "transportError": null
+          },
+          "firstPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": -166.828125,
+              "height": 64
+            },
+            "actions": {
+              "x": -166.828125,
+              "y": 0,
+              "width": 166.828125,
+              "height": 0
+            },
+            "board": {
+              "x": 0.0,
+              "y": 88.34375,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "lastPendingToReadyDeltas": {
+            "header": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "title": {
+              "x": 0,
+              "y": 0.0,
+              "width": 0.0,
+              "height": 0
+            },
+            "actions": {
+              "x": 0.0,
+              "y": 0,
+              "width": 0.0,
+              "height": 0
+            },
+            "board": {
+              "x": 0.0,
+              "y": 0.0,
+              "width": 0,
+              "height": 0
+            }
+          },
+          "shiftSourceClasses": [
+            "board-scroll-region",
+            "play-mark-controls",
+            "play-description",
+            "play-actions",
+            "classic-header__nav"
+          ],
+          "unattributedShiftEntries": 0,
+          "pageErrorCount": 0,
+          "consoleWarningErrorCount": 0
+        }
+      ],
+      "cleanup": {
+        "evidenceSavedBeforeFinalCleanup": true,
+        "errors": []
+      },
+      "completeGeometry": "Full frames, shift rectangles and original offline summary are retained in the external evidence archive, identified by proofSha256."
+    },
+    "limits": [
+      "Exactly guest390 plus registered390/1710; one Linux Chromium run, no physical-device or global readiness claim",
+      "CLS source attribution is observational; earlier small CLS need not recur and intentional content expansion is not classified as a defect",
+      "Every animation frame sampled until freeze or20s cap; buffered layout-shift observer captures reported sources only; offscreen/browsers without attribution can limit coverage",
+      "Real existing cookie/SSR/auth/progress GETs; progress GET held only for matching own main-frame fetch with5s hard cap, then original response continued; no fake GET response",
+      "GETprogress read safety reused from exact a2 source; all business writes blocked and treated as failures, telemetry POST204 intercepted",
+      "No bodies/cookies/identity/title/text/IDs persisted; only sanitized element tags/classes, rects, flags, event counts and safe errors",
+      "Registered identity checked through existing auth/me200 and verified-email boolean; staff status not re-read from an endpoint that omits it",
+      "No UI interactions, source/service/build/reseed/Mac/Cua actions; own disposable Linux container only"
+    ],
+    "verdict": "Three flows complete; early registered hydration geometry changes observed. Last-pending-to-ready stability does not establish whole-flow stability or global section5 pass. No UI change or rerun.",
+    "sourceAssessment": {
+      "player": "BingoPage supplies initialBingo/initialViewer but no initialAuthorProfile; optional client author-profile completion inserts Follow/Following and changes intrinsic action-column width. Button insertion/reflow coincide in frames; profile GET was not separately recorded.",
+      "header": "RootLayout has server snapshot but passes only user ID; header starts user=null and inserts Notifications after client session completion.",
+      "references": [
+        "frontend/app/bingo/[bingoId]/page.tsx",
+        "frontend/features/play/bingo-player.tsx",
+        "frontend/app/globals.css",
+        "frontend/app/layout.tsx",
+        "frontend/components/layout/app-header.tsx"
+      ],
+      "implementationStatus": "Superseded for the affected layout by the d8 header seed and accepted empty Follow reservation; the historical a2 packet remains the before state. See playerLoadingGeometryD8 for measured after-state and its retained failure."
+    }
+  },
+  "playerLoadingGeometryD8": {
+    "runtimePreflight": {
+      "composePath": "/tmp/neb-rollout-a3/compose.json",
+      "frontend": {
+        "image": "sha256:945ce4d8232c6417865f73de66116a876e60afe32140cbca3a1d69e6e6af62ee",
+        "release": "d8fe89ac42613938ef65801b23a4a07b98264dd2",
+        "loopbackPort": 18584,
+        "publicRelease": "d8fe89ac42613938ef65801b23a4a07b98264dd2"
+      },
+      "backend": {
+        "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18585
+      }
+    },
+    "reviewedRepositoryHead": "cca43db8d46ff5e6b5d66dd8af10d7955d87c4a1",
+    "counts": {
+      "observations": 7,
+      "completed": 6,
+      "failures": 1,
+      "observedMutations": 10,
+      "interceptedTelemetry": 10,
+      "blockedBusinessMutations": 0,
+      "expected503ConsoleErrors": 2,
+      "unexpectedConsoleMessages": 1
+    },
+    "rawProofArchive": "/Users/Daniil/.codex/scratch/not-enough-bingo-production-readiness/evidence-d8fe89a-2026-10-08/follow-slot-after-once/proof.json",
+    "proofSha256": "8d4c4967e5540edd3f435dc93d68ade4adde9b3ea9cca626ac498865078d57c5",
+    "observations": [
+      {
+        "mode": "guest",
+        "width": 390,
+        "profileMode": "none",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": false,
+          "profile": false,
+          "followSlot": false
+        },
+        "progressReadyBeforeProfile": null,
+        "emptySlotAccessibleSnapshotEmpty": null,
+        "hiddenSizingLabelsNonfocusable": null,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": null,
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": null,
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": null,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 390,
+        "profileMode": "real-unfollowed",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 390,
+        "profileMode": "controlled-following",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 390,
+        "profileMode": "controlled-503",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0.0006855929487179487,
+        "consoleMessages": [
+          {
+            "type": "error",
+            "message": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "exactProfileLocation": true,
+            "resource503": true,
+            "expectedControlled503": true
+          }
+        ],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "title": 0,
+          "board": 0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 1710,
+        "profileMode": "real-unfollowed",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0.0,
+          "actions": 0.0,
+          "heading": 0,
+          "title": 0,
+          "board": 0.0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 1710,
+        "profileMode": "controlled-following",
+        "completed": true,
+        "failure": null,
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0,
+        "consoleMessages": [],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0.0,
+          "actions": 0.0,
+          "heading": 0,
+          "title": 0,
+          "board": 0.0
+        }
+      },
+      {
+        "mode": "registered",
+        "width": 1710,
+        "profileMode": "controlled-503",
+        "completed": false,
+        "failure": {
+          "name": "AssertionError",
+          "message": "Unexpected console warning/error\n\n1 !== 0\n"
+        },
+        "initialSSR": {
+          "notifications": true,
+          "profile": true,
+          "followSlot": true
+        },
+        "progressReadyBeforeProfile": true,
+        "emptySlotAccessibleSnapshotEmpty": true,
+        "hiddenSizingLabelsNonfocusable": true,
+        "documentOverflowFrames": 0,
+        "realProgressResponse": {
+          "status": 200,
+          "bodyTransportFinished": true,
+          "ownMainFrame": true,
+          "resourceType": "fetch"
+        },
+        "clsMaxSessionWindow": 0,
+        "consoleMessages": [
+          {
+            "type": "error",
+            "message": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "exactProfileLocation": false,
+            "resource503": false,
+            "expectedControlled503": false
+          },
+          {
+            "type": "error",
+            "message": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "exactProfileLocation": true,
+            "resource503": true,
+            "expectedControlled503": true
+          }
+        ],
+        "profileCompletionMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0,
+          "actions": 0,
+          "heading": 0,
+          "board": 0
+        },
+        "firstBoardFrameToFinalMaxAbsoluteRectDeltaPx": {
+          "accountNav": 0,
+          "slot": 0.0,
+          "actions": 0.0,
+          "heading": 0,
+          "title": 0,
+          "board": 0.0
+        }
+      }
+    ],
+    "cleanup": {
+      "evidenceSavedBeforeFinalCleanup": true,
+      "errors": []
+    },
+    "limits": [
+      "Exactly seven fresh contexts in one Linux Chromium packet; no physical-device/global readiness claim",
+      "Actual frontend runtime is d8fe89ac42613938ef65801b23a4a07b98264dd2/image945ce4d8232c6417865f73de66116a876e60afe32140cbca3a1d69e6e6af62ee; backend remains a2. Root verified application files unchanged between d8 runtime and reviewed cca43db8d46ff5e6b5d66dd8af10d7955d87c4a1 checkout, whose differences are test formatting/docs; runtime is not relabeled cca",
+      "Real unfollowed profile response continued unchanged; controlled following copies the real profile in memory and changes only is_following; controlled503 is synthetic, neither proves persisted follow/error",
+      "Only one matching own main-frame author profile GET held per registered observation, one-second ready checkpoint sample and5s hard cap; real progress GET unchanged",
+      "Initial SSR HTML read from the same navigation response in memory only; no additional navigation or raw HTML/private identity persistence",
+      "Hidden sizing labels measured without focus/click/role/DOM mutations; accessibility snapshot restricted to Follow slot and expected empty before completion",
+      "Every RAF sampled until freeze/25s cap and2000frames;200shift cap; raw attribution includes parent tags/classes for text-node sources, not content",
+      "No zero-CLS claim or automatic defect inference from intentional content expansion; all failures and unexpected console events preserved",
+      "All business writes blocked/fail packet, telemetry204 intercepted; no login, reseed, build, service, Mac or Cua actions",
+      "Unexpected console500 co-occurs with independently observed auth/session GET500; console location was retained only as exact-profile boolean, so direct URL association/server cause is not established",
+      "All six registered geometry/accessibility checkpoints completed even though one scenario ultimately failed its unexpected-console assertion; do not mark the packet7/7PASS",
+      "First-board\u2192final geometry and per-profile before\u2192after geometry calculated offline from frozen observations, with absent guest slot represented as null"
+    ],
+    "layoutShiftAttribution": "Each390 capture CLS0.0006855929487179487; nodeType3, parent P.progress-status, play-board-section, equal reported previous/current rect. All1710 captures CLS0.",
+    "sessionFailureEvidence": {
+      "scope": "Frozen ONE7 registered1710 controlled503 auth/session GET500; existing logs only, no requests or mutations",
+      "browserResponseEpochMs": 1791465343333,
+      "proxyFailureTimestamp": "2026-10-08T13:15:43.326488637Z",
+      "proven": {
+        "service": "candidate-frontend",
+        "route": "/api/v1/auth/session/",
+        "upstream": "candidate-backend:8000",
+        "message": "Failed to proxy; socket hang up",
+        "code": "ECONNRESET",
+        "deltaBeforeBrowserResponseMs": 6.511363,
+        "backendLogWindow": "2026-10-08T13:14:00Z through 2026-10-08T13:16:10Z",
+        "backendLogBytes": 0,
+        "backendContainer": {
+          "startedAt": "2026-10-08T11:19:17.327134459Z",
+          "restartCount": 0,
+          "oomKilled": false,
+          "status": "running"
+        }
+      },
+      "source": {
+        "rewrite": "frontend/next.config.ts:12-23 maps /api/v1 to API_BASE_URL",
+        "backendTransport": "backend/Dockerfile:92 configures 3 gunicorn workers, 2 threads, timeout60s, keep-alive5s",
+        "backendLogging": "backend/config/gunicorn.py:5-6 and config/settings/base.py:419-442 route error logs to console; no accesslog"
+      },
+      "limits": [
+        "Backend HTTP500 or session-view exception is not evidenced; frontend proxy failed its upstream socket",
+        "Exact cause of socket reset remains unproven: no backend logs in retained window, no request body/cookies or repeated request inspected",
+        "No evidence of backend container restart/OOM; individual worker/connection termination cannot be ruled out",
+        "Controlled author-profile503 is a separate later response; no proof that it caused this session failure"
+      ],
+      "rawFiles": [
+        {
+          "file": "logs.raw.txt",
+          "sha256": "5efe0ac51a711268e508ea86ad007aaf2115331dec9bfa125fe532721ea1782a",
+          "bytes": 657
+        },
+        {
+          "file": "backend-window.raw.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ]
+    }
+  },
+  "headerUnread022": {
+    "runtime": {
+      "composePath": "/tmp/neb-rollout-a3/compose.json",
+      "frontend": {
+        "image": "sha256:ebab33592ccec0719f7453d861341f937cd9acb55f20cf6ee695391559f992b3",
+        "release": "0224870daca615a065ff244f37d4f041d9a8f47a",
+        "loopbackPort": 18584,
+        "publicRelease": "0224870daca615a065ff244f37d4f041d9a8f47a"
+      },
+      "backend": {
+        "image": "sha256:3c109c6bb13baa3ad98ae397c4385990bfdc6f340b83ae05b0fdcef16f6a4226",
+        "release": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+        "loopbackPort": 18585
+      }
+    },
+    "counts": {
+      "contexts": 2,
+      "completed": 2,
+      "failures": 0
+    },
+    "proofSha256": "cf41bd56b80f6bd95047e91043e460c7f6134b31a30ba3ee942d170efd3c8050",
+    "rawProofArchive": "/Users/Daniil/.codex/scratch/not-enough-bingo-production-readiness/evidence-0224870-2026-10-08/unread-browser-once/proof.json",
+    "observations": [
+      {
+        "width": 390,
+        "completed": true,
+        "seededSSR": {
+          "notifications": true,
+          "profile": true
+        },
+        "startupUnreadRequests": 1,
+        "unreadResponseStatuses": [
+          200,
+          200,
+          503
+        ],
+        "sameAccountSessionStatuses": [
+          200,
+          200,
+          200
+        ],
+        "labels": [
+          "Notifications",
+          "Notifications, 7 unread",
+          "Notifications, 9 unread",
+          "Notifications, 9 unread"
+        ],
+        "headerRectangleMaxDeltaPx": 0,
+        "documentWidth": 390,
+        "expected503ConsoleMessages": 1,
+        "unexpectedConsoleMessages": 0,
+        "pageErrors": 0,
+        "businessMutations": 0,
+        "interceptedTelemetry": 2
+      },
+      {
+        "width": 1710,
+        "completed": true,
+        "seededSSR": {
+          "notifications": true,
+          "profile": true
+        },
+        "startupUnreadRequests": 1,
+        "unreadResponseStatuses": [
+          200,
+          200,
+          503
+        ],
+        "sameAccountSessionStatuses": [
+          200,
+          200,
+          200
+        ],
+        "labels": [
+          "Notifications",
+          "Notifications, 7 unread",
+          "Notifications, 9 unread",
+          "Notifications, 9 unread"
+        ],
+        "headerRectangleMaxDeltaPx": 0,
+        "documentWidth": 1710,
+        "expected503ConsoleMessages": 1,
+        "unexpectedConsoleMessages": 0,
+        "pageErrors": 0,
+        "businessMutations": 0,
+        "interceptedTelemetry": 2
+      }
+    ],
+    "cleanup": {
+      "errors": []
+    },
+    "limits": [
+      "Only configured local Linux Chromium candidate, widths390/1710; no production/Mac/native focus claim",
+      "Synthetic window focus events test event logic; actual OS/browser focus untested",
+      "Unread7/9 and503 synthetic; real unread200 backing used in memory only; no unread payload/IDs/cookies output",
+      "All business mutations blocked and fail; telemetry204 controlled; unrelated GETs unchanged"
+    ]
+  }
+}

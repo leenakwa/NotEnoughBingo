@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
+  );
   await page.route("**/api/v1/auth/me/", (route) =>
     route.fulfill({
       status: 401,
@@ -48,6 +51,89 @@ test("primary navigation uses the production route names", async ({ page }) => {
   await expect(page.getByText("For You")).toHaveCount(0);
 });
 
+test("a failed feed page change hides the previous page and can be retried", async ({ page }) => {
+  let failSecondPage = true;
+  const bingo = {
+    id: "11111111-1111-4111-8111-111111111111",
+    title: "First page board",
+    description: "",
+    language: "en",
+    author: {
+      id: "22222222-2222-4222-8222-222222222222",
+      username: "author",
+      display_name: "Author",
+      avatar: null,
+    },
+    cover: null,
+    preview: null,
+    tags: [],
+    size: 3,
+    status: "published",
+    visibility: "public",
+    completion_style: "checkmark",
+    stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+    liked_by_me: false,
+    published_at: "2026-08-07T00:00:00Z",
+    updated_at: "2026-08-07T00:00:00Z",
+  };
+  await page.route("**/api/v1/feeds/discover/**", (route) => {
+    const secondPage = new URL(route.request().url()).searchParams.get("page") === "2";
+    if (secondPage && failSecondPage) {
+      return route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "unavailable", message: "Feed is unavailable." } }),
+      });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 2,
+        next: secondPage ? null : "http://localhost/api/v1/feeds/discover/?page=2",
+        previous: secondPage ? "http://localhost/api/v1/feeds/discover/?page=1" : null,
+        results: [{ ...bingo, title: secondPage ? "Second page board" : bingo.title }],
+      }),
+    });
+  });
+
+  await page.goto("/discover");
+  await expect(page.getByRole("heading", { name: "First page board" })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Discover pages" })
+    .getByRole("button", { name: "Next" })
+    .click();
+  await expect(page.getByRole("heading", { name: "First page board" })).toHaveCount(0);
+  await expect(page.locator(".page-state--error")).toContainText("Feed is unavailable.");
+
+  failSecondPage = false;
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { name: "Second page board" })).toBeVisible();
+  await expect(page.locator(".page-state--error")).toHaveCount(0);
+});
+
+test("guest creation offers signup and recovers from a session outage", async ({ page }) => {
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "unavailable", message: "Please try later." } }),
+    }),
+  );
+  await page.goto("/create");
+  await expect(page.locator("main [role='alert']")).toContainText("Please try later.");
+
+  await page.unroute("**/api/v1/auth/session/");
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: '{"user":null}' }),
+  );
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { name: "Create your own bingo" })).toBeVisible();
+  await page.getByRole("link", { name: "Create account" }).click();
+  await expect(page.getByRole("dialog", { name: "Join Not Enough Bingo" })).toBeVisible();
+  await expect(page).toHaveURL(/\/create$/);
+});
+
 test("bingo card keeps tags with actions and handles guest likes without an API error", async ({
   page,
 }) => {
@@ -67,6 +153,7 @@ test("bingo card keeps tags with actions and handles guest likes without an API 
     background_opacity: 1,
     image_asset_id: null,
     image: null,
+    image_alt: "",
     image_opacity: 1,
     border_color: "#000000",
     border_width: 1,
@@ -165,19 +252,190 @@ test("bingo card keeps tags with actions and handles guest likes without an API 
   await expect(page.getByText("Authentication credentials were not provided.")).toHaveCount(0);
 });
 
+test("offscreen dense previews retain their content and layout when scrolling and resizing", async ({
+  page,
+}) => {
+  const boards = Array.from({ length: 24 }, (_, boardIndex) => ({
+    id: `11111111-1111-4111-8111-${String(boardIndex).padStart(12, "0")}`,
+    title: `Dense preview board ${boardIndex + 1}`,
+    description: "",
+    language: "en",
+    author: {
+      id: "22222222-2222-4222-8222-222222222222",
+      username: "author",
+      display_name: "Author",
+      avatar: null,
+    },
+    cover: null,
+    preview: {
+      size: 10,
+      board_background: null,
+      cells: Array.from({ length: 100 }, (_, cellIndex) => ({
+        id: `33333333-3333-4333-8333-${String(boardIndex * 100 + cellIndex).padStart(12, "0")}`,
+        position: cellIndex,
+        row: Math.floor(cellIndex / 10),
+        column: cellIndex % 10,
+        text: `Board ${boardIndex + 1}, cell ${cellIndex + 1}: Read a new book, take a walk, and share a favorite moment with a friend.`.slice(
+          0,
+          100,
+        ),
+        text_color: "#17324d",
+        bold: cellIndex % 2 === 0,
+        italic: cellIndex % 3 === 0,
+        underline: cellIndex % 5 === 0,
+        strikethrough: cellIndex % 7 === 0,
+        background_color: cellIndex % 2 === 0 ? "#dbeafe" : "#fef3c7",
+        background_opacity: 0.8,
+        image_asset_id: null,
+        image: null,
+        image_alt: "",
+        image_opacity: 1,
+        border_color: "#17324d",
+        border_width: 1,
+        border_style: "solid",
+      })),
+    },
+    tags: [{ id: "44444444-4444-4444-8444-444444444444", name: "Design", slug: "design" }],
+    size: 10,
+    status: "published",
+    visibility: "public",
+    completion_style: "checkmark",
+    stats: { likes: 4, comments: 2, plays: 0, shares: 0, views: 0 },
+    liked_by_me: false,
+    published_at: "2026-07-20T00:00:00Z",
+    updated_at: "2026-07-20T00:00:00Z",
+  }));
+  await page.route("**/api/v1/feeds/discover/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: boards.length, next: null, previous: null, results: boards }),
+    }),
+  );
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/discover");
+  const cards = page.getByRole("article");
+  await expect(cards).toHaveCount(24);
+  const lastPreview = cards.last().getByRole("img");
+  expect(
+    await lastPreview.evaluate((element) => element.getBoundingClientRect().top),
+  ).toBeGreaterThan(900);
+
+  const checkPreview = async (boardIndex: number) => {
+    const board = boards[boardIndex]!;
+    const card = cards.nth(boardIndex);
+    const preview = card.getByRole("img", {
+      name: `Preview of ${board.title}, 10 by 10 bingo`,
+      exact: true,
+    });
+    await expect(preview).toBeVisible();
+    await expect(card.getByRole("heading", { name: board.title, exact: true })).toBeVisible();
+    const cells = preview.locator(".bingo-card-preview__cell");
+    await expect(cells).toHaveCount(100);
+    expect(await cells.locator(".bingo-card-preview__text").allTextContents()).toEqual(
+      board.preview.cells.map((cell) => cell.text),
+    );
+    expect(
+      await cells.evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("title")),
+      ),
+    ).toEqual(board.preview.cells.map((cell) => cell.text));
+    await expect
+      .poll(async () =>
+        card.evaluate((element) => {
+          const preview = element.querySelector<HTMLElement>(".bingo-card-preview")!;
+          const tags = element.querySelector<HTMLElement>(".bingo-card__tags")!;
+          const actions = element.querySelector<HTMLElement>(".bingo-card__actions")!;
+          const box = preview.getBoundingClientRect();
+          const fits = (inner: DOMRect, outer: DOMRect) =>
+            inner.width > 0 &&
+            inner.height > 0 &&
+            inner.left >= outer.left - 1 &&
+            inner.right <= outer.right + 1 &&
+            inner.top >= outer.top - 1 &&
+            inner.bottom <= outer.bottom + 1;
+          return {
+            square: box.width > 0 && Math.abs(box.width - box.height) <= 1,
+            cellsAndTextFit: Array.from(
+              preview.querySelectorAll<HTMLElement>(".bingo-card-preview__cell"),
+            ).every((cell) => {
+              const cellBox = cell.getBoundingClientRect();
+              return (
+                fits(cellBox, box) &&
+                fits(
+                  cell.querySelector(".bingo-card-preview__text")!.getBoundingClientRect(),
+                  cellBox,
+                )
+              );
+            }),
+            tagsFollowPreview: Math.abs(tags.getBoundingClientRect().top - box.bottom) <= 1,
+            actionsFollowTags:
+              actions.previousElementSibling === tags &&
+              Math.abs(actions.getBoundingClientRect().top - tags.getBoundingClientRect().bottom) <=
+                1,
+          };
+        }),
+      )
+      .toEqual({
+        square: true,
+        cellsAndTextFit: true,
+        tagsFollowPreview: true,
+        actionsFollowTags: true,
+      });
+  };
+
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      window.scrollTo(0, 0);
+    });
+    const lastLink = cards.last().locator(".bingo-card__main");
+    await expect(lastLink).toHaveAttribute("href", `/bingo/${boards[23]!.id}`);
+    // Native focus must reveal the distant card without a preceding locator scroll.
+    await lastLink.evaluate((element) => (element as HTMLElement).focus());
+    await expect(lastLink).toBeFocused();
+    await expect(lastLink).toBeInViewport();
+    await expect(lastPreview).toBeInViewport();
+    await checkPreview(23);
+    for (let pass = 0; pass < 2; pass += 1) {
+      await cards.first().locator(".bingo-card__main").scrollIntoViewIfNeeded();
+      await checkPreview(0);
+      await lastPreview.scrollIntoViewIfNeeded();
+      await checkPreview(23);
+    }
+    await expect(cards).toHaveCount(24);
+    expect(
+      await page.locator(".bingo-card-preview").evaluateAll((elements) =>
+        elements.every((element) => {
+          const box = element.getBoundingClientRect();
+          return box.width > 0 && Math.abs(box.width - box.height) <= 1;
+        }),
+      ),
+    ).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+  }
+});
+
 test("authenticated header keeps notification and profile actions", async ({ page }) => {
-  await page.unroute("**/api/v1/auth/me/");
-  await page.route("**/api/v1/auth/me/", (route) =>
+  await page.unroute("**/api/v1/auth/session/");
+  await page.route("**/api/v1/auth/session/", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        id: "11111111-1111-4111-8111-111111111111",
-        username: "author",
-        display_name: "Author",
-        avatar: null,
-        email: "author@example.test",
-        email_verified: true,
+        user: {
+          id: "11111111-1111-4111-8111-111111111111",
+          username: "author",
+          display_name: "Author",
+          avatar: null,
+          email: "author@example.test",
+          email_verified: true,
+          deletion_scheduled_for: null,
+        },
       }),
     }),
   );
@@ -216,19 +474,338 @@ test("explore exposes title, author, tag, and sort controls", async ({ page }) =
   await expect(page.getByRole("radio", { name: /Popular/ })).toBeChecked();
 });
 
-test("create opens the coordinate-safe editor", async ({ page }) => {
-  await page.unroute("**/api/v1/auth/me/");
-  await page.route("**/api/v1/auth/me/", (route) =>
+test("explore suggests public authors and tags and lets active filters be removed", async ({
+  page,
+}) => {
+  await page.route("**/api/v1/bingos/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
+    }),
+  );
+  await page.route("**/api/v1/tags/**", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        id: "11111111-1111-4111-8111-111111111111",
-        username: "author",
-        display_name: "Author",
-        avatar: null,
-        email: "author@example.test",
-        email_verified: true,
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "44444444-4444-4444-8444-444444444444",
+            name: "Travel",
+            slug: "travel",
+            usage_count: 4,
+          },
+        ],
+      }),
+    }),
+  );
+  await page.route("**/api/v1/authors/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            username: "ada",
+            display_name: "Ada Lovelace",
+          },
+        ],
+      }),
+    }),
+  );
+  await page.goto("/explore?search=summer&author=ada&tags=travel%2Cfriends&ordering=newest", {
+    waitUntil: "domcontentloaded",
+  });
+
+  await expect(page.getByRole("button", { name: "Remove title filter: summer" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove author filter: ada" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove tag filter: friends" })).toBeVisible();
+  await page.getByRole("button", { name: "Remove tag filter: friends" }).click();
+  await expect(page).toHaveURL(/tags=travel/);
+  await expect(page).not.toHaveURL(/friends/);
+
+  await page.getByLabel("Tags").fill("tra");
+  await expect(page.locator('#explore-tag-suggestions option[value="travel"]')).toHaveCount(1);
+
+  const authorInput = page.getByRole("combobox", { name: "Author" });
+  await expect(authorInput).toHaveAttribute("list", "explore-author-suggestions");
+  await authorInput.fill("ad");
+  await expect(page.locator('#explore-author-suggestions option[value="ada"]')).toHaveAttribute(
+    "label",
+    "Ada Lovelace (@ada)",
+  );
+});
+
+test("Explore keeps search visibly busy until a slow result arrives", async ({ page }) => {
+  const emptyPage = { count: 0, next: null, previous: null, results: [] };
+  await page.route("**/api/v1/auth/csrf/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
+  );
+  await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204 }));
+  let releaseSlowResponse = () => {};
+  let reportSlowRequest = () => {};
+  const slowResponse = new Promise<void>((resolve) => {
+    releaseSlowResponse = resolve;
+  });
+  const slowRequest = new Promise<void>((resolve) => {
+    reportSlowRequest = resolve;
+  });
+  await page.route("**/api/v1/bingos/**", async (route) => {
+    if (new URL(route.request().url()).searchParams.get("search") === "slow") {
+      reportSlowRequest();
+      await slowResponse;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(emptyPage),
+    });
+  });
+
+  await page.goto("/explore");
+  await expect(page.getByRole("heading", { name: "No matching bingos" })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search by title" }).fill("slow");
+  await page.getByRole("searchbox", { name: "Search by title" }).press("Enter");
+  await slowRequest;
+  await expect(page.locator("main#main-content[aria-busy]")).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator(".results-count")).toContainText("Updating results");
+  releaseSlowResponse();
+  await expect(page.locator("main#main-content[aria-busy]")).toHaveAttribute("aria-busy", "false");
+});
+
+test("Explore waits for the last author-suggestion query", async ({ page }) => {
+  const queries: string[] = [];
+  await page.route("**/api/v1/bingos/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
+    }),
+  );
+  await page.route("**/api/v1/authors/**", (route) => {
+    queries.push(new URL(route.request().url()).searchParams.get("search") ?? "");
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
+    });
+  });
+
+  await page.goto("/explore");
+  await expect(page.locator("main#main-content[aria-busy]")).toHaveAttribute("aria-busy", "false");
+  const author = page.getByRole("combobox", { name: "Author" });
+  await author.fill("a");
+  await author.fill("ad");
+  await expect(author).toHaveValue("ad");
+  await expect.poll(() => queries).toEqual(["ad"]);
+});
+
+test("board lists keep long titles, author names, and tags readable", async ({ page }) => {
+  const title = "ExtremelyLongBingoTitleWithoutAnySpaces".repeat(2).slice(0, 70);
+  const tag = "ExtremelyLongTagWithoutAnySpaces";
+  await page.route("**/api/v1/feeds/discover/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            title,
+            description: "",
+            language: "en",
+            author: {
+              id: "22222222-2222-4222-8222-222222222222",
+              username: "verylongusernamewithoutspaces",
+              display_name: "VeryLongDisplayNameWithoutAnySpaces".repeat(2),
+              avatar: null,
+            },
+            cover: null,
+            preview: null,
+            tags: [{ id: "33333333-3333-4333-8333-333333333333", name: tag, slug: "long-tag" }],
+            size: 3,
+            status: "published",
+            visibility: "public",
+            completion_style: "checkmark",
+            stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+            liked_by_me: false,
+            published_at: "2026-08-07T00:00:00Z",
+            updated_at: "2026-08-07T00:00:00Z",
+          },
+        ],
+      }),
+    }),
+  );
+
+  for (const width of [320, 1710]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/discover");
+    const card = page.getByRole("article");
+    await expect(card.getByRole("heading", { name: title })).toBeVisible();
+    await expect(card.getByRole("link", { name: `#${tag}` })).toBeVisible();
+    const layout = await card.evaluate((element) => {
+      const cardBox = element.getBoundingClientRect();
+      const titleBox = element.querySelector("h2")?.getBoundingClientRect();
+      const authorBox = element.querySelector(".bingo-card__heading span")?.getBoundingClientRect();
+      const tagBox = element.querySelector(".bingo-card__tags a")?.getBoundingClientRect();
+      return {
+        cardRight: cardBox.right,
+        titleRight: titleBox?.right ?? Infinity,
+        authorRight: authorBox?.right ?? Infinity,
+        tagRight: tagBox?.right ?? Infinity,
+        tagBottom: tagBox?.bottom ?? Infinity,
+        cardBottom: cardBox.bottom,
+      };
+    });
+    expect(layout.titleRight).toBeLessThanOrEqual(layout.cardRight);
+    expect(layout.authorRight).toBeLessThanOrEqual(layout.cardRight);
+    expect(layout.tagRight).toBeLessThanOrEqual(layout.cardRight);
+    expect(layout.tagBottom).toBeLessThanOrEqual(layout.cardBottom);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      width,
+    );
+    await expect(page.locator("body")).not.toContainText("undefined");
+  }
+});
+
+test("Arabic bingo content keeps its language and reading direction on mobile", async ({
+  page,
+}) => {
+  const title = "تجارب جديدة في هذا العام";
+  await page.route("**/api/v1/feeds/discover/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            title,
+            description: "",
+            language: "ar",
+            author: {
+              id: "22222222-2222-4222-8222-222222222222",
+              username: "author",
+              display_name: "Author",
+              avatar: null,
+            },
+            cover: null,
+            preview: null,
+            tags: [],
+            size: 3,
+            status: "published",
+            visibility: "public",
+            completion_style: "checkmark",
+            stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+            liked_by_me: false,
+            published_at: "2026-08-07T00:00:00Z",
+            updated_at: "2026-08-07T00:00:00Z",
+          },
+        ],
+      }),
+    }),
+  );
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/discover");
+  const heading = page.getByRole("heading", { name: title });
+  await expect(heading).toHaveAttribute("lang", "ar");
+  await expect(heading).toHaveAttribute("dir", "auto");
+  expect(await heading.evaluate((element) => getComputedStyle(element).direction)).toBe("rtl");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+test("Explore pagination keeps its page in the URL and restores the selected board", async ({
+  page,
+}) => {
+  const summary = (id: string, title: string) => ({
+    id,
+    title,
+    description: "",
+    language: "en",
+    author: {
+      id: "22222222-2222-4222-8222-222222222222",
+      username: "author",
+      display_name: "Author",
+      avatar: null,
+    },
+    cover: null,
+    preview: null,
+    tags: [],
+    size: 3,
+    status: "published",
+    visibility: "public",
+    completion_style: "checkmark",
+    stats: { likes: 0, comments: 0, plays: 0, shares: 0, views: 0 },
+    liked_by_me: false,
+    published_at: "2026-08-07T00:00:00Z",
+    updated_at: "2026-08-07T00:00:00Z",
+  });
+  await page.route("**/api/v1/bingos/**", (route) => {
+    const secondPage = new URL(route.request().url()).searchParams.get("page") === "2";
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 2,
+        next: secondPage ? null : "?page=2",
+        previous: secondPage ? "?page=1" : null,
+        results: [
+          secondPage
+            ? summary("22222222-2222-4222-8222-222222222223", "Second board")
+            : summary("11111111-1111-4111-8111-111111111111", "First board"),
+        ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/auth/csrf/", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
+  );
+  await page.route("**/api/v1/interactions/", (route) => route.fulfill({ status: 204 }));
+
+  await page.goto("/explore");
+  await expect(page.getByRole("heading", { name: "First board" })).toBeVisible();
+  const pagination = page.getByRole("navigation", { name: "Explore pages" });
+  await pagination.getByRole("button", { name: "Next" }).click();
+  await expect(page).toHaveURL(/\/explore\?page=2$/);
+  await expect(page.getByRole("heading", { name: "Second board" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Second board" })).toBeVisible();
+  await pagination.getByRole("button", { name: "Previous" }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await expect(page.getByRole("heading", { name: "First board" })).toBeVisible();
+});
+
+test("create opens the coordinate-safe editor", async ({ page }) => {
+  await page.unroute("**/api/v1/auth/session/");
+  await page.route("**/api/v1/auth/session/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: {
+          id: "11111111-1111-4111-8111-111111111111",
+          username: "author",
+          display_name: "Author",
+          avatar: null,
+          email: "author@example.test",
+          email_verified: true,
+          deletion_scheduled_for: null,
+        },
       }),
     }),
   );

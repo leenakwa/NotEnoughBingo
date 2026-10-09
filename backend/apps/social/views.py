@@ -14,6 +14,7 @@ from apps.bingos.serializers import BingoCardSerializer
 from apps.common.pagination import StandardPageNumberPagination
 from apps.social.models import Comment, CommentLike
 from apps.social.serializers import (
+    CommentContextSerializer,
     CommentCreateSerializer,
     CommentSerializer,
     CommentUpdateSerializer,
@@ -179,7 +180,7 @@ class CommentReplyListCreateView(CommentListCreateView):
             return Comment.objects.none()
         return _with_like_state(
             Comment.objects.filter(parent=self.get_parent())
-            .select_related("author", "author__profile")
+            .select_related("parent", "author", "author__profile")
             .prefetch_related("author__profile__avatar__derivatives")
             .order_by("created_at"),
             self.request,
@@ -232,6 +233,32 @@ class CommentDetailView(APIView):
     def delete(self, request, comment_id):
         soft_delete_comment(user=request.user, comment=self.get_object(request, comment_id))
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CommentContextView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(responses=CommentContextSerializer)
+    def get(self, request, comment_id):
+        queryset = _with_like_state(
+            Comment.objects.filter(hidden_at__isnull=True)
+            .select_related("bingo", "author", "author__profile", "parent")
+            .prefetch_related("author__profile__avatar__derivatives"),
+            request,
+        )
+        comment = get_object_or_404(queryset, public_id=comment_id)
+        bingo = accessible_bingo(request, comment.bingo.public_id)
+        parent = (
+            get_object_or_404(queryset, pk=comment.parent_id, bingo_id=comment.bingo_id)
+            if comment.parent_id
+            else None
+        )
+        return Response(
+            CommentContextSerializer(
+                {"bingo_id": bingo.public_id, "comment": comment, "parent": parent},
+                context={"request": request},
+            ).data
+        )
 
 
 class CommentLikeView(APIView):

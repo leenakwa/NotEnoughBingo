@@ -1,0 +1,592 @@
+{
+  "date": "2026-10-08",
+  "base_source": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+  "implementation_scope": "Working-tree scoped selected-profile-tab hovered text color; no global button/theme/hover-background/active-transform changes. Not included in base source.",
+  "before": {
+    "normal_contrast": 19.8,
+    "hover_held_press_contrast": 1.13,
+    "widths": [
+      320,
+      1710
+    ],
+    "engine": "Chromium",
+    "log": "/tmp/neb-profile-selected-tab-proof-oct08.log"
+  },
+  "stats": {
+    "startTime": "2026-10-08T03:06:45.447Z",
+    "duration": 18695.379,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "results": [
+    {
+      "project": "chromium",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 320,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 320,
+          "content": 320
+        },
+        "errors": []
+      }
+    },
+    {
+      "project": "chromium",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 1710,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 1710,
+          "content": 1710
+        },
+        "errors": []
+      }
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 320,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 320,
+          "content": 320
+        },
+        "errors": []
+      }
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 1710,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 1710,
+          "content": 1710
+        },
+        "errors": []
+      }
+    },
+    {
+      "project": "firefox",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 320,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 320,
+          "content": 320
+        },
+        "errors": []
+      }
+    },
+    {
+      "project": "firefox",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 1710,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 1710,
+          "content": 1710
+        },
+        "errors": []
+      }
+    },
+    {
+      "project": "webkit",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 320,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 320,
+          "content": 320
+        },
+        "errors": []
+      }
+    },
+    {
+      "project": "webkit",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "width": 1710,
+        "states": [
+          {
+            "state": "normal",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 19.79814571052481
+          },
+          {
+            "state": "hover",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": true,
+            "active": false,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "held press",
+            "color": "rgb(10, 10, 10)",
+            "background": "rgb(241, 241, 241)",
+            "outlineStyle": "none",
+            "outlineWidth": 3,
+            "transform": "matrix(1, 0, 0, 1, 1, 1)",
+            "hover": true,
+            "active": true,
+            "focusVisible": false,
+            "contrast": 17.528380637478683
+          },
+          {
+            "state": "keyboard focus",
+            "color": "rgb(255, 255, 255)",
+            "background": "rgb(10, 10, 10)",
+            "outlineStyle": "solid",
+            "outlineWidth": 3,
+            "transform": "none",
+            "hover": false,
+            "active": false,
+            "focusVisible": true,
+            "contrast": 19.79814571052481
+          }
+        ],
+        "dimensions": {
+          "viewport": 1710,
+          "content": 1710
+        },
+        "errors": []
+      }
+    }
+  ],
+  "log": "/tmp/neb-profile-tab-states-reviewed-oct08.log",
+  "retained_diagnostics": [
+    "Pre-fix regression fails both Chromium widths on actual computed contrast.",
+    "First new-test TypeScript RGB-array inference error; tuple annotation corrected, scoped strict typecheck then passes."
+  ],
+  "limits": [
+    "Explicitly controlled API responses establish real rendered states, not server persistence.",
+    "Four profiles use three browser-engine families; mobile Pixel7 is emulated Chromium.",
+    "Profile tabs do not have disabled state; pending state belongs to their panel.",
+    "Physical devices and final exact-source CI/optimized-image gate remain separate."
+  ],
+  "additionalControls": {
+    "publicFollow": {
+      "date": "2026-10-08",
+      "sourceCommit": "0655989fa176d2337fbd5ea93ce082073f7a413a",
+      "imageId": "sha256:a66207cd968c208e265301cc92668592dcb3b7798eb68db1fd7afb42f532ea56",
+      "moduleHashes": {
+        "features/profile/profile-view.tsx": "1732bd0f818308d162e07444672555a7d1933938cb3f7bef9574a3fce4b87ecf",
+        "app/globals.css": "878f2256f3d512f1bed2c0329dec4030795f9da88d17665f70566fe7fa109cb5",
+        "lib/api/client.ts": "e07cc80050bc0773e9e3a29c5f7cdeab7f9ba470b2daed1b60d6f5f03c883bcd"
+      },
+      "engine": "Chromium",
+      "widths": [
+        320,
+        1710
+      ],
+      "result": {
+        "flowCasesPassed": 2,
+        "additionalNativeFocusCasesPassed": 2,
+        "retries": 0,
+        "unexpectedMutations": 0,
+        "realBackendWrites": 0
+      },
+      "observations": {
+        "followHover": "Black background becomes white with dark text.",
+        "followingHover": "White background becomes gray with dark text.",
+        "heldPress": "Both states move1px; height44px.",
+        "nativeKeyboardFocus": "Tab/Shift+Tab: focus-visible with3px dark outline.",
+        "pending": "Saving… label, disabled and opacity0.55; Saving changes… status.",
+        "errorAndRetry": "Controlled503 preserves Follow; own retry POST204 shows Following; controlled DELETE503 preserves Following.",
+        "flowMutationMethods": [
+          "POST",
+          "POST",
+          "DELETE"
+        ],
+        "flowMutationEndpoint": "/users/{author.id}/followers/",
+        "mobileWidth": 288,
+        "desktopWidths": {
+          "Follow": 89.609375,
+          "Saving…": 99.21875,
+          "Following": 118.421875
+        },
+        "pageErrors": [],
+        "console": "Only expected injected503 errors in flow cases."
+      },
+      "scope": "All mutatingAPI, including analytics/client-errors, intercepted; no persisted-write, all-control, global-layout or target-deployment verdict. Native focus probes additionally invoke a controlled follow POST; the POST/POST/DELETE sequence describes each failure/retry flow only.",
+      "initialHarnessFailures": null,
+      "rawReport": {
+        "name": "neb-profile-follow-native-proof-oct08.json",
+        "sha256": "dfcefda75e330e5579c2fbed2038113ba5ebb8f8a938b73fa7c48f30db21312a"
+      }
+    }
+  }
+}

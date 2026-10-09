@@ -1,0 +1,80 @@
+{
+  "image": "sha256:164823c8653f2e7263dee1427f84df5a6855bafe613df22e0438e940a2932a65",
+  "revision": "9920e83317044102c69d5dba2f40ab2df934ea75",
+  "application_mounts": 0,
+  "build_release": "9920e83317044102c69d5dba2f40ab2df934ea75",
+  "runtime_release": "9920e83317044102c69d5dba2f40ab2df934ea75",
+  "frontend_health": 200,
+  "backend_ready": 200,
+  "local_observation": "Native Chrome wide and320px Report modal, matching auth single46% backdrop",
+  "mobile_dialog": {
+    "viewport_width": 320,
+    "page_width": 320,
+    "x": 19,
+    "y": 24.3671875,
+    "width": 282,
+    "height": 751.265625
+  },
+  "modal": true,
+  "escape_closes_and_restores_trigger_focus": true,
+  "native_clipboard_report": {
+    "multiline_unicode_emoji_literals_exact": true,
+    "lines": 2,
+    "submitted": false,
+    "draft_cleared": true,
+    "original_clipboard_empty_restored": true
+  },
+  "console_limits": "Four retained browser message-channel errors predate candidate replacement; no new entries observed in bounded current-image modal interactions",
+  "limitations": [
+    "Isolated local configured image with illustrative public origin and development Django; no target deployment claim.",
+    "Earlier 165 native/API cases apply to source5e; source992 changes only the approved report shadow in runtime application code.",
+    "Auth field values are privacy-redacted; no native autofill/password-manager claim."
+  ],
+  "ci": {
+    "run_id": 37739609098,
+    "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37739609098",
+    "conclusion": "success",
+    "passed_jobs": 9,
+    "head_sha": "9920e83317044102c69d5dba2f40ab2df934ea75",
+    "tested_merge_sha": "70b2b23681e971e41b8a8b7e641023427b7fcd5f",
+    "head_and_merge_tree": "d2e881660d3ef91fc1d2b052e2f0dc2cdf1a4370",
+    "backend_pass": 383,
+    "frontend_pass": 581,
+    "frontend_files": 43,
+    "smoke_pass": 372,
+    "smoke_skip": 12,
+    "smoke_flaky": 0,
+    "fullstack_pass": 123,
+    "fullstack_fail": 0,
+    "fullstack_flaky": 0
+  },
+  "reports": [
+    {
+      "scope": "Affected real product flows",
+      "stats": {
+        "startTime": "2026-10-08T06:56:13.042Z",
+        "duration": 23784.733,
+        "expected": 5,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "retries": 0,
+      "raw_report_sha256": "f9a8f9cbdadd8ff0385e148ab8ddd7982243c58965d115da2284100d47649579"
+    },
+    {
+      "scope": "Controlled report modal checks",
+      "stats": {
+        "startTime": "2026-10-08T06:46:00.487Z",
+        "duration": 28279.097,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "retries": 0,
+      "raw_report_sha256": "05ba687f05fc704cb2a96552e9c0f63f45ae368b93c67bc65ac4c46ab4c4da8a"
+    }
+  ],
+  "raw_ci_log_sha256": "cdacc6a11bea80f35ba9177e531e880b9cacc01929848b28bca80f8306b27b95"
+}

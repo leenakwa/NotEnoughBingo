@@ -110,17 +110,10 @@ def _sync_draft_media(*, draft: Draft, assets: dict) -> None:
 def create_bingo(*, author, document: dict | None = None) -> Bingo:
     normalized = normalize_draft_document(document or empty_draft_document())
     assets = resolve_document_assets(document=normalized, owner=author)
-    bingo = Bingo.objects.create(
-        author=author,
-        title=normalized["title"],
-        description=normalized["description"],
-        size=normalized["size"],
-        visibility=normalized["visibility"],
-        marking_style=normalized["marking_style"],
-        marking_config=normalized["marking_config"],
-        cover=assets["cover"],
-        background=assets["background"],
-    )
+    # Mutable authoring metadata lives exclusively in Draft.  The Bingo fields
+    # remain the denormalized current-published snapshot (or model defaults
+    # before the first publication).
+    bingo = Bingo.objects.create(author=author)
     draft = Draft.objects.create(
         bingo=bingo,
         document=normalized,
@@ -168,27 +161,9 @@ def save_draft(
             "updated_at",
         )
     )
-    locked_bingo.title = normalized["title"]
-    locked_bingo.description = normalized["description"]
-    locked_bingo.size = normalized["size"]
-    locked_bingo.visibility = normalized["visibility"]
-    locked_bingo.marking_style = normalized["marking_style"]
-    locked_bingo.marking_config = normalized["marking_config"]
-    locked_bingo.cover = assets["cover"]
-    locked_bingo.background = assets["background"]
-    locked_bingo.save(
-        update_fields=(
-            "title",
-            "description",
-            "size",
-            "visibility",
-            "marking_style",
-            "marking_config",
-            "cover",
-            "background",
-            "updated_at",
-        )
-    )
+    # Bingo's denormalized document fields describe only the current published
+    # revision.  A draft save must never change the public access envelope or
+    # produce a metadata/board mixture for readers.
     _sync_draft_media(draft=draft, assets=assets)
     return draft
 
@@ -261,11 +236,13 @@ def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision
     revision_number = (
         locked_bingo.current_revision.revision_number + 1 if locked_bingo.current_revision_id else 1
     )
+    now = timezone.now()
     revision = BingoRevision.objects.create(
         bingo=locked_bingo,
         revision_number=revision_number,
         title=document["title"],
         description=document["description"],
+        language=document["language"],
         size=document["size"],
         visibility=document["visibility"],
         marking_style=document["marking_style"],
@@ -275,6 +252,7 @@ def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision
         schema_version=document["schema_version"],
         document_hash=canonical_document_hash(document),
         published_by=actor,
+        published_at=now,
     )
     BingoCell.objects.bulk_create(
         [
@@ -293,6 +271,7 @@ def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision
                 background_color=cell["background_color"],
                 background_opacity=cell["background_opacity"],
                 image=assets["cells"].get(cell["image_asset_id"]),
+                image_alt=cell["image_alt"],
                 image_opacity=cell["image_opacity"],
                 border_color=cell["border_color"],
                 border_width=cell["border_width"],
@@ -315,9 +294,9 @@ def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision
         ]
     )
     _replace_current_tags(bingo=locked_bingo, tags=tags)
-    now = timezone.now()
     locked_bingo.title = document["title"]
     locked_bingo.description = document["description"]
+    locked_bingo.language = document["language"]
     locked_bingo.size = document["size"]
     locked_bingo.visibility = document["visibility"]
     locked_bingo.marking_style = document["marking_style"]
@@ -326,12 +305,15 @@ def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision
     locked_bingo.background = assets["background"]
     locked_bingo.current_revision = revision
     locked_bingo.status = Bingo.Status.PUBLISHED
-    locked_bingo.published_at = now
+    if locked_bingo.published_at is None:
+        locked_bingo.published_at = now
+    locked_bingo.last_published_at = now
     locked_bingo.archived_at = None
     locked_bingo.save(
         update_fields=(
             "title",
             "description",
+            "language",
             "size",
             "visibility",
             "marking_style",
@@ -341,6 +323,7 @@ def publish_bingo(*, bingo: Bingo, actor, idempotency_key: str) -> BingoRevision
             "current_revision",
             "status",
             "published_at",
+            "last_published_at",
             "archived_at",
             "updated_at",
         )

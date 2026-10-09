@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-08",
+  "scope": "Isolated real Nginx 1.30.3 proxy and immutable frontend images over loopback HTTP; target CDN and replica wiring remain unverified",
+  "publication": [
+    {
+      "added_files": 33,
+      "files": 33,
+      "image_id": "sha256:1935c3c2036bd70db362f780ff2ab10dba51303a147aa782f70b6a74cf2705c9",
+      "image_reference": "sha256:1935c3c2036bd70db362f780ff2ab10dba51303a147aa782f70b6a74cf2705c9",
+      "inventory": "/private/tmp/neb-frontend-assets-oct08/private/releases/1935c3c2036bd70db362f780ff2ab10dba51303a147aa782f70b6a74cf2705c9.json",
+      "release": "c1fc2d7772ce697cb0dcccc528da4ab126040223",
+      "retained_bytes": 1339621
+    },
+    {
+      "added_files": 17,
+      "files": 33,
+      "image_id": "sha256:401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd",
+      "image_reference": "sha256:401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd",
+      "inventory": "/private/tmp/neb-frontend-assets-oct08/private/releases/401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd.json",
+      "release": "15632b6d0b17a8b90d7634fe404a54dbcdcc4cc4",
+      "retained_bytes": 2011929
+    }
+  ],
+  "http_phases": [
+    {
+      "phase": "old",
+      "actual_frontend_image": "sha256:1935c3c2036bd70db362f780ff2ab10dba51303a147aa782f70b6a74cf2705c9",
+      "assets_checked": 50,
+      "bytes_checked": 2011929,
+      "old_only_assets": 17,
+      "new_only_assets": 17,
+      "all_bytes_match_inventories": true,
+      "successful_assets_immutable_and_security_headers": true,
+      "gzip_roundtrip": true,
+      "errors": [
+        {
+          "path": "/_next/static/absent-release.js",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/_next/static/not-public.map",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/private/releases/401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd.json",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/_next/static/../../../private/releases/inventory.json",
+          "status": 400,
+          "cache_control": null
+        }
+      ]
+    },
+    {
+      "phase": "new",
+      "actual_frontend_image": "sha256:401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd",
+      "assets_checked": 50,
+      "bytes_checked": 2011929,
+      "old_only_assets": 17,
+      "new_only_assets": 17,
+      "all_bytes_match_inventories": true,
+      "successful_assets_immutable_and_security_headers": true,
+      "gzip_roundtrip": true,
+      "errors": [
+        {
+          "path": "/_next/static/absent-release.js",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/_next/static/not-public.map",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/private/releases/401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd.json",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/_next/static/../../../private/releases/inventory.json",
+          "status": 400,
+          "cache_control": null
+        }
+      ]
+    },
+    {
+      "phase": "rollback",
+      "actual_frontend_image": "sha256:1935c3c2036bd70db362f780ff2ab10dba51303a147aa782f70b6a74cf2705c9",
+      "assets_checked": 50,
+      "bytes_checked": 2011929,
+      "old_only_assets": 17,
+      "new_only_assets": 17,
+      "all_bytes_match_inventories": true,
+      "successful_assets_immutable_and_security_headers": true,
+      "gzip_roundtrip": true,
+      "errors": [
+        {
+          "path": "/_next/static/absent-release.js",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/_next/static/not-public.map",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/private/releases/401ba1a7ba22bb66c12ac2466b9b8660be2f3edcbc4c779081797f29e6875acd.json",
+          "status": 404,
+          "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+        },
+        {
+          "path": "/_next/static/../../../private/releases/inventory.json",
+          "status": 400,
+          "cache_control": null
+        }
+      ]
+    }
+  ],
+  "empty_archive_fallback": {
+    "empty_archive": true,
+    "active_frontend_fallback_status": 200,
+    "content_hash_matches_active_image": true,
+    "cache_control": "public, max-age=31536000, immutable",
+    "missing_status": 404,
+    "missing_cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+  },
+  "boundary_tests": 13,
+  "static_security_review": "No meaningful finding under the trusted release image, sole publisher and trusted filesystem contract",
+  "constraints": [
+    "Every production replica and edge must serve the same archive before frontend promotion.",
+    "Retain active and rollback release inventories; define the supported tab age before manual pruning.",
+    "Append-only publication stops at its budget; no automatic pruning.",
+    "Metadata consistency does not establish independently trusted source provenance."
+  ],
+  "idempotent_republication": {
+    "release": "15632b6d0b17a8b90d7634fe404a54dbcdcc4cc4",
+    "added_files": 0,
+    "log": "/tmp/neb-frontend-assets-idempotent-publish-oct08.log"
+  }
+}

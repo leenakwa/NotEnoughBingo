@@ -24,16 +24,28 @@ responses must resist account enumeration.
    validated document with `If-Match`.
 4. Media is uploaded through asset intents and the draft references ready asset
    IDs.
-5. Author enters title, optional description, tags, cover, visibility, and mark
-   style.
-6. Publish validates ownership, verification, document completeness, asset
-   readiness, quotas, and moderation state.
+5. Author can click a cell and type directly on the board, or edit it in the
+   cell settings. The author enters a title and one bingo language; description,
+   tags, cover, visibility, and default mark style are optional.
+6. Publish requires a non-empty title, a supported language, and at least one
+   cell containing text or an image. It also validates ownership, verification,
+   asset readiness, quotas, and moderation state.
 7. One transaction creates the immutable revision/cells and points the bingo at
    it.
 8. A newly public bingo becomes catalog-eligible only after commit.
 
 If autosave receives a conflict, the UI stops claiming the draft is saved and
 offers reload/reconciliation rather than overwriting a newer version.
+
+Persistent editor changes are debounced and saved sequentially; focus and
+selection changes do not make the document dirty. Edits made during an active
+request queue another save, failed work remains locally recoverable, and a
+dirty page warns before refresh or internal-link navigation. Emergency browser
+recovery is offered only when its recorded server version still matches the
+loaded draft. Shrinking a board requires confirmation when customized cells
+would be removed and remains undoable in editor history. Editor downloads are
+explicitly labeled as exports of the current published revision; saving a draft
+does not change or export that revision.
 
 ## Edit a published bingo
 
@@ -43,6 +55,11 @@ offers reload/reconciliation rather than overwriting a newer version.
 4. Publishing creates the next immutable revision.
 5. Existing shared results continue to render their referenced revision.
 
+Draft title, description, size, visibility, tags, cover, background, marking
+style, and cells remain author-only until that publication transaction. A
+republish records its own latest-publication time without resetting the
+logical bingo's first-publication age used by feeds.
+
 Archive/soft delete removes the bingo from public discovery. It does not
 cascade-delete revisions needed by shared results.
 
@@ -50,7 +67,8 @@ cascade-delete revisions needed by shared results.
 
 1. Guest opens a public bingo or an unlisted bingo by direct link.
 2. Browser stores one current selection for that bingo/revision locally.
-3. Guest marks cells using the revision's board-wide mark style.
+3. Guest chooses a cross, checkmark, diagonal line, or highlight in the menu
+   above the board and marks cells. The choice is remembered locally per bingo.
 4. Reset clears only the current local selection and emits a reset event.
 5. Guest may play again immediately.
 6. To share, guest enters a non-unique display name.
@@ -91,15 +109,22 @@ moderation without mutating its snapshot.
 
 ## Explore, Trending, and Discover
 
-- Explore searches public bingos by title/author and filters by tags.
+- Explore searches public bingos by title/author and filters by tags and one or
+  more languages.
 - Trending returns public content ordered by the documented decayed score.
 - Discover combines followed authors, tag affinity, and public fallback.
+  New signed-in users choose one or more preferred languages. Discover uses
+  those preferences by default; its top filter can temporarily select several
+  languages or show all. Preferences can be changed in profile settings.
 - Guests receive public Trending/recent content.
 - Every feed emits deduplicated impression events without logging private
   document contents.
 
 Unlisted and private bingos are excluded at queryset level, not filtered out
 after pagination.
+
+Own profile separates unpublished drafts from created bingos. Public profiles
+never show drafts or another user's language preferences.
 
 ## Social interactions
 
@@ -137,6 +162,13 @@ duplicates and self-follow. A deduplicated notification is queued after commit.
 Content restoration never deletes the audit history.
 
 ## Account export and deletion
+
+- An authenticated user requests an email change with the current password.
+  The account keeps its old address until a time-limited, single-use link sent
+  to the new address is confirmed. The old and new addresses receive a change
+  notice, and later logins use the new address.
+- A user who forgot the current password can use the password-reset flow from
+  account settings before changing it.
 
 - Export creates an authenticated, rate-limited Celery job and short-lived
   private download.

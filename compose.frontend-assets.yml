@@ -1,0 +1,11 @@
+# Publish immutable frontend image assets before promotion. Inventories remain
+# outside the Nginx public root; the publisher is the only writer.
+services:
+  proxy:
+    volumes:
+      - type: bind
+        source: ${FRONTEND_ASSET_DIR:?Set an absolute frontend asset archive directory}
+        target: /srv/frontend-assets
+        read_only: true
+        bind:
+          create_host_path: false

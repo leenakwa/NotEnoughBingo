@@ -39,6 +39,12 @@ paths:
       responses:
         '204':
           description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+          description: The deletion request is no longer scheduled and cannot be cancelled.
   /api/v1/auth/account-export/:
     post:
       operationId: auth_account_export_create
@@ -67,6 +73,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/CsrfResponse'
           description: ''
+  /api/v1/auth/email-change/:
+    post:
+      operationId: auth_email_change_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+        required: true
+      security:
+      - sessionCookie: []
+      responses:
+        '202':
+          description: No response body
+  /api/v1/auth/email-change/confirm/:
+    post:
+      operationId: auth_email_change_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailTokenRequest'
+        required: true
+      security:
+      - sessionCookie: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/auth/login/:
     post:
       operationId: auth_login_create
@@ -236,6 +287,21 @@ paths:
       responses:
         '202':
           description: No response body
+  /api/v1/auth/session/:
+    get:
+      operationId: auth_session_retrieve
+      tags:
+      - auth
+      security:
+      - sessionCookie: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionStatus'
+          description: ''
   /api/v1/auth/sessions/:
     get:
       operationId: auth_sessions_list
@@ -319,6 +385,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/CurrentUser'
           description: ''
+  /api/v1/authors/:
+    get:
+      operationId: authors_list
+      description: Suggest active authors who currently have at least one bingo in
+        the public catalog.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+          maxLength: 80
+      tags:
+      - authors
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuthorSuggestionList'
+          description: ''
   /api/v1/bingos/:
     get:
       operationId: bingos_list
@@ -328,6 +428,15 @@ paths:
         schema:
           type: string
         description: Case-insensitive author username or display-name filter.
+      - in: query
+        name: languages
+        schema:
+          type: array
+          items:
+            type: string
+        description: Repeat for each bingo language. Use all for no language filter.
+        explode: true
+        style: form
       - in: query
         name: mine
         schema:
@@ -364,7 +473,8 @@ paths:
           type: array
           items:
             type: string
-        description: Repeat for every tag name or slug that must match.
+        description: Repeat for each matching tag name or slug, up to 15 values of
+          50 characters each.
         explode: true
         style: form
       tags:
@@ -596,6 +706,15 @@ paths:
     post:
       operationId: bingos_exports_create
       parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       - in: path
         name: bingo_id
         schema:
@@ -624,7 +743,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExportJob'
-          description: ''
+          description: Accepted export, or the existing job for an identical retry.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid input, missing/malformed key, or the key was already
+            used for a different board, revision or format.
   /api/v1/bingos/{bingo_id}/like/:
     post:
       operationId: bingos_like_create
@@ -715,6 +842,15 @@ paths:
     post:
       operationId: bingos_publish_create
       parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       - in: path
         name: bingo_id
         schema:
@@ -731,7 +867,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BingoDetail'
-          description: ''
+          description: Published board. Reusing the key returns without creating a
+            revision.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid draft or missing/malformed idempotency key.
+        '409':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: The existing publication idempotency record conflicts.
   /api/v1/bingos/{bingo_id}/restore/:
     post:
       operationId: bingos_restore_create
@@ -763,6 +914,18 @@ paths:
           type: string
           format: uuid
         required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 24
+        description: Requested page size; values above 100 are capped at 100.
       tags:
       - bingos
       security:
@@ -772,14 +935,21 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BingoRevision'
+                $ref: '#/components/schemas/PaginatedBingoRevisionList'
           description: ''
   /api/v1/bingos/{bingo_id}/shares/:
     post:
       operationId: bingos_shares_create
       parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       - in: path
         name: bingo_id
         schema:
@@ -809,7 +979,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SharedResult'
-          description: ''
+          description: Created share, or the existing share for an identical retry.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid share input or missing/malformed key.
+        '409':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: The key was already used for a different share request.
+  /api/v1/client-errors/:
+    post:
+      operationId: client_errors_create
+      description: Accept bounded diagnostics; never accept messages, URLs or user
+        content.
+      parameters:
+      - in: header
+        name: X-NEB-Client-Release
+        schema:
+          type: string
+        description: Full lowercase Git SHA embedded in the loaded frontend bundle.
+          Absent or malformed values are recorded as frontend-unknown. Untrusted diagnostic
+          metadata; never used for authorization.
+      tags:
+      - client-errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrowserErrorRequest'
+        required: true
+      security:
+      - sessionCookie: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/comments/{comment_id}/:
     patch:
       operationId: comments_partial_update
@@ -858,6 +1069,27 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/comments/{comment_id}/context/:
+    get:
+      operationId: comments_context_retrieve
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - comments
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentContext'
+          description: ''
   /api/v1/comments/{comment_id}/like/:
     post:
       operationId: comments_like_create
@@ -1013,6 +1245,19 @@ paths:
   /api/v1/drafts/:
     get:
       operationId: drafts_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 24
+        description: Requested page size; values above 100 are capped at 100.
       tags:
       - drafts
       security:
@@ -1022,12 +1267,20 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Draft'
+                $ref: '#/components/schemas/PaginatedDraftList'
           description: ''
     post:
       operationId: drafts_create
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._:-]{8,128}$
+        description: Letters, digits, dots, colons, underscores or hyphens.
+        required: true
       tags:
       - drafts
       requestBody:
@@ -1045,11 +1298,34 @@ paths:
       - sessionCookie: []
       responses:
         '201':
+          headers:
+            Idempotency-Replayed:
+              schema:
+                type: string
+                enum:
+                - 'true'
+              description: Present when an identical request returns its recorded
+                response.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Draft'
-          description: ''
+          description: Created draft, or the recorded draft response for an identical
+            retry.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Invalid document or missing/malformed idempotency key.
+        '409':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Key used for a different request, or original request is processing.
   /api/v1/exports/{export_id}/:
     get:
       operationId: exports_retrieve
@@ -1074,6 +1350,15 @@ paths:
   /api/v1/feeds/discover/:
     get:
       operationId: feeds_discover_retrieve
+      parameters:
+      - in: query
+        name: languages
+        schema:
+          type: array
+          items:
+            type: string
+        explode: true
+        style: form
       tags:
       - feeds
       security:
@@ -1302,12 +1587,6 @@ paths:
     get:
       operationId: notifications_list
       parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -1320,12 +1599,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
+      - in: query
+        name: unread
         schema:
-          type: string
+          type: boolean
+        description: Set true to return only unread notifications.
       tags:
       - notifications
       security:
@@ -1679,7 +1957,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfileRead'
+                $ref: '#/components/schemas/OwnUserProfileRead'
           description: ''
     patch:
       operationId: profiles_me_partial_update
@@ -1703,7 +1981,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfileRead'
+                $ref: '#/components/schemas/OwnUserProfileRead'
           description: ''
   /api/v1/profiles/me/privacy/:
     get:
@@ -1989,6 +2267,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedResult'
           description: ''
+  /api/v1/sitemap/bingos/:
+    get:
+      operationId: sitemap_bingos_retrieve
+      description: Expose an index-only public projection without hydrating card revisions.
+      parameters:
+      - in: query
+        name: part
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 15
+          pattern: ^(?:0|[1-9][0-9]{0,14})$
+        description: Canonical decimal primary-key bucket from 0 through 922337203685477;
+          each bucket spans 10,000 IDs. Omit for the legacy, capped projection.
+      tags:
+      - sitemap
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSitemap'
+          description: ''
+  /api/v1/sitemap/bingos/index/:
+    get:
+      operationId: sitemap_bingos_index_retrieve
+      description: List only occupied public buckets, including gaps without empty
+        sitemap files.
+      tags:
+      - sitemap
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSitemapIndex'
+          description: ''
   /api/v1/tags/:
     get:
       operationId: tags_list
@@ -2226,24 +2545,45 @@ components:
       required:
       - job_id
       - status
-    ActionEnum:
+    AnalyticsActionEnum:
       enum:
-      - hide
-      - restore
-      - soft_delete
-      - suspend_user
-      - unsuspend_user
-      - dismiss
-      - resolve_no_action
+      - create
+      - register
+      - login
       type: string
       description: |-
-        * `hide` - Hide content
-        * `restore` - Restore content
-        * `soft_delete` - Soft delete content
-        * `suspend_user` - Suspend user
-        * `unsuspend_user` - Unsuspend user
-        * `dismiss` - Dismiss report
-        * `resolve_no_action` - Resolve without action
+        * `create` - create
+        * `register` - register
+        * `login` - login
+    ApiErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        details:
+          readOnly: true
+        request_id:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - code
+      - details
+      - message
+      - request_id
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/ApiErrorDetail'
+          readOnly: true
+      required:
+      - error
     AuthResult:
       type: object
       properties:
@@ -2253,6 +2593,23 @@ components:
           readOnly: true
       required:
       - user
+    AuthorSuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          readOnly: true
+      required:
+      - display_name
+      - id
+      - username
     BingoAuthor:
       type: object
       properties:
@@ -2298,6 +2655,9 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          type: string
+          maxLength: 8
         size:
           type: integer
           maximum: 32767
@@ -2406,13 +2766,13 @@ components:
           minimum: 0
         board_background:
           allOf:
-          - $ref: '#/components/schemas/MediaAsset'
+          - $ref: '#/components/schemas/MediaAssetPreview'
           readOnly: true
           nullable: true
         cells:
           type: array
           items:
-            $ref: '#/components/schemas/BingoCell'
+            $ref: '#/components/schemas/BingoPreviewCell'
           readOnly: true
       required:
       - board_background
@@ -2471,6 +2831,9 @@ components:
           - $ref: '#/components/schemas/MediaAsset'
           readOnly: true
           nullable: true
+        image_alt:
+          type: string
+          maxLength: 160
         image_opacity:
           type: number
           format: double
@@ -2511,6 +2874,9 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          type: string
+          maxLength: 8
         size:
           type: integer
           maximum: 32767
@@ -2538,11 +2904,6 @@ components:
         current_revision_id:
           type: string
           format: uuid
-          readOnly: true
-          nullable: true
-        preview:
-          allOf:
-          - $ref: '#/components/schemas/BingoCardPreview'
           readOnly: true
           nullable: true
         author:
@@ -2642,7 +3003,6 @@ components:
       - liked_by_me
       - marking_config
       - permissions
-      - preview
       - public_id
       - stats
       - tags
@@ -2693,6 +3053,9 @@ components:
           type: string
           format: uuid
           nullable: true
+        image_alt:
+          type: string
+          maxLength: 160
         image_opacity:
           type: number
           format: double
@@ -2721,6 +3084,10 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          oneOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         size:
           type: integer
           maximum: 10
@@ -2770,6 +3137,85 @@ components:
       - can_edit
       - can_like
       - can_report
+    BingoPreviewCell:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        position:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        row:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        column:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        text:
+          type: string
+          maxLength: 100
+        text_color:
+          type: string
+          maxLength: 7
+        bold:
+          type: boolean
+        italic:
+          type: boolean
+        underline:
+          type: boolean
+        strikethrough:
+          type: boolean
+        background_color:
+          type: string
+          maxLength: 7
+        background_opacity:
+          type: number
+          format: double
+          maximum: 10
+          minimum: -10
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        image_asset_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        image:
+          allOf:
+          - $ref: '#/components/schemas/MediaAssetPreview'
+          readOnly: true
+          nullable: true
+        image_alt:
+          type: string
+          maxLength: 160
+        image_opacity:
+          type: number
+          format: double
+          maximum: 10
+          minimum: -10
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        border_color:
+          type: string
+          maxLength: 7
+        border_width:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        border_style:
+          $ref: '#/components/schemas/BorderStyleEnum'
+      required:
+      - column
+      - id
+      - image
+      - image_asset_id
+      - position
+      - row
     BingoRevision:
       type: object
       properties:
@@ -2794,6 +3240,9 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          type: string
+          maxLength: 8
         size:
           type: integer
           maximum: 32767
@@ -2922,6 +3371,87 @@ components:
         * `dashed` - Dashed
         * `dotted` - Dotted
         * `double` - Double
+    BrowserErrorKindEnum:
+      enum:
+      - boundary
+      - exception
+      - rejection
+      - api
+      type: string
+      description: |-
+        * `boundary` - boundary
+        * `exception` - exception
+        * `rejection` - rejection
+        * `api` - api
+    BrowserErrorRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/BrowserErrorKindEnum'
+        error_type:
+          $ref: '#/components/schemas/ErrorTypeEnum'
+        surface:
+          $ref: '#/components/schemas/BrowserErrorSurfaceEnum'
+        status_code:
+          type: integer
+          maximum: 599
+          minimum: 0
+        frames:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrowserFrameRequest'
+      required:
+      - error_type
+      - kind
+      - surface
+    BrowserErrorSurfaceEnum:
+      enum:
+      - discover
+      - trending
+      - explore
+      - create
+      - profile
+      - bingo
+      - share
+      - auth
+      - support
+      - legal
+      - notifications
+      - unknown
+      type: string
+      description: |-
+        * `discover` - discover
+        * `trending` - trending
+        * `explore` - explore
+        * `create` - create
+        * `profile` - profile
+        * `bingo` - bingo
+        * `share` - share
+        * `auth` - auth
+        * `support` - support
+        * `legal` - legal
+        * `notifications` - notifications
+        * `unknown` - unknown
+    BrowserFrameRequest:
+      type: object
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 240
+          pattern: ^/_next/static/chunks/[A-Za-z0-9_./-]+\.js$
+        lineno:
+          type: integer
+          maximum: 10000000
+          minimum: 1
+        colno:
+          type: integer
+          maximum: 10000000
+          minimum: 1
+      required:
+      - colno
+      - filename
+      - lineno
     Comment:
       type: object
       properties:
@@ -2977,6 +3507,22 @@ components:
       - is_liked
       - parent_id
       - replies
+    CommentContext:
+      type: object
+      properties:
+        bingo_id:
+          type: string
+          format: uuid
+        comment:
+          $ref: '#/components/schemas/Comment'
+        parent:
+          allOf:
+          - $ref: '#/components/schemas/Comment'
+          nullable: true
+      required:
+      - bingo_id
+      - comment
+      - parent
     CommentCreateRequest:
       type: object
       properties:
@@ -3003,6 +3549,7 @@ components:
         csrf:
           type: string
           readOnly: true
+          description: Masked token for the X-CSRFToken header on unsafe requests.
       required:
       - csrf
     CurrentUser:
@@ -3033,8 +3580,14 @@ components:
         email_verified:
           type: boolean
           readOnly: true
+        deletion_scheduled_for:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - avatar
+      - deletion_scheduled_for
       - display_name
       - email
       - email_verified
@@ -3060,6 +3613,9 @@ components:
           type: string
           readOnly: true
         description:
+          type: string
+          readOnly: true
+        language:
           type: string
           readOnly: true
         size:
@@ -3115,6 +3671,7 @@ components:
       - description
       - etag
       - id
+      - language
       - public_id
       - size
       - tags
@@ -3169,6 +3726,9 @@ components:
           - $ref: '#/components/schemas/MediaAsset'
           readOnly: true
           nullable: true
+        image_alt:
+          type: string
+          readOnly: true
         image_opacity:
           type: number
           format: double
@@ -3193,6 +3753,7 @@ components:
       - column
       - id
       - image
+      - image_alt
       - image_opacity
       - italic
       - row
@@ -3213,6 +3774,10 @@ components:
         description:
           type: string
           maxLength: 1000
+        language:
+          oneOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         size:
           type: integer
           maximum: 10
@@ -3245,6 +3810,21 @@ components:
         version:
           type: integer
           minimum: 1
+    EmailChangeRequestRequest:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        current_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - current_password
+      - new_email
     EmailRequestRequest:
       type: object
       properties:
@@ -3263,6 +3843,28 @@ components:
           maxLength: 200
       required:
       - token
+    ErrorTypeEnum:
+      enum:
+      - Error
+      - TypeError
+      - RangeError
+      - ReferenceError
+      - SyntaxError
+      - URIError
+      - EvalError
+      - ApiClientError
+      - UnhandledRejection
+      type: string
+      description: |-
+        * `Error` - Error
+        * `TypeError` - TypeError
+        * `RangeError` - RangeError
+        * `ReferenceError` - ReferenceError
+        * `SyntaxError` - SyntaxError
+        * `URIError` - URIError
+        * `EvalError` - EvalError
+        * `ApiClientError` - ApiClientError
+        * `UnhandledRejection` - UnhandledRejection
     EventTypeEnum:
       enum:
       - impression
@@ -3278,6 +3880,8 @@ components:
       - follow
       - search
       - tag_interaction
+      - page_view
+      - cta
       type: string
       description: |-
         * `impression` - Impression
@@ -3293,6 +3897,8 @@ components:
         * `follow` - Follow
         * `search` - Search
         * `tag_interaction` - Tag interaction
+        * `page_view` - Page view
+        * `cta` - Primary action
     ExportJob:
       type: object
       properties:
@@ -3453,7 +4059,9 @@ components:
       type: object
       properties:
         surface:
-          $ref: '#/components/schemas/SurfaceEnum'
+          $ref: '#/components/schemas/InteractionMetadataSurfaceEnum'
+        action:
+          $ref: '#/components/schemas/AnalyticsActionEnum'
         author:
           type: string
           maxLength: 150
@@ -3464,6 +4072,66 @@ components:
           oneOf:
           - $ref: '#/components/schemas/OrderingEnum'
           - $ref: '#/components/schemas/BlankEnum'
+    InteractionMetadataSurfaceEnum:
+      enum:
+      - discover
+      - trending
+      - explore
+      - profile
+      - share
+      - direct
+      - create
+      - register
+      - login
+      - settings
+      - notifications
+      type: string
+      description: |-
+        * `discover` - discover
+        * `trending` - trending
+        * `explore` - explore
+        * `profile` - profile
+        * `share` - share
+        * `direct` - direct
+        * `create` - create
+        * `register` - register
+        * `login` - login
+        * `settings` - settings
+        * `notifications` - notifications
+    LanguageEnum:
+      enum:
+      - en
+      - ru
+      - uk
+      - es
+      - fr
+      - de
+      - pt
+      - it
+      - pl
+      - tr
+      - ar
+      - hi
+      - ja
+      - ko
+      - zh
+      type: string
+      description: |-
+        * `en` - English
+        * `ru` - Russian
+        * `uk` - Ukrainian
+        * `es` - Spanish
+        * `fr` - French
+        * `de` - German
+        * `pt` - Portuguese
+        * `it` - Italian
+        * `pl` - Polish
+        * `tr` - Turkish
+        * `ar` - Arabic
+        * `hi` - Hindi
+        * `ja` - Japanese
+        * `ko` - Korean
+        * `zh` - Chinese
     LoginRequest:
       type: object
       properties:
@@ -3596,6 +4264,35 @@ components:
       - url
       - variant
       - width
+    MediaAssetPreview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        url:
+          type: string
+          nullable: true
+          readOnly: true
+        thumbnail_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - height
+      - id
+      - thumbnail_url
+      - url
+      - width
     MediaAssetStatus:
       enum:
       - pending
@@ -3632,7 +4329,7 @@ components:
         moderator:
           type: string
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/ModerationActionEnum'
         target_type:
           $ref: '#/components/schemas/TargetTypeEnum'
         target_public_id:
@@ -3660,11 +4357,29 @@ components:
       - reason
       - target_public_id
       - target_type
+    ModerationActionEnum:
+      enum:
+      - hide
+      - restore
+      - soft_delete
+      - suspend_user
+      - unsuspend_user
+      - dismiss
+      - resolve_no_action
+      type: string
+      description: |-
+        * `hide` - Hide content
+        * `restore` - Restore content
+        * `soft_delete` - Soft delete content
+        * `suspend_user` - Suspend user
+        * `unsuspend_user` - Unsuspend user
+        * `dismiss` - Dismiss report
+        * `resolve_no_action` - Resolve without action
     ModerationActionRequestRequest:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/ModerationActionEnum'
         reason:
           type: string
           minLength: 1
@@ -3761,6 +4476,81 @@ components:
       description: |-
         * `newest` - newest
         * `popular` - popular
+    OwnUserProfileRead:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          maxLength: 80
+        avatar:
+          allOf:
+          - $ref: '#/components/schemas/MediaAsset'
+          readOnly: true
+          nullable: true
+        bio:
+          type: string
+          maxLength: 500
+        follower_count:
+          type: integer
+          readOnly: true
+        following_count:
+          type: integer
+          readOnly: true
+        is_following:
+          type: boolean
+          readOnly: true
+        privacy:
+          allOf:
+          - $ref: '#/components/schemas/Privacy'
+          readOnly: true
+        preferred_languages:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        language_preferences_confirmed:
+          type: boolean
+          readOnly: true
+      required:
+      - avatar
+      - follower_count
+      - following_count
+      - id
+      - is_following
+      - language_preferences_confirmed
+      - preferred_languages
+      - privacy
+      - username
+    PaginatedAuthorSuggestionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorSuggestion'
     PaginatedBingoCardList:
       type: object
       required:
@@ -3784,6 +4574,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BingoCard'
+    PaginatedBingoRevisionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BingoRevision'
     PaginatedCommentList:
       type: object
       required:
@@ -3830,6 +4643,29 @@ components:
       - next
       - previous
       - results
+    PaginatedDraftList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Draft'
     PaginatedNotificationList:
       type: object
       required:
@@ -4103,6 +4939,13 @@ components:
           format: uuid
           writeOnly: true
           nullable: true
+        preferred_languages:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 8
+          maxItems: 15
     PlayProgress:
       type: object
       properties:
@@ -4188,33 +5031,6 @@ components:
           type: boolean
         show_following:
           type: boolean
-    ProfileBingoCollection:
-      type: object
-      properties:
-        count:
-          type: integer
-          minimum: 0
-          readOnly: true
-        next:
-          type: string
-          format: uri
-          readOnly: true
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          readOnly: true
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/BingoCard'
-          readOnly: true
-      required:
-      - count
-      - next
-      - previous
-      - results
     ProfilePlayProgress:
       type: object
       properties:
@@ -4299,6 +5115,49 @@ components:
           nullable: true
       required:
       - selected_cells
+    PublicSitemap:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSitemapEntry'
+          readOnly: true
+        truncated:
+          type: boolean
+          readOnly: true
+      required:
+      - results
+      - truncated
+    PublicSitemapEntry:
+      type: object
+      properties:
+        bingo_id:
+          type: string
+          format: uuid
+          readOnly: true
+        author_username:
+          type: string
+          readOnly: true
+        last_modified:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author_username
+      - bingo_id
+      - last_modified
+    PublicSitemapIndex:
+      type: object
+      properties:
+        parts:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          maxItems: 49999
+      required:
+      - parts
     PublicUser:
       type: object
       properties:
@@ -4354,6 +5213,7 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
         username:
           type: string
           minLength: 1
@@ -4545,6 +5405,22 @@ components:
       - id
       - ip_hint
       - last_seen_at
+    SessionStatus:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/CurrentUser'
+          readOnly: true
+          nullable: true
+        logout_event:
+          type: string
+          readOnly: true
+          nullable: true
+          maxLength: 32
+      required:
+      - logout_event
+      - user
     SharedResult:
       type: object
       properties:
@@ -4629,22 +5505,6 @@ components:
           nullable: true
       required:
       - selected_cells
-    SurfaceEnum:
-      enum:
-      - discover
-      - trending
-      - explore
-      - profile
-      - share
-      - direct
-      type: string
-      description: |-
-        * `discover` - discover
-        * `trending` - trending
-        * `explore` - explore
-        * `profile` - profile
-        * `share` - share
-        * `direct` - direct
     Tag:
       type: object
       properties:
@@ -4851,14 +5711,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/Privacy'
           readOnly: true
-        created_bingos:
-          allOf:
-          - $ref: '#/components/schemas/ProfileBingoCollection'
-          nullable: true
-          readOnly: true
       required:
       - avatar
-      - created_bingos
       - follower_count
       - following_count
       - id

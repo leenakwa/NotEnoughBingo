@@ -43,10 +43,8 @@ One-to-one with User:
 - display name;
 - optional avatar `MediaAsset`;
 - optional biography;
-- denormalized follower/following/public-bingo counts;
+- preferred bingo languages and whether the user confirmed that selection;
 - timestamps.
-
-Counters are cache-like and periodically reconciled from source rows.
 
 ### UserPrivacySettings
 
@@ -107,6 +105,7 @@ The stable logical identity addressed by `/bingo/{public_id}`:
 - author;
 - public ID;
 - current title and optional description for author/dashboard display;
+- language of the current published revision;
 - size 3–10;
 - status: draft, published, archived, deleted;
 - visibility: public, unlisted, private;
@@ -114,12 +113,17 @@ The stable logical identity addressed by `/bingo/{public_id}`:
 - optional mark configuration validated per style;
 - optional current cover/background assets;
 - current published revision, nullable;
+- immutable first-publication time (`published_at`) and mutable
+  `last_published_at` for explicit republishes;
 - draft/version timestamps;
 - moderation visibility state;
 - denormalized view/like/comment/start/share counters.
 
-The current fields support author dashboards and catalog queries; a published
-page renders revision snapshot fields.
+The denormalized document fields mirror only `current_revision` and change in
+the same publication transaction. Mutable authoring metadata lives in `Draft`;
+saving a draft never changes these fields, catalog visibility, or public media
+access. Before first publication the fields retain neutral model defaults and
+authoring views read the draft document.
 
 Indexes include author/status, visibility/status/published time, moderation
 state, and public ID.
@@ -131,6 +135,7 @@ One active draft per Bingo:
 - bingo, unique;
 - based-on revision, nullable;
 - validated JSON document;
+- author-selected bingo language, which may be blank before publication;
 - optimistic `version`;
 - editor schema version;
 - author/update timestamps.
@@ -147,6 +152,7 @@ Immutable published snapshot:
 - bingo;
 - monotonic revision number;
 - title and description snapshot;
+- language snapshot;
 - size;
 - visibility at publish;
 - mark style/configuration snapshot;
@@ -216,7 +222,7 @@ the current bingo. Maximum 15 tags is enforced server-side.
 - owner;
 - public ID;
 - purpose: avatar, cover, board background, cell image, export, data export;
-- state: pending, uploaded, scanning, ready, rejected, quarantined, deleted;
+- state: pending, uploaded, processing, ready, rejected, quarantined, deleted;
 - random object key and bucket identifier;
 - declared and detected MIME;
 - extension derived by the server;
@@ -276,7 +282,10 @@ user/guest display-name rules is satisfied.
 - unique `(user_id, bingo_id)`.
 
 Create/delete is idempotent. Counter changes use the same database transaction
-and `F()` expressions, with reconciliation jobs correcting drift.
+and `F()` expressions. The daily bounded reconciliation task repairs bingo
+like/comment/share counts, comment like/reply counts, and tag usage from their
+authoritative rows. Lifetime view/play totals are not overwritten because raw
+events expire and cannot reconstruct all-time history.
 
 ### Comment
 
@@ -377,6 +386,16 @@ Indexes serve target/time and actor/time queries. At scale the table can be
 time-partitioned or exported to an analytics store without changing the write
 contract. Event payloads must not include passwords, tokens, private document
 contents, free-form search data beyond the retention policy, or raw IPs.
+
+Raw interaction rows are retained for 90 days by default and purged daily in
+bounded batches. `ANALYTICS_RAW_EVENT_RETENTION_DAYS` may adjust that window
+but cannot be lower than the seven days required by Trending; Discover limits
+its affinity lookback to the configured retention window. Anonymous browser
+identifiers are one-way hashes, authenticated events may reference the user,
+and search events may contain the submitted query plus allowlisted surface
+metadata. Account erasure removes the actor relationship; the remaining
+pseudonymized row expires on the same schedule. Denormalized product counters
+and `BingoDailyMetric` aggregates are separate from raw-event retention.
 
 ## Deletion and foreign-key policy
 

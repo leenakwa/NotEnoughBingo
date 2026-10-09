@@ -3,15 +3,24 @@ from __future__ import annotations
 import uuid
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.text import slugify
 from drf_spectacular.helpers import lazy_serializer
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.accounts.models import User
+from apps.bingos.languages import LANGUAGE_CHOICES
 from apps.bingos.models import Bingo, BingoCell, BingoRevision, Draft, Tag
 from apps.bingos.services import create_bingo
 from apps.bingos.validators import normalize_draft_document
 from apps.media_assets.models import MediaAsset
-from apps.media_assets.serializers import MediaAssetSerializer
+from apps.media_assets.serializers import MediaAssetPreviewSerializer, MediaAssetSerializer
+
+PUBLIC_SITEMAP_BUCKET_SIZE = 10_000
+PUBLIC_SITEMAP_MAX_PK = 2**63 - 1
+PUBLIC_SITEMAP_MAX_PART = (PUBLIC_SITEMAP_MAX_PK - 1) // PUBLIC_SITEMAP_BUCKET_SIZE
+# The root XML index also includes one static sitemap.
+PUBLIC_SITEMAP_MAX_PARTS = 49_999
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -27,6 +36,55 @@ class TagReferenceSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField(read_only=True)
     slug = serializers.SlugField(read_only=True, allow_unicode=True)
+
+
+class AuthorSuggestionQuerySerializer(serializers.Serializer):
+    search = serializers.CharField(required=False, allow_blank=True, max_length=80)
+
+
+class AuthorSuggestionSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(source="public_id", read_only=True)
+    username = serializers.CharField(read_only=True)
+    display_name = serializers.CharField(source="profile.display_name", read_only=True)
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "display_name")
+
+
+class PublicSitemapEntrySerializer(serializers.Serializer):
+    bingo_id = serializers.UUIDField(read_only=True)
+    author_username = serializers.CharField(read_only=True)
+    last_modified = serializers.DateTimeField(read_only=True)
+
+
+class PublicSitemapSerializer(serializers.Serializer):
+    results = PublicSitemapEntrySerializer(many=True, read_only=True)
+    truncated = serializers.BooleanField(read_only=True)
+
+
+class PublicSitemapQuerySerializer(serializers.Serializer):
+    part = serializers.RegexField(
+        r"^(?:0|[1-9][0-9]{0,14})\Z",
+        required=False,
+        trim_whitespace=False,
+        max_length=15,
+        help_text=(
+            f"Canonical decimal primary-key bucket from 0 through {PUBLIC_SITEMAP_MAX_PART}; "
+            "each bucket spans 10,000 IDs. Omit for the legacy, capped projection."
+        ),
+    )
+
+    def validate_part(self, value: str) -> str:
+        if int(value) > PUBLIC_SITEMAP_MAX_PART:
+            raise serializers.ValidationError("Part exceeds the supported primary-key range.")
+        return value
+
+
+class PublicSitemapIndexSerializer(serializers.Serializer):
+    parts = serializers.ListField(
+        child=serializers.CharField(), max_length=PUBLIC_SITEMAP_MAX_PARTS, read_only=True
+    )
 
 
 class RevisionTagSerializer(serializers.Serializer):
@@ -68,6 +126,7 @@ class BingoDocumentCellInputSerializer(serializers.Serializer):
     background_color = serializers.RegexField(r"^#[0-9a-fA-F]{6}$", required=False)
     background_opacity = serializers.FloatField(min_value=0, max_value=1, required=False)
     image_asset_id = serializers.UUIDField(required=False, allow_null=True)
+    image_alt = serializers.CharField(max_length=160, required=False, allow_blank=True)
     image_opacity = serializers.FloatField(min_value=0, max_value=1, required=False)
     border_color = serializers.RegexField(r"^#[0-9a-fA-F]{6}$", required=False)
     border_width = serializers.IntegerField(min_value=0, max_value=12, required=False)
@@ -78,6 +137,7 @@ class BingoDocumentInputSerializer(serializers.Serializer):
     schema_version = serializers.IntegerField(min_value=1, max_value=1, required=False)
     title = serializers.CharField(max_length=70, required=False, allow_blank=True)
     description = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+    language = serializers.ChoiceField(choices=LANGUAGE_CHOICES, required=False, allow_blank=True)
     size = serializers.IntegerField(min_value=3, max_value=10, required=False)
     visibility = serializers.ChoiceField(choices=Bingo.Visibility.choices, required=False)
     completion_style = serializers.ChoiceField(
@@ -133,6 +193,7 @@ class BingoCellSerializer(serializers.ModelSerializer):
             "background_opacity",
             "image_asset_id",
             "image",
+            "image_alt",
             "image_opacity",
             "border_color",
             "border_width",
@@ -173,6 +234,7 @@ class BingoRevisionSerializer(serializers.ModelSerializer):
             "revision_number",
             "title",
             "description",
+            "language",
             "size",
             "visibility",
             "marking_style",
@@ -194,9 +256,15 @@ class BingoRevisionSerializer(serializers.ModelSerializer):
         return [{"name": item.name, "slug": item.slug} for item in obj.revision_tags.all()]
 
 
+class BingoPreviewCellSerializer(BingoCellSerializer):
+    image = MediaAssetPreviewSerializer(read_only=True, allow_null=True)
+
+
 class BingoCardPreviewSerializer(serializers.ModelSerializer):
-    board_background = MediaAssetSerializer(source="background", read_only=True, allow_null=True)
-    cells = BingoCellSerializer(many=True, read_only=True)
+    board_background = MediaAssetPreviewSerializer(
+        source="background", read_only=True, allow_null=True
+    )
+    cells = BingoPreviewCellSerializer(many=True, read_only=True)
 
     class Meta:
         model = BingoRevision
@@ -238,6 +306,7 @@ class BingoCardSerializer(serializers.ModelSerializer):
             "public_id",
             "title",
             "description",
+            "language",
             "size",
             "status",
             "visibility",
@@ -292,7 +361,106 @@ class BingoCardSerializer(serializers.ModelSerializer):
         return obj.likes.filter(user=request.user).exists()
 
 
+class CreatorBingoCardSerializer(BingoCardSerializer):
+    """Project an unpublished draft into the owner's creator-library card.
+
+    ``Bingo`` fields intentionally describe only the current published snapshot.
+    Before first publication those fields contain model defaults, so an owner
+    listing must read its display data from ``Draft`` without changing the public
+    card contract or exposing the draft to another viewer.
+    """
+
+    def to_representation(self, instance: Bingo) -> dict:
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if (
+            instance.status != Bingo.Status.DRAFT
+            or not request
+            or not request.user.is_authenticated
+            or request.user.pk != instance.author_id
+        ):
+            return data
+
+        try:
+            draft = instance.draft
+        except Draft.DoesNotExist:
+            return data
+
+        document = draft.document
+        prefetched_links = getattr(draft, "creator_media_links", None)
+        if prefetched_links is None:
+            prefetched_links = draft.media_links.select_related("asset").prefetch_related(
+                "asset__derivatives"
+            )
+        assets = {str(link.asset.public_id): link.asset for link in prefetched_links}
+
+        def serialized_asset(asset_id: str | None) -> dict | None:
+            asset = assets.get(str(asset_id)) if asset_id else None
+            return MediaAssetSerializer(asset, context=self.context).data if asset else None
+
+        cells = []
+        for cell in document.get("cells", []):
+            cells.append(
+                {
+                    "id": cell.get("id"),
+                    "position": cell["position"],
+                    "row": cell["row"],
+                    "column": cell["column"],
+                    "text": cell["text"],
+                    "text_color": cell["text_color"],
+                    "bold": cell["bold"],
+                    "italic": cell["italic"],
+                    "underline": cell["underline"],
+                    "strikethrough": cell["strikethrough"],
+                    "background_color": cell["background_color"],
+                    "background_opacity": cell["background_opacity"],
+                    "image_asset_id": cell.get("image_asset_id"),
+                    "image": serialized_asset(cell.get("image_asset_id")),
+                    "image_alt": cell["image_alt"],
+                    "image_opacity": cell["image_opacity"],
+                    "border_color": cell["border_color"],
+                    "border_width": cell["border_width"],
+                    "border_style": cell["border_style"],
+                }
+            )
+
+        title = document.get("title", "")
+        size = document.get("size", 5)
+        marking_style = document.get("marking_style", Bingo.MarkingStyle.CHECKMARK)
+        cover_id = document.get("cover_asset_id")
+        background_id = document.get("background_asset_id")
+        data.update(
+            {
+                "title": title,
+                "description": document.get("description", ""),
+                "language": document.get("language", ""),
+                "size": size,
+                "visibility": document.get("visibility", Bingo.Visibility.PRIVATE),
+                "marking_style": marking_style,
+                "completion_style": marking_style,
+                "cover": serialized_asset(cover_id),
+                "cover_asset_id": cover_id,
+                "preview": {
+                    "size": size,
+                    "board_background": serialized_asset(background_id),
+                    "cells": cells,
+                },
+                "tags": [
+                    {
+                        "id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"neb-tag:{name}")),
+                        "name": name,
+                        "slug": slugify(name, allow_unicode=True),
+                    }
+                    for name in document.get("tags", [])
+                ],
+                "updated_at": serializers.DateTimeField().to_representation(draft.updated_at),
+            }
+        )
+        return data
+
+
 class BingoDetailSerializer(BingoCardSerializer):
+    preview = None
     current_revision = BingoRevisionSerializer(read_only=True, allow_null=True)
     marking_config = MarkingConfigSerializer(read_only=True)
     background_asset_id = serializers.UUIDField(
@@ -306,7 +474,7 @@ class BingoDetailSerializer(BingoCardSerializer):
 
     class Meta(BingoCardSerializer.Meta):
         fields = (
-            *BingoCardSerializer.Meta.fields,
+            *(field for field in BingoCardSerializer.Meta.fields if field != "preview"),
             "background_asset_id",
             "marking_config",
             "current_revision",
@@ -360,6 +528,7 @@ class DraftCellSerializer(serializers.Serializer):
     background_color = serializers.CharField(read_only=True)
     background_opacity = serializers.FloatField(read_only=True)
     image = MediaAssetSerializer(read_only=True, allow_null=True)
+    image_alt = serializers.CharField(read_only=True)
     image_opacity = serializers.FloatField(read_only=True)
     border_color = serializers.CharField(read_only=True)
     border_width = serializers.IntegerField(read_only=True)
@@ -372,6 +541,7 @@ class DraftSerializer(serializers.Serializer):
     bingo_id = serializers.UUIDField(read_only=True, allow_null=True)
     title = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
+    language = serializers.CharField(read_only=True)
     size = serializers.IntegerField(min_value=3, max_value=10, read_only=True)
     visibility = serializers.ChoiceField(choices=Bingo.Visibility.choices, read_only=True)
     completion_style = serializers.ChoiceField(
@@ -435,6 +605,7 @@ class DraftSerializer(serializers.Serializer):
                     "background_color": cell["background_color"],
                     "background_opacity": cell["background_opacity"],
                     "image": MediaAssetSerializer(image).data if image else None,
+                    "image_alt": cell["image_alt"],
                     "image_opacity": cell["image_opacity"],
                     "border_color": cell["border_color"],
                     "border_width": cell["border_width"],
@@ -449,6 +620,7 @@ class DraftSerializer(serializers.Serializer):
             "bingo_id": str(obj.bingo.public_id) if obj.bingo_id else None,
             "title": document.get("title", ""),
             "description": document.get("description", ""),
+            "language": document.get("language", ""),
             "size": document.get("size", 5),
             "visibility": document.get("visibility", Bingo.Visibility.PRIVATE),
             "completion_style": document.get(

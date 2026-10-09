@@ -21,7 +21,9 @@ PY
 fi
 
 if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
-  python manage.py migrate --noinput
+  echo >&2 "RUN_MIGRATIONS is intentionally unsupported for replicated processes."
+  echo >&2 "Run 'python manage.py migrate --noinput' once as the dedicated release job."
+  exit 64
 fi
 
 exec "$@"

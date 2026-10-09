@@ -4,7 +4,10 @@ import { Suspense } from "react";
 import { VerifyEmail } from "@/components/auth/verify-email";
 import { LoadingState } from "@/components/ui/page-state";
 
-export const metadata: Metadata = { title: "Verify email" };
+export const metadata: Metadata = {
+  title: "Verify email",
+  robots: { index: false, follow: false },
+};
 
 export default function VerifyEmailPage() {
   return (

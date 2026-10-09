@@ -26,13 +26,17 @@ export interface LiveFixture {
     author: FixtureUser;
     player: FixtureUser;
     moderator: FixtureUser;
+    avatar: FixtureUser;
+    deletion: FixtureUser;
   };
   bingos: {
     public: FixtureBingo;
     unlisted: FixtureBingo;
     private: FixtureBingo;
     revision: FixtureBingo;
+    social: FixtureBingo;
   };
+  social_context: { bingo_id: string; root_id: string; reply_id: string };
   revision_snapshot: {
     bingo_id: string;
     share_id: string;

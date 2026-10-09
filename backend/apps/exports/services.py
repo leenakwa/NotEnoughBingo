@@ -7,7 +7,9 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from apps.accounts.models import User
 from apps.bingos.models import Bingo
+from apps.common.jobs import publish_job
 from apps.exports.models import ExportJob
 
 BINGO_EXPORT_RETENTION = timedelta(days=7)
@@ -54,12 +56,14 @@ def request_bingo_export(
     )
     from apps.exports.tasks import process_export_job
 
-    transaction.on_commit(lambda: process_export_job.delay(job.pk))
+    transaction.on_commit(lambda: publish_job(process_export_job, job.pk))
     return job
 
 
 @transaction.atomic
 def request_account_export(user) -> ExportJob:
+    # There may be no existing job to lock on the first concurrent requests.
+    user = User.objects.select_for_update().get(pk=user.pk)
     now = timezone.now()
     existing = (
         ExportJob.objects.filter(
@@ -86,5 +90,5 @@ def request_account_export(user) -> ExportJob:
     )
     from apps.exports.tasks import process_export_job
 
-    transaction.on_commit(lambda: process_export_job.delay(job.pk))
+    transaction.on_commit(lambda: publish_job(process_export_job, job.pk))
     return job

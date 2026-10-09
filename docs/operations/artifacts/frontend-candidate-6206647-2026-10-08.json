@@ -1,0 +1,258 @@
+{
+  "date": "2026-10-08",
+  "source": "62066472a28eebe46800e05fba9c59a785f3a726",
+  "source_tree": "33cc8da8e46b131ad4b623a24e3a2e40f431b319",
+  "image_id": "sha256:c4f6ce3460eb71419482c43b8cb7be43f1bf695d8499c02c89184c6a786dfe54",
+  "actual_container_image": "sha256:c4f6ce3460eb71419482c43b8cb7be43f1bf695d8499c02c89184c6a786dfe54",
+  "application_mounts": 0,
+  "public_build_runtime_release_matches": true,
+  "health_status": 200,
+  "environment_scope": "Exact Git-archive configured production frontend on loopback18584; isolated old c1 web, forward schema/new worker, development Django settings and illustrative https://bingo.example.com origin. Not target production.",
+  "build_log": "/tmp/neb-frontend-6206647-production-build-oct08.log",
+  "large_api_put": {
+    "stats": {
+      "startTime": "2026-10-08T02:44:59.789Z",
+      "duration": 23697.888,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": [
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "bytes": 3147780,
+          "samples": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77,
+            78,
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100
+          ],
+          "storageStatuses": [
+            202
+          ],
+          "storagePreflights": 0
+        }
+      }
+    ]
+  },
+  "large_api_put_log": "/tmp/neb-frontend-6206647-upload-browser-reviewed-oct08.log",
+  "api_put_four_profiles": {
+    "stats": {
+      "startTime": "2026-10-08T02:50:04.892Z",
+      "duration": 22235.934999999998,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": [
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      },
+      {
+        "project": "mobile-webkit",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      }
+    ]
+  },
+  "api_put_log": "/tmp/neb-frontend-6206647-api-upload-browser-reviewed-oct08.log",
+  "transfer_scope": "Real same-origin API Blob PUT202 with credentials/CSRF; completion API held then continued to real backend. No synthetic transfer progress or fulfilled storage response. Separate shared-QA artifact proves real MinIO POST204 and CORS.",
+  "retained_initial_diagnostics": [
+    "First candidate browser draft POST403: isolated old-web trusted-origin allowlist lacked new loopback18584. Private Compose adds only that origin; CSRF stays enabled. Application source unchanged.",
+    "First four-profile diagnostic4FAIL: pending upload changes accessible input label. Stable Cell editor/input[type=file] locator fixes diagnostic runner only; application image unchanged."
+  ],
+  "ci": {
+    "run_id": 37718675809,
+    "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37718675809",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs_passed": 7,
+    "failed_jobs": [
+      "Browser smoke tests",
+      "Release gate"
+    ],
+    "checkout_sha": "111df2a0bca9dd481899c369267d5d090a1c4f1b",
+    "checkout_tree": "33cc8da8e46b131ad4b623a24e3a2e40f431b319",
+    "tree_equals_head": true,
+    "backend_cases": 383,
+    "frontend_cases": 560,
+    "frontend_test_files": 42,
+    "browser_smoke_passed": 231,
+    "browser_smoke_failed": 1,
+    "browser_smoke_intentional_skips": 12,
+    "full_stack_passed": 120,
+    "failure": "WebKit silent-fill reset test assigns DOM value while control is disabled; all three attempts have no POST. Root local original5FAIL/diagnostic enabled-precondition5PASS. Test correction is next packet, outside this source."
+  },
+  "limitations": [
+    "Current source has failed CI; optimized image evidence does not override the release gate.",
+    "Production origin, registry promotion, actual providers/TLS/ingress/replicas/CDN and physical devices remain unverified.",
+    "Password managers and native OS file chooser are not covered."
+  ]
+}

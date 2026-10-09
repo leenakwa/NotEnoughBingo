@@ -46,4 +46,15 @@ describe("guest progress", () => {
 
     expect(writeGuestProgress("bingo-1", "revision-1", ["0:0"])).toBe(false);
   });
+
+  it("does not crash when both reading and removing local progress are blocked", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new DOMException("Storage denied", "SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("Storage denied", "SecurityError");
+    });
+
+    expect(readGuestProgress("bingo-1", "revision-1")).toBeNull();
+  });
 });

@@ -37,6 +37,8 @@ FIXTURE_EMAILS = (
     "e2e-author@example.test",
     "e2e-player@example.test",
     "e2e-moderator@example.test",
+    "e2e-avatar@example.test",
+    "e2e-deletion@example.test",
 )
 
 
@@ -47,7 +49,7 @@ def _document(
     cells: tuple[str, ...],
     marking_style: str = Bingo.MarkingStyle.CHECKMARK,
 ) -> dict[str, Any]:
-    document = empty_draft_document(title=title, size=3)
+    document = empty_draft_document(title=title, size=3, language="en")
     document.update(
         {
             "description": f"{title} is deterministic browser-test content.",
@@ -152,7 +154,18 @@ def _upsert_user(
     user.profile.display_name = display_name
     user.profile.bio = f"{display_name} browser-test account."
     user.profile.avatar = None
-    user.profile.save(update_fields=("display_name", "bio", "avatar", "updated_at"))
+    user.profile.preferred_languages = []
+    user.profile.language_preferences_confirmed = False
+    user.profile.save(
+        update_fields=(
+            "display_name",
+            "bio",
+            "avatar",
+            "preferred_languages",
+            "language_preferences_confirmed",
+            "updated_at",
+        )
+    )
     privacy = user.privacy
     for field in (
         "show_bio",
@@ -164,6 +177,17 @@ def _upsert_user(
     ):
         setattr(privacy, field, True)
     privacy.save()
+    notification_preferences = user.notification_preferences
+    for field in (
+        "new_comment",
+        "comment_reply",
+        "bingo_like",
+        "comment_like",
+        "new_follower",
+    ):
+        setattr(notification_preferences, field, True)
+    notification_preferences.marketing_email = False
+    notification_preferences.save()
     return user
 
 
@@ -218,6 +242,30 @@ class Command(BaseCommand):
             password=password,
             moderator=True,
         )
+
+        avatar = _upsert_user(
+            email=FIXTURE_EMAILS[3],
+            username="e2e_avatar",
+            display_name="E2E Avatar",
+            password=password,
+        )
+        deletion = _upsert_user(
+            email=FIXTURE_EMAILS[4],
+            username="e2e_deletion",
+            display_name="E2E Deletion",
+            password=password,
+        )
+
+        for actor in (avatar, deletion):
+            actor.profile.preferred_languages = ["en"]
+            actor.profile.language_preferences_confirmed = True
+            actor.profile.save(
+                update_fields=(
+                    "preferred_languages",
+                    "language_preferences_confirmed",
+                    "updated_at",
+                )
+            )
 
         fixture_specs = {
             "public": {
@@ -284,6 +332,12 @@ class Command(BaseCommand):
                     "Clean sheets",
                 ),
             },
+            "social": {
+                "title": "E2E Comment Recovery Board",
+                "visibility": Bingo.Visibility.UNLISTED,
+                "marking_style": Bingo.MarkingStyle.CHECKMARK,
+                "cells": tuple(f"Recovery cell {number}" for number in range(1, 10)),
+            },
         }
         bingos: dict[str, dict[str, Any]] = {}
         bingo_rows: dict[str, Bingo] = {}
@@ -316,6 +370,29 @@ class Command(BaseCommand):
             }
 
         revision_bingo = bingo_rows["revision"]
+        social_bingo = bingo_rows["social"]
+        social_root = Comment.objects.create(
+            bingo=social_bingo, author=player, body="Original recovery conversation", reply_count=6
+        )
+        Comment.objects.bulk_create(
+            [
+                Comment(bingo=social_bingo, author=author, body=f"Newer conversation {number}")
+                for number in range(1, 24)
+            ]
+        )
+        social_replies = Comment.objects.bulk_create(
+            [
+                Comment(
+                    bingo=social_bingo,
+                    author=player,
+                    parent=social_root,
+                    body=f"Original nested reply {number}",
+                )
+                for number in range(1, 7)
+            ]
+        )
+        social_bingo.comment_count = 30
+        social_bingo.save(update_fields=["comment_count", "updated_at"])
         revision = revision_bingo.current_revision
         assert revision is not None
         snapshot = create_shared_result(
@@ -329,6 +406,11 @@ class Command(BaseCommand):
 
         manifest = {
             "schema_version": 1,
+            "social_context": {
+                "bingo_id": str(social_bingo.public_id),
+                "root_id": str(social_root.public_id),
+                "reply_id": str(social_replies[-1].public_id),
+            },
             "users": {
                 "author": {
                     "id": str(author.public_id),
@@ -347,6 +429,18 @@ class Command(BaseCommand):
                     "email": moderator.email,
                     "username": moderator.username,
                     "display_name": moderator.profile.display_name,
+                },
+                "avatar": {
+                    "id": str(avatar.public_id),
+                    "email": avatar.email,
+                    "username": avatar.username,
+                    "display_name": avatar.profile.display_name,
+                },
+                "deletion": {
+                    "id": str(deletion.public_id),
+                    "email": deletion.email,
+                    "username": deletion.username,
+                    "display_name": deletion.profile.display_name,
                 },
             },
             "bingos": bingos,

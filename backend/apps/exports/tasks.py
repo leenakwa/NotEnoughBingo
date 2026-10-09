@@ -6,6 +6,7 @@ from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
 
+from apps.common.jobs import periodic_task
 from apps.exports.account_data import build_account_export
 from apps.exports.models import ExportJob
 from apps.exports.renderers import render_revision_pdf, render_revision_png
@@ -16,16 +17,25 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(
+    bind=True,
     autoretry_for=(OSError,),
     retry_backoff=True,
     retry_jitter=True,
     max_retries=4,
 )
-def process_export_job(job_id: int) -> str:
+def process_export_job(self, job_id: int) -> str:
     with transaction.atomic():
         job = ExportJob.objects.select_for_update().filter(pk=job_id).first()
         if not job:
             return "missing"
+        if job.status in (ExportJob.Status.QUEUED, ExportJob.Status.PROCESSING) and (
+            job.expires_at and job.expires_at <= timezone.now()
+        ):
+            job.status = ExportJob.Status.EXPIRED
+            job.error_code = "export_expired"
+            job.completed_at = timezone.now()
+            job.save(update_fields=("status", "error_code", "completed_at", "updated_at"))
+            return "expired"
         if job.status == ExportJob.Status.READY:
             return "already_ready"
         # Only a queued job may claim execution. A duplicate delivery that sees
@@ -75,15 +85,23 @@ def process_export_job(job_id: int) -> str:
             storage_prefix=prefix,
             expires_at=job.expires_at,
         )
-    except OSError:
+    except OSError as exc:
+        exhausted = self.request.retries >= self.max_retries or job.attempt_count >= 5
         with transaction.atomic():
             ExportJob.objects.filter(pk=job_id).update(
-                status=ExportJob.Status.QUEUED,
+                status=ExportJob.Status.FAILED if exhausted else ExportJob.Status.QUEUED,
                 error_code="temporary_storage_error",
+                completed_at=timezone.now() if exhausted else None,
+                updated_at=timezone.now(),
             )
+        if exhausted:
+            raise RuntimeError("storage_unavailable") from exc
         raise
     except Exception:
-        logger.exception("Export job %s failed", job_id)
+        logger.exception(
+            "export.processing_failed",
+            extra={"job_id": job_id, "outcome": "failed"},
+        )
         with transaction.atomic():
             failed = ExportJob.objects.select_for_update().get(pk=job_id)
             failed.status = ExportJob.Status.FAILED
@@ -109,7 +127,7 @@ def process_export_job(job_id: int) -> str:
     return "ready"
 
 
-@shared_task(ignore_result=True)
+@periodic_task
 def expire_export_jobs() -> int:
     now = timezone.now()
     jobs = list(

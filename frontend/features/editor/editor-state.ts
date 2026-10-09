@@ -31,6 +31,7 @@ export interface EditorCell {
   backgroundColor: string;
   backgroundOpacity: number;
   image: EditorMedia;
+  imageAlt: string;
   imageOpacity: number;
   borderColor: string;
   borderWidth: number;
@@ -44,6 +45,7 @@ export interface EditorState {
   primaryKey: string | null;
   title: string;
   description: string;
+  language: string;
   tags: string[];
   visibility: Visibility;
   completionStyle: CompletionStyle;
@@ -53,6 +55,27 @@ export interface EditorState {
   draftId: string | null;
   version: number;
   lastSavedAt: string | null;
+  history: EditorHistory;
+}
+
+export interface EditorDocumentSnapshot {
+  size: number;
+  cells: Record<string, EditorCell>;
+  title: string;
+  description: string;
+  language: string;
+  tags: string[];
+  visibility: Visibility;
+  completionStyle: CompletionStyle;
+  boardBackground: EditorMedia;
+  cover: EditorMedia;
+}
+
+interface EditorHistory {
+  past: EditorDocumentSnapshot[];
+  future: EditorDocumentSnapshot[];
+  lastGroup: string | null;
+  lastRecordedAt: number;
 }
 
 type CellPatch = Partial<
@@ -62,6 +85,7 @@ type CellPatch = Partial<
     | "textColor"
     | "backgroundColor"
     | "backgroundOpacity"
+    | "imageAlt"
     | "imageOpacity"
     | "borderColor"
     | "borderWidth"
@@ -71,6 +95,7 @@ type CellPatch = Partial<
 
 export type EditorAction =
   | { type: "set-size"; size: number }
+  | { type: "new-document" }
   | {
       type: "select-rectangle";
       anchor: { row: number; column: number };
@@ -85,12 +110,19 @@ export type EditorAction =
   | { type: "set-cover"; media: EditorMedia }
   | { type: "set-title"; value: string }
   | { type: "set-description"; value: string }
+  | { type: "set-language"; value: string }
   | { type: "set-visibility"; value: Visibility }
   | { type: "set-completion-style"; value: CompletionStyle }
   | { type: "add-tag"; value: string }
   | { type: "remove-tag"; value: string }
   | { type: "hydrate"; draft: BingoDraft }
-  | { type: "saved"; draft: BingoDraft };
+  | { type: "restore-document"; document: EditorDocumentSnapshot }
+  | { type: "saved"; draft: BingoDraft }
+  | { type: "undo" }
+  | { type: "redo" };
+
+const HISTORY_LIMIT = 100;
+const HISTORY_GROUP_WINDOW_MS = 900;
 
 export function cellKey(row: number, column: number): string {
   return `${row}:${column}`;
@@ -109,6 +141,7 @@ export function createDefaultCell(row: number, column: number): EditorCell {
     backgroundColor: "#ffffff",
     backgroundOpacity: 1,
     image: { asset: null, previewUrl: null },
+    imageAlt: "",
     imageOpacity: 1,
     borderColor: "#000000",
     borderWidth: 1,
@@ -130,6 +163,7 @@ export function createEditorState(size = 5): EditorState {
     primaryKey: null,
     title: "",
     description: "",
+    language: "",
     tags: [],
     visibility: "public",
     completionStyle: "checkmark",
@@ -139,6 +173,12 @@ export function createEditorState(size = 5): EditorState {
     draftId: null,
     version: 0,
     lastSavedAt: null,
+    history: {
+      past: [],
+      future: [],
+      lastGroup: null,
+      lastRecordedAt: 0,
+    },
   };
 }
 
@@ -146,12 +186,12 @@ function clampSize(size: number): number {
   return Math.max(MIN_BINGO_SIZE, Math.min(MAX_BINGO_SIZE, Math.round(size)));
 }
 
-function ensureCells(state: EditorState, size: number): Record<string, EditorCell> {
-  const cells = { ...state.cells };
+function resizedCells(state: EditorState, size: number): Record<string, EditorCell> {
+  const cells: Record<string, EditorCell> = {};
   for (let row = 0; row < size; row += 1) {
     for (let column = 0; column < size; column += 1) {
       const key = cellKey(row, column);
-      cells[key] ??= createDefaultCell(row, column);
+      cells[key] = state.cells[key] ?? createDefaultCell(row, column);
     }
   }
   return cells;
@@ -167,40 +207,86 @@ function updateSelected(state: EditorState, update: (cell: EditorCell) => Editor
   return { ...state, cells };
 }
 
-export function editorReducer(state: EditorState, action: EditorAction): EditorState {
+function clearHistoryGroup(state: EditorState): EditorState {
+  if (!state.history.lastGroup) return state;
+  return {
+    ...state,
+    history: { ...state.history, lastGroup: null, lastRecordedAt: 0 },
+  };
+}
+
+export function editorDocumentSnapshot(state: EditorState): EditorDocumentSnapshot {
+  return {
+    size: state.size,
+    cells: state.cells,
+    title: state.title,
+    description: state.description,
+    language: state.language,
+    tags: state.tags,
+    visibility: state.visibility,
+    completionStyle: state.completionStyle,
+    boardBackground: state.boardBackground,
+    cover: state.cover,
+  };
+}
+
+function restoreDocument(state: EditorState, document: EditorDocumentSnapshot): EditorState {
+  return {
+    ...state,
+    ...document,
+    selectedKeys: [],
+    primaryKey: null,
+  };
+}
+
+function historyGroupForAction(state: EditorState, action: EditorAction): string | null {
+  switch (action.type) {
+    case "set-title":
+      return "title";
+    case "set-description":
+      return "description";
+    case "patch-selected":
+      return `cells:${state.selectedKeys.join(",")}:${Object.keys(action.patch).sort().join(",")}`;
+    default:
+      return null;
+  }
+}
+
+function recordHistory(state: EditorState, next: EditorState, action: EditorAction): EditorState {
+  if (next === state) return state;
+  const now = Date.now();
+  const group = historyGroupForAction(state, action);
+  const grouped =
+    Boolean(group) &&
+    group === state.history.lastGroup &&
+    now - state.history.lastRecordedAt <= HISTORY_GROUP_WINDOW_MS;
+  const past = grouped
+    ? state.history.past
+    : [...state.history.past, editorDocumentSnapshot(state)].slice(-HISTORY_LIMIT);
+  return {
+    ...next,
+    history: {
+      past,
+      future: [],
+      lastGroup: group,
+      lastRecordedAt: now,
+    },
+  };
+}
+
+function reduceDocumentAction(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case "set-size": {
       const size = clampSize(action.size);
+      if (size === state.size) return state;
       return {
         ...state,
         size,
-        cells: ensureCells(state, size),
+        cells: resizedCells(state, size),
         selectedKeys: [],
         primaryKey: null,
       };
     }
-    case "select-rectangle": {
-      const minRow = Math.max(0, Math.min(action.anchor.row, action.focus.row));
-      const maxRow = Math.min(state.size - 1, Math.max(action.anchor.row, action.focus.row));
-      const minColumn = Math.max(0, Math.min(action.anchor.column, action.focus.column));
-      const maxColumn = Math.min(
-        state.size - 1,
-        Math.max(action.anchor.column, action.focus.column),
-      );
-      const selectedKeys: string[] = [];
-      for (let row = minRow; row <= maxRow; row += 1) {
-        for (let column = minColumn; column <= maxColumn; column += 1) {
-          selectedKeys.push(cellKey(row, column));
-        }
-      }
-      return {
-        ...state,
-        selectedKeys,
-        primaryKey: cellKey(action.anchor.row, action.anchor.column),
-      };
-    }
-    case "clear-selection":
-      return { ...state, selectedKeys: [], primaryKey: null };
     case "patch-selected":
       return updateSelected(state, (cell) => ({ ...cell, ...action.patch }));
     case "toggle-format": {
@@ -212,12 +298,22 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       }));
     }
     case "set-selected-image":
-      return updateSelected(state, (cell) => ({ ...cell, image: action.media }));
+      return updateSelected(state, (cell) => ({
+        ...cell,
+        image: action.media,
+        imageAlt: cell.image.asset?.id === action.media.asset?.id ? cell.imageAlt : "",
+      }));
     case "set-cell-images": {
       const cells = { ...state.cells };
       for (const key of action.keys) {
         const cell = cells[key];
-        if (cell) cells[key] = { ...cell, image: action.media };
+        if (cell) {
+          cells[key] = {
+            ...cell,
+            image: action.media,
+            imageAlt: cell.image.asset?.id === action.media.asset?.id ? cell.imageAlt : "",
+          };
+        }
       }
       return { ...state, cells };
     }
@@ -229,6 +325,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return { ...state, title: action.value };
     case "set-description":
       return { ...state, description: action.value };
+    case "set-language":
+      return { ...state, language: action.value };
     case "set-visibility":
       return { ...state, visibility: action.value };
     case "set-completion-style":
@@ -245,8 +343,48 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         ...state,
         tags: state.tags.filter((tag) => tag !== action.value),
       };
+    default:
+      return state;
+  }
+}
+
+export function editorReducer(state: EditorState, action: EditorAction): EditorState {
+  if (action.type === "new-document") return createEditorState(5);
+  switch (action.type) {
+    case "select-rectangle": {
+      const minRow = Math.max(0, Math.min(action.anchor.row, action.focus.row));
+      const maxRow = Math.min(state.size - 1, Math.max(action.anchor.row, action.focus.row));
+      const minColumn = Math.max(0, Math.min(action.anchor.column, action.focus.column));
+      const maxColumn = Math.min(
+        state.size - 1,
+        Math.max(action.anchor.column, action.focus.column),
+      );
+      const selectedKeys: string[] = [];
+      for (let row = minRow; row <= maxRow; row += 1) {
+        for (let column = minColumn; column <= maxColumn; column += 1) {
+          selectedKeys.push(cellKey(row, column));
+        }
+      }
+      return clearHistoryGroup({
+        ...state,
+        selectedKeys,
+        primaryKey: cellKey(action.anchor.row, action.anchor.column),
+      });
+    }
+    case "clear-selection":
+      return clearHistoryGroup({ ...state, selectedKeys: [], primaryKey: null });
     case "hydrate":
       return editorStateFromDraft(action.draft);
+    case "restore-document":
+      return {
+        ...restoreDocument(state, action.document),
+        history: {
+          past: [editorDocumentSnapshot(state)],
+          future: [],
+          lastGroup: null,
+          lastRecordedAt: 0,
+        },
+      };
     case "saved": {
       const cells = { ...state.cells };
       for (const savedCell of action.draft.cells) {
@@ -263,7 +401,76 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         lastSavedAt: action.draft.updated_at,
       };
     }
+    case "undo": {
+      const previous = state.history.past.at(-1);
+      if (!previous) return state;
+      return {
+        ...restoreDocument(state, previous),
+        history: {
+          past: state.history.past.slice(0, -1),
+          future: [editorDocumentSnapshot(state), ...state.history.future].slice(0, HISTORY_LIMIT),
+          lastGroup: null,
+          lastRecordedAt: 0,
+        },
+      };
+    }
+    case "redo": {
+      const next = state.history.future[0];
+      if (!next) return state;
+      return {
+        ...restoreDocument(state, next),
+        history: {
+          past: [...state.history.past, editorDocumentSnapshot(state)].slice(-HISTORY_LIMIT),
+          future: state.history.future.slice(1),
+          lastGroup: null,
+          lastRecordedAt: 0,
+        },
+      };
+    }
+    default:
+      return recordHistory(state, reduceDocumentAction(state, action), action);
   }
+}
+
+export function canUndo(state: EditorState): boolean {
+  return state.history.past.length > 0;
+}
+
+export function canRedo(state: EditorState): boolean {
+  return state.history.future.length > 0;
+}
+
+function isDefaultCell(cell: EditorCell): boolean {
+  const defaultCell = createDefaultCell(cell.row, cell.column);
+  return (
+    cell.text === defaultCell.text &&
+    cell.textColor === defaultCell.textColor &&
+    cell.bold === defaultCell.bold &&
+    cell.italic === defaultCell.italic &&
+    cell.underline === defaultCell.underline &&
+    cell.strikethrough === defaultCell.strikethrough &&
+    cell.backgroundColor === defaultCell.backgroundColor &&
+    cell.backgroundOpacity === defaultCell.backgroundOpacity &&
+    !cell.image.asset &&
+    !cell.image.previewUrl &&
+    cell.imageAlt === defaultCell.imageAlt &&
+    cell.imageOpacity === defaultCell.imageOpacity &&
+    cell.borderColor === defaultCell.borderColor &&
+    cell.borderWidth === defaultCell.borderWidth &&
+    cell.borderStyle === defaultCell.borderStyle
+  );
+}
+
+export function meaningfulCellsRemovedByResize(state: EditorState, nextSize: number): EditorCell[] {
+  const size = clampSize(nextSize);
+  if (size >= state.size) return [];
+  return Object.values(state.cells).filter(
+    (cell) =>
+      (cell.row >= size || cell.column >= size) &&
+      cell.row < state.size &&
+      cell.column < state.size &&
+      !isDefaultCell(cell),
+  );
 }
 
 export function activeCells(state: EditorState): EditorCell[] {
@@ -295,6 +502,7 @@ function revisionCellToEditor(cell: RevisionCell): EditorCell {
     backgroundColor: cell.background_color,
     backgroundOpacity: cell.background_opacity,
     image: { asset: cell.image, previewUrl: null },
+    imageAlt: cell.image_alt ?? "",
     imageOpacity: cell.image_opacity,
     borderColor: cell.border_color,
     borderWidth: cell.border_width,
@@ -313,6 +521,7 @@ export function editorStateFromDraft(draft: BingoDraft): EditorState {
     cells,
     title: draft.title,
     description: draft.description,
+    language: draft.language,
     tags: draft.tags.map((tag) => tag.name),
     visibility: draft.visibility,
     completionStyle: draft.completion_style,
@@ -325,10 +534,18 @@ export function editorStateFromDraft(draft: BingoDraft): EditorState {
   };
 }
 
+export function editorStateWithDocument(
+  state: EditorState,
+  document: EditorDocumentSnapshot,
+): EditorState {
+  return restoreDocument(state, document);
+}
+
 export function editorPayload(state: EditorState) {
   return {
     title: state.title.trim(),
     description: state.description.trim(),
+    language: state.language,
     size: state.size,
     visibility: state.visibility,
     completion_style: state.completionStyle,
@@ -348,10 +565,17 @@ export function editorPayload(state: EditorState) {
       background_color: cell.backgroundColor,
       background_opacity: cell.backgroundOpacity,
       image_asset_id: cell.image.asset?.id ?? null,
+      image_alt: cell.imageAlt,
       image_opacity: cell.imageOpacity,
       border_color: cell.borderColor,
       border_width: cell.borderWidth,
       border_style: cell.borderStyle,
     })),
   };
+}
+
+export function editorDocumentFingerprint(state: EditorState): string {
+  return JSON.stringify(editorPayload(state), (key, value: unknown) =>
+    key === "id" ? undefined : value,
+  );
 }

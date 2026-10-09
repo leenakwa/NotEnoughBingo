@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, Dispatch, KeyboardEvent, PointerEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   activeCells,
@@ -26,8 +26,18 @@ export function EditorBoard({
   dispatch: Dispatch<EditorAction>;
 }) {
   const dragAnchor = useRef<{ row: number; column: number } | null>(null);
+  const clickedCell = useRef<{ row: number; column: number } | null>(null);
   const dragged = useRef(false);
   const [focusedKey, setFocusedKey] = useState(state.primaryKey ?? cellKey(0, 0));
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [initialText, setInitialText] = useState<string | null>(null);
+  const inlineEditor = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (editingKey && state.primaryKey === editingKey && state.selectedKeys.length === 1) {
+      inlineEditor.current?.focus();
+      if (initialText === null) inlineEditor.current?.select();
+    }
+  }, [editingKey, initialText, state.primaryKey, state.selectedKeys.length]);
   const boardBackground = mediaUrl(
     state.boardBackground.previewUrl,
     state.boardBackground.asset?.url,
@@ -60,6 +70,8 @@ export function EditorBoard({
   function startSelection(event: PointerEvent<HTMLElement>) {
     if (event.button !== 0) return;
     const point = pointFromPointer(event);
+    clickedCell.current = point;
+    setEditingKey(null);
     dragAnchor.current = point;
     dragged.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -91,11 +103,8 @@ export function EditorBoard({
     if (!fromKeyboard || !state.selectedKeys.includes(key)) {
       dispatch({ type: "select-rectangle", anchor: point, focus: point });
     }
-    if (fromKeyboard) {
-      window.setTimeout(() => {
-        document.querySelector<HTMLTextAreaElement>(".cell-inspector textarea")?.focus();
-      }, 0);
-    }
+    setEditingKey(key);
+    setInitialText(null);
   }
 
   function handleCellKeyDown(event: KeyboardEvent<HTMLButtonElement>, row: number, column: number) {
@@ -106,6 +115,15 @@ export function EditorBoard({
       ArrowRight: [0, 1],
     };
     const move = moves[event.key];
+    if (!move && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      const key = cellKey(row, column);
+      dispatch({ type: "select-rectangle", anchor: { row, column }, focus: { row, column } });
+      dispatch({ type: "patch-selected", patch: { text: event.key } });
+      setEditingKey(key);
+      setInitialText(event.key);
+      return;
+    }
     if (!move) return;
     event.preventDefault();
     const nextRow = Math.max(0, Math.min(state.size - 1, row + move[0]));
@@ -136,91 +154,153 @@ export function EditorBoard({
     Number(focusedKey.split(":")[0]) < state.size && Number(focusedKey.split(":")[1]) < state.size
       ? focusedKey
       : cellKey(0, 0);
+  const cells = activeCells(state);
+  const rows = Array.from({ length: state.size }, (_, row) =>
+    cells.filter((cell) => cell.row === row),
+  );
 
   return (
     <>
       <p id="editor-board-help" className="sr-only">
-        Use the arrow keys to move between cells. Press Space or Enter to edit one cell, or hold
-        Shift while using an arrow key to select a rectangular range.
+        Use the arrow keys to move between cells. Type, press Space, or press Enter to edit one
+        cell, or hold Shift while using an arrow key to select a rectangular range.
       </p>
-      <section
-        className="editor-board"
-        style={style}
-        role="grid"
-        aria-label={`${state.size} by ${state.size} bingo board`}
-        aria-describedby="editor-board-help"
-        aria-multiselectable="true"
-        onPointerDown={startSelection}
-        onPointerMove={moveSelection}
-        onPointerUp={finishSelection}
-        onPointerCancel={finishSelection}
+      {state.size >= 8 ? (
+        <p className="large-board-hint">Scroll sideways to edit this large board comfortably.</p>
+      ) : null}
+      <div
+        className="board-scroll-region"
+        role={state.size >= 8 ? "region" : undefined}
+        aria-label={state.size >= 8 ? "Scrollable bingo editor" : undefined}
+        tabIndex={state.size >= 8 ? 0 : undefined}
       >
-        {activeCells(state).map((cell) => {
-          const key = cellKey(cell.row, cell.column);
-          const selected = state.selectedKeys.includes(key);
-          const image = mediaUrl(cell.image.previewUrl, cell.image.asset?.url);
-          return (
-            <button
-              key={key}
-              type="button"
-              role="gridcell"
-              className={`editor-cell${selected ? " is-selected" : ""}${state.primaryKey === key ? " is-primary" : ""}`}
-              data-cell-key={key}
-              aria-selected={selected}
-              aria-label={`Row ${cell.row + 1}, column ${cell.column + 1}: ${cell.text || "empty"}`}
-              tabIndex={key === focusKey ? 0 : -1}
-              style={{
-                color: cell.textColor,
-                borderColor: cell.borderColor,
-                borderWidth: `${cell.borderWidth}px`,
-                borderStyle: cell.borderStyle,
-              }}
-              onFocus={() => setFocusedKey(key)}
-              onClick={(event) => handleCellClick(cell.row, cell.column, event.detail === 0)}
-              onKeyDown={(event) => handleCellKeyDown(event, cell.row, cell.column)}
-            >
-              <span
-                className="editor-cell__background"
-                style={{
-                  backgroundColor: cell.backgroundColor,
-                  opacity: cell.backgroundOpacity,
-                }}
-                aria-hidden="true"
-              />
-              {image ? (
-                <span
-                  className="editor-cell__image"
-                  style={{
-                    backgroundImage: `url("${image}")`,
-                    opacity: cell.imageOpacity,
-                  }}
-                  aria-hidden="true"
-                />
-              ) : null}
-              <span
-                className="editor-cell__text"
-                style={{
-                  fontWeight: cell.bold ? 700 : 400,
-                  fontStyle: cell.italic ? "italic" : "normal",
-                  textDecoration: [
-                    cell.underline ? "underline" : "",
-                    cell.strikethrough ? "line-through" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" "),
-                }}
-              >
-                {cell.text || (
-                  <span className="cell-placeholder" aria-hidden="true">
-                    {cell.row * state.size + cell.column + 1}
-                  </span>
-                )}
-              </span>
-              <span className="selection-frame" aria-hidden="true" />
-            </button>
-          );
-        })}
-      </section>
+        <div
+          className="editor-board"
+          style={style}
+          role="grid"
+          data-board-size={state.size}
+          aria-label={`${state.size} by ${state.size} bingo board`}
+          aria-describedby="editor-board-help"
+          aria-multiselectable="true"
+          onPointerDown={startSelection}
+          onPointerMove={moveSelection}
+          onPointerUp={finishSelection}
+          onPointerCancel={finishSelection}
+          onClick={() => {
+            const point = clickedCell.current;
+            clickedCell.current = null;
+            if (dragged.current) {
+              dragged.current = false;
+              return;
+            }
+            if (!point) return;
+            const key = cellKey(point.row, point.column);
+            dispatch({ type: "select-rectangle", anchor: point, focus: point });
+            setEditingKey(key);
+            setInitialText(null);
+          }}
+        >
+          {rows.map((rowCells, row) => (
+            <div key={row} className="editor-grid-row" role="row">
+              {rowCells.map((cell) => {
+                const key = cellKey(cell.row, cell.column);
+                const selected = state.selectedKeys.includes(key);
+                const image = mediaUrl(cell.image.previewUrl, cell.image.asset?.url);
+                return (
+                  <div
+                    key={key}
+                    className="editor-cell-wrap"
+                    role="gridcell"
+                    aria-selected={selected}
+                    aria-label={`Row ${cell.row + 1}, column ${cell.column + 1}: ${cell.text || cell.imageAlt || "empty"}`}
+                  >
+                    <button
+                      type="button"
+                      className={`editor-cell${selected ? " is-selected" : ""}${state.primaryKey === key ? " is-primary" : ""}`}
+                      data-cell-key={key}
+                      aria-label={`Row ${cell.row + 1}, column ${cell.column + 1}: ${cell.text || cell.imageAlt || "empty"}`}
+                      tabIndex={key === focusKey ? 0 : -1}
+                      style={{
+                        color: cell.textColor,
+                        borderColor: cell.borderColor,
+                        borderWidth: `${cell.borderWidth}px`,
+                        borderStyle: cell.borderStyle,
+                      }}
+                      onFocus={() => setFocusedKey(key)}
+                      onClick={(event) =>
+                        handleCellClick(cell.row, cell.column, event.detail === 0)
+                      }
+                      onKeyDown={(event) => handleCellKeyDown(event, cell.row, cell.column)}
+                    >
+                      <span
+                        className="editor-cell__background"
+                        style={{
+                          backgroundColor: cell.backgroundColor,
+                          opacity: cell.backgroundOpacity,
+                        }}
+                        aria-hidden="true"
+                      />
+                      {image ? (
+                        <span
+                          className="editor-cell__image"
+                          style={{
+                            backgroundImage: `url("${image}")`,
+                            opacity: cell.imageOpacity,
+                          }}
+                          aria-hidden="true"
+                        />
+                      ) : null}
+                      <span
+                        className="editor-cell__text"
+                        style={{
+                          fontWeight: cell.bold ? 700 : 400,
+                          fontStyle: cell.italic ? "italic" : "normal",
+                          textDecoration: [
+                            cell.underline ? "underline" : "",
+                            cell.strikethrough ? "line-through" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" "),
+                        }}
+                      >
+                        {cell.text || (
+                          <span className="cell-placeholder" aria-hidden="true">
+                            {cell.row * state.size + cell.column + 1}
+                          </span>
+                        )}
+                      </span>
+                      <span className="selection-frame" aria-hidden="true" />
+                    </button>
+                    {editingKey === key &&
+                    state.primaryKey === key &&
+                    state.selectedKeys.length === 1 ? (
+                      <textarea
+                        ref={inlineEditor}
+                        className="editor-cell-inline-input"
+                        aria-label={`Text for row ${cell.row + 1}, column ${cell.column + 1}`}
+                        maxLength={100}
+                        value={cell.text}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          dispatch({ type: "patch-selected", patch: { text: event.target.value } })
+                        }
+                        onBlur={() => setEditingKey(null)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape") {
+                            event.preventDefault();
+                            setEditingKey(null);
+                            event.currentTarget.parentElement?.querySelector("button")?.focus();
+                          }
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
     </>
   );
 }

@@ -30,6 +30,8 @@ backend/db.sqlite3
 # Node / Next.js
 node_modules/
 .next/
+.built-origin
+.built-release
 out/
 coverage/
 *.tsbuildinfo
@@ -41,8 +43,12 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Playwright
+.playwright-cli/
 playwright-report/
 test-results/
+frontend/optimized-preview-playwright-report/
+frontend/optimized-preview-test-results/
+frontend/optimized-preview-evidence/
 blob-report/
 
 # Runtime data

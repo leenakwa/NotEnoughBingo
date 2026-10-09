@@ -7,7 +7,7 @@ types. The initial product does not need distributed business transactions or
 microservice operational overhead.
 
 - Next.js owns web rendering, navigation, accessible interaction, guest
-  progress, and the generated API client.
+  progress, and the typed API client with generated OpenAPI schema types.
 - Django and Django REST Framework own all business rules, persistence,
   permissions, validation, moderation, and API contracts.
 - PostgreSQL is the source of truth.
@@ -42,7 +42,8 @@ Browser ── HTTPS ───────▶│ ingress / proxy │
                  Celery worker/beat ─── PostgreSQL / Redis / S3 / Email
 ```
 
-Local development adds MinIO and Mailpit. Production should prefer managed
+Fresh local installs add SeaweedFS and Mailpit; retained legacy stacks use MinIO.
+Production should prefer managed
 PostgreSQL, Redis, object storage, mail delivery, TLS ingress, and centralized
 logs.
 
@@ -81,7 +82,9 @@ Important mutations use optimistic or explicit concurrency control:
 - draft autosave uses a revision integer and `If-Match`;
 - publish locks the logical bingo/draft row and creates one complete revision;
 - likes/follows rely on unique constraints and idempotent create/delete;
-- hot counters use `F()` expressions and periodic reconciliation;
+- hot counters use `F()` expressions; relational like/comment/share/reply/tag
+  counters are reconciled daily from source rows, while lifetime view/play
+  totals remain monotonic because expired raw analytics cannot reconstruct them;
 - shared result creation accepts an idempotency key;
 - upload completion locks the asset intent before transitioning state.
 
@@ -162,15 +165,22 @@ weighted =
   + 5.00 × shares
   + 3.50 × comments
 
-score = ln(1 + max(weighted, 0)) × 0.5^(hours_since_publish / 72)
+score = ln(1 + max(weighted, 0)) × 0.5^(hours_since_first_publish / 72)
 ```
 
 The per-event identity deduplication limits repeated refreshes/actions from one
 actor. Catalog/feed permission scopes still exclude non-public, deleted, and
 moderated content when results are served. The logarithm prevents one large
 counter from dominating; the 72-hour half-life gives newer work a chance.
+Republishing updates `last_published_at` but never the first-publication time
+used for decay or newest ordering, so trivial edits cannot reset feed age.
 Weights are explicit versioned product configuration, not random values.
 Aggregates refresh periodically and can be reconciled from interaction events.
+
+Feed ranking operates on lightweight bingo IDs. Pagination selects the current
+page before author, media, tag, revision preview, and cell dependencies are
+hydrated, so catalog growth does not load hundreds of complete boards per
+request.
 
 ### Discover
 
@@ -198,7 +208,7 @@ Every process emits structured JSON in production with:
 
 - timestamp, severity, service, environment;
 - request/correlation ID;
-- route name, status, duration, and database query summary where appropriate;
+- method, safe path, route name, status, and duration;
 - safe actor public ID when needed;
 - Celery task name, task ID, attempt, and outcome.
 
@@ -214,8 +224,8 @@ Health endpoints:
 - beat: live PID plus scheduled-task telemetry;
 - proxy: local response and upstream readiness through orchestration.
 
-Error tracking is configured through an abstraction and DSN environment
-variable. Metrics should cover request latency/error rate, queue depth/task
+Error tracking is configured through a DSN and receives immutable release and
+environment metadata without default PII. Metrics should cover request latency/error rate, queue depth/task
 failures, database saturation, upload rejection, notification fan-out, and
 authentication throttles.
 

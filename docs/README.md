@@ -1,9 +1,10 @@
 # Engineering documentation
 
-This directory records the product and engineering baseline for the migration
-from the static prototype to the full-stack application.
+This directory contains product, architecture and operations documentation.
+The repository audit records the original prototype; current implementation
+status and deployment requirements are documented separately.
 
-## Phase 0
+## Product and architecture
 
 - [Repository audit](audit.md)
 - [Target architecture](architecture.md)
@@ -17,7 +18,13 @@ from the static prototype to the full-stack application.
 ## Operations
 
 - [Operations runbook](operations/runbook.md)
+- [Production deployment baseline](operations/production-deployment.md)
 - [Backup and restore](operations/backups.md)
+- [Local release assessment (2026-09-29)](operations/release-assessment-2026-09-29.md)
+- [Complete user production-readiness prompt](operations/production-readiness-prompt.txt)
+- [Complete working checklist](operations/production-readiness-checklist.md)
+- [Production-readiness section tracker](operations/production-readiness-tracker.md)
+- [Production-readiness evidence log](operations/production-readiness-evidence.md)
 
 These documents describe intended invariants and boundaries. The OpenAPI
 document, database migrations, and executable tests are the authoritative

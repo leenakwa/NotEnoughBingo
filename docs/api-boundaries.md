@@ -8,8 +8,9 @@
 - Public IDs are opaque strings.
 - Unsafe requests use the authenticated server session plus a valid CSRF token.
 - Browser credentials are sent only to the same application origin.
-- The API is described by OpenAPI and the frontend client is generated from
-  that schema; duplicated handwritten DTOs are not authoritative.
+- The API is described by OpenAPI. Frontend schema types are generated from
+  it; the request client and some DTO interfaces are handwritten. Keep those
+  interfaces consistent with the schema.
 
 The API must never accept an internal database primary key from a public route.
 
@@ -106,9 +107,14 @@ DELETE /api/v1/auth/sessions/{session_id}/
 POST   /api/v1/auth/password-reset/
 POST   /api/v1/auth/password-reset/confirm/
 POST   /api/v1/auth/password-change/
+POST   /api/v1/auth/email-change/
+POST   /api/v1/auth/email-change/confirm/
 ```
 
 Login rotates the session identifier. Logout is a CSRF-protected POST.
+Email changes require the current password, then a single-use confirmation
+link sent to the new address. The old address remains active until confirmation;
+both addresses receive a security notice after the change.
 
 ### Account, profile, and privacy
 
@@ -193,8 +199,10 @@ result GET is read-only and route-pair validated.
 ### Tags, search, and feeds
 
 ```text
+GET    /api/v1/authors/?search=
 GET    /api/v1/tags/
 GET    /api/v1/bingos/?search=&author=&tags=&ordering=
+GET    /api/v1/sitemap/bingos/
 GET    /api/v1/feeds/trending/
 GET    /api/v1/feeds/discover/
 POST   /api/v1/interactions/
@@ -202,6 +210,12 @@ POST   /api/v1/interactions/
 
 The event endpoint accepts only a strict event/property allowlist, applies
 sampling/deduplication, and cannot be used as arbitrary log ingestion.
+Author suggestions are capped at ten results per page and include only a public
+ID, username, and display name. Eligible authors must be active, not suspended
+or deleted, and currently own at least one public-catalog bingo.
+The sitemap endpoint is an hourly cached, visibility-scoped index projection;
+it returns only public bingo IDs, author usernames, and publication timestamps,
+without hydrating revisions, cell JSON, or media.
 
 ### Bingo likes
 
@@ -256,20 +270,20 @@ authors never receive moderator permission over comments on their bingo.
 
 ## Permission matrix
 
-| Resource/action | Guest | Authenticated non-owner | Owner | Staff moderator |
-| --- | --- | --- | --- | --- |
-| Read public bingo | yes | yes | yes | yes |
-| Read unlisted by direct ID | yes | yes | yes | yes |
-| Discover public bingo | yes | yes | yes | yes |
-| Read private bingo | no/not found | no/not found | yes | policy-controlled |
-| Create/edit/publish | no | verified only, own | verified own | no implicit ownership |
-| Play public/unlisted | yes | yes | yes | yes |
-| Server progress | no | own | own | no |
-| Create guest share | accessible non-private revision | n/a | n/a | n/a |
-| Comment/like/follow/report | no | active account | active account | active account |
-| Edit/delete comment | no | own comment | own comment only | moderation path |
-| Read private-derived share | no | no | owner only | policy-controlled |
-| Moderation action | no | no | no | permission required |
+| Resource/action            | Guest                           | Authenticated non-owner | Owner            | Staff moderator       |
+| -------------------------- | ------------------------------- | ----------------------- | ---------------- | --------------------- |
+| Read public bingo          | yes                             | yes                     | yes              | yes                   |
+| Read unlisted by direct ID | yes                             | yes                     | yes              | yes                   |
+| Discover public bingo      | yes                             | yes                     | yes              | yes                   |
+| Read private bingo         | no/not found                    | no/not found            | yes              | policy-controlled     |
+| Create/edit/publish        | no                              | verified only, own      | verified own     | no implicit ownership |
+| Play public/unlisted       | yes                             | yes                     | yes              | yes                   |
+| Server progress            | no                              | own                     | own              | no                    |
+| Create guest share         | accessible non-private revision | n/a                     | n/a              | n/a                   |
+| Comment/like/follow/report | no                              | active account          | active account   | active account        |
+| Edit/delete comment        | no                              | own comment             | own comment only | moderation path       |
+| Read private-derived share | no                              | no                      | owner only       | policy-controlled     |
+| Moderation action          | no                              | no                      | no               | permission required   |
 
 Staff access to private user content must be purpose-limited and audited; a
 staff flag is not a reason to expose private objects in ordinary product APIs.
@@ -290,8 +304,10 @@ staff flag is not a reason to expose private objects in ordinary product APIs.
 
 - Detail queries select revision, author, media, like/progress state in bounded
   query counts.
-- Lists never serialize full cell documents.
-- Cell documents are fetched on detail/play/editor routes only.
+- Feed ranking produces lightweight bingo IDs first; pagination is applied before
+  the selected page's bounded card-preview cells and media are hydrated.
+- Full editable/play cell documents are fetched on detail, play, and editor
+  routes only. Feed page size is capped independently of the global API limit.
 - Comment root pagination does not prefetch unlimited replies.
 - Search inputs have length limits and database statement timeouts.
 - Exports, thumbnails, email, and account archives never block API workers.

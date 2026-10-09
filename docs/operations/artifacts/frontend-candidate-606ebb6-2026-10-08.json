@@ -1,0 +1,504 @@
+{
+  "date": "2026-10-08",
+  "source": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+  "image_id": "sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6",
+  "actual_container_image": "sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6",
+  "application_mounts": 0,
+  "public_build_runtime_release_matches": true,
+  "health_status": 200,
+  "environment_scope": "Exact Git-archive configured production frontend on loopback18584; isolated old c1 web, forward schema/new worker, development Django settings and illustrative https://bingo.example.com origin. Not target production.",
+  "build_log": "/tmp/neb-frontend-606ebb6-production-build-oct08.log",
+  "large_api_put": {
+    "stats": {
+      "startTime": "2026-10-08T03:09:40.609Z",
+      "duration": 29081.172,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": [
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "bytes": 3147780,
+          "samples": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77,
+            78,
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99
+          ],
+          "storageStatuses": [
+            202
+          ],
+          "storagePreflights": 0
+        }
+      }
+    ]
+  },
+  "large_api_put_log": "/tmp/neb-frontend-606ebb6-upload-browser-reviewed-oct08.log",
+  "api_put_four_profiles": {
+    "stats": {
+      "startTime": "2026-10-08T03:11:05.778Z",
+      "duration": 23527.546,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": [
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      },
+      {
+        "project": "mobile-webkit",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0,
+        "proof": {
+          "transfer_status": 202,
+          "csrf_header_present": true,
+          "decoded_size": [
+            8,
+            8
+          ],
+          "viewports": [
+            320,
+            1710
+          ],
+          "persisted_after_reload": true,
+          "page_errors": 0
+        }
+      }
+    ]
+  },
+  "api_put_log": "/tmp/neb-frontend-606ebb6-api-upload-browser-reviewed-oct08.log",
+  "transfer_scope": "Real same-origin API Blob PUT202 with credentials/CSRF; completion API held then continued to real backend. No synthetic transfer progress or fulfilled storage response. Separate shared-QA artifact proves real MinIO POST204 and CORS.",
+  "retained_initial_diagnostics": [
+    "Previous620 origin403 and changing upload-input label failures are retained in that candidate report.606 reviewed runs pass first attempt with existing corrected isolated origin/diagnostic locator."
+  ],
+  "ci": {
+    "run_id": 37720755955,
+    "url": "https://github.com/leenakwa/NotEnoughBingo/actions/runs/37720755955",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs_passed": 9,
+    "checkout_sha": "e258f05903ac9dab215f82ca6e52b9c246636533",
+    "tree_equals_head": true,
+    "checkout_tree": "a620355dc1e77f3f241fe976654a40525be71638",
+    "backend_cases": 383,
+    "frontend_cases": 564,
+    "frontend_test_files": 42,
+    "browser_smoke_passed": 264,
+    "browser_smoke_flaky": 0,
+    "browser_smoke_intentional_skips": 12,
+    "full_stack_passed": 120
+  },
+  "limitations": [
+    "Source606 only. Later selected-tab/tag-target CSS and account browser coverage remain a separate working-tree packet.",
+    "Production origin, registry promotion, actual providers/TLS/ingress/replicas/CDN and physical devices remain unverified.",
+    "Password managers and native OS file chooser are not covered."
+  ],
+  "controlled_native_browser": {
+    "stats": {
+      "startTime": "2026-10-08T03:07:15.069Z",
+      "duration": 62167.008,
+      "expected": 48,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": [
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "chromium",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "mobile",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "firefox",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      },
+      {
+        "project": "webkit",
+        "status": "passed",
+        "retry": 0
+      }
+    ]
+  },
+  "controlled_native_log": "/tmp/neb-frontend-606ebb6-native-browser-oct08.log",
+  "controlled_native_scope": "Profile native32/auth silent DOM-fill16; explicitly controlled API responses on actual optimized UI, not backend persistence. Four profiles (Chromium/Pixel7Chromium/Firefox/WebKit), three engine families. App-only Mac keyboard preference restored/verified.",
+  "source_tree": "a620355dc1e77f3f241fe976654a40525be71638"
+}

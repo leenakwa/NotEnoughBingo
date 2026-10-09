@@ -276,3 +276,86 @@ def test_concurrent_follow_get_or_create_creates_one_row(user_factory) -> None:
 
     assert sorted(results) == [False, True]
     assert Follow.objects.filter(follower=follower, following=target).count() == 1
+
+
+def _comment_context(comment, viewer=None):
+    from apps.social.views import CommentContextView
+
+    request = APIRequestFactory().get(f"/api/v1/comments/{comment.public_id}/context/")
+    if viewer is not None:
+        force_authenticate(request, user=viewer)
+    return CommentContextView.as_view()(request, comment_id=comment.public_id)
+
+
+def test_comment_context_restores_nested_target_without_list_pagination(
+    user_factory, comment_factory
+) -> None:
+    reader = user_factory()
+    root = comment_factory(body="Original parent")
+    for _ in range(30):
+        comment_factory(bingo=root.bingo)
+    reply = comment_factory(bingo=root.bingo, parent=root, body="Target reply")
+    CommentLike.objects.create(user=reader, comment=reply)
+    response = _comment_context(reply, reader)
+    assert response.status_code == 200
+    assert str(response.data["bingo_id"]) == str(root.bingo.public_id)
+    assert str(response.data["comment"]["id"]) == str(reply.public_id)
+    assert response.data["comment"]["body"] == "Target reply"
+    assert response.data["comment"]["is_liked"] is True
+    assert str(response.data["parent"]["id"]) == str(root.public_id)
+    assert response.data["parent"]["body"] == "Original parent"
+
+
+@pytest.mark.parametrize("restriction", ["private", "draft", "archived", "deleted", "hidden"])
+def test_comment_context_does_not_bypass_board_access(
+    restriction, user_factory, bingo_factory, comment_factory
+) -> None:
+    from django.utils import timezone
+
+    reader = user_factory()
+    bingo = bingo_factory()
+    if restriction == "private":
+        bingo.visibility = "private"
+    elif restriction in {"draft", "archived"}:
+        bingo.status = restriction
+    else:
+        setattr(bingo, f"{restriction}_at", timezone.now())
+    bingo.save()
+    comment = comment_factory(bingo=bingo)
+    assert _comment_context(comment, reader).status_code == 404
+
+
+def test_comment_context_requires_sign_in_and_allows_private_board_owner(
+    bingo_factory, comment_factory
+) -> None:
+    bingo = bingo_factory(visibility="private")
+    comment = comment_factory(bingo=bingo)
+    assert _comment_context(comment).status_code == 401
+    assert _comment_context(comment, bingo.author).status_code == 200
+
+
+@pytest.mark.parametrize("hidden_parent", [False, True])
+def test_comment_context_does_not_expose_moderated_comment_text(
+    hidden_parent, user_factory, comment_factory
+) -> None:
+    from django.utils import timezone
+
+    root = comment_factory(body="Parent private moderation text")
+    reply = comment_factory(bingo=root.bingo, parent=root, body="Reply private moderation text")
+    target = root if hidden_parent else reply
+    target.hidden_at = timezone.now()
+    target.save(update_fields=["hidden_at"])
+    assert _comment_context(reply, user_factory()).status_code == 404
+
+
+def test_comment_context_returns_deleted_tombstone_without_original_text(
+    user_factory, comment_factory
+) -> None:
+    from django.utils import timezone
+
+    comment = comment_factory(body="Removed confidential content", deleted_at=timezone.now())
+    response = _comment_context(comment, user_factory())
+    assert response.status_code == 200
+    assert response.data["comment"]["body"] == "[deleted]"
+    assert response.data["comment"]["deleted_at"] is not None
+    assert response.data["parent"] is None

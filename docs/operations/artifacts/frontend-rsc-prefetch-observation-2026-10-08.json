@@ -1,0 +1,636 @@
+{
+  "date": "2026-10-08",
+  "application_source": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+  "verified_image_id": "sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6",
+  "environment_scope": "Immutable configured production frontend on loopback18584, isolated development Django old-web. Anonymous public Discover-to-board observations; not target production.",
+  "observations": [
+    {
+      "kind": "failed baseline locator",
+      "raw_private_path": "/tmp/neb-rsc-probe-oct08/result-606.json",
+      "raw_sha256": "d97ca9cf3390c3ef9f87097aa9d2f9a38909725df6adcef3961843669f030cfe",
+      "outcome": "probe_workflow_failed",
+      "utc_start": "2026-10-08T03:47:36.964Z",
+      "utc_end": "2026-10-08T03:47:38.528Z",
+      "configuration": {
+        "baseUrl": "http://localhost:18584",
+        "freshAnonymousContext": true,
+        "viewport": {
+          "width": 1710,
+          "height": 1000
+        },
+        "locale": "en-US",
+        "idleWindowMs": 10000,
+        "cleanupDrainMs": 500,
+        "mocksOrRouting": false,
+        "networkPacing": false,
+        "bodiesRecorded": false
+      },
+      "runtime_versions": {
+        "nodeVersion": "v24.16.0",
+        "playwrightVersion": "1.61.1",
+        "expectedCommit": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+        "expectedImageId": "sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6",
+        "imageIdentityNote": "Expected identity supplied to this probe; root independently verifies the running container. The probe does not inspect Docker.",
+        "browserVersion": "149.0.7827.55",
+        "cdpBrowserVersion": {
+          "protocolVersion": "1.3",
+          "product": "HeadlessChrome/149.0.7827.55",
+          "revision": "@3188f8a607ae7e067593be8aab7f02d2451fec07",
+          "jsVersion": "14.9.207.21"
+        }
+      },
+      "counts": {
+        "allSegments": 19,
+        "allRequestIds": 19,
+        "rscSegments": 6,
+        "rscRequestIds": 6,
+        "rscByTerminal": {
+          "pending": 6
+        },
+        "rscByStartPhase": {
+          "discover_arrival": 4,
+          "cleanup": 2
+        },
+        "rscByTerminalPhase": {},
+        "rscByteTotals": {
+          "decodedDataLengthEvents": 531,
+          "encodedDataLengthEvents": 354,
+          "encodedLoadingFinished": 0
+        }
+      },
+      "boundaries": [
+        {
+          "label": "before_cleanup",
+          "at_ms": 1027.261,
+          "counts": {
+            "allSegments": 17,
+            "allRequestIds": 17,
+            "rscSegments": 4,
+            "rscRequestIds": 4,
+            "rscByTerminal": {
+              "pending": 4
+            },
+            "rscByStartPhase": {
+              "discover_arrival": 4
+            },
+            "rscByTerminalPhase": {},
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 0,
+              "encodedDataLengthEvents": 0,
+              "encodedLoadingFinished": 0
+            }
+          }
+        },
+        {
+          "label": "cleanup_end",
+          "at_ms": 1563.034,
+          "counts": {
+            "allSegments": 19,
+            "allRequestIds": 19,
+            "rscSegments": 6,
+            "rscRequestIds": 6,
+            "rscByTerminal": {
+              "pending": 6
+            },
+            "rscByStartPhase": {
+              "discover_arrival": 4,
+              "cleanup": 2
+            },
+            "rscByTerminalPhase": {},
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 531,
+              "encodedDataLengthEvents": 354,
+              "encodedLoadingFinished": 0
+            }
+          }
+        }
+      ],
+      "page_workflow_errors": [
+        {
+          "kind": "probe_workflow_failure",
+          "phase": "discover_arrival",
+          "name": "Error"
+        }
+      ],
+      "console_messages": 0,
+      "canceled_request_signals": {
+        "count": 0,
+        "next_router_prefetch_1": 0,
+        "tree_prefetch": 0,
+        "http_200": 0,
+        "cdp_canceled_true": 0,
+        "decoded_data_event_bytes_partial": 0,
+        "encoded_data_event_bytes_partial": 0
+      },
+      "cleanup_failure_events": 0
+    },
+    {
+      "kind": "uninstrumented reviewed baseline",
+      "raw_private_path": "/tmp/neb-rsc-probe-oct08/result-606-reviewed.json",
+      "raw_sha256": "6a3d853321b798929a55c2964df543682af07a7b7e1e808b078dbafa35787c75",
+      "outcome": "observation_completed",
+      "utc_start": "2026-10-08T03:49:09.803Z",
+      "utc_end": "2026-10-08T03:49:31.538Z",
+      "configuration": {
+        "baseUrl": "http://localhost:18584",
+        "freshAnonymousContext": true,
+        "viewport": {
+          "width": 1710,
+          "height": 1000
+        },
+        "locale": "en-US",
+        "idleWindowMs": 10000,
+        "cleanupDrainMs": 500,
+        "mocksOrRouting": false,
+        "networkPacing": false,
+        "bodiesRecorded": false
+      },
+      "runtime_versions": {
+        "nodeVersion": "v24.16.0",
+        "playwrightVersion": "1.61.1",
+        "expectedCommit": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+        "expectedImageId": "sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6",
+        "imageIdentityNote": "Expected identity supplied to this probe; root independently verifies the running container. The probe does not inspect Docker.",
+        "browserVersion": "149.0.7827.55",
+        "cdpBrowserVersion": {
+          "protocolVersion": "1.3",
+          "product": "HeadlessChrome/149.0.7827.55",
+          "revision": "@3188f8a607ae7e067593be8aab7f02d2451fec07",
+          "jsVersion": "14.9.207.21"
+        }
+      },
+      "counts": {
+        "allSegments": 45,
+        "allRequestIds": 45,
+        "rscSegments": 26,
+        "rscRequestIds": 26,
+        "rscByTerminal": {
+          "finished": 5,
+          "failed": 21
+        },
+        "rscByStartPhase": {
+          "discover_idle": 22,
+          "board_navigation": 3,
+          "board_idle": 1
+        },
+        "rscByTerminalPhase": {
+          "discover_idle": 22,
+          "board_navigation": 1,
+          "board_idle": 3
+        },
+        "rscByteTotals": {
+          "decodedDataLengthEvents": 57779,
+          "encodedDataLengthEvents": 14605,
+          "encodedLoadingFinished": 7242
+        }
+      },
+      "boundaries": [
+        {
+          "label": "discover_idle_end",
+          "at_ms": 10972.722,
+          "counts": {
+            "allSegments": 37,
+            "allRequestIds": 37,
+            "rscSegments": 22,
+            "rscRequestIds": 22,
+            "rscByTerminal": {
+              "finished": 4,
+              "failed": 18
+            },
+            "rscByStartPhase": {
+              "discover_idle": 22
+            },
+            "rscByTerminalPhase": {
+              "discover_idle": 22
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 37881,
+              "encodedDataLengthEvents": 10042,
+              "encodedLoadingFinished": 3190
+            }
+          }
+        },
+        {
+          "label": "board_idle_end",
+          "at_ms": 21184.924,
+          "counts": {
+            "allSegments": 45,
+            "allRequestIds": 45,
+            "rscSegments": 26,
+            "rscRequestIds": 26,
+            "rscByTerminal": {
+              "finished": 5,
+              "failed": 21
+            },
+            "rscByStartPhase": {
+              "discover_idle": 22,
+              "board_navigation": 3,
+              "board_idle": 1
+            },
+            "rscByTerminalPhase": {
+              "discover_idle": 22,
+              "board_navigation": 1,
+              "board_idle": 3
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 57779,
+              "encodedDataLengthEvents": 14605,
+              "encodedLoadingFinished": 7242
+            }
+          }
+        },
+        {
+          "label": "before_cleanup",
+          "at_ms": 21189.427,
+          "counts": {
+            "allSegments": 45,
+            "allRequestIds": 45,
+            "rscSegments": 26,
+            "rscRequestIds": 26,
+            "rscByTerminal": {
+              "finished": 5,
+              "failed": 21
+            },
+            "rscByStartPhase": {
+              "discover_idle": 22,
+              "board_navigation": 3,
+              "board_idle": 1
+            },
+            "rscByTerminalPhase": {
+              "discover_idle": 22,
+              "board_navigation": 1,
+              "board_idle": 3
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 57779,
+              "encodedDataLengthEvents": 14605,
+              "encodedLoadingFinished": 7242
+            }
+          }
+        },
+        {
+          "label": "cleanup_end",
+          "at_ms": 21733.127,
+          "counts": {
+            "allSegments": 45,
+            "allRequestIds": 45,
+            "rscSegments": 26,
+            "rscRequestIds": 26,
+            "rscByTerminal": {
+              "finished": 5,
+              "failed": 21
+            },
+            "rscByStartPhase": {
+              "discover_idle": 22,
+              "board_navigation": 3,
+              "board_idle": 1
+            },
+            "rscByTerminalPhase": {
+              "discover_idle": 22,
+              "board_navigation": 1,
+              "board_idle": 3
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 57779,
+              "encodedDataLengthEvents": 14605,
+              "encodedLoadingFinished": 7242
+            }
+          }
+        }
+      ],
+      "page_workflow_errors": [],
+      "console_messages": 0,
+      "canceled_request_signals": {
+        "count": 21,
+        "next_router_prefetch_1": 21,
+        "tree_prefetch": 7,
+        "http_200": 21,
+        "cdp_canceled_true": 21,
+        "decoded_data_event_bytes_partial": 43535,
+        "encoded_data_event_bytes_partial": 10881
+      },
+      "cleanup_failure_events": 0
+    },
+    {
+      "kind": "transient native-cancellation wrappers",
+      "raw_private_path": "/tmp/neb-rsc-probe-oct08/result-stack-606.json",
+      "raw_sha256": "ea8d296a9d86578fefe71e4a6d14f0fea294855a0fa1c2493738c8ee110ef4cd",
+      "outcome": "observation_completed",
+      "utc_start": "2026-10-08T03:57:07.705Z",
+      "utc_end": "2026-10-08T03:57:29.626Z",
+      "configuration": {
+        "baseUrl": "http://localhost:18584",
+        "freshAnonymousContext": true,
+        "viewport": {
+          "width": 1710,
+          "height": 1000
+        },
+        "locale": "en-US",
+        "idleWindowMs": 10000,
+        "cleanupDrainMs": 500,
+        "mocksOrRouting": false,
+        "networkPacing": false,
+        "bodiesRecorded": false,
+        "cancellationCallstackInstrumentation": true,
+        "baselineProbe": "/tmp/neb-rsc-probe-oct08/probe.cjs"
+      },
+      "runtime_versions": {
+        "nodeVersion": "v24.16.0",
+        "playwrightVersion": "1.61.1",
+        "expectedCommit": "606ebb6c074b00d3c2b3848b71ad80a3e997320e",
+        "expectedImageId": "sha256:dee255fdb6c95e38dc5bb3a24d6031ee13c9633819773a3c0d5ee6a99a132bd6",
+        "imageIdentityNote": "Expected identity supplied to this probe; root independently verifies the running container. The probe does not inspect Docker.",
+        "browserVersion": "149.0.7827.55",
+        "cdpBrowserVersion": {
+          "protocolVersion": "1.3",
+          "product": "HeadlessChrome/149.0.7827.55",
+          "revision": "@3188f8a607ae7e067593be8aab7f02d2451fec07",
+          "jsVersion": "14.9.207.21"
+        }
+      },
+      "counts": {
+        "allSegments": 44,
+        "allRequestIds": 44,
+        "rscSegments": 25,
+        "rscRequestIds": 25,
+        "rscByTerminal": {
+          "failed": 23,
+          "finished": 2
+        },
+        "rscByStartPhase": {
+          "discover_arrival": 19,
+          "discover_idle": 2,
+          "board_navigation": 3,
+          "board_idle": 1
+        },
+        "rscByTerminalPhase": {
+          "discover_arrival": 17,
+          "discover_idle": 4,
+          "board_navigation": 1,
+          "board_idle": 3
+        },
+        "rscByteTotals": {
+          "decodedDataLengthEvents": 55007,
+          "encodedDataLengthEvents": 12660,
+          "encodedLoadingFinished": 5827
+        }
+      },
+      "boundaries": [
+        {
+          "label": "discover_idle_end",
+          "at_ms": 11130.555,
+          "counts": {
+            "allSegments": 36,
+            "allRequestIds": 36,
+            "rscSegments": 21,
+            "rscRequestIds": 21,
+            "rscByTerminal": {
+              "failed": 20,
+              "finished": 1
+            },
+            "rscByStartPhase": {
+              "discover_arrival": 19,
+              "discover_idle": 2
+            },
+            "rscByTerminalPhase": {
+              "discover_arrival": 17,
+              "discover_idle": 4
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 35109,
+              "encodedDataLengthEvents": 8295,
+              "encodedLoadingFinished": 1776
+            }
+          }
+        },
+        {
+          "label": "board_idle_end",
+          "at_ms": 21355.619,
+          "counts": {
+            "allSegments": 44,
+            "allRequestIds": 44,
+            "rscSegments": 25,
+            "rscRequestIds": 25,
+            "rscByTerminal": {
+              "failed": 23,
+              "finished": 2
+            },
+            "rscByStartPhase": {
+              "discover_arrival": 19,
+              "discover_idle": 2,
+              "board_navigation": 3,
+              "board_idle": 1
+            },
+            "rscByTerminalPhase": {
+              "discover_arrival": 17,
+              "discover_idle": 4,
+              "board_navigation": 1,
+              "board_idle": 3
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 55007,
+              "encodedDataLengthEvents": 12660,
+              "encodedLoadingFinished": 5827
+            }
+          }
+        },
+        {
+          "label": "before_cleanup",
+          "at_ms": 21365.264,
+          "counts": {
+            "allSegments": 44,
+            "allRequestIds": 44,
+            "rscSegments": 25,
+            "rscRequestIds": 25,
+            "rscByTerminal": {
+              "failed": 23,
+              "finished": 2
+            },
+            "rscByStartPhase": {
+              "discover_arrival": 19,
+              "discover_idle": 2,
+              "board_navigation": 3,
+              "board_idle": 1
+            },
+            "rscByTerminalPhase": {
+              "discover_arrival": 17,
+              "discover_idle": 4,
+              "board_navigation": 1,
+              "board_idle": 3
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 55007,
+              "encodedDataLengthEvents": 12660,
+              "encodedLoadingFinished": 5827
+            }
+          }
+        },
+        {
+          "label": "cleanup_end",
+          "at_ms": 21920.198,
+          "counts": {
+            "allSegments": 44,
+            "allRequestIds": 44,
+            "rscSegments": 25,
+            "rscRequestIds": 25,
+            "rscByTerminal": {
+              "failed": 23,
+              "finished": 2
+            },
+            "rscByStartPhase": {
+              "discover_arrival": 19,
+              "discover_idle": 2,
+              "board_navigation": 3,
+              "board_idle": 1
+            },
+            "rscByTerminalPhase": {
+              "discover_arrival": 17,
+              "discover_idle": 4,
+              "board_navigation": 1,
+              "board_idle": 3
+            },
+            "rscByteTotals": {
+              "decodedDataLengthEvents": 55007,
+              "encodedDataLengthEvents": 12660,
+              "encodedLoadingFinished": 5827
+            }
+          }
+        }
+      ],
+      "page_workflow_errors": [],
+      "console_messages": 0,
+      "canceled_request_signals": {
+        "count": 23,
+        "next_router_prefetch_1": 23,
+        "tree_prefetch": 11,
+        "http_200": 23,
+        "cdp_canceled_true": 23,
+        "decoded_data_event_bytes_partial": 39084,
+        "encoded_data_event_bytes_partial": 8497
+      },
+      "cleanup_failure_events": 0,
+      "cancellation_snapshots": [
+        {
+          "label": "discover_idle_end",
+          "records": 0,
+          "counters": {
+            "overflow": 0,
+            "observationErrors": 0,
+            "fetchAssociations": 0,
+            "signalAccessorSkipped": 0,
+            "unsupportedFetchInput": 0,
+            "signalUrlOverflow": 0
+          },
+          "restoration": null
+        },
+        {
+          "label": "board_idle_end",
+          "records": 0,
+          "counters": {
+            "overflow": 0,
+            "observationErrors": 0,
+            "fetchAssociations": 0,
+            "signalAccessorSkipped": 0,
+            "unsupportedFetchInput": 0,
+            "signalUrlOverflow": 0
+          },
+          "restoration": null
+        },
+        {
+          "label": "before_cleanup",
+          "records": 0,
+          "counters": {
+            "overflow": 0,
+            "observationErrors": 0,
+            "fetchAssociations": 0,
+            "signalAccessorSkipped": 0,
+            "unsupportedFetchInput": 0,
+            "signalUrlOverflow": 0
+          },
+          "restoration": [
+            {
+              "method": "fetch",
+              "restored": true
+            },
+            {
+              "method": "AbortController.abort",
+              "restored": true
+            },
+            {
+              "method": "ReadableStream.cancel",
+              "restored": true
+            },
+            {
+              "method": "ReadableStreamDefaultReader.cancel",
+              "restored": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "interpretation": {
+    "verified": "All baseline canceled RSC requests carry Next-router-prefetch1 and HTTP200. Discover cancellations precede navigation. Observed actual non-prefetch navigation succeeds. Cleanup/page/console failures zero in completed runs.",
+    "unresolved": "Cancellation caller, completed-transfer size, browser-internal termination, server work/cost and operational performance acceptance remain unproved. No failures are suppressed. Instrumented stream wrappers record no cancel calls, but total fetch invocation coverage was not instrumented.",
+    "log_correlation": "Existing candidate frontend and old-web stdout/stderr captures for baseline exact UTC window are empty. This provides no zero-upstream-call or zero-cost evidence."
+  },
+  "source_contracts": [
+    {
+      "url": "https://nextjs.org/docs/app/api-reference/components/link#prefetch",
+      "claim": "Default production viewport prefetch supports origin classification."
+    },
+    {
+      "url": "https://github.com/vercel/next.js/blob/v16.3.8/packages/next/src/client/components/segment-cache/cache.ts#L3699",
+      "claim": "Explicit byteLimit reader cancellation exists; tree-prefetch calls omit byteLimit, so it cannot explain every observed abort."
+    },
+    {
+      "url": "https://fetch.spec.whatwg.org/#garbage-collection",
+      "claim": "Browser-internal termination is possible in principle; not a demonstrated cause here."
+    }
+  ],
+  "a2OneFlowBodyCorrelation": {
+    "source": "a2c2d6f54b690f730c1186c1eb739ef414437e7c",
+    "image": "sha256:30aaa7aa7075161e521a14d878ca8c267506109391ec3c7ade838460ed0e3d46",
+    "counts": {
+      "rscRequests": 17,
+      "finished": 8,
+      "failed": 9,
+      "canceled": 9,
+      "pending": 0
+    },
+    "allAssociatedBodiesReachedEOF": 17,
+    "associatedReadFulfillments": 40,
+    "readRejections": 0,
+    "explicitCancelOrAbortHooks": 0,
+    "uniqueTemporalCorrelations": 17,
+    "destinationReady": true,
+    "clickToReadyMs": 301.029,
+    "requiredNavigationCdpCanceled": true,
+    "requiredNavigationReadBytes": 13364,
+    "pageErrors": 0,
+    "consoleErrors": 0,
+    "realBackendWrites": 0,
+    "cleanupErrors": 0,
+    "causeProven": false,
+    "limitations": [
+      "One flow/one Linux Chromium desktop viewport; not capacity acceptance",
+      "GET bridge and observation overhead remain potential capture interference",
+      "No pipeTo/pipeThrough propagation instrumentation; unassociated acquisitions/reads remain explicit coverage gaps",
+      "Settlement side observers retain original promise identities/results but can change unhandled-rejection bookkeeping",
+      "No private headers/query/cookies/body content saved; public paths replaced by route labels; segment headers SHA256 only",
+      "All evidence frozen before context/browser cleanup; later cleanup failures go to separate status file",
+      "Only analytics/client-error mutations204; GET/HEAD/OPTIONS pass through. Playwright routing can affect HTTP cache; this is not an uninstrumented performance baseline.",
+      "Temporal correlation is not a shared native request identifier."
+    ],
+    "rawProofs": [
+      {
+        "name": "proof.json",
+        "sha256": "cd5cd326b76b6c80f4e1c72d95b20cf815eaff68a95bb6b709f6ef7fa0a8801e"
+      },
+      {
+        "name": "correlation-summary.json",
+        "sha256": "fbf3038c02ad467579cb4c0080c3c2692344b777e26129eeee9a14bbf81193c3"
+      }
+    ]
+  }
+}

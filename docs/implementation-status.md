@@ -15,9 +15,10 @@ editor/navigation behavior had been ported.
 ## Phase 1 — foundation
 
 Completed: Next.js App Router frontend; Django/DRF modular monolith; PostgreSQL,
-Redis, Celery worker/beat, MinIO, Mailpit, and Nginx Compose services; health
+Redis, Celery worker/beat, S3 storage, Mailpit, and Nginx Compose services; health
 checks; structured logging; environment validation; CI; local seed command;
-production container stages; backup/restore scripts.
+production container stages; backup/restore scripts. Fresh local installs use
+SeaweedFS; existing MinIO stacks retain their original storage volumes.
 
 ## Phase 2 — authentication and profiles
 
@@ -72,7 +73,9 @@ Completed: visibility/privacy regression tests, session-cache invalidation,
 pre-registration takeover protection, trusted-proxy handling, upload validation
 and immutable promotion, CSP/security headers, rate limits, OpenAPI validation,
 generated TypeScript API contracts, responsive/accessibility review, dependency
-audits, CI image builds, and documented backup/restore/retention procedures.
+audits, complete-history secret scanning, production image vulnerability scans
+and SBOMs, non-root image checks, structured HTTP/Celery telemetry, Beat
+heartbeat health, and documented deployment/backup/restore procedures.
 
 Authoritative executable artifacts:
 

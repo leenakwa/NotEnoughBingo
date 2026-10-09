@@ -1,0 +1,37 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:moderation_report_changelist' %}">Reports</a>
+  &rsaquo; Confirm action
+</div>
+{% endblock %}
+
+{% block content %}
+<p>You are about to apply <strong>{{ action_label }}</strong> to {{ report_count }} selected report{{ report_count|pluralize }}. This can change published content or a user's account. Review the selection before continuing.</p>
+
+<ul>
+  {% for report in selected_reports %}
+    <li>
+      <a href="{% url 'admin:moderation_report_change' report.pk %}">{{ report.public_id }}</a>
+      — {{ report.get_target_type_display }} · {{ report.get_reason_display }} · {{ report.get_status_display }}
+    </li>
+  {% endfor %}
+</ul>
+
+<form method="post" action="{% url 'admin:moderation_report_changelist' %}">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="index" value="0">
+  <input type="hidden" name="select_across" value="0">
+  <input type="hidden" name="confirm_moderation_action" value="{{ action_name }}">
+  {% for report in selected_reports %}
+    <input type="hidden" name="_selected_action" value="{{ report.pk }}">
+  {% endfor %}
+  <div class="submit-row">
+    <input type="submit" class="default" value="Confirm {{ action_label|lower }}">
+    <a href="{% url 'admin:moderation_report_changelist' %}" class="button cancel-link">Cancel</a>
+  </div>
+</form>
+{% endblock %}

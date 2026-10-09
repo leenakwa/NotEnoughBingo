@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import pytest
-from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
 
+from apps.bingos.models import Bingo
+from apps.bingos.services import create_bingo, publish_bingo, save_draft, soft_delete_bingo
+from apps.bingos.validators import empty_draft_document
 from apps.notifications.models import Notification
 from apps.notifications.services import create_notification
 from apps.notifications.views import (
@@ -10,6 +13,7 @@ from apps.notifications.views import (
     NotificationReadView,
     NotificationUnreadCountView,
 )
+from apps.social.services import create_comment
 
 pytestmark = pytest.mark.django_db
 
@@ -157,3 +161,51 @@ def test_unread_count_is_scoped_to_current_user(user_factory) -> None:
 
     assert response.status_code == 200
     assert response.data == {"count": 2}
+
+
+@pytest.mark.parametrize("unavailable", ["deleted", "private"])
+def test_notification_cannot_reveal_an_unavailable_target(
+    verified_user_factory, unavailable: str
+) -> None:
+    author = verified_user_factory()
+    recipient = verified_user_factory()
+    document = empty_draft_document(title="Sensitive board title", size=3, language="en")
+    document["visibility"] = Bingo.Visibility.PUBLIC
+    document["cells"][0]["text"] = "Sensitive cell content"
+    bingo = create_bingo(author=author, document=document)
+    publish_bingo(bingo=bingo, actor=author, idempotency_key="original-publication")
+    bingo.refresh_from_db()
+    parent = create_comment(user=recipient, bingo=bingo, body="Recipient's original comment")
+    reply = create_comment(user=author, bingo=bingo, body="Sensitive reply content", parent=parent)
+    client = APIClient()
+    client.force_authenticate(recipient)
+    target = f"/api/v1/bingos/{bingo.public_id}/"
+    assert client.get(target).status_code == 200
+
+    if unavailable == "deleted":
+        soft_delete_bingo(bingo=bingo, actor=author)
+    else:
+        document["visibility"] = Bingo.Visibility.PRIVATE
+        save_draft(
+            bingo=bingo, actor=author, document=document, expected_version=bingo.draft.version
+        )
+        publish_bingo(bingo=bingo, actor=author, idempotency_key="private-publication")
+
+    listing = client.get("/api/v1/notifications/?unread=true")
+    assert listing.status_code == 200
+    assert listing.data["count"] == 1
+    assert client.get("/api/v1/notifications/?unread=maybe").status_code == 400
+    notification = listing.data["results"][0]
+    assert notification["target_url"] == f"/bingo/{bingo.public_id}#comment-{reply.public_id}"
+    assert "Sensitive" not in str(listing.data)
+    assert client.get(target).status_code == 404
+    assert client.get(f"{target}comments/").status_code == 404
+
+    read_url = f"/api/v1/notifications/{notification['id']}/read/"
+    first = client.post(read_url)
+    second = client.post(read_url)
+    assert first.status_code == second.status_code == 200
+    assert first.data["read_at"] == second.data["read_at"]
+    assert client.get("/api/v1/notifications/?unread=true").data["count"] == 0
+    assert client.get("/api/v1/notifications/unread-count/").data == {"count": 0}
+    assert client.post("/api/v1/notifications/read-all/").data == {"updated": 0}
