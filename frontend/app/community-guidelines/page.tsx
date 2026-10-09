@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LegalPage } from "@/components/legal/legal-page";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Community Guidelines",
   description: "Rules that keep Not Enough Bingo welcoming and safe.",
   alternates: { canonical: "/community-guidelines" },
+  openGraph: defaultOpenGraph("/community-guidelines"),
 };
 
 export default function CommunityGuidelinesPage() {

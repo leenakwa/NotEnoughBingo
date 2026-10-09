@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LegalPage } from "@/components/legal/legal-page";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How Not Enough Bingo handles account, content, media, and analytics data.",
   alternates: { canonical: "/privacy" },
+  openGraph: defaultOpenGraph("/privacy"),
 };
 
 export default function PrivacyPage() {

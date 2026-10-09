@@ -6,33 +6,42 @@ final sign-off. This report records local evidence only; it does not claim that
 every checklist item has been verified on a public deployment.
 
 Latest completed committed-source gate: exact
-`9910827640b068d89e0b4d9d555e47cd1583c2cc`
-[CI37871575122](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37871575122)
-finishes SUCCESS with all12 jobs:469 backend,635 frontend/46 files and577 expected
+`6050e9ef5cefa72cbc768f3c9dbff0c5c184c46a`
+[CI37874111137](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37874111137)
+finishes SUCCESS with all12 jobs:469 backend,647 frontend/46 files and589 expected
 browser passes with12 intentional skips, zero unexpected cases and zero flakes.
-Chromium passes116 smoke cases, each other profile112/four skips, and full-stack
-flows125. The WebKit header-navigation case has one passed result, retry0 in2549ms.
+Chromium passes119 smoke cases, each other profile115/four skips, and full-stack
+flows125. All12 new editor validation-label browser cases pass once at retry0.
 The locked backend includes all16 auth-cache, six email-boundary and14 production-
-startup cases. Both production images and Release pass; the backend image installs
-Gunicorn26.2.2 and passes its production-default unsafe-startup guard.
-Source991 and logged tested merge `ad90cf6ebe6b7a76b47f4dfb4d3ff8d2954ae348`
-share full tree `57617b27dc7618e765aa39b634ea4808ce56ea3e`. Root independently
-verifies both Git API trees,46 retained CI file hashes and all nine fresh artifact
-API digests against actual bytes; archive integrity passes. See the
-[dated991 gate](production-readiness-evidence.md#2026-10-09--completed9910827-source-and-image-gate).
+startup cases. Both production images and Release pass; the cached backend-image
+SBOM records Gunicorn26.2.2 and its production-default unsafe-startup guard passes.
+Source605 and logged tested merge `8bbb084e13264c8aacf690228036c732425aff56`
+share full tree `8d360241f5cb09ad4b145f19a1879b5ab4219ede`. Root independently
+verifies both Git API commits/full recursive tree,44 retained CI file hashes and
+all nine fresh artifact API digests against actual bytes; archive integrity passes.
+See the [dated605 gate](production-readiness-evidence.md#2026-10-09--completed6050e9e-source-and-image-gate).
 
-This gate includes the preview projection/seven cases, three recovery component
-tests, pinned Gunicorn/configuration and header-navigation synchronization, plus
-prior auth-cache/email/startup/schema changes. The ordinary pip-audit step passes
-but explicitly does NOT audit Gunicorn26.2.2 because its PyPI version is absent.
-A separate local OSV query audits that one exact version with vulns[]; the additive
-OSV CI guard has reviewed local checks, but is outside991 and its next exact-source
-CI gate remains pending. Subsequent working-tree asset-field error-label changes
-are also outside991; no verification of that unfinished work is claimed. Cached
-local frontend ec69223/backend b6aabca/worker a3 and keepalive0 transport
-observations retain their separate scopes. Neither CI nor the scoped advisory
-query establishes current Django/Gunicorn recovery/privacy transport or deployment
-readiness.
+This gate includes the asset-field label correction/12 new API cases and12 browser
+cases, installed-Gunicorn OSV CI guard, preview/recovery/Gunicorn/navigation changes
+and prior auth-cache/email/startup/schema changes. The actual CI OSV guard passes
+for installed26.2.2 with one matching dependency, no skip and vulns[]; complete
+original command/runtime stdout is retained, but its generated audit JSON is not.
+The ordinary full PyPI audit still explicitly skips Gunicorn26.2.2. This scoped
+known-advisory result does not guarantee absence of undisclosed vulnerabilities.
+
+The subsequent static Open Graph URL correction and optimized-image metadata
+gate are outside605. Their28 host tests pass; one live browser case is discovered,
+not executed. Rendered development and optimized-image results await the next
+exact-source CI; section91 remains Partial with its URL bullet open. Current
+counts and newest metadata evidence below remain unchanged. Cached local frontend
+ec69223/backend b6aabca/worker a3 and keepalive0 transport observations retain
+their separate scopes; this CI gate establishes neither current Django/Gunicorn
+recovery/privacy transport nor real deployment readiness.
+
+Historical991 all12 SUCCESS,469 backend/635 frontend,577 expected browser passes,
+12 skips/zero flakes,46 hashes/nine digests and shared tree
+`57617b27dc7618e765aa39b634ea4808ce56ea3e` remain retained in the
+[dated991 gate](production-readiness-evidence.md#2026-10-09--completed9910827-source-and-image-gate).
 
 Historicale8 all12 SUCCESS,469 backend/632 frontend,576 expected browser passes,
 one WebKit flaky case and12 skips,41 hashes/nine digests remain retained in the
@@ -67,14 +76,14 @@ observes four same-origin registration-email Referer matches and anonymous
 verification200 returning own email without explicit Cache-Control. The email-query
 UI choice remains pending. The later auth-prefix private/no-store fix passes
 16 focused SQLite tests and scoped security review; it is outside exact188 CI.
-Committed84 and latest991 backend469 pass under locked dependencies, including
+Committed84 and latest605 backend469 pass under locked dependencies, including
 all16 cache cases; optimized-runtime transport remains unverified. A subsequent single
 post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
 
-Current991 external GitGuardian check113630646154 remains FAILURE with the same
-six occurrences/four incidents, now130 commits; historicale8/84/188 metadata is retained.
+Current605 external GitGuardian check113638587727 remains FAILURE with the same
+six occurrences/four incidents, now131 commits; historical991/e8/84/188 metadata is retained.
 
 The [committed preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
 removes only unused position/image_asset_id fields from feed/Explore SSR preview
@@ -83,7 +92,7 @@ independent source review pass. Actual source-bound development pages retain the
 raw API content except those fields: normalized JSON34,709→31,642 bytes for five
 boards/77 cells on each route. Narrow/wide layout and first-card navigation pass;
 network capture is unavailable, so no new zero-initial-feed-request claim follows.
-This patch is included in e8 and latest991 CI, including all seven projection cases. Its
+This patch is included in e8/991 and latest605 CI, including all seven projection cases. Its
 actual development-media observation remains separate; no optimized browser
 runtime, wire/gzip or latency proof follows. No checkbox/count or section verdict
 changes follow.
@@ -94,12 +103,12 @@ original zoom requirement with guest/authenticated views and readable keyboard
 focus on exact44 frontend/cachedb6 backend, supplemented by source-equivalent
 historical observations. Owned fixtures are guardedly soft-deleted, own session
 revoked, and baseline profile/ten-session IDs preserved; revisions/analytics remain.
-Section24 is Verified before deployment; checklist823/319 and section totals
-59 Verified/39 Partial/6 N/A/1 deployment-only follow from the original bullets.
-Of319 unchecked bullets,89 are release-scoped N/A:85 in the six N/A sections
+Section24 is Verified before deployment; checklist822/320 and section totals
+58 Verified/40 Partial/6 N/A/1 deployment-only follow from the original bullets.
+Of320 unchecked bullets,89 are release-scoped N/A:85 in the six N/A sections
 plus four absent-feature conditions (product WebSockets, invitation/receipt
 emails and payment-webhook alerts), confirmed by source inventory and independent
-review.230 applicable unchecked bullets remain. Four implemented email-type
+review.231 applicable unchecked bullets remain. Four implemented email-type
 functional checks and the two local restore-procedure checks have separately
 reviewed evidence; applicability reconciliation itself changes no checkbox or
 section verdict.
@@ -566,3 +575,20 @@ excluded-input layout-shift observations are not field CLS proof. See the
 [dated optimized evidence](production-readiness-evidence.md#2026-10-09--optimized-ec69223-export-announcement-and-pagination-loading).
 No checklist/section counts change; committed034 CI does not cover these later
 source changes, and these local observations do not certify deployment.
+
+### 2026-10-09 — Public Open Graph URL gap
+
+Committed6050e9e and the installed Next16.3.8 resolver show missing `og:url` on
+Discover, Explore, Trending, Privacy, Terms, Community Guidelines and Support.
+Their canonical paths do not implicitly populate the Open Graph URL. Dynamic
+bingo/profile/share routes already set it. Earlier all-public-route URL evidence
+is superseded for these seven routes; section91 is Partial and its URL bullet is
+reopened pending actual rendered production-head verification. The working-tree
+correction preserves existing metadata defaults and passes28 host Node24 tests,
+full typecheck, targeted lint/format and independent review. One development
+head loop is discovered, not executed. The additive exact-built-image probe
+passes parser/mocked-cleanup/Ruff checks but has not executed against Docker.
+The next exact-source CI must run both rendered gates.
+Current counts are822 checked/320 unchecked, including89 release-scoped N/A and
+231 applicable;58 sections Verified/40 Partial. Social-provider caches still
+require a real deployment. No copy, design or indexing policy change is selected.

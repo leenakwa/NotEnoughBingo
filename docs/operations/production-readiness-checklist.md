@@ -1643,7 +1643,7 @@ Inspect rendered production source/head for expected tags such as:
 - [x] Open Graph title;
 - [x] Open Graph description;
 - [x] Open Graph image;
-- [x] Open Graph URL;
+- [ ] Open Graph URL;
 - [x] canonical;
 - [x] favicon.
 

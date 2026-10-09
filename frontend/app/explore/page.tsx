@@ -6,6 +6,7 @@ import { ExplorePage } from "@/components/explore/explore-page";
 import { LoadingState } from "@/components/ui/page-state";
 import { getServerExplore } from "@/lib/api/server";
 import { isPublicProduction } from "@/lib/site";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 type ExploreSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -26,6 +27,7 @@ export async function generateMetadata({
     title: "Explore",
     description: "Search public bingo boards by title, author, or tag.",
     alternates: { canonical: "/explore" },
+    openGraph: defaultOpenGraph("/explore"),
     robots: !isPublicProduction()
       ? { index: false, follow: false }
       : hasSearchState

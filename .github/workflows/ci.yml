@@ -459,6 +459,18 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
           build-args: ${{ matrix.build_args }}
 
+      - name: Verify rendered metadata from the production frontend image
+        if: ${{ matrix.name == 'frontend' }}
+        timeout-minutes: 5
+        env:
+          IMAGE_REF: not-enough-bingo-frontend:${{ github.sha }}
+          EXPECTED_RELEASE: ${{ github.sha }}
+          EXPECTED_ORIGIN: https://ci.not-enough-bingo.invalid
+        run: |
+          python3 infra/scripts/verify-frontend-metadata.py \
+            --image "$IMAGE_REF" --expected-release "$EXPECTED_RELEASE" \
+            --expected-origin "$EXPECTED_ORIGIN"
+
       - name: Export and validate immutable frontend assets
         if: ${{ matrix.name == 'frontend' }}
         env:

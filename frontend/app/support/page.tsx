@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/legal/legal-page";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Support & Moderation",
   description: "Get product help or report a safety, privacy, or security concern.",
   alternates: { canonical: "/support" },
+  openGraph: defaultOpenGraph("/support"),
 };
 
 function SupportContact() {

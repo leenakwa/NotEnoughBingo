@@ -27,6 +27,82 @@ const cellImagePng = Buffer.from(
 let moderationReportId = "";
 const socialFormBoards = new WeakMap<Page, string>();
 
+test("static public heads retain canonical social URLs and shared metadata", async ({ page }) => {
+  // HTML-limited crawlers receive blocking metadata in head rather than streamed tags.
+  await page.setExtraHTTPHeaders({ "User-Agent": "facebookexternalhit/1.1" });
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? expectedFrontendURL.origin;
+  const descriptions: Record<string, string> = {
+    discover: "Discover public bingo boards, play as a guest, and share your result.",
+    explore: "Search public bingo boards by title, author, or tag.",
+    trending: "See public bingo boards getting meaningful attention right now.",
+    privacy: "How Not Enough Bingo handles account, content, media, and analytics data.",
+    terms: "The basic terms for using Not Enough Bingo.",
+    "community-guidelines": "Rules that keep Not Enough Bingo welcoming and safe.",
+    support: "Get product help or report a safety, privacy, or security concern.",
+  };
+  for (const path of [
+    "/discover",
+    "/explore",
+    "/trending",
+    "/privacy",
+    "/terms",
+    "/community-guidelines",
+    "/support",
+    "/explore?search=board&tags=games&languages=en&ordering=newest&page=2",
+  ]) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(200);
+    const route = path.split("?")[0]!;
+    const canonical = new URL(route, origin).href;
+    const head = page.locator("head");
+    await expect(head.locator('link[rel="canonical"]')).toHaveCount(1);
+    await expect(head.locator('link[rel="canonical"]')).toHaveAttribute("href", canonical);
+    await expect(head.locator('meta[property="og:url"]')).toHaveCount(1);
+    await expect(head.locator('meta[property="og:url"]')).toHaveAttribute("content", canonical);
+    await expect(head.locator('meta[property="og:type"]')).toHaveAttribute("content", "website");
+    await expect(head.locator('meta[property="og:site_name"]')).toHaveAttribute(
+      "content",
+      "Not Enough Bingo",
+    );
+    await expect(head.locator('meta[property="og:title"]')).toHaveAttribute(
+      "content",
+      await page.title(),
+    );
+    await expect(head.locator('meta[property="og:description"]')).toHaveAttribute(
+      "content",
+      descriptions[route.slice(1)]!,
+    );
+    await expect(head.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      new URL("/opengraph-image", origin).href,
+    );
+    await expect(head.locator('meta[property="og:image:width"]')).toHaveAttribute(
+      "content",
+      "1200",
+    );
+    await expect(head.locator('meta[property="og:image:height"]')).toHaveAttribute(
+      "content",
+      "630",
+    );
+    await expect(head.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+      "content",
+      "Not Enough Bingo — create, play, and share community bingo boards",
+    );
+    await expect(head.locator('meta[name="twitter:card"]')).toHaveAttribute(
+      "content",
+      "summary_large_image",
+    );
+    await expect(head.locator('meta[name="twitter:image"]')).toHaveAttribute(
+      "content",
+      new URL("/opengraph-image", origin).href,
+    );
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(head.locator('link[rel="icon"]').first()).toHaveAttribute("href", /favicon|icon/);
+    if (path.includes("?"))
+      await expect(head.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  }
+});
+
 test("profile remains editable when its activity list fails and recovers", async ({ page }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));

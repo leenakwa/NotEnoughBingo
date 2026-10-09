@@ -11,6 +11,7 @@ import { PageActivity } from "@/components/layout/page-activity";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { absoluteSiteUrl, isPublicProduction, siteUrl } from "@/lib/site";
 import { getServerSessionSnapshot } from "@/lib/api/server";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 import "./globals.css";
 
@@ -22,18 +23,7 @@ export const metadata: Metadata = {
   },
   description: "Create, play, and share community bingo boards.",
   robots: isPublicProduction() ? undefined : { index: false, follow: false },
-  openGraph: {
-    type: "website",
-    siteName: "Not Enough Bingo",
-    images: [
-      {
-        url: absoluteSiteUrl("/opengraph-image"),
-        width: 1200,
-        height: 630,
-        alt: "Not Enough Bingo — create, play, and share community bingo boards",
-      },
-    ],
-  },
+  openGraph: defaultOpenGraph(),
   twitter: {
     card: "summary_large_image",
     images: [absoluteSiteUrl("/opengraph-image")],

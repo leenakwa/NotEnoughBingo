@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LegalPage } from "@/components/legal/legal-page";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
   description: "The basic terms for using Not Enough Bingo.",
   alternates: { canonical: "/terms" },
+  openGraph: defaultOpenGraph("/terms"),
 };
 
 export default function TermsPage() {

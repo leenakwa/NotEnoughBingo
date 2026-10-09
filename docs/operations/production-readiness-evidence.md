@@ -9076,3 +9076,95 @@ Private `evidence-asset-validation-labels-2026-10-09/checks-tool-response-summar
 retains command/results provenance as a tool-response summary, not runner logs.
 The label/test changes and additive CI OSV guard are outside completed991 CI;
 they require the next exact-source gate. No counts, checkboxes or status change.
+
+### 2026-10-09 — Static public Open Graph URL correction pending
+
+A bounded read-only inspection of committed6050e9e finds seven static public routes with
+canonical metadata but no `openGraph.url`: Discover, Explore, Trending, Privacy,
+Terms, Community Guidelines and Support. Root layout also has no OG URL. The
+installed Next16.3.8 resolver returns null for their absent URLs; supplying each
+existing canonical path resolves to the configured absolute URL. No build or HTTP
+observation is claimed by that resolver check. Dynamic bingo/profile/share routes
+already explicitly provide their URL.
+
+This contradicts the earlier all-public-route URL conclusion in the dated
+2026-09-30 metadata evidence. That conclusion is superseded for these seven routes;
+its historical paragraph is retained. Section91 is Partial, the Open Graph URL
+bullet is reopened, and counts become822 checked/320 unchecked (89 N/A,231
+applicable), with58 Verified/40 Partial sections. Source correction must preserve
+all existing global OG image/type/site-name values because Next replaces nested
+OG objects. The working-tree shared helper now retains the original absolute
+image URL,1200×630 dimensions, alt, website type and site name while each of the
+seven routes adds its existing query-free canonical URL. Root receives no invented
+URL; dynamic bingo/profile/share metadata, copy, Twitter, icons and robots remain
+unchanged. Host Node24.16 passes28 metadata cases (eight new/20 existing), full
+typecheck and targeted lint/format. One development live browser case is discovered,
+not executed, covering seven routes plus filtered Explore. Existing full-stack
+CI uses development images, so it cannot provide optimized-image evidence.
+
+An additive frontend-image CI step invokes the stdlib metadata probe against the
+exact built image ID with embedded release/origin checks, NODE_ENV=production and
+the existing staging CI origin/indexing policy. It requests eight loopback URLs
+with a blocking crawler agent, checks original HTML head metadata and rejects
+redirects. Its uniquely named, resource-limited container receives no shared
+mounts; bounded commands and scoped finally-cleanup cover failures. Parser
+positive/negative checks, mocked failed-start cleanup, Ruff and CLI checks pass;
+no local Docker probe is claimed and actionlint is unavailable. Independent
+source/CI review passes. Private tool-response summaries in
+`evidence-static-opengraph-url-605-2026-10-09/` and
+`evidence-optimized-metadata-gate-605-2026-10-09/` retain observed check provenance,
+not original runner logs. These changes are outside605 CI and require the next
+exact-source rendered development and optimized-image gates. Section91 stays
+Partial. Social-provider caches remain deployment-specific.
+
+### 2026-10-09 — Completed6050e9e source and image gate
+
+Exact `6050e9ef5cefa72cbc768f3c9dbff0c5c184c46a`
+[CI37874111137](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37874111137)
+finishes SUCCESS with all12 jobs:469 backend and647 frontend tests/46 files.
+The backend includes16 auth-cache, six email-boundary and14 production-startup
+cases. API-client tests pass60 cases, including the12 new label cases. Both
+production images and Release pass. The cached backend-image SBOM records
+Gunicorn26.2.2, and the actual production-default unsafe-startup guard passes;
+the cached build log does not supply a fresh installation-version observation.
+
+Original browser reports contain589 expected passes,12 intentional skips and zero
+unexpected/flaky cases: Chromium119, each other smoke profile115/four skips,
+and125 full-stack cases. All12 new editor-label cases (three scenarios across
+four projects) have exactly one passed result at retry0. This supplies their
+previously pending browser execution under the recorded mocked PUT400/Retry200
+scope; it does not establish actual backend validation or deployment recovery.
+Historical991/e8/84 results and the original e8 failure/retry remain retained.
+
+Logged tested merge `8bbb084e13264c8aacf690228036c732425aff56` and source605
+share full tree `8d360241f5cb09ad4b145f19a1879b5ab4219ede`. Root independently
+fetches both Git API commits and the complete597-entry recursive tree, verifies44
+manifest file hashes and all nine fresh artifact API digests against original
+bytes. The separately retained archive validation reports outer archive and
+embedded report ZIP integrity passing. Original logs,
+metadata, reports and validation remain privately in
+`evidence-6050e9e-2026-10-09/ci/`. The source gate includes asset labels, the OSV
+guard and earlier preview/recovery/Gunicorn/navigation changes.
+
+The actual CI step "Audit installed Gunicorn against OSV" completes successfully
+for installed26.2.2. Its executed checks require exactly one Gunicorn dependency,
+the installed version, no skip_reason and vulns[]. Original complete command and
+runtime warning/success stdout are retained in the full backend log; the scoped
+excerpt is explicitly derived. The generated audit JSON was not separately
+retained/uploaded. The ordinary full PyPI pip-audit step still explicitly skips
+Gunicorn because26.2.2 is absent from PyPI. The supplemental OSV check supplies
+scoped known-advisory coverage; it does not establish source integrity by itself
+or absence of undisclosed vulnerabilities.
+
+External GitGuardian check113638587727 remains FAILURE: the same six occurrences
+and four incidents, now131 commits. Historical991/e8/84/188 vendor metadata is
+retained; provider spans, external use and disposition remain unresolved.
+
+The subsequent static Open Graph helper/URL correction and optimized-image
+metadata gate above are outside605 CI. Their28 host cases and discovered-but-
+unexecuted live case retain their local scopes; the next exact-source rendered
+development and optimized-image gate remains pending. Section91 stays Partial
+and its URL bullet open. Existing822 checked/320 unchecked,89 N/A/231 applicable
+and58 Verified/40 Partial counts remain unchanged. No current Django/Gunicorn
+HTTP recovery/privacy transport, deployment readiness or broader section closure
+follows from this CI gate.

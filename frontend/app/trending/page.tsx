@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import { FeedPage } from "@/components/feeds/feed-page";
 import { getServerFeed } from "@/lib/api/server";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Trending",
   description: "See public bingo boards getting meaningful attention right now.",
   alternates: { canonical: "/trending" },
+  openGraph: defaultOpenGraph("/trending"),
 };
 
 export default async function TrendingPage() {

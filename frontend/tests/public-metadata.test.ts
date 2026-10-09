@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { resolveAlternates } from "next/dist/lib/metadata/resolvers/resolve-basics";
+import { resolveOpenGraph } from "next/dist/lib/metadata/resolvers/resolve-opengraph";
 
 import { generateMetadata as bingoMetadata } from "@/app/bingo/[bingoId]/page";
 import { generateMetadata as exploreMetadata } from "@/app/explore/page";
@@ -7,6 +9,7 @@ import { generateMetadata as shareMetadata } from "@/app/share/[bingoId]/[shareI
 import robots from "@/app/robots";
 import type { BingoDetail, SharedResult, UserProfile } from "@/lib/api/types";
 import { absoluteSiteUrl, siteUrl } from "@/lib/site";
+import { defaultOpenGraph } from "@/lib/metadata";
 
 const mocks = vi.hoisted(() => ({
   getBingo: vi.fn(),
@@ -125,6 +128,79 @@ describe("public route metadata", () => {
   });
 
   it.each([
+    ["discover", "Discover"],
+    ["trending", "Trending"],
+    ["privacy", "Privacy Policy"],
+    ["terms", "Terms of Service"],
+    ["community-guidelines", "Community Guidelines"],
+    ["support", "Support & Moderation"],
+    ["explore", "Explore"],
+  ])(
+    "resolves /%s Open Graph URL to its canonical with all shared defaults",
+    async (route, title) => {
+      const pages = {
+        discover: () => import("@/app/discover/page"),
+        trending: () => import("@/app/trending/page"),
+        privacy: () => import("@/app/privacy/page"),
+        terms: () => import("@/app/terms/page"),
+        "community-guidelines": () => import("@/app/community-guidelines/page"),
+        support: () => import("@/app/support/page"),
+      };
+      const metadata =
+        route === "explore"
+          ? await exploreMetadata({ searchParams: Promise.resolve({ search: "board", page: "2" }) })
+          : (await pages[route as keyof typeof pages]()).metadata;
+      const context = { trailingSlash: false, isStaticMetadataRouteFile: false };
+      const openGraph = await resolveOpenGraph(
+        metadata.openGraph,
+        siteUrl(),
+        Promise.resolve(`/${route}`),
+        context,
+        null,
+      );
+      const alternates = await resolveAlternates(
+        metadata.alternates,
+        siteUrl(),
+        Promise.resolve(`/${route}`),
+        context,
+      );
+
+      expect(metadata.title).toBe(title);
+      expect(metadata.description).toEqual(expect.any(String));
+      expect(openGraph?.url?.toString()).toBe(absoluteSiteUrl(`/${route}`));
+      expect(openGraph?.url?.toString()).toBe(alternates?.canonical?.url.toString());
+      expect(openGraph).toMatchObject({
+        type: "website",
+        siteName: "Not Enough Bingo",
+        images: [
+          {
+            url: new URL(absoluteSiteUrl("/opengraph-image")),
+            width: 1200,
+            height: 630,
+            alt: "Not Enough Bingo — create, play, and share community bingo boards",
+          },
+        ],
+      });
+      if (route === "explore") expect(metadata.robots).toEqual({ index: false, follow: true });
+    },
+  );
+
+  it("retains the root Open Graph defaults without inventing a root URL", () => {
+    expect(defaultOpenGraph()).toEqual({
+      type: "website",
+      siteName: "Not Enough Bingo",
+      images: [
+        {
+          url: absoluteSiteUrl("/opengraph-image"),
+          width: 1200,
+          height: 630,
+          alt: "Not Enough Bingo — create, play, and share community bingo boards",
+        },
+      ],
+    });
+  });
+
+  it.each([
     { label: "no parameters", searchParams: {} },
     { label: "undefined search", searchParams: { search: undefined } },
     { label: "empty search", searchParams: { search: "" } },
@@ -135,6 +211,7 @@ describe("public route metadata", () => {
 
     expect(metadata.robots).toBeUndefined();
     expect(metadata.alternates).toEqual({ canonical: "/explore" });
+    expect(metadata.openGraph).toMatchObject({ url: "/explore" });
     expect(mocks.getExplore).not.toHaveBeenCalled();
   });
 
@@ -152,6 +229,7 @@ describe("public route metadata", () => {
 
     expect(metadata.robots).toEqual({ index: false, follow: true });
     expect(metadata.alternates).toEqual({ canonical: "/explore" });
+    expect(metadata.openGraph).toMatchObject({ url: "/explore" });
     expect(mocks.getExplore).not.toHaveBeenCalled();
   });
 
@@ -164,6 +242,7 @@ describe("public route metadata", () => {
 
     expect(metadata.robots).toEqual({ index: false, follow: false });
     expect(metadata.alternates).toEqual({ canonical: "/explore" });
+    expect(metadata.openGraph).toMatchObject({ url: "/explore" });
     expect(mocks.getExplore).not.toHaveBeenCalled();
   });
 
