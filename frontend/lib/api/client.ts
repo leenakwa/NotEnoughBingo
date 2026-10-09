@@ -355,6 +355,15 @@ export function fieldValidationMessage(error: unknown, field: string): string | 
   return firstValidationDetail((error.details as Record<string, unknown>)[field]);
 }
 
+const assetValidationLabels: Record<string, string> = {
+  cover_asset_id: "Cover image",
+  cover_id: "Cover image",
+  background_asset_id: "Background",
+  board_background_id: "Background",
+  image_asset_id: "Cell image",
+  avatar_id: "Avatar",
+};
+
 function firstValidationDetail(value: unknown, path: string[] = []): string | null {
   if (Array.isArray(value)) {
     for (const item of value) {
@@ -366,10 +375,15 @@ function firstValidationDetail(value: unknown, path: string[] = []): string | nu
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   if (typeof record.message === "string") {
-    const field = path
-      .filter((part) => !/^\d+$/.test(part))
-      .map((part) => part.replaceAll("_", " "))
-      .join(" · ");
+    const assetField = path.at(-1)?.split(".").at(-1);
+    const field =
+      (assetField && Object.hasOwn(assetValidationLabels, assetField)
+        ? assetValidationLabels[assetField]
+        : null) ??
+      path
+        .filter((part) => !/^\d+$/.test(part))
+        .map((part) => part.replaceAll("_", " "))
+        .join(" · ");
     return field ? `${field}: ${record.message}` : record.message;
   }
   for (const [key, item] of Object.entries(record)) {

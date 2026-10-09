@@ -40,33 +40,40 @@ unresolved failures or missing evidence.
 ### Latest observed source gate — 2026-10-09
 
 Latest completed committed-source gate: exact
-`e8d9e58be7d4d2069e93f1048be35d2e99802c47`
-[CI37868923503](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37868923503)
-finishes SUCCESS with all12 jobs:469 backend,632 frontend/46 files and125 full-stack
-cases. Browser reports contain576 expected passes, one WebKit flaky case and12
-intentional skips, with zero unexpected cases. The WebKit header test initially
-fails while the Trending RSC request is still pending and the browser remains on
-Discover at the five-second heading assertion; retry1 passes. Independent trace
-review confirms that boundary, but does not prove the underlying server delay.
-The subsequent test explicitly awaits the route URL before unchanged heading/
-scroll/shadow assertions; exact-source runtime verification remains pending.
-This historical browser gate retains its flaky result. The locked backend includes all16 auth-cache,
-six email-boundary and14 production-startup cases. Both production images and
-Release pass, including the backend-image default-settings unsafe-startup check.
-Sourcee8 and logged tested merge `43d44dd6b6370b88ddc1fbfe8703a76ebc684155`
-share full tree `6896a30e573f4389115deadcc84868dcde71e61d`. Root independently
-verifies both Git API trees,41 retained CI file hashes and all nine fresh artifact
+`9910827640b068d89e0b4d9d555e47cd1583c2cc`
+[CI37871575122](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37871575122)
+finishes SUCCESS with all12 jobs:469 backend,635 frontend/46 files and577 expected
+browser passes with12 intentional skips, zero unexpected cases and zero flakes.
+Chromium passes116 smoke cases, each other profile112/four skips, and full-stack
+flows125. The WebKit header-navigation case has one passed result, retry0 in2549ms.
+The locked backend includes all16 auth-cache, six email-boundary and14 production-
+startup cases. Both production images and Release pass; the backend image installs
+Gunicorn26.2.2 and passes its production-default unsafe-startup guard.
+Source991 and logged tested merge `ad90cf6ebe6b7a76b47f4dfb4d3ff8d2954ae348`
+share full tree `57617b27dc7618e765aa39b634ea4808ce56ea3e`. Root independently
+verifies both Git API trees,46 retained CI file hashes and all nine fresh artifact
 API digests against actual bytes; archive integrity passes. See the
-[datede8 gate](production-readiness-evidence.md#2026-10-09--completede8d9e58-source-and-image-gate).
+[dated991 gate](production-readiness-evidence.md#2026-10-09--completed9910827-source-and-image-gate).
 
-This gate includes the SSR preview field projection and its seven new cases,
-the anonymous-auth cache correction and prior email/startup/schema changes.
-Subsequent Gunicorn26.2.2 dependency/configuration changes, three recovery
-component tests and header-navigation synchronization require the next exact-source
-gate; they are outside this completed e8 gate. Cached local frontend
-ec69223/backend b6aabca/worker a3 and keepalive0 transport observations retain
-their separate scopes; no actual deployment or current recovery-runtime result
-follows from this CI gate.
+This gate includes the preview projection/seven cases, three recovery component
+tests, pinned Gunicorn/configuration and header-navigation synchronization, plus
+prior auth-cache/email/startup/schema changes. The ordinary pip-audit step passes
+but explicitly does NOT audit Gunicorn26.2.2 because its PyPI version is absent.
+A separate local OSV query audits that one exact version with vulns[]; the additive
+OSV CI guard has reviewed local checks, but is outside991 and its next exact-source
+CI gate remains pending. Subsequent working-tree asset-field error-label changes
+are also outside991; no verification of that unfinished work is claimed. Cached
+local frontend ec69223/backend b6aabca/worker a3 and keepalive0 transport
+observations retain their separate scopes. Neither CI nor the scoped advisory
+query establishes current Django/Gunicorn recovery/privacy transport or deployment
+readiness.
+
+Historicale8 all12 SUCCESS,469 backend/632 frontend,576 expected browser passes,
+one WebKit flaky case and12 skips,41 hashes/nine digests remain retained in the
+[datede8 gate](production-readiness-evidence.md#2026-10-09--completede8d9e58-source-and-image-gate).
+Its initial five-second heading assertion occurs while Trending RSC is pending
+and Discover remains visible; retry1 passes. The underlying delay remains
+unestablished, and its original flaky report is not relabeled clean.
 
 Historical84 all12 SUCCESS,469 backend/625 frontend/577 browser passes with no
 reported flakes,35 hashes, nine artifact digests and shared tree
@@ -94,14 +101,14 @@ observes four same-origin registration-email Referer matches and anonymous
 verification200 returning own email without explicit Cache-Control. The email-query
 UI choice remains pending. The later auth-prefix private/no-store fix passes
 16 focused SQLite tests and scoped security review; it is outside exact188 CI.
-Committed84 and latest e8 backend469 pass under locked dependencies, including
+Committed84 and latest991 backend469 pass under locked dependencies, including
 all16 cache cases; optimized-runtime transport remains unverified. A subsequent single
 post-reset login returns200 with33 fresh upstream connections/zeroRST and stable
 worker snapshots; original500 cause remains unknown. Section59, expired-links
 ID569 and section76 remain open; counts and checkbox states are unchanged.
 
-Currente8 external GitGuardian check113622182680 remains FAILURE with the same
-six occurrences/four incidents, now129 commits; historical84/188 metadata is retained.
+Current991 external GitGuardian check113630646154 remains FAILURE with the same
+six occurrences/four incidents, now130 commits; historicale8/84/188 metadata is retained.
 
 The [committed preview projection](production-readiness-evidence.md#2026-10-09--preview-ssr-unused-field-projection)
 removes only unused position/image_asset_id fields from feed/Explore SSR preview
@@ -110,7 +117,7 @@ independent source review pass. Actual source-bound development pages retain the
 raw API content except those fields: normalized JSON34,709→31,642 bytes for five
 boards/77 cells on each route. Narrow/wide layout and first-card navigation pass;
 network capture is unavailable, so no new zero-initial-feed-request claim follows.
-This patch is included in exact e8 CI, including all seven projection cases. Its
+This patch is included in e8 and latest991 CI, including all seven projection cases. Its
 actual development-media observation remains separate; no optimized browser
 runtime, wire/gzip or latency proof follows. No checkbox/count or section verdict
 changes follow.

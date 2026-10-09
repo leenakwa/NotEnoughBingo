@@ -8999,3 +8999,80 @@ change or production-readiness claim follows.
 unchanged heading/scroll/shadow assertions. No timeout, retry, skip or warm-up
 changes are made. Scoped behavioral review, ESLint and Prettier pass; runtime
 verification remains pending in the next exact-source CI gate.
+
+### 2026-10-09 — Completed9910827 source and image gate
+
+Exact `9910827640b068d89e0b4d9d555e47cd1583c2cc`
+[CI37871575122](https://github.com/leenakwa/NotEnoughBingo/actions/runs/37871575122)
+finishes SUCCESS with all12 jobs:469 backend and635 frontend tests/46 files.
+The backend includes16 auth-cache, six email-boundary and14 production-startup
+cases. Frontend includes the seven preview cases and three new recovery component
+cases; the two recovery files pass19 cases in total. Both production images and
+Release pass. The actual backend image installs Gunicorn26.2.2 and passes its
+production-default unsafe-startup rejection guard.
+
+Original browser reports contain577 expected passes,12 intentional skips and zero
+unexpected/flaky cases: Chromium116, each other smoke profile112/four skips,
+and125 full-stack cases. WebKit's `hover-lift.spec.ts:42` header-navigation case
+has exactly one passed result, retry0, duration2549ms. This verifies the synchronized
+test in this source gate. Historicale8's initial failure/retry, original artifacts
+and unresolved underlying development delay remain retained unchanged.
+
+Logged tested merge `ad90cf6ebe6b7a76b47f4dfb4d3ff8d2954ae348` and source991
+share full tree `57617b27dc7618e765aa39b634ea4808ce56ea3e`. Root independently
+fetches both Git API trees and verifies46 manifest file hashes, all nine fresh
+artifact API digests against original archive bytes, outer archive integrity and
+embedded report ZIP integrity. Original logs, metadata, reports and validation
+remain privately in `evidence-9910827-2026-10-09/ci/`. The source archive hash
+`b42561d72978f30c97b65ea1ba54b0171dfe7f1ef8603b13085647cacec2077d`
+is retained in both locks for upstream commit8d98faa; it is distinct from the
+CI-built Gunicorn wheel hash. The completed gate includes preview, recovery,
+Gunicorn/configuration and navigation-test changes that were outside exact e8 CI.
+
+The ordinary full requirements pip-audit step succeeds but explicitly reports
+Gunicorn26.2.2 could not be audited because that PyPI version is absent (404).
+It therefore provides no Gunicorn advisory coverage. A separate actual local
+`pip-audit --vulnerability-service osv --no-deps --disable-pip` query exits0 and
+returns one dependency, gunicorn26.2.2 with vulns[], retained as original JSON/logs
+in `evidence-gunicorn26-osv-2026-10-09/`. This covers known OSV advisories for that
+version, not source integrity, PyPI publication or undisclosed vulnerabilities.
+An additive30-line CI OSV guard preserves the existing full PyPI audit, checks
+installed Gunicorn metadata and rejects missing/skipped/mismatched audit results.
+Scoped review, actionlint, bash syntax and execution of the exact added block with
+cached generated26.2.2 metadata pass; one valid report is accepted and seven invalid
+reports rejected. Original local logs/results are retained in
+`evidence-gunicorn26-ci-audit-2026-10-09/`. This uncommitted guard is outside991 CI;
+its actual next-source gate is pending, not established by the cached local run.
+
+External GitGuardian check113630646154 remains FAILURE: the same six occurrences
+and four incidents, now130 commits. Historicale8/84/188 vendor metadata is retained;
+provider spans, external use and disposition remain unresolved. Subsequent asset-
+field error-label work is outside991 and its result remains pending. The scoped
+media/development/runtime evidence keeps its earlier limits; no current HTTP,
+Django/Gunicorn recovery/privacy transport or real deployment claim follows.
+No classification counts, checkboxes or section verdicts change.
+
+### 2026-10-09 — Asset validation labels and editor regression scope
+
+Source inspection confirms ordinary editor/avatar validation could expose
+technical asset-field prefixes. Six known keys (`cover_asset_id`, `cover_id`,
+`background_asset_id`, `board_background_id`, `image_asset_id`, `avatar_id`) and
+nested/dotted asset leaves now use existing control terms: Cover image,
+Background, Cell image and Avatar. Generic field context, server messages/codes
+and direct inline field messages are preserved; no new product-copy choice or
+global sections3/4/5 guarantee follows. Independent mapping/test review passes.
+
+Host Node24.16 checks pass60 API cases (12 new,48 existing), full frontend
+typecheck and targeted ESLint/Prettier. Four Docker Node22 commands stalled without
+output; only their task-owned CLI processes were canceled, with no daemon/service
+restart. No Node22 or local browser execution result is claimed. Three mocked
+editor scenarios across four existing default browser projects discover12 cases,
+not executed locally. Their assertions cover PUT400 through the real formatter
+with a friendly alert/no asset keys or codes, then Retry200/Saved, retained title
+and two PUT attempts with matching titles.
+Review corrected the new CSRF fixture to return `csrf` and assert `x-csrftoken`
+on both PUT attempts. Browser execution remains pending the next exact-source CI.
+Private `evidence-asset-validation-labels-2026-10-09/checks-tool-response-summary.json`
+retains command/results provenance as a tool-response summary, not runner logs.
+The label/test changes and additive CI OSV guard are outside completed991 CI;
+they require the next exact-source gate. No counts, checkboxes or status change.

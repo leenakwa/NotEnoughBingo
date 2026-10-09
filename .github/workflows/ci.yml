@@ -162,6 +162,36 @@ jobs:
       - name: Audit production Python dependency graph
         run: pip-audit -r requirements.lock --progress-spinner=off
 
+      - name: Audit installed Gunicorn against OSV
+        run: |
+          audit_dir="$(mktemp -d /tmp/neb-gunicorn-audit.XXXXXX)"
+          trap 'rm -rf "$audit_dir"' EXIT
+          python - "$audit_dir/requirements.txt" <<'PY'
+          from importlib.metadata import version
+          from pathlib import Path
+          import sys
+
+          Path(sys.argv[1]).write_text(f"gunicorn=={version('gunicorn')}\n")
+          PY
+          pip-audit --vulnerability-service osv --no-deps --disable-pip \
+            --progress-spinner=off --format=json -r "$audit_dir/requirements.txt" \
+            > "$audit_dir/result.json"
+          python - "$audit_dir/result.json" <<'PY'
+          from importlib.metadata import version
+          import json
+          from pathlib import Path
+          import sys
+
+          dependencies = json.loads(Path(sys.argv[1]).read_text())["dependencies"]
+          assert len(dependencies) == 1, "OSV must audit exactly one dependency"
+          dependency = dependencies[0]
+          assert dependency.get("name") == "gunicorn", "OSV must audit Gunicorn"
+          assert dependency.get("version") == version("gunicorn"), "OSV version mismatch"
+          assert "skip_reason" not in dependency, "OSV must not skip Gunicorn"
+          assert dependency.get("vulns") == [], "Gunicorn vulnerabilities missing or found"
+          print(f"OSV audited gunicorn=={dependency['version']} with no known vulnerabilities")
+          PY
+
       - name: Ruff lint and format
         run: |
           ruff check .

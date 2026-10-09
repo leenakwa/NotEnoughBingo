@@ -91,6 +91,75 @@ describe("API error presentation", () => {
     expect(errorMessage(error)).toBe("The service is temporarily unavailable.");
   });
 
+  it.each([
+    ["cover_asset_id", "Cover image"],
+    ["cover_id", "Cover image"],
+    ["background_asset_id", "Background"],
+    ["board_background_id", "Background"],
+    ["image_asset_id", "Cell image"],
+    ["avatar_id", "Avatar"],
+    ["cells.image_asset_id", "Cell image"],
+    ["cells.0.image_asset_id", "Cell image"],
+  ])("uses the existing UI label for %s without changing inline feedback", (field, label) => {
+    const error = new ApiClientError(400, {
+      code: "validation_error",
+      message: "The request could not be processed.",
+      details: { [field]: [{ message: "Choose an available image.", code: "asset_unavailable" }] },
+    });
+    expect(errorMessage(error)).toBe(`${label}: Choose an available image.`);
+    expect(fieldValidationMessage(error, field)).toBe("Choose an available image.");
+    expect(error.code).toBe("validation_error");
+  });
+
+  it.each([
+    {
+      cells: [{}, { image_asset_id: [{ message: "Choose an available image.", code: "invalid" }] }],
+    },
+    {
+      cells: {
+        "2": { image_asset_id: { message: "Choose an available image.", code: "invalid" } },
+      },
+    },
+    {
+      cells: [
+        {
+          image_asset_id: [
+            { code: "ignored_code_only" },
+            { message: "Choose an available image." },
+          ],
+        },
+      ],
+    },
+  ])("labels nested cell image details without exposing codes or array indices", (details) => {
+    expect(
+      errorMessage(
+        new ApiClientError(400, { code: "validation_error", message: "Invalid input.", details }),
+      ),
+    ).toBe("Cell image: Choose an available image.");
+  });
+
+  it("preserves generic nested field context and ignores unknown code-only details", () => {
+    const error = new ApiClientError(400, {
+      code: "validation_error",
+      message: "Invalid input.",
+      details: {
+        ignored: [{ code: "unknown_internal_code" }],
+        cells: [{ text_color: [{ message: "Choose a valid color.", code: "invalid" }] }],
+      },
+    });
+    expect(errorMessage(error)).toBe("cells · text color: Choose a valid color.");
+    expect(fieldValidationMessage(error, "ignored")).toBeNull();
+    expect(
+      errorMessage(
+        new ApiClientError(400, {
+          code: "unknown_code",
+          message: "Invalid input.",
+          details: { cover_id: [{ code: "unknown_internal_code" }] },
+        }),
+      ),
+    ).toBe("Invalid input.");
+  });
+
   it("turns browser network failures into an actionable message", () => {
     expect(errorMessage(new TypeError("Failed to fetch"))).toBe(
       "Unable to reach the service. Check your connection and try again.",
